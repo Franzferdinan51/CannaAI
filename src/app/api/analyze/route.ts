@@ -71,37 +71,40 @@ export async function POST(request: NextRequest) {
           };
 
           // Smart processing based on original image characteristics
+          // BACKUP: Original compression settings for reference
+          // Original values: quality: 85 (8K+), 80 (4K-8K), 75 (2MP+), 70 (standard)
+
           if (originalMegapixels > 20) {
-            // Ultra-high resolution images (8K+)
+            // Ultra-high resolution images (8K+) - Maintain 90% quality
             processingOptions = {
               ...processingOptions,
               width: 1600,
               height: 1600,
-              quality: 85 // Higher quality for large detailed images
+              quality: 90 // Highest quality for ultra-high resolution
             };
           } else if (originalMegapixels > 8) {
-            // High resolution images (4K-8K)
+            // High resolution images (4K-8K) - Maintain 90% quality
             processingOptions = {
               ...processingOptions,
               width: 1200,
               height: 1200,
-              quality: 80
+              quality: 90 // High quality maintained
             };
           } else if (originalMegapixels > 2) {
-            // Medium resolution images
+            // Medium resolution images - Maintain 90% quality
             processingOptions = {
               ...processingOptions,
               width: 1000,
               height: 1000,
-              quality: 75
+              quality: 90 // Quality improved to 90%
             };
           } else {
-            // Standard resolution images
+            // Standard resolution images - Maintain 90% quality
             processingOptions = {
               ...processingOptions,
               width: 800,
               height: 800,
-              quality: 70
+              quality: 90 // All images now maintain 90% quality minimum
             };
           }
 
@@ -691,6 +694,12 @@ function generateFallbackAnalysis(
   let treatment: string[] = [];
   let symptomsMatched: string[] = [];
   let isPurpleStrain = strainName.includes('purple');
+
+  // Declare urgencyLevel early to prevent reference errors
+  let urgencyLevel = 'medium';
+  let environmentalFactors: string[] = [];
+  let pestsDetected: string[] = [];
+  let diseasesDetected: string[] = [];
 
   // ENHANCED: Always provide comprehensive analysis even with minimal input
   if (leafSymptoms === "General symptoms" || symptoms === "general symptoms" || leafSymptoms.trim() === "" || symptoms.trim() === "") {
@@ -1426,10 +1435,7 @@ function generateFallbackAnalysis(
   if (symptomsMatched.length === 0) symptomsMatched = ['General symptoms observed'];
 
   // Determine urgency and environmental factors
-  let urgencyLevel = 'medium';
-  let environmentalFactors: string[] = [];
-  let pestsDetected: string[] = [];
-  let diseasesDetected: string[] = [];
+  // Variables already declared at the beginning of the function
 
   if (symptoms.includes('spider mite') || symptoms.includes('webbing')) {
     pestsDetected.push('Spider Mites');

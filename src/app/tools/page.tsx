@@ -4,9 +4,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Bug, Calculator, Beaker, Settings, TrendingUp, BookOpen, Wrench, Scissors } from 'lucide-react';
+import { Bug, Calculator, Beaker, Settings, TrendingUp, BookOpen, Wrench, Scissors, Package, Archive } from 'lucide-react';
 
 const tools = [
+  {
+    name: 'Logistics Tracker',
+    description: 'Complete inventory management for nutrients, seeds, supplies, and automated reordering system',
+    href: '/tools/logistics-tracker',
+    icon: Package,
+    status: 'Active',
+    statusColor: 'bg-green-500',
+    features: ['Inventory Management', 'Reorder Alerts', 'Supplier Tracking', 'Analytics Dashboard'],
+    category: 'Tracking'
+  },
+  {
+    name: 'Inventory Manager',
+    description: 'Complete inventory tracking system for plants, equipment, and growing supplies',
+    href: '/tools/inventory-manager',
+    icon: Archive,
+    status: 'Active',
+    statusColor: 'bg-green-500',
+    features: ['Plant Tracking', 'Equipment Management', 'Supply Inventory', 'Status Monitoring'],
+    category: 'Tracking'
+  },
   {
     name: 'Harvest Tracker',
     description: 'Comprehensive harvest management with analytics, yield tracking, and curing batch management',

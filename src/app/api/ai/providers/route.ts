@@ -21,6 +21,43 @@ interface AIModel {
 }
 
 async function getLMStudioModels(): Promise<AIModel[]> {
+  // Check if we're on a serverless platform
+  const isServerless = !!process.env.NETLIFY ||
+                      !!process.env.VERCEL ||
+                      !process.platform;
+
+  if (isServerless) {
+    console.log('Serverless platform detected - returning demo LM Studio models');
+    return [
+      {
+        id: 'demo_llava_vision',
+        name: 'LLaVA Vision (Demo - Serverless)',
+        provider: 'lm-studio-demo',
+        capabilities: ['text-generation', 'vision', 'image-analysis', 'plant-analysis'],
+        contextLength: 4096,
+        size: '4.1 GB (Demo)',
+        quantization: 'Q4_K_M',
+        metadata: {
+          note: 'Demo data - Real LM Studio requires local deployment',
+          platform: 'serverless'
+        }
+      },
+      {
+        id: 'demo_cannabis_expert',
+        name: 'Cannabis Expert (Demo - Serverless)',
+        provider: 'lm-studio-demo',
+        capabilities: ['text-generation', 'plant-analysis', 'classification', 'analysis'],
+        contextLength: 8192,
+        size: '8.5 GB (Demo)',
+        quantization: 'Q5_K_M',
+        metadata: {
+          note: 'Demo data - Real LM Studio requires local deployment',
+          platform: 'serverless'
+        }
+      }
+    ];
+  }
+
   try {
     console.log('Fetching LM Studio models from http://localhost:1234/v1/models');
     const response = await fetch('http://localhost:1234/v1/models', {
@@ -278,6 +315,10 @@ async function getAvailableProviders(): Promise<AIProvider[]> {
 
 export async function GET(request: NextRequest) {
   try {
+    const isServerless = !!process.env.NETLIFY ||
+                        !!process.env.VERCEL ||
+                        !process.platform;
+
     const providers = await getAvailableProviders();
 
     // Calculate summary
@@ -295,12 +336,32 @@ export async function GET(request: NextRequest) {
         .reduce((sum, p) => sum + p.models.filter(m => m.capabilities.includes('vision')).length, 0)
     };
 
-    return NextResponse.json({
+    const response: any = {
       success: true,
       providers,
       summary,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    // Add deployment information for serverless platforms
+    if (isServerless) {
+      response.deploymentInfo = {
+        platform: 'Serverless (Netlify/Vercel)',
+        limitations: [
+          'LM Studio requires local deployment',
+          'Local network access is restricted',
+          'File system access is limited'
+        ],
+        recommendations: [
+          'Use OpenRouter for cloud AI models',
+          'Deploy locally with Docker for full functionality',
+          'Use a VPS for self-hosted deployment'
+        ],
+        note: 'Demo models shown above are placeholders. Configure OpenRouter API key for real cloud models.'
+      };
+    }
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('AI providers fetch error:', error);

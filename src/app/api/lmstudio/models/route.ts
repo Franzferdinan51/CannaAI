@@ -324,6 +324,98 @@ export async function GET(request: NextRequest) {
   try {
     console.log('=== LM Studio Model Scan Started ===');
     console.log('Platform:', process.platform);
+    console.log('Netlify Detection:', process.env.NETLIFY || 'Not detected');
+
+    // Check if we're running on Netlify or similar serverless platform
+    const isNetlify = !!process.env.NETLIFY ||
+                     process.env.VERCEL ||
+                     !process.platform ||
+                     typeof window !== 'undefined';
+
+    if (isNetlify) {
+      console.log('Running on serverless platform - returning demo data');
+      return NextResponse.json({
+        status: 'demo',
+        message: 'LM Studio access is not available on serverless platforms. This is demo data.',
+        lmStudioRunning: false,
+        isServerless: true,
+        models: [
+          {
+            id: 'demo_llava_vision',
+            name: 'LLaVA Vision (Demo)',
+            filename: 'llava-v1.5-7b-q4_demo.gguf',
+            author: 'Demo',
+            filepath: '/demo/path/llava-v1.5-7b-q4_demo.gguf',
+            relativePath: 'demo/path/llava-v1.5-7b-q4_demo.gguf',
+            fullPath: 'demo / path',
+            size: 4100000000,
+            sizeFormatted: '4.1 GB',
+            sizeGB: 4.1,
+            sizeMB: 4100.0,
+            modified: new Date().toISOString(),
+            provider: 'lmstudio-demo',
+            type: 'gguf',
+            capabilities: ['text-generation', 'vision', 'image-analysis', 'plant-analysis'],
+            quantization: 'Q4_K_M',
+            contextLength: 4096,
+            metadata: {
+              source: 'Demo Data - Serverless Platform',
+              platform: 'serverless',
+              version: '1.0.0',
+              note: 'This is demo data. Real LM Studio models require local deployment.'
+            }
+          },
+          {
+            id: 'demo_cannabis_expert',
+            name: 'Cannabis Expert (Demo)',
+            filename: 'cannabis-expert-13b-q5_demo.gguf',
+            author: 'Demo',
+            filepath: '/demo/path/cannabis-expert-13b-q5_demo.gguf',
+            relativePath: 'demo/path/cannabis-expert-13b-q5_demo.gguf',
+            fullPath: 'demo / path',
+            size: 8500000000,
+            sizeFormatted: '8.5 GB',
+            sizeGB: 8.5,
+            sizeMB: 8500.0,
+            modified: new Date().toISOString(),
+            provider: 'lmstudio-demo',
+            type: 'gguf',
+            capabilities: ['text-generation', 'plant-analysis', 'classification', 'analysis'],
+            quantization: 'Q5_K_M',
+            contextLength: 8192,
+            metadata: {
+              source: 'Demo Data - Serverless Platform',
+              platform: 'serverless',
+              version: '1.0.0',
+              note: 'This is demo data. Real LM Studio models require local deployment.'
+            }
+          }
+        ],
+        summary: {
+          total: 2,
+          vision: 1,
+          textOnly: 1,
+          plantAnalysis: 2
+        },
+        timestamp: new Date().toISOString(),
+        deploymentInfo: {
+          platform: 'Serverless (Netlify/Vercel)',
+          limitations: [
+            'LM Studio requires local deployment',
+            'File system access is not available',
+            'Local network connections are restricted',
+            'Consider using cloud AI providers instead'
+          ],
+          alternatives: [
+            'OpenRouter API for cloud models',
+            'Local deployment with Docker',
+            'Self-hosted server with full access'
+          ]
+        }
+      });
+    }
+
+    console.log('Platform:', process.platform);
     console.log('User Profile:', process.env.USERPROFILE);
     console.log('Local AppData:', process.env.LOCALAPPDATA);
 
@@ -374,6 +466,30 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error scanning LM Studio models:', error);
+
+    // Check if the error is due to serverless limitations
+    const isServerlessError = error.message.includes('EACCES') ||
+                            error.message.includes('EPERM') ||
+                            error.message.includes('ENOENT') ||
+                            !process.platform;
+
+    if (isServerlessError) {
+      return NextResponse.json({
+        status: 'serverless_limitation',
+        message: 'LM Studio access is not available on this platform',
+        error: 'Serverless platform limitations',
+        models: [],
+        summary: { total: 0, vision: 0, textOnly: 0, plantAnalysis: 0 },
+        timestamp: new Date().toISOString(),
+        deploymentInfo: {
+          platform: 'Serverless',
+          limitations: [
+            'File system access restricted',
+            'Local network access limited'
+          ]
+        }
+      }, { status: 200 }); // Return 200 so frontend can handle gracefully
+    }
 
     return NextResponse.json({
       status: 'error',
