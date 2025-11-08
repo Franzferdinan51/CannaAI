@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Bug, Calculator, Beaker, Settings, TrendingUp, BookOpen, Wrench, Scissors, Package, Archive } from 'lucide-react';
+import { Bug, Calculator, Beaker, Settings, TrendingUp, BookOpen, Wrench, Scissors, Package, Archive, Eye, Camera } from 'lucide-react';
 
 const tools = [
   {
@@ -36,6 +36,16 @@ const tools = [
     statusColor: 'bg-green-500',
     features: ['Harvest Logging', 'Yield Analytics', 'Curing Management', 'Quality Tracking'],
     category: 'Harvest'
+  },
+  {
+    name: 'Live Plant Vision',
+    description: 'Real-time plant health monitoring with USB webcam and microscope integration for continuous AI analysis',
+    href: '/live-vision',
+    icon: Eye,
+    status: 'Active',
+    statusColor: 'bg-green-500',
+    features: ['USB Webcam Support', 'Microscope Integration', 'Real-time Analysis', 'Auto-monitoring'],
+    category: 'Plant Health'
   },
   {
     name: 'Pest & Disease Identifier',
