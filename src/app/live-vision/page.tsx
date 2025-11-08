@@ -59,6 +59,8 @@ export default function LiveVisionDashboard() {
     growthStage: 'vegetative',
     medium: 'soil'
   });
+  const [trichomeAnalysis, setTrichomeAnalysis] = useState<any>(null);
+  const [enableTrichomeMode, setEnableTrichomeMode] = useState(true);
 
   // Handle image capture and analysis
   const handleImageCapture = useCallback(async (imageData: string, deviceInfo: any) => {
@@ -113,6 +115,54 @@ export default function LiveVisionDashboard() {
     }
   }, [selectedPlant]);
 
+  // Handle trichome analysis
+  const handleTrichomeAnalysis = useCallback(async (imageData: string, deviceInfo: any) => {
+    setIsAnalyzing(true);
+    setConnectionStatus('connected');
+
+    try {
+      const response = await fetch('/api/trichome-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageData,
+          deviceInfo: {
+            deviceId: deviceInfo.deviceId,
+            label: deviceInfo.label,
+            mode: deviceInfo.mode,
+            resolution: deviceInfo.resolution,
+            magnification: deviceInfo.magnification,
+            deviceType: deviceInfo.deviceType
+          },
+          analysisOptions: {
+            focusArea: 'trichomes',
+            maturityStage: selectedPlant.growthStage === 'flowering' ? 'peak' : 'mid',
+            strainType: 'hybrid', // Default, can be made configurable
+            enableCounting: true,
+            enableMaturityAssessment: true,
+            enableHarvestReadiness: true
+          }
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setTrichomeAnalysis(result.analysis);
+        setConnectionStatus('connected');
+      } else {
+        throw new Error(result.error?.message || 'Trichome analysis failed');
+      }
+    } catch (error) {
+      console.error('Trichome analysis error:', error);
+      setConnectionStatus('error');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [selectedPlant]);
+
   // Get health score color
   const getHealthScoreColor = (score: number) => {
     if (score >= 0.8) return 'text-green-400';
@@ -133,7 +183,7 @@ export default function LiveVisionDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-6 pt-20">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -208,8 +258,10 @@ export default function LiveVisionDashboard() {
             {/* Live Camera Component */}
             <LiveCamera
               onImageCapture={handleImageCapture}
+              onTrichomeAnalysis={handleTrichomeAnalysis}
               autoAnalyze={autoAnalysis}
               analyzeInterval={analysisInterval}
+              enableTrichomeMode={enableTrichomeMode}
             />
 
             {/* Plant Context Settings */}

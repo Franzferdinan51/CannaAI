@@ -14,7 +14,7 @@ import {
   TestTube, Beaker, Eye, Heart, Timer, Target, Award, Archive, ShoppingCart,
   Clipboard, Filter, Download, DownloadCloud, UploadCloud, BarChart3, ActivityIcon,
   Flame, Snowflake, AirVent, LightbulbOff, Volume2, VolumeX, X, Grid,
-  TrendingDown, Star
+  TrendingDown, Star, Wrench
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -446,6 +446,11 @@ export default function CultivAIPro() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
   const [sensorData, setSensorData] = useState(mockSensorData);
+
+  // Expose sensor data globally for AI assistant and header
+  useEffect(() => {
+    (window as any).sensorData = sensorData;
+  }, [sensorData]);
   const [showAIChat, setShowAIChat] = useState(false);
   const [aiMessages, setAIMessages] = useState([]);
   const [aiInput, setAIInput] = useState('');
@@ -1297,9 +1302,9 @@ export default function CultivAIPro() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Clean Header with Hamburger Menu */}
-      <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-slate-700">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white pt-4">
+      {/* Content starts immediately below global header */}
+      <header>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Sheet open={sidePanelOpen} onOpenChange={setSidePanelOpen}>
@@ -1324,6 +1329,51 @@ export default function CultivAIPro() {
                     {/* Quick Tool Access */}
                     <div className="space-y-3">
                       <h3 className="text-sm font-semibold text-blue-300 mb-3">Quick Access Tools</h3>
+
+                      <Link href="/all-tools" className="block">
+                        <Card className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-blue-500 hover:border-blue-300 transition-all duration-300 hover:from-blue-800/50 hover:to-purple-800/50">
+                          <CardContent className="p-3">
+                            <div className="flex items-center">
+                              <Wrench className="h-4 w-4 text-blue-400 mr-3" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-blue-300">All Tools Suite</h4>
+                                <p className="text-xs text-slate-400">Complete toolkit - All tools in one place</p>
+                              </div>
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+
+                      <Link href="/ai-assistant" className="block">
+                        <Card className="bg-gradient-to-r from-emerald-900/50 to-teal-900/50 border-emerald-500 hover:border-emerald-300 transition-all duration-300 hover:from-emerald-800/50 hover:to-teal-800/50">
+                          <CardContent className="p-3">
+                            <div className="flex items-center">
+                              <Bot className="h-4 w-4 text-emerald-400 mr-3" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-emerald-300">AI Cultivation Assistant</h4>
+                                <p className="text-xs text-slate-400">Expert guidance & plant analysis</p>
+                              </div>
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+
+                      <Link href="/live-vision" className="block">
+                        <Card className="bg-slate-800/50 border-slate-600 hover:border-green-400 transition-all duration-300 hover:bg-slate-800/70">
+                          <CardContent className="p-3">
+                            <div className="flex items-center">
+                              <Eye className="h-4 w-4 text-green-400 mr-3" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-green-300">Live Plant Vision</h4>
+                                <p className="text-xs text-slate-400">USB webcam & microscope analysis</p>
+                              </div>
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
 
                       <Link href="/tools/nutrient-calculator" className="block">
                         <Card className="bg-slate-800/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:bg-slate-800/70">
@@ -1481,6 +1531,14 @@ export default function CultivAIPro() {
               </Badge>
             </Button>
             
+            {/* AI Assistant Button */}
+            <Link href="/ai-assistant" className="block">
+              <Button variant="ghost" size="sm" className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 hover:text-emerald-300 border border-emerald-600/30">
+                <Bot className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">AI Assistant</span>
+              </Button>
+            </Link>
+
             {/* Minimal Notification Bell */}
             <div className="relative">
               <Button variant="ghost" size="sm" className="text-slate-300 hover:text-blue-400">
@@ -1619,25 +1677,38 @@ export default function CultivAIPro() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <Link href="/ai-assistant" className="block">
+                    <Button className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 border-0 flex flex-col items-center h-auto py-3 text-xs shadow-lg shadow-emerald-600/20">
+                      <Bot className="h-6 w-6 text-white mb-2" />
+                      <span className="font-semibold">AI Assistant</span>
+                      <span className="text-emerald-100 opacity-90">Get Expert Help</span>
+                    </Button>
+                  </Link>
+
                   <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <ZapIcon className="h-5 w-5 text-amber-400 mb-1" />
                     Water
                   </Button>
-                  
+
                   <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <Sun className="h-5 w-5 text-yellow-400 mb-1" />
                     Lights
                   </Button>
-                  
+
                   <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <Wind className="h-5 w-5 text-cyan-400 mb-1" />
                     Fans
                   </Button>
-                  
+
                   <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <FlaskConical className="h-5 w-5 text-purple-400 mb-1" />
                     Nutrients
+                  </Button>
+
+                  <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
+                    <Camera className="h-5 w-5 text-blue-400 mb-1" />
+                    Scan
                   </Button>
                 </div>
               </CardContent>
@@ -3874,6 +3945,16 @@ export default function CultivAIPro() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Floating AI Assistant Button */}
+      <Link href="/ai-assistant" className="fixed bottom-6 right-6 block">
+        <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-full p-4 shadow-2xl shadow-emerald-600/30 border-0 group">
+          <Bot className="h-6 w-6 text-white" />
+          <span className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            AI Assistant
+          </span>
+        </Button>
+      </Link>
     </div>
   );
 }

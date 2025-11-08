@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import GlobalHeader from "@/components/layout/global-header";
+import FloatingAIAssistant from "@/components/ai/floating-assistant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,7 +47,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        {children}
+        <GlobalHeader />
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <FloatingAIAssistant />
         <Toaster />
       </body>
     </html>

@@ -1,530 +1,311 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Brain, Settings, Badge, Bot, Eye, Cloud, Info
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
-import { ChatMessage } from '@/components/chat/ChatMessage';
-import { ChatInput } from '@/components/chat/ChatInput';
-import { ChatSidebar } from '@/components/chat/ChatSidebar';
-import Link from 'next/link';
+import React, { useState } from 'react';
+import CannaAISidebar from '@/components/cannai-sidebar';
+import CultivationAssistantSidebar from '@/components/cultivation-assistant-sidebar';
+
+type ViewMode = 'chat' | 'live-vision' | 'plant-health' | 'nutrients' | 'genetics' | 'pest-disease' | 'tools' | 'settings';
+type ChatMode = 'chat' | 'analysis' | 'diagnosis' | 'recommendation' | 'trichome' | 'harvest';
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  image?: string;
-  model?: string;
-  provider?: string;
-  processingTime?: string;
-  isTyping?: boolean;
+  text: string;
+  sender: 'user' | 'bot';
+  timestamp?: string;
+  type?: 'analysis' | 'recommendation' | 'alert' | 'diagnosis';
+  confidence?: number;
+  urgency?: 'low' | 'medium' | 'high';
 }
 
-interface AIModelInfo {
-  id: string;
-  name: string;
-  provider: string;
-  hasVision: boolean;
-  visionConfidence: number;
-  isAvailable: boolean;
-}
-
-interface ChatSettings {
-  model: string;
-  provider: string;
-  temperature: number;
-  maxTokens: number;
-  systemPrompt: string;
-  enableHistory: boolean;
-  autoSave: boolean;
-}
-
-export default function AIAssistant() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "🌱 Hello! I'm your cannabis cultivation AI assistant. I can help you with:\n\n• Plant health analysis and diagnosis\n• Nutrient recommendations\n• Environmental control advice\n• Strain-specific guidance\n• Troubleshooting common issues\n\nFeel free to ask questions or upload images of your plants for analysis. How can I assist you today?",
-      timestamp: new Date(),
-    }
-  ]);
-  const [input, setInput] = useState('');
+export default function AIAssistantPage() {
+  const [isMainSidebarOpen, setIsMainSidebarOpen] = useState(false);
+  const [isAssistantSidebarOpen, setIsAssistantSidebarOpen] = useState(false);
+  const [activeView, setActiveView] = useState<ViewMode>('chat');
+  const [chatMode, setChatMode] = useState<ChatMode>('chat');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [models, setModels] = useState<AIModelInfo[]>([]);
-  const [settings, setSettings] = useState<ChatSettings>({
-    model: '',
-    provider: 'lm-studio',
-    temperature: 0.7,
-    maxTokens: 800,
-    systemPrompt: 'You are CultivAI Assistant, an expert cannabis cultivation AI. Provide helpful, accurate advice about plant care, nutrients, environmental conditions, and troubleshooting.',
-    enableHistory: true,
-    autoSave: true
+
+  // Mock chat history
+  const [chatHistory, setChatHistory] = useState<Record<string, Message[]>>({
+    'chat-1': [
+      { id: '1', text: 'Hello! I need help with my cannabis plants.', sender: 'user', timestamp: new Date().toISOString() },
+      { id: '2', text: 'Hello! I\'d be happy to help you with your cannabis cultivation. What specific questions or concerns do you have about your plants?', sender: 'bot', timestamp: new Date().toISOString() }
+    ]
   });
-  const [showSettings, setShowSettings] = useState(false);
-  const [sensorData, setSensorData] = useState({
-    temperature: 24,
-    humidity: 65,
-    ph: 6.2,
-    soilMoisture: 72,
-    lightIntensity: 450,
-    ec: 1.8
+  const [activeChatId, setActiveChatId] = useState('chat-1');
+  const [pinnedChatIds, setPinnedChatIds] = useState<string[]>([]);
+
+  // Mock plant context
+  const [plantContext] = useState({
+    plantId: 'plant-001',
+    strain: 'Blue Dream',
+    growthStage: 'flowering' as const,
+    age: 45,
+    environment: {
+      temperature: 24.5,
+      humidity: 55,
+      ph: 6.2,
+      ec: 1.4,
+      lightHours: 12
+    },
+    lastAnalysis: {
+      healthScore: 0.87,
+      issues: ['Slight nutrient burn on leaf tips'],
+      recommendations: ['Reduce nutrient concentration by 15%', 'Monitor pH levels closely']
+    }
   });
-  const router = useRouter();
 
-  useEffect(() => {
-    loadModelsAndSettings();
-    loadMessagesFromStorage();
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    if (settings.autoSave) {
-      saveMessagesToStorage();
-    }
-  }, [messages, settings.autoSave]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const loadModelsAndSettings = async () => {
-    try {
-      const response = await fetch('/api/chat');
-      const data = await response.json();
-
-      if (data.success) {
-        setModels([
-          ...(data.lmStudioDetails?.allModels || []).map((model: any) => ({
-            id: model.id,
-            name: model.id,
-            provider: 'lm-studio',
-            hasVision: model.hasVision,
-            visionConfidence: model.visionConfidence,
-            isAvailable: true
-          })),
-          {
-            id: data.settings?.openRouter?.model || 'meta-llama/llama-3.1-8b-instruct:free',
-            name: data.settings?.openRouter?.model || 'Llama 3.1 8B',
-            provider: 'openrouter',
-            hasVision: false,
-            visionConfidence: 0,
-            isAvailable: !!data.settings?.openRouter?.apiKey
-          }
-        ]);
-
-        if (data.currentProvider) {
-          setSettings(prev => ({
-            ...prev,
-            provider: data.currentProvider,
-            model: data.settings?.[data.currentProvider === 'openrouter' ? 'openRouter' : 'lmStudio']?.model || ''
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load models:', error);
-    }
-  };
-
-  const loadMessagesFromStorage = () => {
-    if (typeof window !== 'undefined' && settings.enableHistory) {
-      try {
-        const stored = localStorage.getItem('ai-assistant-messages');
-        if (stored) {
-          const parsedMessages = JSON.parse(stored);
-          setMessages(parsedMessages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
-          })));
-        }
-      } catch (error) {
-        console.error('Failed to load messages from storage:', error);
-      }
-    }
-  };
-
-  const saveMessagesToStorage = () => {
-    if (typeof window !== 'undefined' && settings.enableHistory) {
-      try {
-        localStorage.setItem('ai-assistant-messages', JSON.stringify(messages));
-      } catch (error) {
-        console.error('Failed to save messages to storage:', error);
-      }
-    }
-  };
-
-  const handleImageUpload = (file: File) => {
-    if (file && (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif'))) {
-      if (file.size > 20 * 1024 * 1024) {
-        alert('Image size must be less than 20MB');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  const removeImage = () => {
-    setSelectedImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  
-  const sendMessage = async () => {
-    if (!input.trim() && !selectedImage) return;
-
+  const handleSendMessage = async (text: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: 'user',
-      content: input.trim(),
-      timestamp: new Date(),
-      image: selectedImage || undefined
+      text,
+      sender: 'user',
+      timestamp: new Date().toISOString()
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setSelectedImage(null);
+    const newMessageId = `chat-${Date.now()}`;
+    setChatHistory(prev => ({
+      ...prev,
+      [activeChatId]: [...(prev[activeChatId] || []), userMessage]
+    }));
+
     setIsLoading(true);
 
-    // Add typing indicator
-    const typingId = (Date.now() + 1).toString();
-    setMessages(prev => [...prev, {
-      id: typingId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      isTyping: true
-    }]);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: userMessage.content,
-          model: settings.model,
-          image: userMessage.image,
-          sensorData: sensorData
-        })
-      });
-
-      const data = await response.json();
-
-      // Remove typing indicator
-      setMessages(prev => prev.filter(msg => msg.id !== typingId));
-
-      if (data.success) {
-        const assistantMessage: Message = {
-          id: (Date.now() + 2).toString(),
-          role: 'assistant',
-          content: data.response,
-          timestamp: new Date(),
-          model: data.model,
-          provider: data.provider,
-          processingTime: data.processingTime
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
-        const errorMessage: Message = {
-          id: (Date.now() + 2).toString(),
-          role: 'assistant',
-          content: `❌ Error: ${data.error || 'Failed to get response from AI assistant'}`,
-          timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, errorMessage]);
-      }
-    } catch (error) {
-      // Remove typing indicator
-      setMessages(prev => prev.filter(msg => msg.id !== typingId));
-
-      const errorMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        role: 'assistant',
-        content: '❌ Sorry, I encountered an error while processing your request. Please check your AI provider settings and try again.',
-        timestamp: new Date()
+    // Simulate AI response
+    setTimeout(() => {
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: generateAIResponse(text, chatMode),
+        sender: 'bot',
+        timestamp: new Date().toISOString(),
+        type: getResponseType(chatMode),
+        confidence: 0.85 + Math.random() * 0.1,
+        urgency: Math.random() > 0.7 ? 'medium' : 'low'
       };
 
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
+      setChatHistory(prev => ({
+        ...prev,
+        [activeChatId]: [...(prev[activeChatId] || []), botResponse]
+      }));
       setIsLoading(false);
+    }, 1500);
+  };
+
+  const generateAIResponse = (userInput: string, mode: ChatMode): string => {
+    const input = userInput.toLowerCase();
+
+    switch (mode) {
+      case 'analysis':
+        if (input.includes('yellow')) {
+          return "Yellowing leaves can indicate several issues: nitrogen deficiency (lower leaves first), overwatering, or pH imbalance. Given your Blue Dream is in flowering at 45 days, check your pH levels first. Your current pH of 6.2 is good, so consider reducing watering frequency and checking nitrogen levels in your nutrients.";
+        }
+        return "I'd be happy to analyze your plant health! Could you provide more details about any symptoms you're noticing? Look for changes in leaf color, spots, drooping, or unusual growth patterns.";
+
+      case 'diagnosis':
+        if (input.includes('spot') || input.includes('brown')) {
+          return "Brown spots could indicate several issues: 1) Calcium/magnesium deficiency, 2) Fungal infection like leaf septoria, or 3) Nutrient burn. Given your environment shows 55% humidity and 24.5°C temperature, the conditions are good for preventing fungal issues. Check your nutrient concentration - slight nutrient burn was noted in your last analysis.";
+        }
+        return "To help diagnose your plant issues, I need more specific information. What symptoms are you observing? Please describe any changes in appearance, growth patterns, or environmental conditions.";
+
+      case 'recommendation':
+        if (input.includes('flowering') || input.includes('bud')) {
+          return "For your Blue Dream at 45 days flowering: 1) Continue with bloom nutrients, 2) Maintain 12/12 light cycle, 3) Keep temperature 22-26°C during lights on, 4) Reduce humidity to 45-50% to prevent bud rot, 5) Monitor trichome development - you're probably 2-3 weeks from harvest based on typical flowering time.";
+        }
+        return "For your Blue Dream in flowering, I recommend: 1) Maintain consistent environmental conditions, 2) Monitor pH between 6.0-6.5, 3) Watch for signs of nutrient deficiencies common in mid-flowering, 4) Start checking trichomes in 1-2 weeks.";
+
+      case 'trichome':
+        if (input.includes('when') || input.includes('harvest')) {
+          return "For optimal trichome development on Blue Dream: Look for 50-70% milky white trichomes with some turning amber. At 45 days, you're probably 2-3 weeks from harvest. Use a magnifier to check daily - the window for peak potency is about 5-7 days when most trichomes are cloudy with 10-20% amber.";
+        }
+        return "Trichome analysis is crucial for harvest timing! Milky white trichomes indicate peak THC, while amber ones suggest THC converting to CBN (more sedative). For your Blue Dream, expect harvest around 60-70 days total.";
+
+      case 'harvest':
+        if (input.includes('ready')) {
+          return "Your Blue Dream is likely ready when: 1) 50-70% of trichomes are cloudy/milky, 2) Some amber trichomes appear (10-20%), 3) Pistils have darkened and curled in, 4) Foliage starts yellowing naturally. Given you're at 45 days, monitor trichomes closely for the next 2-3 weeks.";
+        }
+        return "For harvest planning: Start flushing 1-2 weeks before harvest, prepare drying space with 60-70% humidity and 18-22°C, plan for 7-14 days drying then 2-4 weeks curing. Your Blue Dream should be ready around day 60-70.";
+
+      default:
+        return "I'm here to help with your cannabis cultivation! I can assist with plant analysis, problem diagnosis, growing advice, trichome analysis, and harvest planning. What would you like to know?";
     }
   };
 
-  
-  const clearChat = () => {
-    setMessages([{
-      id: '1',
-      role: 'assistant',
-      content: "🌱 Chat history cleared. How can I help you with your cannabis cultivation today?",
-      timestamp: new Date(),
-    }]);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('ai-assistant-messages');
+  const getResponseType = (mode: ChatMode): Message['type'] => {
+    switch (mode) {
+      case 'analysis': return 'analysis';
+      case 'diagnosis': return 'diagnosis';
+      case 'recommendation': return 'recommendation';
+      case 'trichome': return 'analysis';
+      case 'harvest': return 'recommendation';
+      default: return 'recommendation';
     }
   };
 
-  const exportChat = () => {
-    const chatText = messages
-      .map(msg => `[${formatTimestamp(msg.timestamp)}] ${msg.role.toUpperCase()}: ${msg.content}`)
-      .join('\n\n');
+  const handleQuickAction = (action: string) => {
+    const actionMessages = {
+      analyze: "Can you analyze the current health of my plant?",
+      diagnose: "I'm seeing some issues with my plant, can you help diagnose?",
+      nutrients: "What's the best nutrient regimen for my flowering stage?",
+      tips: "Do you have any tips for maximizing yields during flowering?",
+      harvest: "When should I harvest my Blue Dream plants?"
+    };
 
-    const blob = new Blob([chatText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ai-assistant-chat-${new Date().toISOString().split('T')[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (actionMessages[action as keyof typeof actionMessages]) {
+      handleSendMessage(actionMessages[action as keyof typeof actionMessages]);
+    }
   };
-
-  const currentModel = models.find(m => m.id === settings.model);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <div className="container mx-auto p-4 max-w-6xl">
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex">
+      {/* Main Sidebar */}
+      <CannaAISidebar
+        isOpen={isMainSidebarOpen}
+        activeView={activeView}
+        setActiveView={setActiveView}
+        onClose={() => setIsMainSidebarOpen(false)}
+        chatMode={chatMode}
+        setChatMode={setChatMode}
+        isLoading={isLoading}
+        chatHistory={chatHistory}
+        activeChatId={activeChatId}
+        onNewChat={() => {
+          const newChatId = `chat-${Date.now()}`;
+          setChatHistory(prev => ({
+            ...prev,
+            [newChatId]: []
+          }));
+          setActiveChatId(newChatId);
+        }}
+        onSelectChat={(chatId) => setActiveChatId(chatId)}
+        pinnedChatIds={pinnedChatIds}
+        onTogglePin={(chatId) => {
+          setPinnedChatIds(prev =>
+            prev.includes(chatId)
+              ? prev.filter(id => id !== chatId)
+              : [...prev, chatId]
+          );
+        }}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-sky-600 rounded-xl">
-                <Brain className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-100">AI Assistant</h1>
-                <p className="text-slate-300 text-sm">Your intelligent cannabis cultivation companion</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {currentModel && (
-                <Badge variant="secondary" className="bg-slate-800/50 text-slate-200 border-slate-600">
-                  <Bot className="h-3 w-3 mr-1" />
-                  {currentModel.name}
-                  {currentModel.hasVision && <Eye className="h-3 w-3 ml-1" />}
-                </Badge>
-              )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSettings(!showSettings)}
-                className="bg-slate-800/50 border-slate-600 text-slate-200 hover:bg-slate-700/50"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-
-              <Link href="/">
-                <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600 text-slate-200 hover:bg-slate-700/50">
-                  Back to Dashboard
-                </Button>
-              </Link>
+        <header className="bg-slate-800 border-b border-slate-700 p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsMainSidebarOpen(true)}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-white">AI Cultivation Assistant</h1>
+              <p className="text-slate-400">Get expert guidance for your cannabis cultivation</p>
             </div>
           </div>
-        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Chat Area */}
-          <div className="lg:col-span-3">
-            <Card className="bg-slate-900/30 border-slate-600 backdrop-blur-sm h-[700px] flex flex-col">
-              {/* Chat Messages */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
-                  ))}
-                  <div ref={messagesEndRef} />
+          <button
+            onClick={() => setIsAssistantSidebarOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
+            </svg>
+            <span>Chat Assistant</span>
+          </button>
+        </header>
+
+        {/* Main Content Area */}
+        <div className="flex-1 p-6">
+          <div className="max-w-4xl mx-auto">
+            {activeView === 'chat' && (
+              <div className="text-center py-12">
+                <div className="mb-8">
+                  <div className="w-24 h-24 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-3xl font-bold text-white mb-4">Welcome to CannaAI Assistant</h2>
+                  <p className="text-xl text-slate-300 mb-8">
+                    Your personal cultivation expert is ready to help you grow better cannabis
+                  </p>
                 </div>
-              </ScrollArea>
 
-              {/* Input Area */}
-              <ChatInput
-                input={input}
-                setInput={setInput}
-                selectedImage={selectedImage}
-                onSendMessage={sendMessage}
-                onImageUpload={handleImageUpload}
-                onRemoveImage={removeImage}
-                isLoading={isLoading}
-                isDragging={isDragging}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              />
-            </Card>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Plant Analysis</h3>
+                    <p className="text-slate-400">Get detailed health analysis and identify issues early</p>
+                  </div>
+
+                  <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                    <div className="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Growing Advice</h3>
+                    <p className="text-slate-400">Expert recommendations for optimal growing conditions</p>
+                  </div>
+
+                  <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                    <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Harvest Planning</h3>
+                    <p className="text-slate-400">Perfect timing for maximum potency and quality</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsAssistantSidebarOpen(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
+                >
+                  Start Chat with Assistant
+                </button>
+              </div>
+            )}
+
+            {activeView !== 'chat' && (
+              <div className="text-center py-12">
+                <h2 className="text-2xl font-bold text-white mb-4">
+                  {activeView === 'live-vision' && 'Live Vision Analysis'}
+                  {activeView === 'plant-health' && 'Plant Health Monitoring'}
+                  {activeView === 'tools' && 'All Tools'}
+                </h2>
+                <p className="text-slate-400">
+                  This feature is coming soon! For now, use the chat assistant for immediate help.
+                </p>
+                <button
+                  onClick={() => setIsAssistantSidebarOpen(true)}
+                  className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors"
+                >
+                  Open Chat Assistant
+                </button>
+              </div>
+            )}
           </div>
-
-          {/* Sidebar */}
-          <ChatSidebar
-            onClearChat={clearChat}
-            onExportChat={exportChat}
-            sensorData={sensorData}
-            currentModel={currentModel ? {
-              name: currentModel.name,
-              provider: currentModel.provider,
-              hasVision: currentModel.hasVision
-            } : undefined}
-          />
         </div>
-
-        {/* Settings Dialog */}
-        <Dialog open={showSettings} onOpenChange={setShowSettings}>
-          <DialogContent className="bg-slate-900 border-slate-600 text-slate-100 max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-slate-100">AI Assistant Settings</DialogTitle>
-            </DialogHeader>
-
-            <Tabs defaultValue="provider" className="w-full">
-              <TabsList className="bg-slate-800 border-slate-600">
-                <TabsTrigger value="provider" className="text-slate-200">AI Provider</TabsTrigger>
-                <TabsTrigger value="model" className="text-slate-200">Model Selection</TabsTrigger>
-                <TabsTrigger value="chat" className="text-slate-200">Chat Settings</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="provider" className="mt-4">
-                <AIProviderSettings />
-              </TabsContent>
-
-              <TabsContent value="model" className="mt-4">
-                <div className="space-y-4">
-                  <h3 className="text-slate-200 font-medium">Select AI Model</h3>
-                  <div className="grid gap-2 max-h-60 overflow-y-auto">
-                    {models.map((model) => (
-                      <div
-                        key={model.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          settings.model === model.id
-                            ? 'border-blue-500 bg-slate-800/50'
-                            : 'border-slate-600 hover:border-blue-600 bg-slate-900/30'
-                        }`}
-                        onClick={() => setSettings(prev => ({ ...prev, model: model.id }))}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Bot className="h-4 w-4 text-slate-400" />
-                            <span className="text-slate-200 text-sm font-medium">{model.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {model.hasVision && (
-                              <Badge variant="secondary" className="bg-purple-900/50 text-purple-300 border-purple-700">
-                                <Eye className="h-3 w-3 mr-1" />
-                                Vision
-                              </Badge>
-                            )}
-                            <Badge variant="outline" className="text-slate-300 border-blue-600">
-                              {model.provider}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="chat" className="mt-4">
-                <div className="space-y-4">
-                  <h3 className="text-slate-200 font-medium">Chat Preferences</h3>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-slate-200 text-sm font-medium">Enable Chat History</label>
-                        <p className="text-slate-400 text-xs">Save conversations locally</p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={settings.enableHistory}
-                        onChange={(e) => setSettings(prev => ({ ...prev, enableHistory: e.target.checked }))}
-                        className="rounded bg-slate-800 border-blue-600 text-blue-500"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-slate-200 text-sm font-medium">Auto-save Messages</label>
-                        <p className="text-slate-400 text-xs">Automatically save after each message</p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={settings.autoSave}
-                        onChange={(e) => setSettings(prev => ({ ...prev, autoSave: e.target.checked }))}
-                        className="rounded bg-slate-800 border-blue-600 text-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-slate-200 text-sm font-medium">System Prompt</label>
-                    <Textarea
-                      value={settings.systemPrompt}
-                      onChange={(e) => setSettings(prev => ({ ...prev, systemPrompt: e.target.value }))}
-                      className="bg-slate-800 border-blue-600 text-slate-100 placeholder-slate-500"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
       </div>
+
+      {/* Cultivation Assistant Sidebar */}
+      <CultivationAssistantSidebar
+        isOpen={isAssistantSidebarOpen}
+        onClose={() => setIsAssistantSidebarOpen(false)}
+        context={plantContext}
+        messages={chatHistory[activeChatId] || []}
+        isLoading={isLoading}
+        onSendMessage={handleSendMessage}
+        onQuickAction={handleQuickAction}
+      />
     </div>
   );
 }

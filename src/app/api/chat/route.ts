@@ -507,7 +507,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { message, model, sensorData, image } = body;
+    const { message, model, sensorData, image, context } = body;
 
     // Validate required fields
     if (!message) {
@@ -618,8 +618,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create context-aware prompt with sensor data
+    // Create context-aware prompt with sensor data and page context
     let contextPrompt = `You are CultivAI Assistant, an expert cannabis cultivation AI. You provide helpful, accurate advice about plant care, nutrients, environmental conditions, and troubleshooting.
+
+Current page context: ${context?.title || 'CannaAI Pro'} (${context?.page || 'unknown'})
+Page description: ${context?.description || 'Cannabis cultivation management system'}
 
 Current environmental conditions:
 - Temperature: ${sensorData?.temperature ? Math.round((sensorData.temperature * 9/5) + 32) : 'N/A'}°F (${sensorData?.temperature || 'N/A'}°C)
@@ -631,7 +634,7 @@ Current environmental conditions:
 
 User question: ${message}
 
-Please provide a helpful, concise response. If the user asks about specific readings, reference the current sensor data. Use Fahrenheit for temperature measurements in your response. Keep responses under 200 words and focus on actionable advice.`;
+Please provide a helpful, concise response. If the user asks about specific readings, reference the current sensor data. Consider the current page context to provide more relevant advice. Use Fahrenheit for temperature measurements in your response. Keep responses under 200 words and focus on actionable advice.`;
 
     // Create message array for the AI model
     let messages = [

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Bug, Calculator, Beaker, Settings, TrendingUp, BookOpen, Wrench, Scissors, Package, Archive, Eye, Camera } from 'lucide-react';
+import { Bug, Calculator, Beaker, Settings, TrendingUp, BookOpen, Wrench, Scissors, Package, Archive, Eye, Camera, CheckCircle } from 'lucide-react';
 
 const tools = [
   {
@@ -127,9 +127,21 @@ export default function ToolsPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-slate-100 mb-2">Cultivation Tools Suite</h1>
-            <p className="text-slate-300 text-lg">
+            <p className="text-slate-300 text-lg mb-4">
               Professional-grade tools to optimize your cannabis cultivation workflow
             </p>
+            <div className="flex items-center space-x-4">
+              <Link href="/all-tools">
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500">
+                  <Wrench className="h-4 w-4 mr-2" />
+                  View Unified Tools Dashboard
+                </Button>
+              </Link>
+              <Badge className="bg-green-600 text-white">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                New: All Tools in One Place
+              </Badge>
+            </div>
           </div>
           <Wrench className="h-12 w-12 text-slate-400" />
         </div>
