@@ -1,4 +1,5 @@
 # CannaAI - Cannabis Cultivation Management System
+(Some Features Still in Development)
 
 An advanced AI-powered cannabis cultivation management system built with Next.js 15, featuring real-time plant health analysis, sensor monitoring, automation controls, and comprehensive cultivation analytics.
 
