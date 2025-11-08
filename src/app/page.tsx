@@ -1064,18 +1064,18 @@ export default function CultivAIPro() {
     const isOptimal = optimalRange ? value >= optimalRange[0] && value <= optimalRange[1] : true;
     
     return (
-      <Card className="bg-emerald-900/50 border-emerald-800">
+      <Card className="bg-slate-900/50 border-slate-700">
         <CardContent className="p-4">
           <div className="flex items-center mb-2">
             {icon}
-            <h4 className="ml-2 font-medium text-emerald-200">{title}</h4>
+            <h4 className="ml-2 font-medium text-slate-200">{title}</h4>
           </div>
           <div className="text-center">
-            <span className={`text-3xl font-bold ${isOptimal ? 'text-lime-400' : 'text-amber-400'}`}>
+            <span className={`text-3xl font-bold ${isOptimal ? 'text-green-400' : 'text-amber-400'}`}>
               {value}{unit}
             </span>
             {optimalRange && (
-              <p className="text-xs text-emerald-400 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Optimal: {optimalRange[0]}-{optimalRange[1]}{unit}
               </p>
             )}
@@ -1094,23 +1094,23 @@ export default function CultivAIPro() {
     });
     
     return (
-      <Card 
-        key={item.id} 
-        className={`bg-emerald-900/50 border-emerald-800 cursor-pointer transition-all ${
-          selectedHistoryItem?.id === item.id ? 'border-lime-500 bg-emerald-900/70' : 'hover:bg-emerald-800/50'
+      <Card
+        key={item.id}
+        className={`bg-slate-900/50 border-slate-700 cursor-pointer transition-all ${
+          selectedHistoryItem?.id === item.id ? 'border-blue-500 bg-slate-900/70' : 'hover:bg-slate-800/50'
         }`}
         onClick={() => setSelectedHistoryItem(item)}
       >
         <CardContent className="p-4">
           <div className="flex items-start">
             <div className="mr-4 mt-1">
-              <div className="w-12 h-12 bg-emerald-800 flex items-center justify-center rounded-lg border border-emerald-700">
-                <Leaf className="h-6 w-6 text-lime-400" />
+              <div className="w-12 h-12 bg-slate-800 flex items-center justify-center rounded-lg border border-slate-600">
+                <Leaf className="h-6 w-6 text-green-400" />
               </div>
             </div>
             <div className="flex-grow min-w-0">
               <div className="flex justify-between items-start">
-                <h3 className="font-bold text-emerald-200 truncate">{item.strain}</h3>
+                <h3 className="font-bold text-slate-200 truncate">{item.strain}</h3>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   item.confidence > 75 ? 'bg-green-900/50 text-green-300' :
                   item.confidence > 50 ? 'bg-amber-900/50 text-amber-300' : 'bg-red-900/50 text-red-300'
@@ -1118,8 +1118,8 @@ export default function CultivAIPro() {
                   {item.confidence}%
                 </span>
               </div>
-              <p className="text-emerald-300 text-sm mt-1 line-clamp-1">{item.diagnosis}</p>
-              <div className="flex items-center mt-2 text-xs text-emerald-400">
+              <p className="text-slate-300 text-sm mt-1 line-clamp-1">{item.diagnosis}</p>
+              <div className="flex items-center mt-2 text-xs text-slate-400">
                 <div className="flex items-center">
                   <span>{formattedDate}</span>
                   <div className="ml-3 flex items-center">
@@ -1133,14 +1133,14 @@ export default function CultivAIPro() {
                 </div>
               )}
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 handleDeleteHistory(item.id);
               }}
-              className="ml-2 text-emerald-400 hover:text-red-400"
+              className="ml-2 text-slate-400 hover:text-red-400"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -1154,50 +1154,50 @@ export default function CultivAIPro() {
 
   const renderPestDiseaseIdentifier = () => (
     <div className="space-y-4">
-      <h3 className="text-lg font-bold text-lime-300 flex items-center">
+      <h3 className="text-lg font-bold text-blue-300 flex items-center">
         <Bug className="h-5 w-5 mr-2" />
         Pest & Disease ID
       </h3>
-      
+
       <div>
-        <Label className="text-emerald-300 text-sm">Search Symptoms</Label>
+        <Label className="text-slate-300 text-sm">Search Symptoms</Label>
         <Input
           placeholder="e.g., yellow spots, webbing..."
-          className="bg-emerald-800 border-emerald-700 text-emerald-200 placeholder-emerald-400"
+          className="bg-slate-800 border-slate-600 text-slate-200 placeholder-slate-400"
         />
       </div>
-      
+
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {pestDiseaseDatabase.map((item) => (
-          <Card 
+          <Card
             key={item.name}
-            className="bg-emerald-800/50 border-emerald-700 cursor-pointer hover:bg-emerald-800/70"
+            className="bg-slate-800/50 border-slate-600 cursor-pointer hover:bg-slate-800/70"
             onClick={() => setSelectedPestDisease(item)}
           >
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-emerald-200 text-sm">{item.name}</h4>
+                  <h4 className="font-medium text-slate-200 text-sm">{item.name}</h4>
                   <Badge variant="secondary" className={`text-xs ${
                     item.type === 'Pest' ? 'bg-red-500/20 text-red-300' : 'bg-orange-500/20 text-orange-300'
                   }`}>
                     {item.type}
                   </Badge>
                 </div>
-                <Bug className="h-4 w-4 text-emerald-400" />
+                <Bug className="h-4 w-4 text-slate-400" />
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-      
+
       {selectedPestDisease && (
-        <Card className="bg-emerald-800/50 border-emerald-700">
+        <Card className="bg-slate-800/50 border-slate-600">
           <CardContent className="p-3">
-            <h4 className="font-medium text-lime-300 text-sm mb-2">{selectedPestDisease.name}</h4>
-            <p className="text-xs text-emerald-300 mb-1"><strong>Symptoms:</strong> {selectedPestDisease.symptoms}</p>
-            <p className="text-xs text-emerald-300 mb-1"><strong>Treatment:</strong> {selectedPestDisease.treatment}</p>
-            <p className="text-xs text-emerald-300"><strong>Prevention:</strong> {selectedPestDisease.prevention}</p>
+            <h4 className="font-medium text-blue-300 text-sm mb-2">{selectedPestDisease.name}</h4>
+            <p className="text-xs text-slate-300 mb-1"><strong>Symptoms:</strong> {selectedPestDisease.symptoms}</p>
+            <p className="text-xs text-slate-300 mb-1"><strong>Treatment:</strong> {selectedPestDisease.treatment}</p>
+            <p className="text-xs text-slate-300"><strong>Prevention:</strong> {selectedPestDisease.prevention}</p>
           </CardContent>
         </Card>
       )}
@@ -1206,41 +1206,41 @@ export default function CultivAIPro() {
 
   const renderInventoryManager = () => (
     <div className="space-y-4">
-      <h3 className="text-lg font-bold text-lime-300 flex items-center">
+      <h3 className="text-lg font-bold text-blue-300 flex items-center">
         <Package className="h-5 w-5 mr-2" />
         Inventory Manager
       </h3>
-      
-      <Button className="w-full bg-emerald-700 hover:bg-emerald-600">
+
+      <Button className="w-full bg-blue-700 hover:bg-blue-600">
         <Plus className="h-4 w-4 mr-2" />
         Add Item
       </Button>
-      
+
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {inventory.map((item) => (
-          <Card key={item.id} className="bg-emerald-800/50 border-emerald-700">
+          <Card key={item.id} className="bg-slate-800/50 border-slate-600">
             <CardContent className="p-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="font-medium text-emerald-200 text-sm">{item.name}</h4>
-                  <p className="text-xs text-emerald-400">{item.quantity} {item.unit}</p>
-                  <Badge variant="secondary" className="text-xs bg-emerald-700/50">
+                  <h4 className="font-medium text-slate-200 text-sm">{item.name}</h4>
+                  <p className="text-xs text-slate-400">{item.quantity} {item.unit}</p>
+                  <Badge variant="secondary" className="text-xs bg-slate-700/50">
                     {item.category}
                   </Badge>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-lime-400">${item.cost}</p>
-                  <p className="text-xs text-emerald-500">{item.lastRestocked}</p>
+                  <p className="text-xs text-green-400">${item.cost}</p>
+                  <p className="text-xs text-slate-500">{item.lastRestocked}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-      
-      <div className="bg-emerald-800/30 border border-emerald-700 rounded-lg p-3">
-        <p className="text-sm font-medium text-lime-300">Total Value</p>
-        <p className="text-xl font-bold text-lime-400">
+
+      <div className="bg-slate-800/30 border border-slate-600 rounded-lg p-3">
+        <p className="text-sm font-medium text-blue-300">Total Value</p>
+        <p className="text-xl font-bold text-blue-400">
           ${inventory.reduce((sum, item) => sum + (item.cost * item.quantity), 0)}
         </p>
       </div>
@@ -1249,26 +1249,26 @@ export default function CultivAIPro() {
 
   const renderHarvestTracker = () => (
     <div className="space-y-4">
-      <h3 className="text-lg font-bold text-lime-300 flex items-center">
+      <h3 className="text-lg font-bold text-blue-300 flex items-center">
         <Scissors className="h-5 w-5 mr-2" />
         Harvest Tracker
       </h3>
-      
-      <Button className="w-full bg-emerald-700 hover:bg-emerald-600">
+
+      <Button className="w-full bg-blue-700 hover:bg-blue-600">
         <Plus className="h-4 w-4 mr-2" />
         Log Harvest
       </Button>
-      
+
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {harvestData.map((harvest) => (
-          <Card key={harvest.id} className="bg-emerald-800/50 border-emerald-700">
+          <Card key={harvest.id} className="bg-slate-800/50 border-slate-600">
             <CardContent className="p-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="font-medium text-emerald-200 text-sm">{harvest.strain}</h4>
-                  <p className="text-xs text-emerald-400">{harvest.harvestDate}</p>
+                  <h4 className="font-medium text-slate-200 text-sm">{harvest.strain}</h4>
+                  <p className="text-xs text-slate-400">{harvest.harvestDate}</p>
                   <div className="flex space-x-2 mt-1">
-                    <Badge variant="secondary" className="text-xs bg-lime-700/50 text-lime-300">
+                    <Badge variant="secondary" className="text-xs bg-green-700/50 text-green-300">
                       {harvest.quality}
                     </Badge>
                     <Badge variant="secondary" className="text-xs bg-purple-700/50 text-purple-300">
@@ -1277,129 +1277,129 @@ export default function CultivAIPro() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-lime-400">{harvest.dryWeight}g</p>
-                  <p className="text-xs text-emerald-500">dry</p>
+                  <p className="text-sm font-medium text-green-400">{harvest.dryWeight}g</p>
+                  <p className="text-xs text-slate-500">dry</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-      
-      <div className="bg-emerald-800/30 border border-emerald-700 rounded-lg p-3">
-        <p className="text-sm font-medium text-lime-300">Total Harvested</p>
-        <p className="text-xl font-bold text-lime-400">
+
+      <div className="bg-slate-800/30 border border-slate-600 rounded-lg p-3">
+        <p className="text-sm font-medium text-blue-300">Total Harvested</p>
+        <p className="text-xl font-bold text-blue-400">
           {harvestData.reduce((sum, harvest) => sum + harvest.dryWeight, 0)}g
         </p>
-        <p className="text-xs text-emerald-400">Across {harvestData.length} harvests</p>
+        <p className="text-xs text-slate-400">Across {harvestData.length} harvests</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 to-lime-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
       {/* Clean Header with Hamburger Menu */}
-      <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-emerald-800">
+      <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-slate-700">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Sheet open={sidePanelOpen} onOpenChange={setSidePanelOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-emerald-300 hover:text-lime-400">
+                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-blue-400">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="bg-emerald-900 border-emerald-800 w-80">
+              <SheetContent side="left" className="bg-slate-900 border-slate-700 w-80">
                 <SheetHeader>
-                  <SheetTitle className="text-lime-300">Cultivation Tools Suite</SheetTitle>
-                  <p className="text-emerald-400 text-sm mt-1">Quick access to all cultivation tools</p>
+                  <SheetTitle className="text-blue-300">Cultivation Tools Suite</SheetTitle>
+                  <p className="text-slate-400 text-sm mt-1">Quick access to all cultivation tools</p>
                 </SheetHeader>
-                
+
                 <Tabs value={activeSideTab} onValueChange={setActiveSideTab} className="mt-6">
-                  <TabsList className="grid w-full grid-cols-2 bg-emerald-800">
-                    <TabsTrigger value="tools" className="text-emerald-300">Tools</TabsTrigger>
-                    <TabsTrigger value="data" className="text-emerald-300">Data</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 bg-slate-800">
+                    <TabsTrigger value="tools" className="text-slate-300">Tools</TabsTrigger>
+                    <TabsTrigger value="data" className="text-slate-300">Data</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="tools" className="space-y-6 mt-4">
                     {/* Quick Tool Access */}
                     <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-lime-300 mb-3">Quick Access Tools</h3>
+                      <h3 className="text-sm font-semibold text-blue-300 mb-3">Quick Access Tools</h3>
 
                       <Link href="/tools/nutrient-calculator" className="block">
-                        <Card className="bg-emerald-800/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 hover:bg-emerald-800/70">
+                        <Card className="bg-slate-800/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:bg-slate-800/70">
                           <CardContent className="p-3">
                             <div className="flex items-center">
-                              <Calculator className="h-4 w-4 text-lime-400 mr-3" />
+                              <Calculator className="h-4 w-4 text-blue-400 mr-3" />
                               <div className="flex-1">
-                                <h4 className="text-sm font-medium text-lime-300">Nutrient Calculator</h4>
-                                <p className="text-xs text-emerald-400">Full version</p>
+                                <h4 className="text-sm font-medium text-blue-300">Nutrient Calculator</h4>
+                                <p className="text-xs text-slate-400">Full version</p>
                               </div>
-                              <ArrowLeft className="h-3 w-3 text-emerald-400 rotate-180" />
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
                             </div>
                           </CardContent>
                         </Card>
                       </Link>
 
                       <Link href="/tools/pest-disease-id" className="block">
-                        <Card className="bg-emerald-800/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 hover:bg-emerald-800/70">
+                        <Card className="bg-slate-800/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:bg-slate-800/70">
                           <CardContent className="p-3">
                             <div className="flex items-center">
-                              <Bug className="h-4 w-4 text-lime-400 mr-3" />
+                              <Bug className="h-4 w-4 text-blue-400 mr-3" />
                               <div className="flex-1">
-                                <h4 className="text-sm font-medium text-lime-300">Pest & Disease ID</h4>
-                                <p className="text-xs text-emerald-400">Full version</p>
+                                <h4 className="text-sm font-medium text-blue-300">Pest & Disease ID</h4>
+                                <p className="text-xs text-slate-400">Full version</p>
                               </div>
-                              <ArrowLeft className="h-3 w-3 text-emerald-400 rotate-180" />
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
                             </div>
                           </CardContent>
                         </Card>
                       </Link>
 
                       <Link href="/tools/harvest-tracker" className="block">
-                        <Card className="bg-emerald-800/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 hover:bg-emerald-800/70">
+                        <Card className="bg-slate-800/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:bg-slate-800/70">
                           <CardContent className="p-3">
                             <div className="flex items-center">
-                              <Scissors className="h-4 w-4 text-lime-400 mr-3" />
+                              <Scissors className="h-4 w-4 text-blue-400 mr-3" />
                               <div className="flex-1">
-                                <h4 className="text-sm font-medium text-lime-300">Harvest Tracker</h4>
-                                <p className="text-xs text-emerald-400">Full version</p>
+                                <h4 className="text-sm font-medium text-blue-300">Harvest Tracker</h4>
+                                <p className="text-xs text-slate-400">Full version</p>
                               </div>
-                              <ArrowLeft className="h-3 w-3 text-emerald-400 rotate-180" />
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
                             </div>
                           </CardContent>
                         </Card>
                       </Link>
 
                       <Link href="/tools/inventory-manager" className="block">
-                        <Card className="bg-emerald-800/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 hover:bg-emerald-800/70">
+                        <Card className="bg-slate-800/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:bg-slate-800/70">
                           <CardContent className="p-3">
                             <div className="flex items-center">
-                              <Package className="h-4 w-4 text-lime-400 mr-3" />
+                              <Package className="h-4 w-4 text-blue-400 mr-3" />
                               <div className="flex-1">
-                                <h4 className="text-sm font-medium text-lime-300">Inventory Manager</h4>
-                                <p className="text-xs text-emerald-400">Full version</p>
+                                <h4 className="text-sm font-medium text-blue-300">Inventory Manager</h4>
+                                <p className="text-xs text-slate-400">Full version</p>
                               </div>
-                              <ArrowLeft className="h-3 w-3 text-emerald-400 rotate-180" />
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
                             </div>
                           </CardContent>
                         </Card>
                       </Link>
                     </div>
 
-                    <Separator className="bg-emerald-700" />
+                    <Separator className="bg-slate-700" />
 
                     {/* Embedded Quick Tools */}
                     <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-lime-300 mb-3">Quick Tools</h3>
+                      <h3 className="text-sm font-semibold text-blue-300 mb-3">Quick Tools</h3>
                       {renderPestDiseaseIdentifier()}
                     </div>
                   </TabsContent>
 
                   <TabsContent value="data" className="space-y-6 mt-4">
                     <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-lime-300 mb-3">Data Management</h3>
+                      <h3 className="text-sm font-semibold text-blue-300 mb-3">Data Management</h3>
                       {renderInventoryManager()}
-                      <Separator className="bg-emerald-700" />
+                      <Separator className="bg-slate-700" />
                       {renderHarvestTracker()}
                     </div>
                   </TabsContent>
@@ -1407,27 +1407,27 @@ export default function CultivAIPro() {
               </SheetContent>
             </Sheet>
             
-            <div className="bg-lime-500 p-2 rounded-full">
-              <Leaf className="h-6 w-6 text-emerald-900" />
+            <div className="bg-blue-500 p-2 rounded-full">
+              <Leaf className="h-6 w-6 text-slate-900" />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-lime-300 to-emerald-300">
+            <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-sky-300">
               CultivAI Pro
             </h1>
-            <Badge variant="secondary" className="bg-lime-500/20 text-lime-300 text-xs">SMART GROW</Badge>
+            <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 text-xs">SMART GROW</Badge>
           </div>
           
           <div className="flex items-center space-x-3">
             {/* Growth Stage Toggle */}
-            <div className="hidden sm:flex items-center bg-emerald-800/50 px-3 py-1.5 rounded-full border border-emerald-700">
+            <div className="hidden sm:flex items-center bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-600">
               <Flame className="h-4 w-4 mr-2 text-orange-400" />
               <span className="text-sm font-medium mr-2">Stage:</span>
-              <div className="flex bg-emerald-900 rounded-lg p-1">
+              <div className="flex bg-slate-900 rounded-lg p-1">
                 <button
                   onClick={() => setCurrentGrowthStage('vegetative')}
                   className={`px-2 py-0.5 text-xs font-medium rounded transition-colors ${
                     currentGrowthStage === 'vegetative'
                       ? 'bg-green-600 text-white'
-                      : 'text-emerald-300 hover:text-white'
+                      : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   Veg
@@ -1437,7 +1437,7 @@ export default function CultivAIPro() {
                   className={`px-2 py-0.5 text-xs font-medium rounded transition-colors ${
                     currentGrowthStage === 'flowering'
                       ? 'bg-purple-600 text-white'
-                      : 'text-emerald-300 hover:text-white'
+                      : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   Flower
@@ -1446,44 +1446,44 @@ export default function CultivAIPro() {
             </div>
             
             {/* Room Status */}
-            <div className="hidden sm:flex items-center bg-emerald-800/50 px-3 py-1.5 rounded-full border border-emerald-700">
+            <div className="hidden sm:flex items-center bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-600">
               <Wifi className={`h-4 w-4 mr-2 ${rooms.some(r => r.active) ? 'text-green-400' : 'text-amber-400'}`} />
               <span className="text-sm font-medium">
                 {rooms.filter(r => r.active).length}/{rooms.length} Rooms
               </span>
             </div>
-            
+
             {/* AI Assistant */}
-            <Button 
+            <Button
               variant="outline"
               size="sm"
               onClick={() => setShowAIChat(true)}
-              className="bg-emerald-800/50 hover:bg-emerald-800 border-emerald-700"
+              className="bg-slate-800/50 hover:bg-slate-800 border-slate-600"
             >
               <Bot className="h-4 w-4" />
               {aiMessages.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-amber-500 text-emerald-900 text-xs">
+                <Badge variant="secondary" className="ml-1 bg-amber-500 text-slate-900 text-xs">
                   {aiMessages.length}
                 </Badge>
               )}
             </Button>
-            
+
             {/* History */}
-            <Button 
+            <Button
               variant="outline"
               size="sm"
               onClick={() => setShowHistoryModal(true)}
-              className="bg-emerald-800/50 hover:bg-emerald-800 border-emerald-700"
+              className="bg-slate-800/50 hover:bg-slate-800 border-slate-600"
             >
               <Database className="h-4 w-4" />
-              <Badge variant="secondary" className="ml-1 bg-amber-500 text-emerald-900 text-xs">
+              <Badge variant="secondary" className="ml-1 bg-amber-500 text-slate-900 text-xs">
                 {plantHistory.length}
               </Badge>
             </Button>
             
             {/* Minimal Notification Bell */}
             <div className="relative">
-              <Button variant="ghost" size="sm" className="text-emerald-300 hover:text-lime-400">
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-blue-400">
                 <Bell className="h-4 w-4" />
                 {notifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-3 w-3 flex items-center justify-center">
@@ -1501,11 +1501,11 @@ export default function CultivAIPro() {
           {/* Left Column - Live Sensors & Controls */}
           <div className="lg:col-span-1 space-y-6">
             {/* Room Management */}
-            <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+            <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-lime-300 flex items-center">
-                    <Home className="h-4 w-4 mr-2 text-lime-400" />
+                  <CardTitle className="text-lg font-bold text-blue-300 flex items-center">
+                    <Home className="h-4 w-4 mr-2 text-blue-400" />
                     Grow Rooms
                   </CardTitle>
                   <Button variant="ghost" size="sm">
@@ -1518,22 +1518,22 @@ export default function CultivAIPro() {
                   {rooms.map((room) => (
                     <div 
                       key={room.id} 
-                      className={`bg-emerald-900/50 border ${
-                        room.active ? 'border-emerald-700' : 'border-gray-700'
-                      } rounded-xl p-3 cursor-pointer transition-all hover:bg-emerald-800/50`}
+                      className={`bg-slate-900/50 border ${
+                        room.active ? 'border-slate-600' : 'border-gray-700'
+                      } rounded-xl p-3 cursor-pointer transition-all hover:bg-slate-800/50`}
                       onClick={() => toggleRoom(room.id)}
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <h3 className="font-bold text-emerald-200 text-sm">{room.name}</h3>
+                          <h3 className="font-bold text-slate-200 text-sm">{room.name}</h3>
                           <div className="flex items-center space-x-2 mt-1">
                             <div className="flex items-center text-xs">
                               <Thermometer className="h-3 w-3 text-amber-400 mr-1" />
-                              <span className="text-emerald-300">{celsiusToFahrenheit(room.temp)}°F</span>
+                              <span className="text-slate-300">{celsiusToFahrenheit(room.temp)}°F</span>
                             </div>
                             <div className="flex items-center text-xs">
                               <Droplet className="h-3 w-3 text-blue-400 mr-1" />
-                              <span className="text-emerald-300">{room.humidity}%</span>
+                              <span className="text-slate-300">{room.humidity}%</span>
                             </div>
                           </div>
                         </div>
@@ -1546,11 +1546,11 @@ export default function CultivAIPro() {
             </Card>
             
             {/* Live Sensors */}
-            <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+            <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-lime-300 flex items-center">
-                    <Monitor className="h-4 w-4 mr-2 text-lime-400" />
+                  <CardTitle className="text-lg font-bold text-blue-300 flex items-center">
+                    <Monitor className="h-4 w-4 mr-2 text-blue-400" />
                     Live Sensors
                   </CardTitle>
                   <div className="flex space-x-1">
@@ -1558,7 +1558,7 @@ export default function CultivAIPro() {
                       variant={storageMode === 'local' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setStorageMode('local')}
-                      className={storageMode === 'local' ? 'bg-emerald-800 text-emerald-200 h-6 w-6 p-0' : 'h-6 w-6 p-0'}
+                      className={storageMode === 'local' ? 'bg-slate-800 text-slate-200 h-6 w-6 p-0' : 'h-6 w-6 p-0'}
                     >
                       <HardDrive className="h-3 w-3" />
                     </Button>
@@ -1566,7 +1566,7 @@ export default function CultivAIPro() {
                       variant={storageMode === 'cloud' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setStorageMode('cloud')}
-                      className={storageMode === 'cloud' ? 'bg-emerald-800 text-emerald-200 h-6 w-6 p-0' : 'h-6 w-6 p-0'}
+                      className={storageMode === 'cloud' ? 'bg-slate-800 text-slate-200 h-6 w-6 p-0' : 'h-6 w-6 p-0'}
                     >
                       <Cloud className="h-3 w-3" />
                     </Button>
@@ -1595,7 +1595,7 @@ export default function CultivAIPro() {
                     'pH', 
                     sensorData.ph, 
                     '', 
-                    <Scale className="h-4 w-4 text-lime-400" />,
+                    <Scale className="h-4 w-4 text-blue-400" />,
                     [5.8, 6.5]
                   )}
                   
@@ -1611,31 +1611,31 @@ export default function CultivAIPro() {
             </Card>
             
             {/* Quick Actions */}
-            <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+            <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
               <CardHeader>
-                <CardTitle className="text-lg font-bold text-lime-300 flex items-center">
-                  <Zap className="h-4 w-4 mr-2 text-lime-400" />
+                <CardTitle className="text-lg font-bold text-blue-300 flex items-center">
+                  <Zap className="h-4 w-4 mr-2 text-blue-400" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" className="bg-emerald-800 hover:bg-emerald-700 border-emerald-700 flex flex-col items-center h-auto py-2 text-xs">
+                  <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <ZapIcon className="h-5 w-5 text-amber-400 mb-1" />
                     Water
                   </Button>
                   
-                  <Button variant="outline" className="bg-emerald-800 hover:bg-emerald-700 border-emerald-700 flex flex-col items-center h-auto py-2 text-xs">
+                  <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <Sun className="h-5 w-5 text-yellow-400 mb-1" />
                     Lights
                   </Button>
                   
-                  <Button variant="outline" className="bg-emerald-800 hover:bg-emerald-700 border-emerald-700 flex flex-col items-center h-auto py-2 text-xs">
+                  <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <Wind className="h-5 w-5 text-cyan-400 mb-1" />
                     Fans
                   </Button>
                   
-                  <Button variant="outline" className="bg-emerald-800 hover:bg-emerald-700 border-emerald-700 flex flex-col items-center h-auto py-2 text-xs">
+                  <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <FlaskConical className="h-5 w-5 text-purple-400 mb-1" />
                     Nutrients
                   </Button>
@@ -1647,7 +1647,7 @@ export default function CultivAIPro() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Dashboard Navigation */}
-            <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+            <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
               <CardContent className="p-3">
                 <div className="flex overflow-x-auto py-1">
                   {['overview', 'automation', 'analytics', 'ai-tools', 'settings'].map((tab) => (
@@ -1657,8 +1657,8 @@ export default function CultivAIPro() {
                       onClick={() => setActiveDashboard(tab)}
                       className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap mr-2 ${
                         activeDashboard === tab
-                          ? 'bg-lime-500 text-emerald-900'
-                          : 'text-emerald-300 hover:bg-emerald-800/50'
+                          ? 'bg-blue-500 text-slate-900'
+                          : 'text-slate-300 hover:bg-slate-800/50'
                       }`}
                     >
                       {tab === 'overview' && <LayoutDashboard className="h-3 w-3 mr-1 inline" />}
@@ -1674,13 +1674,13 @@ export default function CultivAIPro() {
             </Card>
 
             {/* Section Header with Breadcrumb */}
-            <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+            <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="text-emerald-400 text-sm">Dashboard</div>
-                    <ArrowLeft className="h-3 w-3 text-emerald-500 rotate-180" />
-                    <div className="text-lime-300 text-sm font-medium capitalize">
+                    <div className="text-slate-400 text-sm">Dashboard</div>
+                    <ArrowLeft className="h-3 w-3 text-slate-500 rotate-180" />
+                    <div className="text-blue-300 text-sm font-medium capitalize">
                       {activeDashboard === 'ai-tools' ? 'AI Tools Suite' :
                        activeDashboard === 'overview' ? 'Overview & Analysis' :
                        activeDashboard === 'automation' ? 'Automation Controls' :
@@ -1690,7 +1690,7 @@ export default function CultivAIPro() {
                   </div>
                   {activeDashboard === 'ai-tools' && (
                     <div className="flex items-center space-x-2">
-                      <Badge variant="secondary" className="bg-lime-500/20 text-lime-300 border-lime-500/30">
+                      <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
                         <Bot className="h-3 w-3 mr-1" />
                         4 Tools Available
                       </Badge>
@@ -1704,21 +1704,21 @@ export default function CultivAIPro() {
             {activeDashboard === 'overview' && (
               <div className="space-y-6">
                 {/* Image Analysis Section */}
-                <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+                <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className="bg-lime-500 p-2 rounded-lg mr-3">
-                          <Image className="h-5 w-5 text-emerald-900" alt="Plant scanner icon" />
+                        <div className="bg-blue-500 p-2 rounded-lg mr-3">
+                          <Image className="h-5 w-5 text-slate-900" alt="Plant scanner icon" />
                         </div>
-                        <CardTitle className="text-xl font-bold text-lime-300">Plant Health Scanner</CardTitle>
+                        <CardTitle className="text-xl font-bold text-blue-300">Plant Health Scanner</CardTitle>
                       </div>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" className="bg-emerald-800 hover:bg-emerald-700">
+                        <Button variant="outline" size="sm" className="bg-slate-800 hover:bg-slate-700">
                           <Video className="h-3 w-3 mr-1" />
                           Time-lapse
                         </Button>
-                        <Button variant="outline" size="sm" className="bg-emerald-800 hover:bg-emerald-700">
+                        <Button variant="outline" size="sm" className="bg-slate-800 hover:bg-slate-700">
                           <Camera className="h-3 w-3 mr-1" />
                           Capture
                         </Button>
@@ -1728,7 +1728,7 @@ export default function CultivAIPro() {
                   <CardContent>
                     <div 
                       className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-                        image ? 'border-emerald-500 bg-emerald-900/30' : 'border-emerald-700 hover:border-lime-400'
+                        image ? 'border-blue-500 bg-slate-900/30' : 'border-slate-600 hover:border-blue-400'
                       }`}
                     >
                       {image ? (
@@ -1736,7 +1736,7 @@ export default function CultivAIPro() {
                           {/* Enhanced Image Viewer with Annotation Tools */}
                           <div className="relative">
                             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                              <div className="text-sm text-emerald-300">
+                              <div className="text-sm text-slate-300">
                                 <Image className="h-4 w-4 inline mr-1" />
                                 High-Resolution Image Analysis
                               </div>
@@ -1771,16 +1771,16 @@ export default function CultivAIPro() {
 
                             {/* Annotation Tools */}
                             {showImageAnnotation && (
-                              <div className="mb-2 p-2 bg-emerald-900/50 rounded-lg border border-emerald-700">
+                              <div className="mb-2 p-2 bg-slate-900/50 rounded-lg border border-slate-600">
                                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                                  <span className="text-xs text-emerald-400 font-medium">Annotation Tools:</span>
+                                  <span className="text-xs text-slate-400 font-medium">Annotation Tools:</span>
                                   {['point', 'circle', 'rectangle', 'arrow'].map((mode) => (
                                     <Button
                                       key={mode}
                                       onClick={() => setAnnotationMode(mode)}
                                       variant={annotationMode === mode ? 'default' : 'outline'}
                                       size="sm"
-                                      className={`text-xs ${annotationMode === mode ? 'bg-lime-600 text-emerald-900' : 'bg-emerald-800 hover:bg-emerald-700'}`}
+                                      className={`text-xs ${annotationMode === mode ? 'bg-blue-600 text-slate-900' : 'bg-slate-800 hover:bg-slate-700'}`}
                                     >
                                       {mode === 'point' ? '📍' : mode === 'circle' ? '⭕' : mode === 'rectangle' ? '▢' : '➔'} {mode}
                                     </Button>
@@ -1797,7 +1797,7 @@ export default function CultivAIPro() {
                                     </Button>
                                   )}
                                 </div>
-                                <div className="text-xs text-emerald-400">
+                                <div className="text-xs text-slate-400">
                                   Click on the image to mark problem areas. Current tool: {annotationMode}
                                 </div>
                               </div>
@@ -1805,41 +1805,40 @@ export default function CultivAIPro() {
 
                             {/* Interactive Image with Zoom */}
                             <div
-                              className="relative overflow-hidden rounded-lg border border-emerald-700 bg-black"
+                              className="relative overflow-hidden rounded-lg border border-slate-600 bg-black"
                               style={{ height: '300px' }}
                             >
-                              <div
-                                className="w-full h-full flex items-center justify-center cursor-crosshair"
-                                style={{
-                                  transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
-                                  transition: 'transform 0.2s'
-                                }}
-                                onClick={(e) => {
-                                  if (!showImageAnnotation) return;
+                              {image ? (
+                                <>
+                                  <img
+                                    src={image}
+                                    alt="Interactive plant image for analysis and annotation"
+                                    className="w-full h-full object-contain cursor-crosshair"
+                                    draggable={false}
+                                    style={{
+                                      transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+                                      transition: 'transform 0.2s',
+                                      pointerEvents: showImageAnnotation ? 'auto' : 'none'
+                                    }}
+                                    onClick={(e) => {
+                                      if (!showImageAnnotation) return;
 
-                                  const rect = e.currentTarget.getBoundingClientRect();
-                                  const x = ((e.clientX - rect.left) / zoomLevel) - panOffset.x;
-                                  const y = ((e.clientY - rect.top) / zoomLevel) - panOffset.y;
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      const x = ((e.clientX - rect.left) / zoomLevel) - panOffset.x;
+                                      const y = ((e.clientY - rect.top) / zoomLevel) - panOffset.y;
 
-                                  const newAnnotation = {
-                                    id: Date.now(),
-                                    type: annotationMode,
-                                    x,
-                                    y,
-                                    label: `Issue ${imageAnnotations.length + 1}`,
-                                    timestamp: new Date().toISOString()
-                                  };
+                                      const newAnnotation = {
+                                        id: Date.now(),
+                                        type: annotationMode,
+                                        x,
+                                        y,
+                                        label: `Issue ${imageAnnotations.length + 1}`,
+                                        timestamp: new Date().toISOString()
+                                      };
 
-                                  setImageAnnotations([...imageAnnotations, newAnnotation]);
-                                }}
-                              >
-                                <img
-                                  src={image}
-                                  alt="Interactive plant image for analysis and annotation"
-                                  className="max-w-full max-h-full object-contain"
-                                  draggable={false}
-                                  style={{ pointerEvents: showImageAnnotation ? 'none' : 'auto' }}
-                                />
+                                      setImageAnnotations([...imageAnnotations, newAnnotation]);
+                                    }}
+                                  />
 
                                 {/* Overlay Annotations */}
                                 {showImageAnnotation && imageAnnotations.map((annotation) => (
@@ -1887,7 +1886,15 @@ export default function CultivAIPro() {
                                     )}
                                   </div>
                                 ))}
-                              </div>
+                                </>
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <div className="text-center">
+                                    <Image className="h-12 w-12 mx-auto mb-2 text-slate-500" />
+                                    <p className="text-slate-400 text-sm">Click to upload plant image</p>
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Zoom Level Indicator */}
                               <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
@@ -1897,22 +1904,22 @@ export default function CultivAIPro() {
                           </div>
 
                           {/* Image Information */}
-                          <div className="bg-emerald-900/40 rounded-lg p-3">
+                          <div className="bg-slate-900/40 rounded-lg p-3">
                             <div className="grid grid-cols-2 gap-2 text-xs">
                               <div>
-                                <span className="text-emerald-400">Annotations:</span>
-                                <span className="text-emerald-300 ml-1">{imageAnnotations.length}</span>
+                                <span className="text-slate-400">Annotations:</span>
+                                <span className="text-slate-300 ml-1">{imageAnnotations.length}</span>
                               </div>
                               <div>
-                                <span className="text-emerald-400">Mode:</span>
-                                <span className="text-emerald-300 ml-1">{showImageAnnotation ? 'Interactive' : 'View Only'}</span>
+                                <span className="text-slate-400">Mode:</span>
+                                <span className="text-slate-300 ml-1">{showImageAnnotation ? 'Interactive' : 'View Only'}</span>
                               </div>
                               {imageAnnotations.length > 0 && (
                                 <div className="col-span-2">
-                                  <span className="text-emerald-400">Marked Areas:</span>
+                                  <span className="text-slate-400">Marked Areas:</span>
                                   <div className="flex flex-wrap gap-1 mt-1">
                                     {imageAnnotations.map((ann, idx) => (
-                                      <span key={ann.id} className="bg-emerald-800 text-emerald-300 px-1 py-0.5 rounded text-xs">
+                                      <span key={ann.id} className="bg-slate-800 text-slate-300 px-1 py-0.5 rounded text-xs">
                                         {ann.label}
                                       </span>
                                     ))}
@@ -1928,7 +1935,7 @@ export default function CultivAIPro() {
                               onClick={() => fileInputRef.current.click()}
                               variant="outline"
                               size="sm"
-                              className="bg-emerald-800 hover:bg-emerald-700"
+                              className="bg-slate-800 hover:bg-slate-700"
                             >
                               <RefreshCw className="h-3 w-3 mr-1" />
                               Replace
@@ -1959,16 +1966,16 @@ export default function CultivAIPro() {
                       ) : (
                         <div className="space-y-3">
                           <div className="flex justify-center">
-                            <div className="bg-emerald-800/50 border-2 border-dashed border-emerald-600 rounded-xl p-6">
-                              <Camera className="h-12 w-12 mx-auto text-emerald-400" />
+                            <div className="bg-slate-800/50 border-2 border-dashed border-blue-600 rounded-xl p-6">
+                              <Camera className="h-12 w-12 mx-auto text-slate-400" />
                             </div>
                           </div>
-                          <h3 className="text-lg font-bold text-emerald-200">Ultra High-Resolution Plant Scanner</h3>
-                          <p className="text-emerald-400 text-sm max-w-md mx-auto">
+                          <h3 className="text-lg font-bold text-slate-200">Ultra High-Resolution Plant Scanner</h3>
+                          <p className="text-slate-400 text-sm max-w-md mx-auto">
                             Upload images up to 500MB (8K+ resolution) for professional-grade diagnosis with interactive annotation tools
                           </p>
-                          <div className="bg-emerald-900/40 rounded-lg p-2 mx-auto max-w-md">
-                            <div className="text-xs text-emerald-300 space-y-1">
+                          <div className="bg-slate-900/40 rounded-lg p-2 mx-auto max-w-md">
+                            <div className="text-xs text-slate-300 space-y-1">
                               <div>📸 Support for ultra-high resolution images (up to 8K)</div>
                               <div>🔍 Interactive zoom & annotation tools</div>
                               <div>🧠 AI-powered symptom detection</div>
@@ -1978,7 +1985,7 @@ export default function CultivAIPro() {
                           <div className="flex flex-wrap justify-center gap-2">
                             <Button
                               onClick={() => fileInputRef.current.click()}
-                              className="bg-gradient-to-r from-lime-500 to-emerald-600 hover:from-lime-400 hover:to-emerald-500 text-emerald-900 font-medium"
+                              className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-400 hover:to-sky-500 text-slate-900 font-medium"
                             >
                               <Upload className="h-4 w-4 mr-2" />
                               Upload Ultra HD Image (≤500MB)
@@ -2003,39 +2010,39 @@ export default function CultivAIPro() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <Card className="bg-gradient-to-br from-emerald-950/90 via-emerald-950/70 to-lime-950/30 backdrop-blur-sm border-emerald-700/50 shadow-2xl hover:shadow-lime-500/10 transition-all duration-300 group">
+                  <Card className="bg-gradient-to-br from-slate-950/90 via-slate-950/70 to-blue-950/30 backdrop-blur-sm border-slate-600/50 shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 group">
                     <CardHeader className="relative">
                       {/* Animated background gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-lime-500/5 via-emerald-500/5 to-lime-500/5 rounded-t-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-sky-500/5 to-blue-500/5 rounded-t-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                       <div className="flex items-center justify-between relative z-10">
                         <div className="flex items-center space-x-3">
                           <motion.div
-                            className="bg-gradient-to-br from-lime-500 to-emerald-600 p-2.5 rounded-xl shadow-lg"
+                            className="bg-gradient-to-br from-blue-500 to-sky-600 p-2.5 rounded-xl shadow-lg"
                             whileHover={{ scale: 1.05, rotate: 5 }}
                             transition={{ type: "spring", stiffness: 300 }}
                           >
-                            <Bot className="h-5 w-5 text-emerald-900" />
+                            <Bot className="h-5 w-5 text-slate-900" />
                           </motion.div>
                           <div>
-                            <CardTitle className="text-xl font-bold bg-gradient-to-r from-lime-300 to-emerald-300 bg-clip-text text-transparent">
+                            <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-300 to-sky-300 bg-clip-text text-transparent">
                               Live Plant Analysis
                             </CardTitle>
-                            <p className="text-emerald-400/80 text-sm">AI-powered continuous monitoring</p>
+                            <p className="text-slate-400/80 text-sm">AI-powered continuous monitoring</p>
                           </div>
                         </div>
 
                         <div className="flex items-center space-x-3">
                           {/* View Toggle */}
-                          <motion.div className="flex bg-emerald-900/50 rounded-lg p-1 border border-emerald-700/50">
+                          <motion.div className="flex bg-slate-900/50 rounded-lg p-1 border border-slate-600/50">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => setCompactView(false)}
                               className={`px-2 py-1 text-xs transition-all duration-200 ${
                                 !compactView
-                                  ? 'bg-lime-500/20 text-lime-300 shadow-sm'
-                                  : 'text-emerald-400 hover:text-emerald-300'
+                                  ? 'bg-blue-500/20 text-blue-300 shadow-sm'
+                                  : 'text-slate-400 hover:text-slate-300'
                               }`}
                             >
                               <Grid className="h-3 w-3 mr-1" />
@@ -2047,8 +2054,8 @@ export default function CultivAIPro() {
                               onClick={() => setCompactView(true)}
                               className={`px-2 py-1 text-xs transition-all duration-200 ${
                                 compactView
-                                  ? 'bg-lime-500/20 text-lime-300 shadow-sm'
-                                  : 'text-emerald-400 hover:text-emerald-300'
+                                  ? 'bg-blue-500/20 text-blue-300 shadow-sm'
+                                  : 'text-slate-400 hover:text-slate-300'
                               }`}
                             >
                               <Minimize2 className="h-3 w-3 mr-1" />
@@ -2064,19 +2071,19 @@ export default function CultivAIPro() {
                               onClick={() => setAutoAnalysisEnabled(!autoAnalysisEnabled)}
                               className={`relative overflow-hidden transition-all duration-300 ${
                                 autoAnalysisEnabled
-                                  ? 'bg-gradient-to-r from-lime-500 to-emerald-600 text-emerald-900 border-lime-400/50 shadow-lg shadow-lime-500/25'
-                                  : 'bg-emerald-800/50 text-emerald-300 border-emerald-600/50 hover:bg-emerald-700/50'
+                                  ? 'bg-gradient-to-r from-blue-500 to-sky-600 text-slate-900 border-blue-400/50 shadow-lg shadow-blue-500/25'
+                                  : 'bg-slate-800/50 text-slate-300 border-blue-600/50 hover:bg-slate-700/50'
                               }`}
                             >
                               {autoAnalysisEnabled && (
                                 <motion.div
-                                  className="absolute inset-0 bg-gradient-to-r from-lime-400/20 to-emerald-400/20"
+                                  className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-sky-400/20"
                                   animate={{ x: ['-100%', '100%'] }}
                                   transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                                 />
                               )}
                               <span className="relative flex items-center">
-                                <div className={`w-2 h-2 rounded-full mr-2 ${autoAnalysisEnabled ? 'bg-emerald-900 animate-pulse' : 'bg-emerald-400'}`} />
+                                <div className={`w-2 h-2 rounded-full mr-2 ${autoAnalysisEnabled ? 'bg-slate-900 animate-pulse' : 'bg-green-400'}`} />
                                 {autoAnalysisEnabled ? 'Active' : 'Paused'}
                               </span>
                             </Button>
@@ -2084,7 +2091,7 @@ export default function CultivAIPro() {
 
                           {lastAutoAnalysis && (
                             <motion.span
-                              className="text-emerald-400/70 text-xs hidden sm:block"
+                              className="text-slate-400/70 text-xs hidden sm:block"
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                             >
@@ -2106,29 +2113,29 @@ export default function CultivAIPro() {
                           <div className="relative w-20 h-20 mx-auto mb-6">
                             {/* Outer ring */}
                             <motion.div
-                              className="absolute inset-0 border-4 border-emerald-700/30 rounded-full"
+                              className="absolute inset-0 border-4 border-slate-600/30 rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             >
-              <div className="absolute inset-0 border-t-4 border-lime-400 rounded-full" />
+              <div className="absolute inset-0 border-t-4 border-blue-400 rounded-full" />
             </motion.div>
 
             {/* Middle ring */}
             <motion.div
-              className="absolute inset-2 border-3 border-emerald-600/30 rounded-full"
+              className="absolute inset-2 border-3 border-blue-600/30 rounded-full"
               animate={{ rotate: -360 }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
             >
-              <div className="absolute inset-0 border-t-3 border-emerald-400 rounded-full" />
+              <div className="absolute inset-0 border-t-3 border-green-400 rounded-full" />
             </motion.div>
 
             {/* Inner ring */}
             <motion.div
-              className="absolute inset-4 border-2 border-lime-700/30 rounded-full"
+              className="absolute inset-4 border-2 border-blue-700/30 rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             >
-              <div className="absolute inset-0 border-t-2 border-lime-300 rounded-full" />
+              <div className="absolute inset-0 border-t-2 border-blue-300 rounded-full" />
             </motion.div>
 
             {/* Center icon */}
@@ -2137,19 +2144,19 @@ export default function CultivAIPro() {
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 1, repeat: Infinity }}
               >
-                <Bot className="h-8 w-8 text-lime-400" />
+                <Bot className="h-8 w-8 text-blue-400" />
               </motion.div>
             </div>
           </div>
 
           <motion.h3
-            className="text-lg font-bold text-emerald-200 mb-2"
+            className="text-lg font-bold text-slate-200 mb-2"
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
             Analyzing Plant Health...
           </motion.h3>
-          <p className="text-emerald-400/70 text-sm max-w-md mx-auto">
+          <p className="text-slate-400/70 text-sm max-w-md mx-auto">
             Processing sensor data and running AI diagnostics
           </p>
 
@@ -2158,7 +2165,7 @@ export default function CultivAIPro() {
             {[1, 2, 3].map((i) => (
               <motion.div
                 key={i}
-                className="h-1 bg-gradient-to-r from-transparent via-lime-400/30 to-transparent rounded-full"
+                className="h-1 bg-gradient-to-r from-transparent via-blue-400/30 to-transparent rounded-full"
                 initial={{ width: "0%", x: "-50%" }}
                 animate={{ width: "100%", x: "50%" }}
                 transition={{
@@ -2183,12 +2190,12 @@ export default function CultivAIPro() {
             <>
               {/* Enhanced Health Score with Trend */}
               <motion.div
-                className="relative p-4 bg-gradient-to-br from-emerald-900/40 via-emerald-800/30 to-lime-900/20 rounded-xl border border-emerald-700/30 hover:border-emerald-600/50 transition-all duration-300 group"
+                className="relative p-4 bg-gradient-to-br from-slate-900/40 via-slate-800/30 to-blue-900/20 rounded-xl border border-slate-600/30 hover:border-blue-600/50 transition-all duration-300 group"
                 whileHover={{ scale: 1.02, y: -2 }}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
-                    <span className="text-emerald-200 font-semibold">Plant Health Score</span>
+                    <span className="text-slate-200 font-semibold">Plant Health Score</span>
                     {analysisTrend !== 'stable' && (
                       <motion.div
                         className={`flex items-center text-xs px-2 py-1 rounded-full ${
@@ -2226,7 +2233,7 @@ export default function CultivAIPro() {
 
                 {/* Enhanced Progress Bar */}
                 <div className="relative">
-                  <div className="h-4 bg-emerald-800/50 rounded-full overflow-hidden">
+                  <div className="h-4 bg-slate-800/50 rounded-full overflow-hidden">
                     <motion.div
                       className={`h-full rounded-full relative overflow-hidden ${
                         autoAnalysis.healthScore >= 80 ? 'bg-gradient-to-r from-green-500 to-green-400' :
@@ -2251,8 +2258,8 @@ export default function CultivAIPro() {
                   <div className="absolute inset-0 flex items-center justify-between px-1 pointer-events-none">
                     {[25, 50, 75].map((milestone) => (
                       <div key={milestone} className="relative">
-                        <div className="w-0.5 h-2 bg-emerald-700/50" />
-                        <span className="absolute -top-5 left-1/2 transform -translate-x-1/2 text-xs text-emerald-500/70">
+                        <div className="w-0.5 h-2 bg-slate-700/50" />
+                        <span className="absolute -top-5 left-1/2 transform -translate-x-1/2 text-xs text-slate-500/70">
                           {milestone}
                         </span>
                       </div>
@@ -2283,15 +2290,15 @@ export default function CultivAIPro() {
 
               {/* Enhanced Diagnosis Card */}
               <motion.div
-                className="p-4 bg-gradient-to-br from-emerald-900/30 to-lime-900/20 rounded-xl border border-emerald-700/30 hover:border-lime-600/30 transition-all duration-300"
+                className="p-4 bg-gradient-to-br from-slate-900/30 to-blue-900/20 rounded-xl border border-slate-600/30 hover:border-blue-600/30 transition-all duration-300"
                 whileHover={{ scale: 1.01, y: -1 }}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
-                    <div className="bg-lime-500/20 p-1.5 rounded-lg">
-                      <Activity className="h-4 w-4 text-lime-400" />
+                    <div className="bg-blue-500/20 p-1.5 rounded-lg">
+                      <Activity className="h-4 w-4 text-blue-400" />
                     </div>
-                    <span className="text-emerald-200 font-semibold">Current Diagnosis</span>
+                    <span className="text-slate-200 font-semibold">Current Diagnosis</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center space-x-1">
@@ -2312,13 +2319,13 @@ export default function CultivAIPro() {
                           />
                         ))}
                       </div>
-                      <span className="text-xs text-emerald-400 ml-1">
+                      <span className="text-xs text-slate-400 ml-1">
                         {autoAnalysis.confidence}% confidence
                       </span>
                     </div>
                   </div>
                 </div>
-                <p className="text-lime-300 font-medium leading-relaxed">
+                <p className="text-blue-300 font-medium leading-relaxed">
                   {autoAnalysis.diagnosis}
                 </p>
               </motion.div>
@@ -2490,7 +2497,7 @@ export default function CultivAIPro() {
 
           {/* Enhanced Recommendations - Always Visible */}
           <motion.div
-            className={`p-4 bg-gradient-to-br from-lime-900/20 to-lime-800/10 border border-lime-700/30 rounded-xl hover:border-lime-600/40 transition-all duration-300 ${
+            className={`p-4 bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-700/30 rounded-xl hover:border-blue-600/40 transition-all duration-300 ${
               compactView ? 'mt-0' : 'mt-4'
             }`}
             whileHover={{ scale: 1.01 }}
@@ -2500,10 +2507,10 @@ export default function CultivAIPro() {
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
-                <div className="bg-lime-500/20 p-1.5 rounded-lg">
-                  <Lightbulb className="h-4 w-4 text-lime-400" />
+                <div className="bg-blue-500/20 p-1.5 rounded-lg">
+                  <Lightbulb className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-lime-300 font-semibold">
+                <span className="text-blue-300 font-semibold">
                   {compactView ? 'Quick Status' : 'AI Recommendations'}
                 </span>
               </div>
@@ -2517,7 +2524,7 @@ export default function CultivAIPro() {
                   {[1, 2, 3].map((pulse) => (
                     <motion.div
                       key={pulse}
-                      className="w-1.5 h-1.5 bg-lime-400 rounded-full"
+                      className="w-1.5 h-1.5 bg-blue-400 rounded-full"
                       animate={{ scale: [1, 1.5, 1] }}
                       transition={{
                         duration: 1.5,
@@ -2545,7 +2552,7 @@ export default function CultivAIPro() {
                       {autoAnalysis.healthScore}/100
                     </span>
                   </div>
-                  <span className="text-emerald-400/70 text-sm max-w-xs truncate">
+                  <span className="text-slate-400/70 text-sm max-w-xs truncate">
                     {autoAnalysis.diagnosis}
                   </span>
                 </div>
@@ -2648,19 +2655,19 @@ export default function CultivAIPro() {
           animate={{ opacity: 1 }}
         >
           <div className="relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 bg-emerald-800/30 border-2 border-dashed border-emerald-600 rounded-xl flex items-center justify-center">
+            <div className="absolute inset-0 bg-slate-800/30 border-2 border-dashed border-blue-600 rounded-xl flex items-center justify-center">
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                <Bot className="h-10 w-10 text-emerald-400/50" />
+                <Bot className="h-10 w-10 text-slate-400/50" />
               </motion.div>
             </div>
             {/* Pulsing rings */}
             {[1, 2, 3].map((ring) => (
               <motion.div
                 key={ring}
-                className="absolute inset-0 border border-emerald-600/20 rounded-xl"
+                className="absolute inset-0 border border-blue-600/20 rounded-xl"
                 animate={{ scale: [1, 1.5, 2], opacity: [0.5, 0.2, 0] }}
                 transition={{
                   duration: 3,
@@ -2673,13 +2680,13 @@ export default function CultivAIPro() {
           </div>
 
           <motion.h3
-            className="text-lg font-bold text-emerald-200 mb-2"
+            className="text-lg font-bold text-slate-200 mb-2"
             animate={{ opacity: [0.7, 1, 0.7] }}
             transition={{ duration: 3, repeat: Infinity }}
           >
             {autoAnalysisEnabled ? 'Ready for Analysis' : 'Auto-Analysis Paused'}
           </motion.h3>
-          <p className="text-emerald-400/70 text-sm max-w-md mx-auto mb-6">
+          <p className="text-slate-400/70 text-sm max-w-md mx-auto mb-6">
             {autoAnalysisEnabled
               ? 'System is ready to analyze sensor data and provide real-time plant health insights.'
               : 'Enable auto-analysis to get continuous plant health monitoring based on sensor data.'
@@ -2693,8 +2700,8 @@ export default function CultivAIPro() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              <div className="flex items-center space-x-2 text-xs text-emerald-400/60">
-                <div className="w-2 h-2 bg-lime-400 rounded-full animate-pulse" />
+              <div className="flex items-center space-x-2 text-xs text-slate-400/60">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
                 <span>Waiting for sensor data...</span>
               </div>
             </motion.div>
@@ -2709,14 +2716,14 @@ export default function CultivAIPro() {
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-emerald-950/70 backdrop-blur-sm rounded-xl border border-emerald-800 p-4 shadow-2xl"
+                  className="bg-slate-950/70 backdrop-blur-sm rounded-xl border border-slate-700 p-4 shadow-2xl"
                 >
                   <CardHeader>
                     <div className="flex items-center">
-                      <div className="bg-lime-500 p-2 rounded-lg mr-3">
-                        <Settings className="h-5 w-5 text-emerald-900" />
+                      <div className="bg-blue-500 p-2 rounded-lg mr-3">
+                        <Settings className="h-5 w-5 text-slate-900" />
                       </div>
-                      <CardTitle className="text-xl font-bold text-lime-300">Analysis Form</CardTitle>
+                      <CardTitle className="text-xl font-bold text-blue-300">Analysis Form</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -2724,8 +2731,8 @@ export default function CultivAIPro() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
                           <div className="relative">
-                            <Label className="block text-emerald-300 mb-2 flex items-center text-sm">
-                              <Wheat className="h-3 w-3 mr-2 text-lime-400" />
+                            <Label className="block text-slate-300 mb-2 flex items-center text-sm">
+                              <Wheat className="h-3 w-3 mr-2 text-blue-400" />
                               Strain Search
                             </Label>
                             <div className="relative">
@@ -2735,14 +2742,14 @@ export default function CultivAIPro() {
                                 onChange={(e) => setStrainSearch(e.target.value)}
                                 onFocus={() => setShowStrainDropdown(true)}
                                 placeholder="Search strains by name, type, or description..."
-                                className="w-full bg-emerald-900/50 border-emerald-700 text-emerald-200 placeholder-emerald-400 pr-20"
+                                className="w-full bg-slate-900/50 border-slate-600 text-slate-200 placeholder-emerald-400 pr-20"
                               />
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setShowStrainModal(true)}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-emerald-300 hover:text-lime-400 p-1"
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-300 hover:text-blue-400 p-1"
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
@@ -2750,8 +2757,8 @@ export default function CultivAIPro() {
 
                             {/* Selected strain display */}
                             {formData.strain !== 'Select Strain' && (
-                              <div className="mt-2 p-2 bg-emerald-800/30 border border-emerald-600 rounded flex items-center justify-between">
-                                <span className="text-emerald-200 text-sm">
+                              <div className="mt-2 p-2 bg-slate-800/30 border border-blue-600 rounded flex items-center justify-between">
+                                <span className="text-slate-200 text-sm">
                                   {formData.strain} {strains.find(s => s.name === formData.strain)?.isPurpleStrain ? '(Purple)' : ''}
                                 </span>
                                 <Button
@@ -2759,7 +2766,7 @@ export default function CultivAIPro() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => setFormData(prev => ({ ...prev, strain: 'Select Strain' }))}
-                                  className="text-emerald-400 hover:text-red-400 p-1 h-4"
+                                  className="text-slate-400 hover:text-red-400 p-1 h-4"
                                 >
                                   <X className="h-3 w-3" />
                                 </Button>
@@ -2768,7 +2775,7 @@ export default function CultivAIPro() {
 
                             {/* Search dropdown */}
                             {showStrainDropdown && strainSearch && (
-                              <div className="absolute z-10 w-full mt-1 bg-emerald-900 border border-emerald-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              <div className="absolute z-10 w-full mt-1 bg-slate-900 border border-slate-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
                                 {filteredStrains.length > 0 ? (
                                   filteredStrains.map(strain => (
                                     <div
@@ -2778,22 +2785,22 @@ export default function CultivAIPro() {
                                         setStrainSearch('');
                                         setShowStrainDropdown(false);
                                       }}
-                                      className="p-3 hover:bg-emerald-800 cursor-pointer border-b border-emerald-700 last:border-b-0"
+                                      className="p-3 hover:bg-slate-800 cursor-pointer border-b border-slate-600 last:border-b-0"
                                     >
                                       <div className="flex items-center justify-between">
                                         <div>
-                                          <div className="text-emerald-200 font-medium">
+                                          <div className="text-slate-200 font-medium">
                                             {strain.name}
                                             {strain.isPurpleStrain && <span className="ml-2 text-purple-400 text-xs">(Purple)</span>}
                                           </div>
-                                          <div className="text-emerald-400 text-xs">{strain.type}</div>
-                                          <div className="text-emerald-500 text-xs mt-1 line-clamp-1">{strain.description}</div>
+                                          <div className="text-slate-400 text-xs">{strain.type}</div>
+                                          <div className="text-slate-500 text-xs mt-1 line-clamp-1">{strain.description}</div>
                                         </div>
                                       </div>
                                     </div>
                                   ))
                                 ) : (
-                                  <div className="p-3 text-emerald-400 text-center">
+                                  <div className="p-3 text-slate-400 text-center">
                                     No strains found matching "{strainSearch}"
                                   </div>
                                 )}
@@ -2802,15 +2809,15 @@ export default function CultivAIPro() {
                           </div>
                           
                           <div>
-                            <Label className="block text-emerald-300 mb-2 flex items-center text-sm">
-                              <AlertTriangle className="h-3 w-3 mr-2 text-lime-400" />
+                            <Label className="block text-slate-300 mb-2 flex items-center text-sm">
+                              <AlertTriangle className="h-3 w-3 mr-2 text-blue-400" />
                               Symptoms
                             </Label>
                             <Textarea
                               value={formData.leafSymptoms}
                               onChange={(e) => setFormData({...formData, leafSymptoms: e.target.value})}
                               rows={2}
-                              className="w-full bg-emerald-900/50 border-emerald-700 placeholder-emerald-400 text-sm"
+                              className="w-full bg-slate-900/50 border-slate-600 placeholder-emerald-400 text-sm"
                               placeholder="Describe leaf symptoms..."
                             />
                           </div>
@@ -2818,8 +2825,8 @@ export default function CultivAIPro() {
                         
                         <div className="space-y-3">
                           <div>
-                            <Label className="block text-emerald-300 mb-2 flex items-center text-sm">
-                              <Droplet className="h-3 w-3 mr-2 text-lime-400" />
+                            <Label className="block text-slate-300 mb-2 flex items-center text-sm">
+                              <Droplet className="h-3 w-3 mr-2 text-blue-400" />
                               pH Level
                             </Label>
                             <Input
@@ -2827,21 +2834,21 @@ export default function CultivAIPro() {
                               step="0.1"
                               value={formData.phLevel}
                               onChange={(e) => setFormData({...formData, phLevel: e.target.value})}
-                              className="w-full bg-emerald-900/50 border-emerald-700 placeholder-emerald-400 text-sm"
+                              className="w-full bg-slate-900/50 border-slate-600 placeholder-emerald-400 text-sm"
                               placeholder="6.2"
                             />
                           </div>
                           
                           <div>
-                            <Label className="block text-emerald-300 mb-2 flex items-center text-sm">
-                              <Thermometer className="h-3 w-3 mr-2 text-lime-400" />
+                            <Label className="block text-slate-300 mb-2 flex items-center text-sm">
+                              <Thermometer className="h-3 w-3 mr-2 text-blue-400" />
                               Temperature (°F)
                             </Label>
                             <Input
                               type="number"
                               value={formData.temperature}
                               onChange={(e) => setFormData({...formData, temperature: e.target.value})}
-                              className="w-full bg-emerald-900/50 border-emerald-700 placeholder-emerald-400 text-sm"
+                              className="w-full bg-slate-900/50 border-slate-600 placeholder-emerald-400 text-sm"
                               placeholder="75°F"
                             />
                           </div>
@@ -2850,14 +2857,14 @@ export default function CultivAIPro() {
                         {/* Enhanced Diagnostic Fields */}
                         <div className="space-y-3">
                           <div>
-                            <Label className="block text-emerald-300 mb-2 flex items-center text-sm">
-                              <Bug className="h-3 w-3 mr-2 text-lime-400" />
+                            <Label className="block text-slate-300 mb-2 flex items-center text-sm">
+                              <Bug className="h-3 w-3 mr-2 text-blue-400" />
                               Diagnostic Focus
                             </Label>
                             <select
                               value={mounted ? formData.pestDiseaseFocus : 'all'}
                               onChange={(e) => setFormData({...formData, pestDiseaseFocus: e.target.value})}
-                              className="w-full bg-emerald-900/50 border-emerald-700 placeholder-emerald-400 text-sm px-3 py-2 rounded-md"
+                              className="w-full bg-slate-900/50 border-slate-600 placeholder-emerald-400 text-sm px-3 py-2 rounded-md"
                               suppressHydrationWarning
                             >
                               <option value="all">Comprehensive Analysis</option>
@@ -2868,14 +2875,14 @@ export default function CultivAIPro() {
                           </div>
 
                           <div>
-                            <Label className="block text-emerald-300 mb-2 flex items-center text-sm">
-                              <AlertTriangle className="h-3 w-3 mr-2 text-lime-400" />
+                            <Label className="block text-slate-300 mb-2 flex items-center text-sm">
+                              <AlertTriangle className="h-3 w-3 mr-2 text-blue-400" />
                               Urgency Level
                             </Label>
                             <select
                               value={mounted ? formData.urgency : 'medium'}
                               onChange={(e) => setFormData({...formData, urgency: e.target.value})}
-                              className="w-full bg-emerald-900/50 border-emerald-700 placeholder-emerald-400 text-sm px-3 py-2 rounded-md"
+                              className="w-full bg-slate-900/50 border-slate-600 placeholder-emerald-400 text-sm px-3 py-2 rounded-md"
                               suppressHydrationWarning
                             >
                               <option value="low">Low - Routine monitoring</option>
@@ -2886,15 +2893,15 @@ export default function CultivAIPro() {
                           </div>
 
                           <div>
-                            <Label className="block text-emerald-300 mb-2 flex items-center text-sm">
-                              <MessageSquare className="h-3 w-3 mr-2 text-lime-400" />
+                            <Label className="block text-slate-300 mb-2 flex items-center text-sm">
+                              <MessageSquare className="h-3 w-3 mr-2 text-blue-400" />
                               Additional Notes
                             </Label>
                             <Textarea
                               value={formData.additionalNotes}
                               onChange={(e) => setFormData({...formData, additionalNotes: e.target.value})}
                               rows={2}
-                              className="w-full bg-emerald-900/50 border-emerald-700 placeholder-emerald-400 text-sm"
+                              className="w-full bg-slate-900/50 border-slate-600 placeholder-emerald-400 text-sm"
                               placeholder="Any additional information..."
                             />
                           </div>
@@ -2905,7 +2912,7 @@ export default function CultivAIPro() {
                         <Button
                           type="submit"
                           disabled={isLoading}
-                          className="bg-gradient-to-r from-lime-500 to-emerald-600 hover:from-lime-400 hover:to-emerald-500 text-emerald-900 font-bold"
+                          className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-400 hover:to-sky-500 text-slate-900 font-bold"
                         >
                           {isLoading ? (
                             <>
@@ -2931,30 +2938,30 @@ export default function CultivAIPro() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="bg-emerald-950/70 backdrop-blur-sm rounded-xl border border-emerald-800 p-4 shadow-2xl"
+                    className="bg-slate-950/70 backdrop-blur-sm rounded-xl border border-slate-700 p-4 shadow-2xl"
                   >
                     <CardHeader>
                       <div className="flex items-center">
-                        <div className="bg-lime-500 p-2 rounded-lg mr-3">
-                          <CheckCircle className="h-5 w-5 text-emerald-900" />
+                        <div className="bg-blue-500 p-2 rounded-lg mr-3">
+                          <CheckCircle className="h-5 w-5 text-slate-900" />
                         </div>
-                        <CardTitle className="text-xl font-bold text-lime-300">Analysis Results</CardTitle>
+                        <CardTitle className="text-xl font-bold text-blue-300">Analysis Results</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         {/* Primary Diagnosis Header */}
-                        <div className="bg-gradient-to-br from-emerald-900/50 to-lime-900/30 border border-emerald-700 rounded-lg p-4">
+                        <div className="bg-gradient-to-br from-emerald-900/50 to-lime-900/30 border border-slate-600 rounded-lg p-4">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3">
                             <div>
-                              <h3 className="text-xl font-bold text-lime-300">{analysisResult?.diagnosis || 'Analysis Complete'}</h3>
+                              <h3 className="text-xl font-bold text-blue-300">{analysisResult?.diagnosis || 'Analysis Complete'}</h3>
                               <div className="flex items-center mt-1 space-x-3">
                                 <div className="flex items-center">
                                   <div className={`w-3 h-3 rounded-full mr-2 ${
                                     (analysisResult?.confidence || 0) >= 80 ? 'bg-green-500' :
                                     (analysisResult?.confidence || 0) >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                                   }`}></div>
-                                  <span className="text-emerald-200 text-sm">{analysisResult?.confidence || 0}% Confidence</span>
+                                  <span className="text-slate-200 text-sm">{analysisResult?.confidence || 0}% Confidence</span>
                                 </div>
                                 {analysisResult?.isPurpleStrain && (
                                   <Badge className="bg-purple-900/50 text-purple-300 border-purple-700">
@@ -2972,8 +2979,8 @@ export default function CultivAIPro() {
                             </div>
                             <div className="mt-2 md:mt-0">
                               <div className="text-center">
-                                <div className="text-2xl font-bold text-lime-400">{analysisResult?.healthScore || 0}/100</div>
-                                <div className="text-xs text-emerald-400 mt-1">Health Score</div>
+                                <div className="text-2xl font-bold text-blue-400">{analysisResult?.healthScore || 0}/100</div>
+                                <div className="text-xs text-slate-400 mt-1">Health Score</div>
                                 <Progress value={analysisResult?.healthScore || 0} className="mt-2 h-2 w-24" />
                               </div>
                             </div>
@@ -2983,8 +2990,8 @@ export default function CultivAIPro() {
                         {/* Detailed Analysis Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                           {/* Symptoms Matched */}
-                          <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-4">
-                            <h4 className="text-sm font-semibold text-lime-300 mb-3 flex items-center">
+                          <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4">
+                            <h4 className="text-sm font-semibold text-blue-300 mb-3 flex items-center">
                               <Search className="h-4 w-4 mr-2 text-blue-400" />
                               Symptoms Identified
                             </h4>
@@ -2993,18 +3000,18 @@ export default function CultivAIPro() {
                                 analysisResult.symptomsMatched.slice(0, 5).map((symptom, index) => (
                                   <div key={index} className="flex items-start">
                                     <span className="text-blue-400 mr-2 text-xs">▸</span>
-                                    <span className="text-emerald-200 text-sm">{symptom}</span>
+                                    <span className="text-slate-200 text-sm">{symptom}</span>
                                   </div>
                                 ))
                               ) : (
-                                <div className="text-emerald-400 text-sm italic">No specific symptoms detailed in analysis</div>
+                                <div className="text-slate-400 text-sm italic">No specific symptoms detailed in analysis</div>
                               )}
                             </div>
                           </div>
 
                           {/* Root Causes */}
-                          <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-4">
-                            <h4 className="text-sm font-semibold text-lime-300 mb-3 flex items-center">
+                          <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4">
+                            <h4 className="text-sm font-semibold text-blue-300 mb-3 flex items-center">
                               <AlertTriangle className="h-4 w-4 mr-2 text-amber-400" />
                               Root Causes
                             </h4>
@@ -3013,46 +3020,46 @@ export default function CultivAIPro() {
                                 analysisResult.causes.slice(0, 4).map((cause, index) => (
                                   <div key={index} className="flex items-start">
                                     <span className="text-amber-400 mr-2 text-xs">▸</span>
-                                    <span className="text-emerald-200 text-sm">{cause}</span>
+                                    <span className="text-slate-200 text-sm">{cause}</span>
                                   </div>
                                 ))
                               ) : (
-                                <div className="text-emerald-400 text-sm italic">No specific causes identified</div>
+                                <div className="text-slate-400 text-sm italic">No specific causes identified</div>
                               )}
                             </div>
                           </div>
 
                           {/* Treatment Plan */}
-                          <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-4">
-                            <h4 className="text-sm font-semibold text-lime-300 mb-3 flex items-center">
-                              <Lightbulb className="h-4 w-4 mr-2 text-lime-400" />
+                          <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4">
+                            <h4 className="text-sm font-semibold text-blue-300 mb-3 flex items-center">
+                              <Lightbulb className="h-4 w-4 mr-2 text-blue-400" />
                               Treatment Plan
                             </h4>
                             <div className="space-y-2">
                               {analysisResult?.treatment?.length > 0 ? (
                                 analysisResult.treatment.slice(0, 5).map((step, index) => (
                                   <div key={index} className="flex items-start">
-                                    <span className="bg-lime-500 text-emerald-900 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mr-2 flex-shrink-0">
+                                    <span className="bg-blue-500 text-slate-900 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mr-2 flex-shrink-0">
                                       {index + 1}
                                     </span>
-                                    <span className="text-emerald-200 text-sm">{step}</span>
+                                    <span className="text-slate-200 text-sm">{step}</span>
                                   </div>
                                 ))
                               ) : (
-                                <div className="text-emerald-400 text-sm italic">No treatment steps provided</div>
+                                <div className="text-slate-400 text-sm italic">No treatment steps provided</div>
                               )}
                             </div>
                           </div>
 
                           {/* Strain-Specific Advice */}
-                          <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-4">
-                            <h4 className="text-sm font-semibold text-lime-300 mb-3 flex items-center">
+                          <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4">
+                            <h4 className="text-sm font-semibold text-blue-300 mb-3 flex items-center">
                               <Wheat className="h-4 w-4 mr-2 text-purple-400" />
                               Strain-Specific Advice
                             </h4>
-                            <div className="text-emerald-200 text-sm leading-relaxed">
+                            <div className="text-slate-200 text-sm leading-relaxed">
                               {analysisResult?.strainSpecificAdvice || (
-                                <span className="text-emerald-400 italic">No strain-specific advice available</span>
+                                <span className="text-slate-400 italic">No strain-specific advice available</span>
                               )}
                             </div>
                           </div>
@@ -3175,8 +3182,8 @@ export default function CultivAIPro() {
 
                         {/* AI Reasoning Process */}
                         {analysisResult?.reasoning && analysisResult.reasoning.length > 0 && (
-                          <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-4">
-                            <h4 className="text-sm font-semibold text-lime-300 mb-3 flex items-center">
+                          <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4">
+                            <h4 className="text-sm font-semibold text-blue-300 mb-3 flex items-center">
                               <Brain className="h-4 w-4 mr-2 text-cyan-400" />
                               AI Analysis Reasoning
                             </h4>
@@ -3185,11 +3192,11 @@ export default function CultivAIPro() {
                                 <div key={index} className="border-l-2 border-cyan-400/30 pl-3">
                                   <div className="flex items-center justify-between mb-1">
                                     <span className="text-cyan-300 text-sm font-medium">{step.step}</span>
-                                    <span className="text-emerald-400 text-xs">{step.weight}% weight</span>
+                                    <span className="text-slate-400 text-xs">{step.weight}% weight</span>
                                   </div>
-                                  <p className="text-emerald-200 text-sm leading-relaxed">{step.explanation}</p>
+                                  <p className="text-slate-200 text-sm leading-relaxed">{step.explanation}</p>
                                   <div className="mt-2">
-                                    <div className="bg-emerald-800/50 rounded-full h-1.5">
+                                    <div className="bg-slate-800/50 rounded-full h-1.5">
                                       <div
                                         className="bg-cyan-400 h-1.5 rounded-full transition-all duration-500"
                                         style={{ width: `${step.weight}%` }}
@@ -3205,20 +3212,20 @@ export default function CultivAIPro() {
                         {/* Priority Recommendations */}
                         {analysisResult?.recommendations && analysisResult.recommendations.length > 0 && (
                           <div className="bg-gradient-to-r from-lime-900/30 to-emerald-900/40 border border-lime-600/50 rounded-lg p-4">
-                            <h4 className="text-sm font-semibold text-lime-300 mb-3 flex items-center">
+                            <h4 className="text-sm font-semibold text-blue-300 mb-3 flex items-center">
                               <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                               Priority Recommendations
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {analysisResult.recommendations.slice(0, 4).map((rec, index) => (
-                                <div key={index} className="bg-emerald-800/30 rounded-lg p-3">
+                                <div key={index} className="bg-slate-800/30 rounded-lg p-3">
                                   <div className="flex items-center justify-between mb-2">
-                                    <span className="text-lime-300 text-sm font-medium">{rec.issue}</span>
+                                    <span className="text-blue-300 text-sm font-medium">{rec.issue}</span>
                                     <Badge className={
                                       rec.priority === 'high' ? 'bg-red-900/50 text-red-300 border-red-700' :
                                       rec.priority === 'medium' ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700' :
                                       rec.priority === 'low' ? 'bg-blue-900/50 text-blue-300 border-blue-700' :
-                                      'bg-emerald-800/50 text-emerald-300'
+                                      'bg-slate-800/50 text-slate-300'
                                     }>
                                       {rec.priority}
                                     </Badge>
@@ -3227,7 +3234,7 @@ export default function CultivAIPro() {
                                     {rec.actions?.slice(0, 3).map((action, actionIndex) => (
                                       <div key={actionIndex} className="flex items-start">
                                         <span className="text-green-400 mr-1 text-xs">•</span>
-                                        <span className="text-emerald-200 text-xs">{action}</span>
+                                        <span className="text-slate-200 text-xs">{action}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -3242,67 +3249,67 @@ export default function CultivAIPro() {
                 )}
 
                 {/* Tools Suite Quick Access */}
-                <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+                <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className="bg-lime-500 p-2 rounded-lg mr-3">
-                          <Bot className="h-5 w-5 text-emerald-900" />
+                        <div className="bg-blue-500 p-2 rounded-lg mr-3">
+                          <Bot className="h-5 w-5 text-slate-900" />
                         </div>
-                        <CardTitle className="text-xl font-bold text-lime-300">Cultivation Tools Suite</CardTitle>
+                        <CardTitle className="text-xl font-bold text-blue-300">Cultivation Tools Suite</CardTitle>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="bg-emerald-800 hover:bg-emerald-700 border-emerald-700"
+                        className="bg-slate-800 hover:bg-slate-700 border-slate-600"
                         onClick={() => setActiveDashboard('ai-tools')}
                       >
                         <Eye className="h-3 w-3 mr-1" />
                         View All
                       </Button>
                     </div>
-                    <p className="text-emerald-400 text-sm mt-2">
+                    <p className="text-slate-400 text-sm mt-2">
                       Quick access to specialized cultivation tools and utilities
                     </p>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <Link href="/tools/nutrient-calculator" className="block">
-                        <Card className="bg-emerald-900/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 group">
+                        <Card className="bg-slate-900/50 border-slate-600 hover:border-blue-400 transition-all duration-300 group">
                           <CardContent className="p-4 text-center">
-                            <Calculator className="h-8 w-8 text-lime-400 mx-auto mb-2 group-hover:text-lime-300" />
-                            <h4 className="text-sm font-medium text-lime-300 mb-1">Nutrient Calc</h4>
-                            <p className="text-xs text-emerald-400">NPK mixing</p>
+                            <Calculator className="h-8 w-8 text-blue-400 mx-auto mb-2 group-hover:text-blue-300" />
+                            <h4 className="text-sm font-medium text-blue-300 mb-1">Nutrient Calc</h4>
+                            <p className="text-xs text-slate-400">NPK mixing</p>
                           </CardContent>
                         </Card>
                       </Link>
 
                       <Link href="/tools/pest-disease-id" className="block">
-                        <Card className="bg-emerald-900/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 group">
+                        <Card className="bg-slate-900/50 border-slate-600 hover:border-blue-400 transition-all duration-300 group">
                           <CardContent className="p-4 text-center">
-                            <Bug className="h-8 w-8 text-lime-400 mx-auto mb-2 group-hover:text-lime-300" />
-                            <h4 className="text-sm font-medium text-lime-300 mb-1">Pest ID</h4>
-                            <p className="text-xs text-emerald-400">Disease detection</p>
+                            <Bug className="h-8 w-8 text-blue-400 mx-auto mb-2 group-hover:text-blue-300" />
+                            <h4 className="text-sm font-medium text-blue-300 mb-1">Pest ID</h4>
+                            <p className="text-xs text-slate-400">Disease detection</p>
                           </CardContent>
                         </Card>
                       </Link>
 
                       <Link href="/tools/harvest-tracker" className="block">
-                        <Card className="bg-emerald-900/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 group">
+                        <Card className="bg-slate-900/50 border-slate-600 hover:border-blue-400 transition-all duration-300 group">
                           <CardContent className="p-4 text-center">
-                            <Scissors className="h-8 w-8 text-lime-400 mx-auto mb-2 group-hover:text-lime-300" />
-                            <h4 className="text-sm font-medium text-lime-300 mb-1">Harvest</h4>
-                            <p className="text-xs text-emerald-400">Yield tracking</p>
+                            <Scissors className="h-8 w-8 text-blue-400 mx-auto mb-2 group-hover:text-blue-300" />
+                            <h4 className="text-sm font-medium text-blue-300 mb-1">Harvest</h4>
+                            <p className="text-xs text-slate-400">Yield tracking</p>
                           </CardContent>
                         </Card>
                       </Link>
 
                       <Link href="/tools/inventory-manager" className="block">
-                        <Card className="bg-emerald-900/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 group">
+                        <Card className="bg-slate-900/50 border-slate-600 hover:border-blue-400 transition-all duration-300 group">
                           <CardContent className="p-4 text-center">
-                            <Package className="h-8 w-8 text-lime-400 mx-auto mb-2 group-hover:text-lime-300" />
-                            <h4 className="text-sm font-medium text-lime-300 mb-1">Inventory</h4>
-                            <p className="text-xs text-emerald-400">Supply management</p>
+                            <Package className="h-8 w-8 text-blue-400 mx-auto mb-2 group-hover:text-blue-300" />
+                            <h4 className="text-sm font-medium text-blue-300 mb-1">Inventory</h4>
+                            <p className="text-xs text-slate-400">Supply management</p>
                           </CardContent>
                         </Card>
                       </Link>
@@ -3315,15 +3322,15 @@ export default function CultivAIPro() {
             {/* AI Tools Dashboard */}
             {activeDashboard === 'ai-tools' && (
               <div className="space-y-6">
-                <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+                <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
                   <CardHeader>
                     <div className="flex items-center">
-                      <div className="bg-lime-500 p-2 rounded-lg mr-3">
-                        <Bot className="h-5 w-5 text-emerald-900" />
+                      <div className="bg-blue-500 p-2 rounded-lg mr-3">
+                        <Bot className="h-5 w-5 text-slate-900" />
                       </div>
-                      <CardTitle className="text-xl font-bold text-lime-300">AI Tools Suite</CardTitle>
+                      <CardTitle className="text-xl font-bold text-blue-300">AI Tools Suite</CardTitle>
                     </div>
-                    <p className="text-emerald-400 text-sm mt-2">
+                    <p className="text-slate-400 text-sm mt-2">
                       Access specialized cultivation tools and utilities for optimal plant management
                     </p>
                   </CardHeader>
@@ -3331,27 +3338,27 @@ export default function CultivAIPro() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Nutrient Calculator */}
                       <Link href="/tools/nutrient-calculator" className="block">
-                        <Card className="bg-emerald-900/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 hover:shadow-lg hover:shadow-lime-400/20 group">
+                        <Card className="bg-slate-900/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:shadow-lg hover:shadow-lime-400/20 group">
                           <CardContent className="p-6">
                             <div className="flex items-center mb-4">
-                              <div className="bg-emerald-800 p-3 rounded-lg mr-4 group-hover:bg-lime-500 transition-colors">
-                                <Calculator className="h-6 w-6 text-lime-400 group-hover:text-emerald-900" />
+                              <div className="bg-slate-800 p-3 rounded-lg mr-4 group-hover:bg-blue-500 transition-colors">
+                                <Calculator className="h-6 w-6 text-blue-400 group-hover:text-slate-900" />
                               </div>
                               <div>
-                                <h3 className="text-lg font-bold text-lime-300 group-hover:text-lime-200">Nutrient Calculator</h3>
-                                <p className="text-emerald-400 text-sm">Calculate optimal nutrient mixtures</p>
+                                <h3 className="text-lg font-bold text-blue-300 group-hover:text-lime-200">Nutrient Calculator</h3>
+                                <p className="text-slate-400 text-sm">Calculate optimal nutrient mixtures</p>
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 NPK ratio calculations
                               </div>
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Growth stage adjustments
                               </div>
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Water volume calculations
                               </div>
@@ -3362,27 +3369,27 @@ export default function CultivAIPro() {
 
                       {/* Pest & Disease Identifier */}
                       <Link href="/tools/pest-disease-id" className="block">
-                        <Card className="bg-emerald-900/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 hover:shadow-lg hover:shadow-lime-400/20 group">
+                        <Card className="bg-slate-900/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:shadow-lg hover:shadow-lime-400/20 group">
                           <CardContent className="p-6">
                             <div className="flex items-center mb-4">
-                              <div className="bg-emerald-800 p-3 rounded-lg mr-4 group-hover:bg-lime-500 transition-colors">
-                                <Bug className="h-6 w-6 text-lime-400 group-hover:text-emerald-900" />
+                              <div className="bg-slate-800 p-3 rounded-lg mr-4 group-hover:bg-blue-500 transition-colors">
+                                <Bug className="h-6 w-6 text-blue-400 group-hover:text-slate-900" />
                               </div>
                               <div>
-                                <h3 className="text-lg font-bold text-lime-300 group-hover:text-lime-200">Pest & Disease ID</h3>
-                                <p className="text-emerald-400 text-sm">Identify and treat plant issues</p>
+                                <h3 className="text-lg font-bold text-blue-300 group-hover:text-lime-200">Pest & Disease ID</h3>
+                                <p className="text-slate-400 text-sm">Identify and treat plant issues</p>
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Visual symptom analysis
                               </div>
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Treatment recommendations
                               </div>
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Prevention strategies
                               </div>
@@ -3393,27 +3400,27 @@ export default function CultivAIPro() {
 
                       {/* Harvest Tracker */}
                       <Link href="/tools/harvest-tracker" className="block">
-                        <Card className="bg-emerald-900/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 hover:shadow-lg hover:shadow-lime-400/20 group">
+                        <Card className="bg-slate-900/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:shadow-lg hover:shadow-lime-400/20 group">
                           <CardContent className="p-6">
                             <div className="flex items-center mb-4">
-                              <div className="bg-emerald-800 p-3 rounded-lg mr-4 group-hover:bg-lime-500 transition-colors">
-                                <Scissors className="h-6 w-6 text-lime-400 group-hover:text-emerald-900" />
+                              <div className="bg-slate-800 p-3 rounded-lg mr-4 group-hover:bg-blue-500 transition-colors">
+                                <Scissors className="h-6 w-6 text-blue-400 group-hover:text-slate-900" />
                               </div>
                               <div>
-                                <h3 className="text-lg font-bold text-lime-300 group-hover:text-lime-200">Harvest Tracker</h3>
-                                <p className="text-emerald-400 text-sm">Monitor and optimize harvests</p>
+                                <h3 className="text-lg font-bold text-blue-300 group-hover:text-lime-200">Harvest Tracker</h3>
+                                <p className="text-slate-400 text-sm">Monitor and optimize harvests</p>
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Yield tracking & predictions
                               </div>
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Harvest timing optimization
                               </div>
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Quality metrics tracking
                               </div>
@@ -3424,27 +3431,27 @@ export default function CultivAIPro() {
 
                       {/* Inventory Manager */}
                       <Link href="/tools/inventory-manager" className="block">
-                        <Card className="bg-emerald-900/50 border-emerald-700 hover:border-lime-400 transition-all duration-300 hover:shadow-lg hover:shadow-lime-400/20 group">
+                        <Card className="bg-slate-900/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:shadow-lg hover:shadow-lime-400/20 group">
                           <CardContent className="p-6">
                             <div className="flex items-center mb-4">
-                              <div className="bg-emerald-800 p-3 rounded-lg mr-4 group-hover:bg-lime-500 transition-colors">
-                                <Package className="h-6 w-6 text-lime-400 group-hover:text-emerald-900" />
+                              <div className="bg-slate-800 p-3 rounded-lg mr-4 group-hover:bg-blue-500 transition-colors">
+                                <Package className="h-6 w-6 text-blue-400 group-hover:text-slate-900" />
                               </div>
                               <div>
-                                <h3 className="text-lg font-bold text-lime-300 group-hover:text-lime-200">Inventory Manager</h3>
-                                <p className="text-emerald-400 text-sm">Manage supplies and equipment</p>
+                                <h3 className="text-lg font-bold text-blue-300 group-hover:text-lime-200">Inventory Manager</h3>
+                                <p className="text-slate-400 text-sm">Manage supplies and equipment</p>
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Stock level monitoring
                               </div>
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Automated reordering
                               </div>
-                              <div className="flex items-center text-emerald-300 text-sm">
+                              <div className="flex items-center text-slate-300 text-sm">
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
                                 Supply cost tracking
                               </div>
@@ -3456,32 +3463,32 @@ export default function CultivAIPro() {
 
                     {/* Quick Stats Section */}
                     <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <Card className="bg-emerald-900/50 border-emerald-700">
+                      <Card className="bg-slate-900/50 border-slate-600">
                         <CardContent className="p-4 text-center">
-                          <Calculator className="h-8 w-8 text-lime-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-lime-300">4</div>
-                          <div className="text-xs text-emerald-400">Active Tools</div>
+                          <Calculator className="h-8 w-8 text-blue-400 mx-auto mb-2" />
+                          <div className="text-2xl font-bold text-blue-300">4</div>
+                          <div className="text-xs text-slate-400">Active Tools</div>
                         </CardContent>
                       </Card>
-                      <Card className="bg-emerald-900/50 border-emerald-700">
+                      <Card className="bg-slate-900/50 border-slate-600">
                         <CardContent className="p-4 text-center">
                           <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-lime-300">98%</div>
-                          <div className="text-xs text-emerald-400">Accuracy Rate</div>
+                          <div className="text-2xl font-bold text-blue-300">98%</div>
+                          <div className="text-xs text-slate-400">Accuracy Rate</div>
                         </CardContent>
                       </Card>
-                      <Card className="bg-emerald-900/50 border-emerald-700">
+                      <Card className="bg-slate-900/50 border-slate-600">
                         <CardContent className="p-4 text-center">
                           <Users className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-lime-300">24/7</div>
-                          <div className="text-xs text-emerald-400">AI Assistance</div>
+                          <div className="text-2xl font-bold text-blue-300">24/7</div>
+                          <div className="text-xs text-slate-400">AI Assistance</div>
                         </CardContent>
                       </Card>
-                      <Card className="bg-emerald-900/50 border-emerald-700">
+                      <Card className="bg-slate-900/50 border-slate-600">
                         <CardContent className="p-4 text-center">
                           <Target className="h-8 w-8 text-purple-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-lime-300">Pro</div>
-                          <div className="text-xs text-emerald-400">Tool Suite</div>
+                          <div className="text-2xl font-bold text-blue-300">Pro</div>
+                          <div className="text-xs text-slate-400">Tool Suite</div>
                         </CardContent>
                       </Card>
                     </div>
@@ -3493,21 +3500,21 @@ export default function CultivAIPro() {
             {/* Settings Dashboard */}
             {activeDashboard === 'settings' && (
               <div className="space-y-6">
-                <Card className="bg-emerald-950/70 backdrop-blur-sm border-emerald-800">
+                <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
                   <CardHeader>
                     <div className="flex items-center">
-                      <div className="bg-lime-500 p-2 rounded-lg mr-3">
-                        <Settings className="h-5 w-5 text-emerald-900" />
+                      <div className="bg-blue-500 p-2 rounded-lg mr-3">
+                        <Settings className="h-5 w-5 text-slate-900" />
                       </div>
-                      <CardTitle className="text-xl font-bold text-lime-300">Settings</CardTitle>
+                      <CardTitle className="text-xl font-bold text-blue-300">Settings</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="ai" className="w-full">
-                      <TabsList className="grid w-full grid-cols-3 bg-emerald-800">
-                        <TabsTrigger value="ai" className="text-emerald-300">AI Provider</TabsTrigger>
-                        <TabsTrigger value="notifications" className="text-emerald-300">Notifications</TabsTrigger>
-                        <TabsTrigger value="general" className="text-emerald-300">General</TabsTrigger>
+                      <TabsList className="grid w-full grid-cols-3 bg-slate-800">
+                        <TabsTrigger value="ai" className="text-slate-300">AI Provider</TabsTrigger>
+                        <TabsTrigger value="notifications" className="text-slate-300">Notifications</TabsTrigger>
+                        <TabsTrigger value="general" className="text-slate-300">General</TabsTrigger>
                       </TabsList>
                       
                       <TabsContent value="ai" className="space-y-6 mt-6">
@@ -3515,9 +3522,9 @@ export default function CultivAIPro() {
                       </TabsContent>
                       
                       <TabsContent value="notifications" className="space-y-6 mt-6">
-                        <Card className="bg-emerald-900/50 border-emerald-800">
+                        <Card className="bg-slate-900/50 border-slate-700">
                           <CardHeader>
-                            <CardTitle className="text-lg font-bold text-lime-300 flex items-center">
+                            <CardTitle className="text-lg font-bold text-blue-300 flex items-center">
                               <Bell className="h-5 w-5 mr-2 text-amber-400" />
                               Notification Settings
                             </CardTitle>
@@ -3525,8 +3532,8 @@ export default function CultivAIPro() {
                           <CardContent className="space-y-4">
                             <div className="flex items-center justify-between">
                               <div>
-                                <Label className="text-emerald-300">Enable Notifications</Label>
-                                <p className="text-xs text-emerald-400">Receive alerts for system events</p>
+                                <Label className="text-slate-300">Enable Notifications</Label>
+                                <p className="text-xs text-slate-400">Receive alerts for system events</p>
                               </div>
                               <Switch
                                 checked={settings.notifications.enabled}
@@ -3539,8 +3546,8 @@ export default function CultivAIPro() {
                             
                             <div className="flex items-center justify-between">
                               <div>
-                                <Label className="text-emerald-300">Sound Alerts</Label>
-                                <p className="text-xs text-emerald-400">Play sound for notifications</p>
+                                <Label className="text-slate-300">Sound Alerts</Label>
+                                <p className="text-xs text-slate-400">Play sound for notifications</p>
                               </div>
                               <Switch
                                 checked={settings.notifications.sound}
@@ -3553,8 +3560,8 @@ export default function CultivAIPro() {
                             
                             <div className="flex items-center justify-between">
                               <div>
-                                <Label className="text-emerald-300">Desktop Notifications</Label>
-                                <p className="text-xs text-emerald-400">Show system notifications</p>
+                                <Label className="text-slate-300">Desktop Notifications</Label>
+                                <p className="text-xs text-slate-400">Show system notifications</p>
                               </div>
                               <Switch
                                 checked={settings.notifications.desktop}
@@ -3569,21 +3576,21 @@ export default function CultivAIPro() {
                       </TabsContent>
                       
                       <TabsContent value="general" className="space-y-6 mt-6">
-                        <Card className="bg-emerald-900/50 border-emerald-800">
+                        <Card className="bg-slate-900/50 border-slate-700">
                           <CardHeader>
-                            <CardTitle className="text-lg font-bold text-lime-300 flex items-center">
+                            <CardTitle className="text-lg font-bold text-blue-300 flex items-center">
                               <Monitor className="h-5 w-5 mr-2 text-cyan-400" />
                               General Settings
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-4">
                             <div>
-                              <Label className="text-emerald-300 mb-3 block">Temperature Units</Label>
+                              <Label className="text-slate-300 mb-3 block">Temperature Units</Label>
                               <Select value={settings.units.temperature} onValueChange={(value) => setSettings(prev => ({
                                 ...prev,
                                 units: { ...prev.units, temperature: value }
                               }))}>
-                                <SelectTrigger className="w-full bg-emerald-800 border-emerald-700">
+                                <SelectTrigger className="w-full bg-slate-800 border-slate-600">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -3594,12 +3601,12 @@ export default function CultivAIPro() {
                             </div>
                             
                             <div>
-                              <Label className="text-emerald-300 mb-3 block">Weight Units</Label>
+                              <Label className="text-slate-300 mb-3 block">Weight Units</Label>
                               <Select value={settings.units.weight} onValueChange={(value) => setSettings(prev => ({
                                 ...prev,
                                 units: { ...prev.units, weight: value }
                               }))}>
-                                <SelectTrigger className="w-full bg-emerald-800 border-emerald-700">
+                                <SelectTrigger className="w-full bg-slate-800 border-slate-600">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -3610,15 +3617,15 @@ export default function CultivAIPro() {
                               </Select>
                             </div>
                             
-                            <div className="pt-4 border-t border-emerald-700">
-                              <Button variant="outline" className="w-full bg-emerald-800 hover:bg-emerald-700 border-emerald-700">
+                            <div className="pt-4 border-t border-slate-600">
+                              <Button variant="outline" className="w-full bg-slate-800 hover:bg-slate-700 border-slate-600">
                                 <DownloadCloud className="h-4 w-4 mr-2" />
                                 Export Settings
                               </Button>
                             </div>
                             
                             <div>
-                              <Button variant="outline" className="w-full bg-emerald-800 hover:bg-emerald-700 border-emerald-700">
+                              <Button variant="outline" className="w-full bg-slate-800 hover:bg-slate-700 border-slate-600">
                                 <UploadCloud className="h-4 w-4 mr-2" />
                                 Import Settings
                               </Button>
@@ -3637,10 +3644,10 @@ export default function CultivAIPro() {
 
       {/* AI Chat Modal */}
       <Dialog open={showAIChat} onOpenChange={setShowAIChat}>
-        <DialogContent className="bg-emerald-900 w-full max-w-md rounded-2xl border-emerald-800 shadow-2xl max-h-[500px] flex flex-col">
+        <DialogContent className="bg-slate-900 w-full max-w-md rounded-2xl border-slate-700 shadow-2xl max-h-[500px] flex flex-col">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-bold text-lime-300 flex items-center">
+              <DialogTitle className="text-lg font-bold text-blue-300 flex items-center">
                 <Bot className="h-4 w-4 mr-2 text-purple-400" />
                 AI Assistant
               </DialogTitle>
@@ -3648,7 +3655,7 @@ export default function CultivAIPro() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAIChat(false)}
-                className="text-emerald-400 hover:text-lime-400"
+                className="text-slate-400 hover:text-blue-400"
               >
                 <XCircle className="h-5 w-5" />
               </Button>
@@ -3666,17 +3673,17 @@ export default function CultivAIPro() {
               >
                 <div className={`max-w-[80%] rounded-lg p-2 ${
                   message.role === 'user'
-                    ? 'bg-lime-500 text-emerald-900'
+                    ? 'bg-blue-500 text-slate-900'
                     : message.isError
                     ? 'bg-red-900/50 border border-red-700 text-red-200'
-                    : 'bg-emerald-800/50 border border-emerald-700 text-emerald-200'
+                    : 'bg-slate-800/50 border border-slate-600 text-slate-200'
                 }`}>
                   {message.image && (
                     <div className="mb-2">
                       <img
                         src={message.image}
                         alt="Uploaded image"
-                        className="max-w-full h-auto rounded border border-emerald-600"
+                        className="max-w-full h-auto rounded border border-blue-600"
                         style={{ maxHeight: '150px' }}
                       />
                     </div>
@@ -3693,22 +3700,22 @@ export default function CultivAIPro() {
             
             {isProcessingAI && (
               <div className="flex justify-start">
-                <div className="bg-emerald-800/50 border border-emerald-700 rounded-lg p-2 flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-emerald-400" />
-                  <span className="text-sm text-emerald-300">Thinking...</span>
+                <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-2 flex items-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-400" />
+                  <span className="text-sm text-slate-300">Thinking...</span>
                 </div>
               </div>
             )}
           </div>
           
-          <div className="p-3 border-t border-emerald-800">
+          <div className="p-3 border-t border-slate-700">
             {/* Chat Image Preview */}
             {chatImage && (
               <div className="mb-3 relative">
                 <img
                   src={chatImage}
                   alt="Chat image preview"
-                  className="max-w-full h-auto rounded border border-emerald-600"
+                  className="max-w-full h-auto rounded border border-blue-600"
                   style={{ maxHeight: '120px' }}
                 />
                 <Button
@@ -3729,7 +3736,7 @@ export default function CultivAIPro() {
                 variant="outline"
                 size="sm"
                 onClick={() => chatImageInputRef.current?.click()}
-                className="bg-emerald-800/50 border-emerald-600 text-emerald-300 hover:bg-emerald-700 px-3"
+                className="bg-slate-800/50 border-blue-600 text-slate-300 hover:bg-slate-700 px-3"
               >
                 <Upload className="h-4 w-4" />
               </Button>
@@ -3738,7 +3745,7 @@ export default function CultivAIPro() {
                 value={aiInput}
                 onChange={(e) => setAIInput(e.target.value)}
                 placeholder="Ask about plant care..."
-                className="flex-1 bg-emerald-800 border-emerald-700 text-emerald-200 placeholder-emerald-400"
+                className="flex-1 bg-slate-800 border-slate-600 text-slate-200 placeholder-emerald-400"
               />
               <Button
                 type="submit"
@@ -3755,7 +3762,7 @@ export default function CultivAIPro() {
                 className="hidden"
               />
             </form>
-            <p className="text-xs text-emerald-400 mt-2 text-center">
+            <p className="text-xs text-slate-400 mt-2 text-center">
               Powered by {settings.aiProvider === 'lm-studio' ? 'LM Studio' : 'OpenRouter'} •
               {chatImage ? ' Image attached' : ' Click upload button to add image'} •
               AI-generated responses for informational purposes only
@@ -3766,17 +3773,17 @@ export default function CultivAIPro() {
       
       {/* Strain Modal */}
       <Dialog open={showStrainModal} onOpenChange={setShowStrainModal}>
-        <DialogContent className="bg-emerald-900 w-full max-w-2xl rounded-2xl border-emerald-800 shadow-2xl max-h-[70vh] overflow-y-auto">
+        <DialogContent className="bg-slate-900 w-full max-w-2xl rounded-2xl border-slate-700 shadow-2xl max-h-[70vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl font-bold text-lime-300 flex items-center">
-                <Wheat className="h-5 w-5 mr-2 text-lime-400" />
+              <DialogTitle className="text-xl font-bold text-blue-300 flex items-center">
+                <Wheat className="h-5 w-5 mr-2 text-blue-400" />
                 {editingStrain ? 'Edit Strain' : 'Add Custom Strain'}
               </DialogTitle>
               <Button 
                 variant="ghost"
                 onClick={() => { setShowStrainModal(false); setEditingStrain(null); }}
-                className="text-emerald-400 hover:text-lime-400"
+                className="text-slate-400 hover:text-blue-400"
               >
                 <XCircle className="h-5 w-5" />
               </Button>
@@ -3785,21 +3792,21 @@ export default function CultivAIPro() {
           
           <div className="space-y-4">
             <div>
-              <Label className="block text-emerald-300 mb-2 flex items-center">
-                <Tag className="h-4 w-4 mr-2 text-lime-400" />
+              <Label className="block text-slate-300 mb-2 flex items-center">
+                <Tag className="h-4 w-4 mr-2 text-blue-400" />
                 Strain Name
               </Label>
               <Input
                 type="text"
                 value={newStrain.name}
                 onChange={(e) => setNewStrain({...newStrain, name: e.target.value})}
-                className="w-full bg-emerald-900/50 border-emerald-700 placeholder-emerald-400"
+                className="w-full bg-slate-900/50 border-slate-600 placeholder-emerald-400"
                 placeholder="e.g., Granddaddy Purple"
               />
             </div>
             
             <div>
-              <Label className="block text-emerald-300 mb-2 flex items-center">
+              <Label className="block text-slate-300 mb-2 flex items-center">
                 <Palette className="h-4 w-4 mr-2 text-purple-400" />
                 Purple Strain
               </Label>
@@ -3809,21 +3816,21 @@ export default function CultivAIPro() {
                   checked={newStrain.isPurpleStrain}
                   onCheckedChange={(checked) => setNewStrain({...newStrain, isPurpleStrain: checked})}
                 />
-                <Label htmlFor="purple-strain" className="text-emerald-200">This is a purple strain</Label>
+                <Label htmlFor="purple-strain" className="text-slate-200">This is a purple strain</Label>
               </div>
             </div>
             
-            <div className="flex justify-end space-x-3 pt-4 border-t border-emerald-800">
+            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-700">
               <Button
                 variant="outline"
                 onClick={() => { setShowStrainModal(false); setEditingStrain(null); }}
-                className="bg-emerald-800 hover:bg-emerald-700 text-emerald-200"
+                className="bg-slate-800 hover:bg-slate-700 text-slate-200"
               >
                 Cancel
               </Button>
               <Button
                 onClick={editingStrain ? handleUpdateStrain : handleAddStrain}
-                className="bg-gradient-to-r from-lime-500 to-emerald-600 hover:from-lime-400 hover:to-emerald-500 text-emerald-900"
+                className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-400 hover:to-sky-500 text-slate-900"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {editingStrain ? 'Update' : 'Add'} Strain
@@ -3835,17 +3842,17 @@ export default function CultivAIPro() {
       
       {/* History Modal */}
       <Dialog open={showHistoryModal} onOpenChange={setShowHistoryModal}>
-        <DialogContent className="bg-emerald-900 w-full max-w-3xl rounded-2xl border-emerald-800 shadow-2xl max-h-[80vh] flex flex-col">
+        <DialogContent className="bg-slate-900 w-full max-w-3xl rounded-2xl border-slate-700 shadow-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl font-bold text-lime-300 flex items-center">
-                <Database className="h-5 w-5 mr-2 text-lime-400" />
+              <DialogTitle className="text-xl font-bold text-blue-300 flex items-center">
+                <Database className="h-5 w-5 mr-2 text-blue-400" />
                 Analysis History
               </DialogTitle>
               <Button 
                 variant="ghost"
                 onClick={() => { setShowHistoryModal(false); setSelectedHistoryItem(null); }}
-                className="text-emerald-400 hover:text-lime-400"
+                className="text-slate-400 hover:text-blue-400"
               >
                 <XCircle className="h-5 w-5" />
               </Button>
@@ -3855,9 +3862,9 @@ export default function CultivAIPro() {
           <div className="flex-1 overflow-y-auto p-4">
             {plantHistory.length === 0 ? (
               <div className="text-center py-12">
-                <Database className="h-12 w-12 mx-auto mb-3 text-emerald-500" />
-                <p className="text-emerald-300 text-lg font-medium">No history yet</p>
-                <p className="text-emerald-400 mt-2">Perform your first analysis to build your history</p>
+                <Database className="h-12 w-12 mx-auto mb-3 text-slate-500" />
+                <p className="text-slate-300 text-lg font-medium">No history yet</p>
+                <p className="text-slate-400 mt-2">Perform your first analysis to build your history</p>
               </div>
             ) : (
               <div className="space-y-3">

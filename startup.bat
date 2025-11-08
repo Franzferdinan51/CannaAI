@@ -117,19 +117,21 @@ if not errorlevel 1 (
 :: Display startup options
 echo ========================================
 echo Select startup mode:
-echo 1. Development Mode ^(with hot reload^)
-echo 2. Production Mode ^(optimized build^)
+echo 1. Development Mode ^(with hot reload - Local^)
+echo 2. Production Mode ^(optimized build - Local^)
 echo 3. Development Mode + Database Reset
 echo 4. Install Dependencies Only
-echo 5. Exit
+echo 5. Remote Development Mode ^(Tailscale + Network^)
+echo 6. Exit
 echo ========================================
-set /p choice="Enter your choice (1-5): "
+set /p choice="Enter your choice (1-6): "
 
 if "!choice!"=="1" goto DEV_MODE
 if "!choice!"=="2" goto PROD_MODE
 if "!choice!"=="3" goto DEV_RESET
 if "!choice!"=="4" goto INSTALL_ONLY
-if "!choice!"=="5" goto END
+if "!choice!"=="5" goto REMOTE_DEV_MODE
+if "!choice!"=="6" goto END
 
 echo [ERROR] Invalid choice. Please enter 1-5.
 pause
@@ -227,6 +229,29 @@ if errorlevel 1 (
 
 echo [SUCCESS] Dependencies installed/updated successfully
 echo [INFO] You can now run the script again to start the application
+goto END
+
+:REMOTE_DEV_MODE
+echo.
+echo [INFO] Starting CannaAI in Remote Development Mode...
+echo [INFO] This mode enables network access for Tailscale and local network connections
+if "!USE_ALT_PORT!"=="1" (
+    echo [INFO] Server will be available at: http://0.0.0.0:3001
+    echo [INFO] Local access: http://127.0.0.1:3001
+    set PORT=3001
+) else (
+    echo [INFO] Server will be available at: http://0.0.0.0:3000
+    echo [INFO] Local access: http://127.0.0.1:3000
+    set PORT=3000
+)
+echo [INFO] Network access enabled for Tailscale and LAN connections
+echo [INFO] Console output will be displayed below
+echo [INFO] Press Ctrl+C to stop the server
+echo.
+
+:: Set HOST and PORT environment variables for remote access and start
+echo [INFO] Starting remote server with HOST=0.0.0.0 and PORT=!PORT!...
+cmd /c "set HOST=0.0.0.0 && set PORT=!PORT! && npm run dev"
 goto END
 
 :END

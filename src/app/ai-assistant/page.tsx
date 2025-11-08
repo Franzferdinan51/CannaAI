@@ -332,7 +332,7 @@ export default function AIAssistant() {
   const currentModel = models.find(m => m.id === settings.model);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className="container mx-auto p-4 max-w-6xl">
         {/* Header */}
         <motion.div
@@ -342,18 +342,18 @@ export default function AIAssistant() {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-sky-600 rounded-xl">
                 <Brain className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-emerald-100">AI Assistant</h1>
-                <p className="text-emerald-300 text-sm">Your intelligent cannabis cultivation companion</p>
+                <h1 className="text-3xl font-bold text-slate-100">AI Assistant</h1>
+                <p className="text-slate-300 text-sm">Your intelligent cannabis cultivation companion</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
               {currentModel && (
-                <Badge variant="secondary" className="bg-emerald-800/50 text-emerald-200 border-emerald-700">
+                <Badge variant="secondary" className="bg-slate-800/50 text-slate-200 border-slate-600">
                   <Bot className="h-3 w-3 mr-1" />
                   {currentModel.name}
                   {currentModel.hasVision && <Eye className="h-3 w-3 ml-1" />}
@@ -364,14 +364,14 @@ export default function AIAssistant() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowSettings(!showSettings)}
-                className="bg-emerald-800/50 border-emerald-700 text-emerald-200 hover:bg-emerald-700/50"
+                className="bg-slate-800/50 border-slate-600 text-slate-200 hover:bg-slate-700/50"
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
 
               <Link href="/">
-                <Button variant="outline" size="sm" className="bg-emerald-800/50 border-emerald-700 text-emerald-200 hover:bg-emerald-700/50">
+                <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600 text-slate-200 hover:bg-slate-700/50">
                   Back to Dashboard
                 </Button>
               </Link>
@@ -382,7 +382,7 @@ export default function AIAssistant() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Chat Area */}
           <div className="lg:col-span-3">
-            <Card className="bg-emerald-900/30 border-emerald-700 backdrop-blur-sm h-[700px] flex flex-col">
+            <Card className="bg-slate-900/30 border-slate-600 backdrop-blur-sm h-[700px] flex flex-col">
               {/* Chat Messages */}
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
@@ -425,16 +425,16 @@ export default function AIAssistant() {
 
         {/* Settings Dialog */}
         <Dialog open={showSettings} onOpenChange={setShowSettings}>
-          <DialogContent className="bg-emerald-900 border-emerald-700 text-emerald-100 max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="bg-slate-900 border-slate-600 text-slate-100 max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-emerald-100">AI Assistant Settings</DialogTitle>
+              <DialogTitle className="text-slate-100">AI Assistant Settings</DialogTitle>
             </DialogHeader>
 
             <Tabs defaultValue="provider" className="w-full">
-              <TabsList className="bg-emerald-800 border-emerald-700">
-                <TabsTrigger value="provider" className="text-emerald-200">AI Provider</TabsTrigger>
-                <TabsTrigger value="model" className="text-emerald-200">Model Selection</TabsTrigger>
-                <TabsTrigger value="chat" className="text-emerald-200">Chat Settings</TabsTrigger>
+              <TabsList className="bg-slate-800 border-slate-600">
+                <TabsTrigger value="provider" className="text-slate-200">AI Provider</TabsTrigger>
+                <TabsTrigger value="model" className="text-slate-200">Model Selection</TabsTrigger>
+                <TabsTrigger value="chat" className="text-slate-200">Chat Settings</TabsTrigger>
               </TabsList>
 
               <TabsContent value="provider" className="mt-4">
@@ -443,22 +443,22 @@ export default function AIAssistant() {
 
               <TabsContent value="model" className="mt-4">
                 <div className="space-y-4">
-                  <h3 className="text-emerald-200 font-medium">Select AI Model</h3>
+                  <h3 className="text-slate-200 font-medium">Select AI Model</h3>
                   <div className="grid gap-2 max-h-60 overflow-y-auto">
                     {models.map((model) => (
                       <div
                         key={model.id}
                         className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                           settings.model === model.id
-                            ? 'border-emerald-500 bg-emerald-800/50'
-                            : 'border-emerald-700 hover:border-emerald-600 bg-emerald-900/30'
+                            ? 'border-blue-500 bg-slate-800/50'
+                            : 'border-slate-600 hover:border-blue-600 bg-slate-900/30'
                         }`}
                         onClick={() => setSettings(prev => ({ ...prev, model: model.id }))}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Bot className="h-4 w-4 text-emerald-400" />
-                            <span className="text-emerald-200 text-sm font-medium">{model.name}</span>
+                            <Bot className="h-4 w-4 text-slate-400" />
+                            <span className="text-slate-200 text-sm font-medium">{model.name}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             {model.hasVision && (
@@ -467,7 +467,7 @@ export default function AIAssistant() {
                                 Vision
                               </Badge>
                             )}
-                            <Badge variant="outline" className="text-emerald-300 border-emerald-600">
+                            <Badge variant="outline" className="text-slate-300 border-blue-600">
                               {model.provider}
                             </Badge>
                           </div>
@@ -480,42 +480,42 @@ export default function AIAssistant() {
 
               <TabsContent value="chat" className="mt-4">
                 <div className="space-y-4">
-                  <h3 className="text-emerald-200 font-medium">Chat Preferences</h3>
+                  <h3 className="text-slate-200 font-medium">Chat Preferences</h3>
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="text-emerald-200 text-sm font-medium">Enable Chat History</label>
-                        <p className="text-emerald-400 text-xs">Save conversations locally</p>
+                        <label className="text-slate-200 text-sm font-medium">Enable Chat History</label>
+                        <p className="text-slate-400 text-xs">Save conversations locally</p>
                       </div>
                       <input
                         type="checkbox"
                         checked={settings.enableHistory}
                         onChange={(e) => setSettings(prev => ({ ...prev, enableHistory: e.target.checked }))}
-                        className="rounded bg-emerald-800 border-emerald-600 text-emerald-500"
+                        className="rounded bg-slate-800 border-blue-600 text-blue-500"
                       />
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="text-emerald-200 text-sm font-medium">Auto-save Messages</label>
-                        <p className="text-emerald-400 text-xs">Automatically save after each message</p>
+                        <label className="text-slate-200 text-sm font-medium">Auto-save Messages</label>
+                        <p className="text-slate-400 text-xs">Automatically save after each message</p>
                       </div>
                       <input
                         type="checkbox"
                         checked={settings.autoSave}
                         onChange={(e) => setSettings(prev => ({ ...prev, autoSave: e.target.checked }))}
-                        className="rounded bg-emerald-800 border-emerald-600 text-emerald-500"
+                        className="rounded bg-slate-800 border-blue-600 text-blue-500"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-emerald-200 text-sm font-medium">System Prompt</label>
+                    <label className="text-slate-200 text-sm font-medium">System Prompt</label>
                     <Textarea
                       value={settings.systemPrompt}
                       onChange={(e) => setSettings(prev => ({ ...prev, systemPrompt: e.target.value }))}
-                      className="bg-emerald-800 border-emerald-600 text-emerald-100 placeholder-emerald-500"
+                      className="bg-slate-800 border-blue-600 text-slate-100 placeholder-slate-500"
                       rows={3}
                     />
                   </div>
