@@ -337,7 +337,7 @@ export default function FloatingAIAssistant({
             {/* Messages area */}
             {!isMinimized && (
               <div className="flex flex-col h-[calc(100%-140px)]">
-                <ScrollArea className="flex-1 p-3">
+                <ScrollArea className="flex-1 p-3 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 hover:scrollbar-thumb-slate-500">
                   <div className="space-y-3">
                     {messages.length === 0 && (
                       <div className="text-center text-slate-400 py-8">

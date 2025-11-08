@@ -215,7 +215,7 @@ const CultivationAssistantSidebar: React.FC<CultivationAssistantSidebarProps> = 
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
           {messages.length === 0 && !isLoading && (
             <div className="text-center py-8">
               <Leaf className="h-12 w-12 text-slate-600 mx-auto mb-3" />

@@ -198,7 +198,7 @@ const CannaAISidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 hover:scrollbar-thumb-slate-500">
           <nav className="p-4 space-y-6">
             {/* Main Tools */}
             <div>
