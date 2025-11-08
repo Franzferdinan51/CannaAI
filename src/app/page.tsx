@@ -687,7 +687,7 @@ export default function CultivAIPro() {
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (file && (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif'))) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImage(reader.result);
@@ -698,7 +698,7 @@ export default function CultivAIPro() {
 
   const handleChatImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (file && (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif'))) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setChatImage(reader.result);
@@ -1952,7 +1952,7 @@ export default function CultivAIPro() {
                             type="file"
                             ref={fileInputRef}
                             onChange={handleImageUpload}
-                            accept="image/*"
+                            accept="image/*,.heic,.heif"
                             className="hidden"
                           />
                         </div>
@@ -1988,7 +1988,7 @@ export default function CultivAIPro() {
                             type="file" 
                             ref={fileInputRef}
                             onChange={handleImageUpload}
-                            accept="image/*" 
+                            accept="image/*,.heic,.heif" 
                             className="hidden" 
                           />
                         </div>
@@ -3750,7 +3750,7 @@ export default function CultivAIPro() {
               <input
                 ref={chatImageInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 onChange={handleChatImageUpload}
                 className="hidden"
               />

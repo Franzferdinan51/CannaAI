@@ -42,7 +42,7 @@ export function ChatInput({
   };
 
   const handleImageUpload = (file: File) => {
-    if (file && file.type.startsWith('image/')) {
+    if (file && (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif'))) {
       if (file.size > 20 * 1024 * 1024) {
         alert('Image size must be less than 20MB');
         return;
@@ -135,7 +135,7 @@ export function ChatInput({
 
         <div className="flex items-center gap-2 mt-2 text-xs text-emerald-400">
           <Info className="h-3 w-3" />
-          <span>Drag & drop images here • Max 20MB • JPG, PNG, WebP supported</span>
+          <span>Drag & drop images here • Max 20MB • JPG, PNG, WebP, HEIC, HEIF supported</span>
         </div>
       </div>
     </div>

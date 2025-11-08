@@ -169,7 +169,7 @@ export default function AIAssistant() {
   };
 
   const handleImageUpload = (file: File) => {
-    if (file && file.type.startsWith('image/')) {
+    if (file && (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif'))) {
       if (file.size > 20 * 1024 * 1024) {
         alert('Image size must be less than 20MB');
         return;

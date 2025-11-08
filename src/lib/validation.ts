@@ -102,8 +102,11 @@ export const analyzeRequestSchema = z.object({
     .refine((val) => {
       if (!val) return true; // Optional
       try {
-        // Basic base64 validation for data URLs
-        return val.startsWith('data:image/') && val.includes('base64,');
+        // Basic base64 validation for data URLs - support HEIC/HEIF
+        return (val.startsWith('data:image/') && val.includes('base64,')) ||
+               (val.startsWith('data:application/octet-stream') && val.includes('base64,')) ||
+               (val.startsWith('data:file/') && val.includes('heic;base64,')) ||
+               (val.startsWith('data:file/') && val.includes('heif;base64,'));
       } catch {
         return false;
       }
