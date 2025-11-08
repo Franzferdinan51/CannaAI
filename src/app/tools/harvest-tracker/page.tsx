@@ -17,7 +17,7 @@ import {
   Scissors, Plus, TrendingUp, Calendar, Weight,
   Timer, BarChart3, Package, Filter, Download,
   AlertCircle, CheckCircle, Clock, Target,
-  Activity, Zap, Droplets, ThermometerSun, Edit
+  Activity, Zap, Droplets, ThermometerSun, Edit, Trash2
 } from 'lucide-react';
 import {
   LineChart,
@@ -295,6 +295,13 @@ export default function HarvestTracker() {
     }));
   };
 
+  // Delete harvest
+  const handleDeleteHarvest = (id: string) => {
+    setHarvests(harvests.filter(h => h.id !== id));
+    // Also remove associated curing batches
+    setCuringBatches(curingBatches.filter(cb => cb.harvestId !== id));
+  };
+
   // Get unique strains for filter
   const uniqueStrains = Array.from(new Set(harvests.map(h => h.strain)));
 
@@ -324,7 +331,7 @@ export default function HarvestTracker() {
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 to-lime-900 text-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -334,23 +341,23 @@ export default function HarvestTracker() {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-emerald-700 p-3 rounded-lg">
-                <Scissors className="h-8 w-8 text-lime-300" />
+              <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                <Scissors className="h-8 w-8 text-blue-300" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-lime-300">Harvest Tracker</h1>
-                <p className="text-emerald-400">Comprehensive harvest management and analytics</p>
+                <h1 className="text-4xl font-bold text-blue-300">Harvest Tracker</h1>
+                <p className="text-slate-400">Comprehensive harvest management and analytics</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Button
                 onClick={() => setShowHarvestDialog(true)}
-                className="bg-emerald-700 hover:bg-emerald-600"
+                className="bg-blue-700 hover:bg-blue-600"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Log Harvest
               </Button>
-              <Button variant="outline" className="border-emerald-600 text-emerald-300">
+              <Button variant="outline" className="border-slate-600 text-slate-300">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
@@ -365,67 +372,67 @@ export default function HarvestTracker() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
         >
-          <Card className="bg-emerald-800/50 border-emerald-700">
+          <Card className="bg-slate-900/50 border-slate-700">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-400">Total Harvested</p>
-                  <p className="text-2xl font-bold text-lime-400">{analytics.totalDry}g</p>
-                  <p className="text-xs text-emerald-500">Dry weight</p>
+                  <p className="text-sm text-slate-400">Total Harvested</p>
+                  <p className="text-2xl font-bold text-green-400">{analytics.totalDry}g</p>
+                  <p className="text-xs text-slate-500">Dry weight</p>
                 </div>
-                <Package className="h-8 w-8 text-lime-500" />
+                <Package className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-emerald-800/50 border-emerald-700">
+          <Card className="bg-slate-900/50 border-slate-700">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-400">Avg Yield/Plant</p>
-                  <p className="text-2xl font-bold text-lime-400">{analytics.avgYieldPerPlant}g</p>
-                  <p className="text-xs text-emerald-500">Per plant</p>
+                  <p className="text-sm text-slate-400">Avg Yield/Plant</p>
+                  <p className="text-2xl font-bold text-green-400">{analytics.avgYieldPerPlant}g</p>
+                  <p className="text-xs text-slate-500">Per plant</p>
                 </div>
-                <Target className="h-8 w-8 text-lime-500" />
+                <Target className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-emerald-800/50 border-emerald-700">
+          <Card className="bg-slate-900/50 border-slate-700">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-400">Avg THC</p>
-                  <p className="text-2xl font-bold text-lime-400">{analytics.avgTHC}%</p>
-                  <p className="text-xs text-emerald-500">Potency</p>
+                  <p className="text-sm text-slate-400">Avg THC</p>
+                  <p className="text-2xl font-bold text-green-400">{analytics.avgTHC}%</p>
+                  <p className="text-xs text-slate-500">Potency</p>
                 </div>
-                <Zap className="h-8 w-8 text-lime-500" />
+                <Zap className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-emerald-800/50 border-emerald-700">
+          <Card className="bg-slate-900/50 border-slate-700">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-400">Drying Ratio</p>
-                  <p className="text-2xl font-bold text-lime-400">{analytics.dryingRatio}%</p>
-                  <p className="text-xs text-emerald-500">Dry/Wet</p>
+                  <p className="text-sm text-slate-400">Drying Ratio</p>
+                  <p className="text-2xl font-bold text-green-400">{analytics.dryingRatio}%</p>
+                  <p className="text-xs text-slate-500">Dry/Wet</p>
                 </div>
-                <Droplets className="h-8 w-8 text-lime-500" />
+                <Droplets className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-emerald-800/50 border-emerald-700">
+          <Card className="bg-slate-900/50 border-slate-700">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-400">Total Harvests</p>
-                  <p className="text-2xl font-bold text-lime-400">{analytics.totalHarvests}</p>
-                  <p className="text-xs text-emerald-500">All time</p>
+                  <p className="text-sm text-slate-400">Total Harvests</p>
+                  <p className="text-2xl font-bold text-green-400">{analytics.totalHarvests}</p>
+                  <p className="text-xs text-slate-500">All time</p>
                 </div>
-                <BarChart3 className="h-8 w-8 text-lime-500" />
+                <BarChart3 className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
@@ -439,11 +446,11 @@ export default function HarvestTracker() {
           className="flex flex-wrap gap-4 mb-6"
         >
           <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-emerald-400" />
-            <span className="text-sm text-emerald-400">Filters:</span>
+            <Filter className="h-4 w-4 text-slate-400" />
+            <span className="text-sm text-slate-400">Filters:</span>
           </div>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-40 bg-emerald-800/50 border-emerald-700">
+            <SelectTrigger className="w-40 bg-slate-800/50 border-slate-600">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -455,7 +462,7 @@ export default function HarvestTracker() {
             </SelectContent>
           </Select>
           <Select value={filterStrain} onValueChange={setFilterStrain}>
-            <SelectTrigger className="w-40 bg-emerald-800/50 border-emerald-700">
+            <SelectTrigger className="w-40 bg-slate-800/50 border-slate-600">
               <SelectValue placeholder="Strain" />
             </SelectTrigger>
             <SelectContent>
@@ -469,16 +476,16 @@ export default function HarvestTracker() {
 
         {/* Main Content */}
         <Tabs defaultValue="harvests" className="space-y-6">
-          <TabsList className="bg-emerald-800/50 border-emerald-700">
-            <TabsTrigger value="harvests" className="data-[state=active]:bg-emerald-700">
+          <TabsList className="bg-slate-800/50 border-slate-600">
+            <TabsTrigger value="harvests" className="data-[state=active]:bg-slate-700">
               <Package className="h-4 w-4 mr-2" />
               Harvests
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-emerald-700">
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-700">
               <BarChart3 className="h-4 w-4 mr-2" />
               Analytics
             </TabsTrigger>
-            <TabsTrigger value="curing" className="data-[state=active]:bg-emerald-700">
+            <TabsTrigger value="curing" className="data-[state=active]:bg-slate-700">
               <Timer className="h-4 w-4 mr-2" />
               Curing Batches
             </TabsTrigger>
@@ -494,12 +501,12 @@ export default function HarvestTracker() {
                   animate={{ opacity: 1, scale: 1 }}
                   whileHover={{ scale: 1.02 }}
                 >
-                  <Card className="bg-emerald-800/50 border-emerald-700 hover:border-lime-500 transition-colors">
+                  <Card className="bg-slate-900/50 border-slate-700 hover:border-blue-500 transition-colors">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle className="text-lg text-lime-300">{harvest.strain}</CardTitle>
-                          <p className="text-sm text-emerald-400">{harvest.batchNumber} • {harvest.roomNumber}</p>
+                          <CardTitle className="text-lg text-blue-300">{harvest.strain}</CardTitle>
+                          <p className="text-sm text-slate-400">{harvest.batchNumber} • {harvest.roomNumber}</p>
                         </div>
                         <div className="flex flex-col items-end space-y-1">
                           <Badge className={`${getStatusColor(harvest.status)} text-white`}>
@@ -515,28 +522,28 @@ export default function HarvestTracker() {
                       {/* Harvest Details */}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs text-emerald-400">Harvest Date</p>
-                          <p className="text-sm font-medium text-emerald-200">{harvest.harvestDate}</p>
+                          <p className="text-xs text-slate-400">Harvest Date</p>
+                          <p className="text-sm font-medium text-slate-200">{harvest.harvestDate}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-emerald-400">Flowering Time</p>
-                          <p className="text-sm font-medium text-emerald-200">{harvest.floweringTime} days</p>
+                          <p className="text-xs text-slate-400">Flowering Time</p>
+                          <p className="text-sm font-medium text-slate-200">{harvest.floweringTime} days</p>
                         </div>
                         <div>
-                          <p className="text-xs text-emerald-400">Wet Weight</p>
-                          <p className="text-sm font-medium text-emerald-200">{harvest.wetWeight}g</p>
+                          <p className="text-xs text-slate-400">Wet Weight</p>
+                          <p className="text-sm font-medium text-slate-200">{harvest.wetWeight}g</p>
                         </div>
                         <div>
-                          <p className="text-xs text-emerald-400">Dry Weight</p>
-                          <p className="text-sm font-medium text-lime-400">{harvest.dryWeight}g</p>
+                          <p className="text-xs text-slate-400">Dry Weight</p>
+                          <p className="text-sm font-medium text-green-400">{harvest.dryWeight}g</p>
                         </div>
                         <div>
-                          <p className="text-xs text-emerald-400">Yield/Plant</p>
-                          <p className="text-sm font-medium text-emerald-200">{harvest.yieldPerPlant.toFixed(1)}g</p>
+                          <p className="text-xs text-slate-400">Yield/Plant</p>
+                          <p className="text-sm font-medium text-slate-200">{harvest.yieldPerPlant.toFixed(1)}g</p>
                         </div>
                         <div>
-                          <p className="text-xs text-emerald-400">Plant Count</p>
-                          <p className="text-sm font-medium text-emerald-200">{harvest.plantCount}</p>
+                          <p className="text-xs text-slate-400">Plant Count</p>
+                          <p className="text-sm font-medium text-slate-200">{harvest.plantCount}</p>
                         </div>
                       </div>
 
@@ -558,8 +565,8 @@ export default function HarvestTracker() {
                       {/* Terpenes */}
                       {harvest.terpenes && (
                         <div>
-                          <p className="text-xs text-emerald-400 mb-1">Terpenes</p>
-                          <p className="text-sm text-emerald-200">{harvest.terpenes}</p>
+                          <p className="text-xs text-slate-400 mb-1">Terpenes</p>
+                          <p className="text-sm text-slate-200">{harvest.terpenes}</p>
                         </div>
                       )}
 
@@ -596,9 +603,17 @@ export default function HarvestTracker() {
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedHarvest(harvest)}
-                          className="border-emerald-600 text-emerald-300"
+                          className="border-slate-600 text-slate-300"
                         >
                           Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteHarvest(harvest.id)}
+                          className="border-red-600 text-red-300 hover:bg-red-600 hover:text-white"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
 
