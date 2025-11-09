@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Netlify static export compatibility
+export const runtime = 'edge';
+
 // Default settings
 let currentSettings = {
   aiProvider: 'lm-studio',

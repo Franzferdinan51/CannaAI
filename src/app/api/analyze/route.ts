@@ -3,6 +3,9 @@ import { withSecurity, securityConfig, createAPIResponse, createAPIError } from 
 import { analyzeRequestSchema, validateRequestBody, AnalyzeRequest } from '@/lib/validation';
 import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
 
+// Netlify static export compatibility
+export const runtime = 'edge';
+
 // File size formatting helper
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
