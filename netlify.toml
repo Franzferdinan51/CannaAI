@@ -1,20 +1,19 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  publish = "out"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "9"
 
-[functions]
-  node_version = "18"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
+# Handle SPA routing for static export
 [[redirects]]
   from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Fallback for API routes (will be handled by client-side)
+[[redirects]]
+  from = "/api/*"
   to = "/index.html"
   status = 200
