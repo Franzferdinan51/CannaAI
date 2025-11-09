@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withSecurity, createAPIResponse, createAPIError } from '@/lib/security';
 import { base64ToBuffer, processImageForVisionModel } from '@/lib/image';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 interface TrichomeAnalysisRequest {
   imageData: string; // Base64 image data
   deviceInfo: {

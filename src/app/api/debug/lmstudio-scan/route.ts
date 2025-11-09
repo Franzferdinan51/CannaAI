@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Test the exact path you mentioned
 const TEST_PATHS = [
   'C:\\Users\\Ryan\\.lmstudio\\models',

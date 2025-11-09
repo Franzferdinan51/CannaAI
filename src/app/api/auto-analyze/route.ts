@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server';
 import { withSecurity, securityConfig, createAPIResponse, createAPIError } from '@/lib/security';
 import { autoAnalyzeRequestSchema, validateRequestBody, AutoAnalyzeRequest } from '@/lib/validation';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Auto-analysis thresholds and rules
 const ANALYSIS_THRESHOLDS = {
   temperature: {

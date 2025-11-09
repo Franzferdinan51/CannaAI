@@ -3,6 +3,10 @@ import { withSecurity, createAPIResponse, createAPIError } from '@/lib/security'
 import { base64ToBuffer, processImageForVisionModel } from '@/lib/image';
 import { analyzePlantHealth } from '@/lib/ai';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 interface LiveVisionRequest {
   imageData: string; // Base64 image data
   deviceInfo: {

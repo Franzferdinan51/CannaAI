@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isStaticExport = process.env.BUILD_MODE === 'static';
+
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
@@ -7,20 +9,20 @@ const nextConfig: NextConfig = {
   },
   // 禁用 Next.js 热重载，由 nodemon 处理重编译
   reactStrictMode: false,
-  // Output for static hosting (Netlify)
-  output: 'export',
-  // Remove trailing slash for static hosting
-  trailingSlash: false,
-  // Disable image optimization for static export
-  images: {
-    unoptimized: true
-  },
+  // Output for static hosting (Netlify) - only when BUILD_MODE=static
+  ...(isStaticExport && {
+    output: 'export',
+    trailingSlash: false,
+    images: {
+      unoptimized: true
+    },
+  }),
   // Ensure static export works properly
-  outputFileTracingIncludes: [
-    'src/components/**/*',
-    'src/lib/**/*',
-    'public/**/*',
-  ],
+  ...(isStaticExport && {
+    outputFileTracingIncludes: {
+      '*': ['src/components/**/*', 'src/lib/**/*', 'public/**/*'],
+    },
+  }),
   webpack: (config, { dev, isServer }) => {
     if (dev) {
       // 禁用 webpack 的热模块替换
@@ -29,7 +31,7 @@ const nextConfig: NextConfig = {
       };
     }
     // For static export, handle server-side imports
-    if (!dev && !isServer) {
+    if (!dev && !isServer && isStaticExport) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,

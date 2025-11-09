@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Mock inventory data
 let inventory = [
   { id: 1, name: 'General Hydroponics Flora Series', category: 'Nutrients', quantity: 2, unit: 'L', cost: 45, lastRestocked: '2024-05-01', lowStockThreshold: 1 },

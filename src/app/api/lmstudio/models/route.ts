@@ -6,6 +6,10 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // LM Studio model paths for different operating systems
 const LM_STUDIO_PATHS = {
   win32: [

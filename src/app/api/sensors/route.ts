@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Mock sensor data with realistic values
 let sensorData = {
   temperature: 22.5, // Internal Celsius for calculations

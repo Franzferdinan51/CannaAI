@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 export async function GET(request: NextRequest) {
   try {
     console.log('=== Testing LM Studio Models API ===');
