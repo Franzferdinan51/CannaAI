@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import GlobalHeader from "@/components/layout/global-header";
-import FloatingAIAssistant from "@/components/ai/floating-assistant";
+import UnifiedAIAssistant from "@/components/ai/unified-assistant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +22,12 @@ export const metadata: Metadata = {
   authors: [{ name: "CannaAI Team" }],
   icons: {
     icon: "/favicon.ico",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
   },
   openGraph: {
     title: "CannaAI - Cannabis Cultivation Management",
@@ -51,7 +57,7 @@ export default function RootLayout({
         <main className="min-h-screen">
           {children}
         </main>
-        <FloatingAIAssistant />
+        <UnifiedAIAssistant />
         <Toaster />
       </body>
     </html>

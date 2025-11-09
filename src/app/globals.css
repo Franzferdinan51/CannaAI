@@ -152,3 +152,110 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Enhanced scrollbar styles for chat components */
+@layer utilities {
+  .scrollbar-visible {
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #1e293b;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-track {
+    background: #1e293b;
+    border-radius: 4px;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+
+  .scrollbar-chat {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #64748b #1e293b;
+    max-height: 100%;
+  }
+
+  .scrollbar-chat::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-chat::-webkit-scrollbar-track {
+    background: #1e293b;
+    border-radius: 3px;
+  }
+
+  .scrollbar-chat::-webkit-scrollbar-thumb {
+    background: #64748b;
+    border-radius: 3px;
+    min-height: 40px; /* Touch-friendly minimum height */
+  }
+
+  .scrollbar-chat::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  .scrollbar-chat::-webkit-scrollbar-thumb:active {
+    background: #cbd5e1;
+  }
+
+  /* Mobile-specific scrollbar improvements */
+  @media (max-width: 768px) {
+    .scrollbar-chat::-webkit-scrollbar {
+      width: 8px; /* Wider on mobile for easier touch */
+    }
+
+    .scrollbar-chat::-webkit-scrollbar-thumb {
+      min-height: 44px; /* Minimum touch target size */
+    }
+
+    .scrollbar-visible::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .scrollbar-visible::-webkit-scrollbar-thumb {
+      min-height: 44px;
+    }
+  }
+
+  /* Touch-friendly button sizes */
+  @media (max-width: 768px) {
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Improve touch scrolling on iOS */
+    .scrollbar-chat,
+    .scrollbar-visible {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    /* Prevent bounce scrolling on chat containers */
+    .chat-container {
+      overscroll-behavior: contain;
+    }
+  }
+
+  /* Prevent text selection issues on mobile */
+  @media (max-width: 768px) {
+    .no-select {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
+}

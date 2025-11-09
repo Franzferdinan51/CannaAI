@@ -115,8 +115,8 @@ export async function POST(request: NextRequest) {
           const compressionEfficiency = ((originalSize - processedImage.compressedSize) / originalSize) * 100;
 
           console.log(`🖼️ Ultra-high resolution image processed:`);
-          console.log(`   Original: ${formatFileSize(originalSize)} (${metadata.width}x${metadata.height}, ${originalMegapixels.toFixed(1)}MP)`);
-          console.log(`   Processed: ${formatFileSize(processedImage.compressedSize)} (${processedImage.metadata.width}x${processedImage.metadata.height})`);
+          console.log('   Original: ' + formatFileSize(originalSize) + ' (' + metadata.width + 'x' + metadata.height + ', ' + originalMegapixels.toFixed(1) + 'MP)');
+          console.log('   Processed: ' + formatFileSize(processedImage.compressedSize) + ' (' + processedImage.metadata.width + 'x' + processedImage.metadata.height + ')');
           console.log(`   Compression: ${compressionEfficiency.toFixed(1)}% reduction, Quality preserved: ${processingOptions.quality}%`);
 
           processedImageInfo = {
@@ -475,7 +475,7 @@ The provided image has been optimized for AI analysis while maintaining maximum 
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`LM Studio error: ${response.status} ${response.statusText}`);
+      throw new Error('LM Studio error: ' + response.status + ' ' + response.statusText);
     }
 
     const data = await response.json();
@@ -514,7 +514,7 @@ async function callOpenRouter(prompt: string): Promise<any> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': 'Bearer ' + apiKey,
         'HTTP-Referer': process.env.VERCEL_URL || 'http://localhost:3000',
         'X-Title': 'CannaAI Plant Analysis',
       },
@@ -539,7 +539,7 @@ async function callOpenRouter(prompt: string): Promise<any> {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Open Router error: ${response.status} ${response.statusText}`);
+      throw new Error('Open Router error: ' + response.status + ' ' + response.statusText);
     }
 
     const data = await response.json();
@@ -814,12 +814,12 @@ function generateFallbackAnalysis(
       reasoning: [
         {
           step: 'Environmental Analysis',
-          explanation: `Comprehensive analysis of pH (${phValue || 'not measured'}), temperature (${tempValue || 'not measured'}°F), humidity (${humidityValue || 'not measured'}%) for optimal cannabis growing conditions`,
+          explanation: 'Comprehensive analysis of pH (' + (phValue || 'not measured') + '), temperature (' + (tempValue || 'not measured') + '°F), humidity (' + (humidityValue || 'not measured') + '%) for optimal cannabis growing conditions',
           weight: 60
         },
         {
           step: 'Growth Stage Assessment',
-          explanation: `Analysis based on ${growthStage || 'unspecified'} growth stage with appropriate recommendations`,
+          explanation: 'Analysis based on ' + (growthStage || 'unspecified') + ' growth stage with appropriate recommendations',
           weight: 30
         },
         {
@@ -1088,7 +1088,7 @@ function generateFallbackAnalysis(
   }
   // WHITEFLIES - Common greenhouse pest
   else if (symptoms.includes('whitefly') || (symptoms.includes('white') && symptoms.includes('fly')) ||
-           symptoms.includes('cloud') && symptoms.includes('white')) {
+           (symptoms.includes('cloud') && symptoms.includes('white'))) {
     diagnosis = 'Whitefly Infestation (Trialeurodes vaporariorum)';
     confidence = 80;
     healthScore = 70;
@@ -1477,7 +1477,7 @@ function generateFallbackAnalysis(
     healthScore: Math.max(20, Math.min(100, healthScore)),
     strainSpecificAdvice: isPurpleStrain
       ? 'Purple strain: Monitor for actual deficiencies vs natural coloration. Focus on overall plant health rather than just purple coloration. Purple strains still need the same nutrient management as other strains.'
-      : `${strain}: ${getStrainSpecificAdvice(strain, diagnosis, growthStage)}`,
+      : strain + ': ' + getStrainSpecificAdvice(strain, diagnosis, growthStage),
     reasoning: [
       {
         step: 'Rule-Based Analysis',

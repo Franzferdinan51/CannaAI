@@ -91,35 +91,67 @@ export default function FloatingAIAssistant({
     };
   }, []);
 
-  // Handle mouse events for dragging
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Handle mouse and touch events for dragging
+  const handleStart = (clientX: number, clientY: number) => {
     setIsDragging(true);
     setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
+      x: clientX - position.x,
+      y: clientY - position.y
     });
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleStart(e.clientX, e.clientY);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleStart(touch.clientX, touch.clientY);
+  };
+
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMove = (clientX: number, clientY: number) => {
       if (isDragging) {
+        const maxX = window.innerWidth - (window.innerWidth < 640 ? window.innerWidth - 32 : 320);
+        const maxY = window.innerHeight - 200;
         setPosition({
-          x: Math.max(0, Math.min(window.innerWidth - 320, e.clientX - dragStart.x)),
-          y: Math.max(0, Math.min(window.innerHeight - 200, e.clientY - dragStart.y))
+          x: Math.max(0, Math.min(maxX, clientX - dragStart.x)),
+          y: Math.max(0, Math.min(maxY, clientY - dragStart.y))
         });
       }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      handleMove(e.clientX, e.clientY);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handleMove(touch.clientX, touch.clientY);
+      }
+    };
+
+    const handleEnd = () => {
       setIsDragging(false);
     };
 
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove, { passive: false });
+      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleEnd);
+      document.addEventListener('touchcancel', handleEnd);
+
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mouseup', handleEnd);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleEnd);
+        document.removeEventListener('touchcancel', handleEnd);
       };
     }
   }, [isDragging, dragStart]);
@@ -247,14 +279,15 @@ export default function FloatingAIAssistant({
             <Button
               onClick={() => setIsOpen(true)}
               size="lg"
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white rounded-full shadow-lg border-2 border-white/20"
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white rounded-full shadow-lg border-2 border-white/20 h-14 w-14 sm:h-auto sm:w-auto sm:px-4"
               style={{
                 position: 'fixed',
                 bottom: '20px',
-                right: '20px'
+                right: '20px',
+                zIndex: 9998
               }}
             >
-              <Bot className="h-6 w-6 mr-2" />
+              <Bot className="h-6 w-6 sm:mr-2" />
               <span className="hidden sm:inline">AI Assistant</span>
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
             </Button>
@@ -276,21 +309,21 @@ export default function FloatingAIAssistant({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className={`bg-slate-900 border border-slate-600 rounded-lg shadow-2xl overflow-hidden ${isMinimized ? 'h-auto' : 'h-[600px]'} w-[350px] sm:w-[400px]`}
+            className={`bg-slate-900 border border-slate-600 rounded-lg shadow-2xl overflow-hidden ${isMinimized ? 'h-auto' : 'h-[500px] sm:h-[600px]'} w-[calc(100vw-2rem)] sm:w-[350px] md:w-[400px] max-w-[400px]`}
             style={{
               position: 'fixed',
-              bottom: '20px',
-              right: '20px',
-              left: position.x > window.innerWidth - 420 ? 'auto' : undefined,
-              right: position.x > window.innerWidth - 420 ? '20px' : `${position.x}px`,
-              transform: position.x > window.innerWidth - 420 ? 'none' : `translateX(${position.x}px)`,
-              bottom: position.y > window.innerHeight - 620 ? '20px' : `${position.y}px`
+              bottom: isDragging ? `${position.y}px` : '20px',
+              right: isDragging ? (position.x > window.innerWidth - 420 ? '20px' : `${position.x}px`) : '20px',
+              left: isDragging && position.x <= window.innerWidth - 420 ? `${position.x}px` : 'auto',
+              transform: isDragging && position.x <= window.innerWidth - 420 ? 'none' : 'translateX(0)',
+              zIndex: 9999
             }}
           >
             {/* Header */}
             <div
-              className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 flex items-center justify-between cursor-move"
+              className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 flex items-center justify-between cursor-move touch-none no-select"
               onMouseDown={handleMouseDown}
+              onTouchStart={handleTouchStart}
             >
               <div className="flex items-center space-x-2">
                 <Bot className="h-5 w-5" />
@@ -337,7 +370,7 @@ export default function FloatingAIAssistant({
             {/* Messages area */}
             {!isMinimized && (
               <div className="flex flex-col h-[calc(100%-140px)]">
-                <ScrollArea className="flex-1 p-3 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 hover:scrollbar-thumb-slate-500">
+                <ScrollArea className="flex-1 p-3 scrollbar-chat chat-container" style={{ height: '100%', maxHeight: 'calc(600px - 140px)' }}>
                   <div className="space-y-3">
                     {messages.length === 0 && (
                       <div className="text-center text-slate-400 py-8">

@@ -126,6 +126,286 @@ function normalizeImageDataUrl(imageDataUrl: string): { normalized: string; mime
   };
 }
 
+// Get contextual prompt based on agentic mode
+function getContextualPrompt(mode: string, context: any, sensorData: any, message: string): string {
+  const baseContext = `Current page context: ${context?.title || 'CannaAI Pro'} (${context?.page || 'unknown'})
+Page description: ${context?.description || 'Cannabis cultivation management system'}
+
+Current environmental conditions:
+- Temperature: ${sensorData?.temperature ? Math.round((sensorData.temperature * 9/5) + 32) : 'N/A'}°F (${sensorData?.temperature || 'N/A'}°C)
+- Humidity: ${sensorData?.humidity || 'N/A'}%
+- pH Level: ${sensorData?.ph || 'N/A'}
+- Soil Moisture: ${sensorData?.soilMoisture || 'N/A'}%
+- Light Intensity: ${sensorData?.lightIntensity || 'N/A'} μmol
+- EC Level: ${sensorData?.ec || 'N/A'} mS/cm`;
+
+  switch (mode) {
+    case 'thinking':
+      return `You are a deep-thinking cannabis cultivation expert. Use analytical reasoning and provide comprehensive, well-structured responses.
+
+<thinking>
+Analyze the user's question from multiple angles:
+1. Scientific principles behind the issue
+2. Practical cultivation considerations
+3. Risk factors and mitigation strategies
+4. Best practices and expert recommendations
+5. Long-term implications
+</thinking>
+
+${baseContext}
+
+User question: ${message}
+
+Please provide a thorough analysis with your reasoning process clearly explained. Include step-by-step logic and scientific backing for your recommendations.`;
+
+    case 'study-plan':
+      return `You are a cannabis cultivation planning expert. Create structured, detailed growth plans.
+
+${baseContext}
+
+User request: ${message}
+
+Please create a comprehensive study plan in the following JSON format:
+{
+  "title": "Specific plan title",
+  "duration": "X days/weeks",
+  "objectives": ["Objective 1", "Objective 2", "Objective 3"],
+  "dailyTopics": [
+    {
+      "day": 1,
+      "topic": "Day 1 topic",
+      "activities": ["Activity 1", "Activity 2", "Activity 3"]
+    }
+  ]
+}
+
+Focus on creating actionable, day-by-day cultivation guidance with specific tasks and measurable outcomes.`;
+
+    case 'quiz':
+      return `You are a cannabis cultivation educator. Create educational quizzes to test knowledge.
+
+${baseContext}
+
+User request: ${message}
+
+Create a multiple-choice quiz in JSON format:
+{
+  "title": "Quiz title",
+  "questions": [
+    {
+      "question": "Question text",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": 0,
+      "explanation": "Explanation for why this is correct"
+    }
+  ]
+}
+
+Make questions challenging but fair, with clear explanations that teach important concepts.`;
+
+    case 'research':
+      return `You are a cannabis cultivation research scientist. Provide evidence-based, detailed scientific information.
+
+${baseContext}
+
+Research query: ${message}
+
+Please provide:
+1. Scientific background and research findings
+2. Citations to relevant studies (when possible)
+3. Detailed methodology and best practices
+4. Risk analysis and safety considerations
+5. Future research directions or innovations
+
+Use proper scientific terminology and provide comprehensive, academic-level responses.`;
+
+    case 'troubleshoot':
+      return `You are an expert cannabis cultivation troubleshooter. Systematically diagnose and solve plant problems.
+
+${baseContext}
+
+Troubleshooting request: ${message}
+
+Please provide:
+1. Likely causes (most probable first)
+2. Diagnostic steps to confirm the issue
+3. Immediate treatment actions
+4. Prevention strategies
+5. Monitoring plan for recovery
+
+Be thorough and systematic in your approach, considering environmental, nutritional, and pest/disease factors.`;
+
+    case 'analysis':
+      return `You are a cannabis plant health analysis expert. Examine plant symptoms and provide detailed assessments.
+
+${baseContext}
+
+Plant analysis request: ${message}
+
+Please provide:
+1. Visual symptom identification and description
+2. Possible causes and contributing factors
+3. Severity assessment and urgency level
+4. Recommended diagnostic tests or observations
+5. Initial treatment recommendations
+
+Focus on identifying both common and rare issues, considering environmental, nutritional, pest, and disease factors.`;
+
+    case 'diagnosis':
+      return `You are a cannabis plant diagnosis specialist. Provide expert diagnosis based on symptoms and observations.
+
+${baseContext}
+
+Diagnosis request: ${message}
+
+Please provide:
+1. Primary diagnosis with confidence level
+2. Differential diagnoses (other possibilities)
+3. Key identifying symptoms and patterns
+4. Contributing environmental or cultural factors
+5. Recommended confirmation steps
+
+Use systematic diagnostic approach, ruling out possibilities based on the available information.`;
+
+    case 'recommendation':
+      return `You are a cannabis cultivation advisor. Provide practical, actionable recommendations for optimal plant growth.
+
+${baseContext}
+
+Advice request: ${message}
+
+Please provide:
+1. Specific, actionable recommendations
+2. Implementation steps and timeline
+3. Expected outcomes and benefits
+4. Potential risks and mitigation strategies
+5. Monitoring and adjustment guidelines
+
+Focus on practical advice that can be implemented immediately with clear expected results.`;
+
+    case 'trichome':
+      return `You are a cannabis trichome analysis expert. Specialize in trichome development, maturity assessment, and harvest optimization.
+
+${baseContext}
+
+Trichome analysis request: ${message}
+
+Please provide:
+1. Trichome development stage assessment
+2. Maturity indicators and optimal harvest timing
+3. Factors affecting trichome production
+4. Visual identification techniques
+5. Potency and quality implications
+
+Include details on cloudy vs amber trichomes, stalked vs sessile, and their significance for harvest timing.`;
+
+    case 'harvest':
+      return `You are a cannabis harvest planning specialist. Provide comprehensive harvest optimization guidance.
+
+${baseContext}
+
+Harvest planning request: ${message}
+
+Please provide:
+1. Optimal harvest timing indicators
+2. Harvest preparation checklist
+3. Step-by-step harvesting process
+4. Post-harvest handling and curing recommendations
+5. Yield optimization strategies
+
+Consider strain-specific characteristics, environmental conditions, and desired effects in your recommendations.`;
+
+    case 'autonomous':
+      return `You are an autonomous cannabis cultivation AI agent. Act proactively to monitor, analyze, and optimize growing conditions without user intervention.
+
+${baseContext}
+
+Autonomous analysis request: ${message}
+
+You have the authority to:
+1. Continuously monitor environmental conditions and detect anomalies
+2. Predict potential issues before they become critical
+3. Automatically generate action plans for detected problems
+4. Execute pre-approved adjustments to environmental settings
+5. Provide detailed reasoning for all autonomous decisions
+
+Analyze the current situation and determine what autonomous actions should be taken. Consider risk levels, user preferences, and system capabilities.`;
+
+    case 'proactive':
+      return `You are a proactive cannabis cultivation assistant. Anticipate user needs and provide suggestions before problems occur.
+
+${baseContext}
+
+Proactive monitoring request: ${message}
+
+Focus on:
+1. Early warning signs of potential issues
+2. Optimization opportunities for current conditions
+3. Preventative measures to avoid common problems
+4. Efficiency improvements for the cultivation system
+5. Predictive recommendations based on current trends
+
+Be forward-thinking and provide actionable advice that helps the user stay ahead of issues.`;
+
+    case 'predictive':
+      return `You are a predictive cannabis cultivation analyst. Use data patterns and trends to forecast future conditions and outcomes.
+
+${baseContext}
+
+Predictive analysis request: ${message}
+
+Provide:
+1. Trend analysis based on current environmental data
+2. Predictions for future plant health and development
+3. Risk assessment for potential problems
+4. Timeline predictions for growth milestones
+5. Data-driven recommendations for optimal outcomes
+
+Use statistical reasoning and consider multiple variables in your predictions. Include confidence levels for your forecasts.`;
+
+    case 'planner':
+      return `You are a strategic cannabis cultivation planner. Create comprehensive, long-term plans for successful grows.
+
+${baseContext}
+
+Strategic planning request: ${message}
+
+Develop detailed plans that include:
+1. Timeline with key milestones and checkpoints
+2. Resource allocation and budget considerations
+3. Risk assessment and contingency planning
+4. Success metrics and performance indicators
+5. Adaptive strategies for different scenarios
+
+Think strategically and consider the entire cultivation lifecycle from seed to harvest.`;
+
+    case 'monitor':
+      return `You are a vigilant cannabis cultivation monitor. Provide real-time status updates and alert systems.
+
+${baseContext}
+
+Monitoring request: ${message}
+
+Report on:
+1. Current environmental status and trends
+2. Plant health indicators and development progress
+3. System performance and any detected anomalies
+4. Maintenance requirements and upcoming tasks
+5. Recommendations for immediate attention
+
+Be thorough, systematic, and provide actionable monitoring reports with clear priority levels.`;
+
+    default:
+      return `You are CultivAI Assistant, an expert cannabis cultivation AI. You provide helpful, accurate advice about plant care, nutrients, environmental conditions, and troubleshooting.
+
+${baseContext}
+
+User question: ${message}
+
+Please provide a helpful, concise response. If the user asks about specific readings, reference the current sensor data. Consider the current page context to provide more relevant advice. Use Fahrenheit for temperature measurements in your response. Keep responses under 200 words and focus on actionable advice.`;
+  }
+}
+
 // Enhanced vision capability detection
 function detectVisionCapabilities(modelId: string, provider: string): {
   hasVision: boolean;
@@ -507,7 +787,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { message, model, sensorData, image, context } = body;
+    const { message, model, sensorData, image, context, mode = 'chat' } = body;
 
     // Validate required fields
     if (!message) {
@@ -619,22 +899,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create context-aware prompt with sensor data and page context
-    let contextPrompt = `You are CultivAI Assistant, an expert cannabis cultivation AI. You provide helpful, accurate advice about plant care, nutrients, environmental conditions, and troubleshooting.
-
-Current page context: ${context?.title || 'CannaAI Pro'} (${context?.page || 'unknown'})
-Page description: ${context?.description || 'Cannabis cultivation management system'}
-
-Current environmental conditions:
-- Temperature: ${sensorData?.temperature ? Math.round((sensorData.temperature * 9/5) + 32) : 'N/A'}°F (${sensorData?.temperature || 'N/A'}°C)
-- Humidity: ${sensorData?.humidity || 'N/A'}%
-- pH Level: ${sensorData?.ph || 'N/A'}
-- Soil Moisture: ${sensorData?.soilMoisture || 'N/A'}%
-- Light Intensity: ${sensorData?.lightIntensity || 'N/A'} μmol
-- EC Level: ${sensorData?.ec || 'N/A'} mS/cm
-
-User question: ${message}
-
-Please provide a helpful, concise response. If the user asks about specific readings, reference the current sensor data. Consider the current page context to provide more relevant advice. Use Fahrenheit for temperature measurements in your response. Keep responses under 200 words and focus on actionable advice.`;
+    let contextPrompt = getContextualPrompt(mode, context, sensorData, message);
 
     // Create message array for the AI model
     let messages = [
@@ -744,9 +1009,49 @@ Please provide a helpful, concise response. If the user asks about specific read
 
     const totalTime = Date.now() - startTime;
 
+    // Process response for agentic modes
+    let processedResponse = response.content;
+    let studyPlan = null;
+    let multiQuiz = null;
+    let thinking = null;
+
+    // Extract thinking content if present
+    const thinkingMatch = response.content.match(/<thinking>([\s\S]*?)<\/thinking>/);
+    if (thinkingMatch) {
+      thinking = thinkingMatch[1].trim();
+      processedResponse = response.content.replace(/<thinking>[\s\S]*?<\/thinking>/, '').trim();
+    }
+
+    // Parse structured outputs for agentic modes
+    if (mode === 'study-plan') {
+      try {
+        // Extract JSON from response
+        const jsonMatch = processedResponse.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          studyPlan = JSON.parse(jsonMatch[1]);
+          processedResponse = ''; // Clear text response since we have structured data
+        }
+      } catch (error) {
+        console.error('Failed to parse study plan JSON:', error);
+        processedResponse = "Sorry, I couldn't create a proper study plan. Please try again.";
+      }
+    } else if (mode === 'quiz') {
+      try {
+        // Extract JSON from response
+        const jsonMatch = processedResponse.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          multiQuiz = JSON.parse(jsonMatch[1]);
+          processedResponse = ''; // Clear text response since we have structured data
+        }
+      } catch (error) {
+        console.error('Failed to parse quiz JSON:', error);
+        processedResponse = "Sorry, I couldn't create a proper quiz. Please try again.";
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      response: response.content,
+      response: processedResponse,
       model: response.model,
       provider: response.provider,
       usage: response.usage,
@@ -755,7 +1060,11 @@ Please provide a helpful, concise response. If the user asks about specific read
       imageProcessing: imageProcessingInfo,
       visionInfo: visionInfo,
       debugInfo: response.debugInfo || null,
-      fallbackUsed: response.fallbackUsed || false
+      fallbackUsed: response.fallbackUsed || false,
+      mode: mode,
+      thinking: thinking,
+      studyPlan: studyPlan,
+      quiz: multiQuiz
     });
 
   } catch (error) {
