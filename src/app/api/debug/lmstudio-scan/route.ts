@@ -102,6 +102,17 @@ async function checkLMStudioRunning() {
 }
 
 export async function GET(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     console.log('=== LM Studio Debug Scan Started ===');
     console.log('Platform:', process.platform);

@@ -4,14 +4,17 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'auto';
 export const revalidate = false;
 
-export async function POST() {
-  // Provide client-side compatibility response for static export
-  return NextResponse.json({
-    success: false,
-    message: 'AI chat is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
-    clientSide: true,
-    buildMode: 'static'
-  });
+export async function POST(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'AI chat is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
 
   // Full server-side functionality for local development
   const runtime = 'nodejs';
@@ -159,8 +162,7 @@ Please provide a helpful, concise response. If the user asks about specific read
   try {
     const startTime = Date.now();
 
-    // For this example, we'll use a mock request since we can't access the actual request body in static mode
-    const body = { message: 'Hello', mode: 'chat' };
+    const body = await request.json();
     const { message, mode = 'chat' } = body;
 
     // Validate required fields
@@ -261,13 +263,16 @@ Please provide a helpful, concise response. If the user asks about specific read
 }
 
 export async function GET() {
-  // Provide client-side compatibility response for static export
-  return NextResponse.json({
-    success: false,
-    message: 'AI chat is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
-    clientSide: true,
-    buildMode: 'static'
-  });
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'AI chat is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
 
   // Full server-side functionality for local development
   try {

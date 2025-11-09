@@ -260,16 +260,23 @@ export default function LiveCamera({
         for (let attempt = 1; attempt <= retries; attempt++) {
           console.log(`Video binding attempt ${attempt}/${retries}`);
 
-          // Wait for video element to be available
+          // Wait for video element to be available with better timing
           let attempts = 0;
-          while (!videoRef.current && attempts < 10) {
-            console.log('Waiting for video element...');
-            await new Promise(resolve => setTimeout(resolve, 100));
+          let maxAttempts = 30; // Increased attempts
+          while (!videoRef.current && attempts < maxAttempts) {
+            console.log(`Waiting for video element... (${attempts + 1}/${maxAttempts})`);
+            await new Promise(resolve => setTimeout(resolve, 50)); // Reduced wait time
             attempts++;
+
+            // Force a re-render if needed
+            if (attempts === 10) {
+              // Trigger a small state change to force re-render
+              setStreamStatus(prev => prev);
+            }
           }
 
           if (!videoRef.current) {
-            throw new Error(`Video element reference is null after ${attempts} attempts`);
+            throw new Error(`Video element reference is null after ${maxAttempts} attempts. Component may not have mounted properly.`);
           }
 
           const videoElement = videoRef.current;
@@ -856,6 +863,7 @@ export default function LiveCamera({
                   objectFit: 'contain',
                   display: 'block'
                 }}
+                suppressHydrationWarning={true}
               />
               {isTrichomeAnalyzing && (
                 <div className="absolute top-2 right-2">

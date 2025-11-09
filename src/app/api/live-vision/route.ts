@@ -38,6 +38,17 @@ interface LiveVisionRequest {
 }
 
 export async function POST(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   return withSecurity(request, async (req, context) => {
     try {
       const body = await request.json();
@@ -206,6 +217,17 @@ function getNextCaptureSuggestion(analysis: any, context: any) {
 
 // GET endpoint for live vision status and configuration
 export async function GET(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   return withSecurity(request, async () => {
     try {
       // Get available camera devices and capabilities

@@ -5,13 +5,16 @@ export const dynamic = 'auto';
 export const revalidate = false;
 
 export async function GET() {
-  // Provide client-side compatibility response for static export
-  return NextResponse.json({
-    success: false,
-    message: 'AI analysis is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
-    clientSide: true,
-    buildMode: 'static'
-  });
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'AI analysis is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
 
   // Full server-side functionality for local development
   try {
@@ -50,13 +53,16 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  // Provide client-side compatibility response for static export
-  return NextResponse.json({
-    success: false,
-    message: 'AI analysis is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
-    clientSide: true,
-    buildMode: 'static'
-  });
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'AI analysis is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
 
   // Full server-side functionality for local development
   try {
