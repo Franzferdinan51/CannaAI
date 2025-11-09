@@ -397,23 +397,95 @@ Edit prompts in API route files:
 
 ## 🚀 Deployment
 
-### Production Build
+### Local Development
 ```bash
 npm run build
 npm start
 ```
 
-### Environment Setup
+### Netlify Static Hosting
+The application now supports static hosting on Netlify with client-side AI configuration:
+
+#### 1. Automatic Build Deployment
+1. Push your code to GitHub
+2. Connect your repository to Netlify
+3. Netlify will automatically build and deploy the static site
+
+#### 2. Client-Side AI Configuration
+Since static hosting doesn't support server-side APIs, the application includes:
+- **Browser-based AI service** for direct API calls
+- **Configuration UI** for setting up AI providers
+- **Fallback responses** when external providers are unavailable
+
+#### 3. AI Provider Setup on Netlify
+1. **OpenRouter Configuration**:
+   - Click the "AI Config" button in the application
+   - Select "OpenRouter (Cloud)"
+   - Enter your OpenRouter API key
+   - Choose your preferred model
+   - Test connection and save
+
+2. **LM Studio Configuration** (for local development):
+   - Click the "AI Config" button
+   - Select "LM Studio (Local)"
+   - Enter your LM Studio server URL
+   - Choose your loaded model
+   - Test connection and save
+
+3. **Fallback Mode** (Offline):
+   - Select "Fallback Mode" in AI configuration
+   - Provides rule-based cultivation advice
+   - Works completely offline
+
+#### 4. Netlify Configuration Files
+The application includes:
+- `netlify.toml` - Build and redirect configuration
+- `next.config.ts` - Static export settings
+- Edge runtime declarations for API compatibility
+
+#### 5. Build Process
+```bash
+# Build for static hosting
+npm run build
+
+# The build script now includes:
+# - next build (Next.js build)
+# - next export (Static files generation)
+```
+
+### Traditional Server Deployment
+
+#### Environment Setup
 1. Configure production database
 2. Set up AI API keys
 3. Configure SSL certificates
 4. Set up monitoring and logging
 
-### Deployment Options
+#### Deployment Options
 - **VPS**: DigitalOcean, Vultr, Linode
 - **Cloud**: AWS, Google Cloud, Azure
 - **Container**: Docker, Podman
 - **PaaS**: Heroku, Railway, Render
+
+#### Server Configuration
+For traditional server deployment with full API support:
+
+1. **Environment Variables**:
+```env
+# AI Services
+LM_STUDIO_URL=http://localhost:1234
+OPENROUTER_API_KEY=your-api-key
+ENABLE_OPENROUTER=true
+
+# Database
+DATABASE_URL="file:./db/custom.db"
+```
+
+2. **Production Commands**:
+```bash
+npm run build
+npm run start:prod  # or npm run start:win on Windows
+```
 
 ## 🐛 Troubleshooting
 
@@ -440,6 +512,13 @@ npm run db:generate
 - Verify OpenRouter API key is valid
 - Check network connectivity
 - Review environment variables
+
+**Netlify-Specific Issues**:
+- **AI Configuration**: Use the "AI Config" button to set up providers
+- **CORS Errors**: Make sure OpenRouter allows your domain
+- **Build Failures**: Check that submodules are properly removed
+- **API Timeouts**: Increase timeout in OpenRouter configuration
+- **Local Development**: Test with fallback mode first
 
 ### Debug Mode
 ```bash

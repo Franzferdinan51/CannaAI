@@ -23,8 +23,13 @@ import {
   Eye,
   Camera,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Settings,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
+import { createClientAIService } from '@/lib/ai/client-ai-service';
+import AIConfigManager from '@/components/ai/config/ai-config-manager';
 
 interface Message {
   id: string;
@@ -62,6 +67,9 @@ export default function FloatingAIAssistant({
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [aiConfig, setAIConfig] = useState<any>(null);
+  const [aiService, setAIService] = useState<any>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('disconnected');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +89,27 @@ export default function FloatingAIAssistant({
   // Update context based on current page
   const updateContext = (newContext: PageContext) => {
     setContext(newContext);
+  };
+
+  // Initialize AI service when config changes
+  useEffect(() => {
+    if (aiConfig) {
+      const service = createClientAIService(aiConfig);
+      setAIService(service);
+
+      // Test connection
+      setConnectionStatus('testing');
+      service.testConnection().then((success: boolean) => {
+        setConnectionStatus(success ? 'connected' : 'disconnected');
+      }).catch(() => {
+        setConnectionStatus('disconnected');
+      });
+    }
+  }, [aiConfig]);
+
+  // Handle AI configuration changes
+  const handleAIConfigChange = (config: any) => {
+    setAIConfig(config);
   };
 
   // Make this function available globally
@@ -172,37 +201,26 @@ export default function FloatingAIAssistant({
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: input.trim(),
-          context: context,
-          sensorData: context.sensorData
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: data.response,
-          timestamp: new Date(),
-          context: {
-            model: data.model,
-            provider: data.provider,
-            processingTime: data.processingTime
-          }
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
-        throw new Error(data.error || 'Failed to get response');
+      if (!aiService) {
+        throw new Error('AI service not configured. Please set up your AI configuration.');
       }
+
+      const response = await aiService.generateResponse(input.trim(), context);
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: response.content,
+        timestamp: new Date(),
+        context: {
+          model: response.model,
+          provider: response.provider,
+          processingTime: response.processingTime,
+          fallback: response.fallback
+        }
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -266,40 +284,61 @@ export default function FloatingAIAssistant({
   };
 
   return (
-    <div className={`fixed z-50 ${className}`}>
-      {/* Floating button when closed */}
-      <AnimatePresence>
-        {!isOpen && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="relative"
-          >
-            <Button
-              onClick={() => setIsOpen(true)}
-              size="lg"
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white rounded-full shadow-lg border-2 border-white/20 h-14 w-14 sm:h-auto sm:w-auto sm:px-4"
-              style={{
-                position: 'fixed',
-                bottom: '20px',
-                right: '20px',
-                zIndex: 9998
-              }}
+    <AIConfigManager onConfigChange={handleAIConfigChange}>
+      <div className={`fixed z-50 ${className}`}>
+        {/* Floating button when closed */}
+        <AnimatePresence>
+          {!isOpen && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="relative"
             >
-              <Bot className="h-6 w-6 sm:mr-2" />
-              <span className="hidden sm:inline">AI Assistant</span>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-            </Button>
+              <Button
+                onClick={() => setIsOpen(true)}
+                size="lg"
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white rounded-full shadow-lg border-2 border-white/20 h-14 w-14 sm:h-auto sm:w-auto sm:px-4"
+                style={{
+                  position: 'fixed',
+                  bottom: '20px',
+                  right: '20px',
+                  zIndex: 9998
+                }}
+              >
+                <Bot className="h-6 w-6 sm:mr-2" />
+                <span className="hidden sm:inline">AI Assistant</span>
+                <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-green-400' :
+                  connectionStatus === 'testing' ? 'bg-yellow-400 animate-pulse' :
+                  'bg-red-400'
+                }`} />
+              </Button>
 
-            {/* Context tooltip */}
-            <div className="absolute bottom-full right-0 mb-2 bg-slate-800 text-white text-xs p-2 rounded-lg shadow-lg whitespace-nowrap">
-              {getContextualGreeting()}
-              <div className="absolute bottom-0 right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800" />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {/* Connection status indicator */}
+              <div className="absolute -top-1 -left-1">
+                {connectionStatus === 'connected' ? (
+                  <Wifi className="h-3 w-3 text-green-400" />
+                ) : connectionStatus === 'testing' ? (
+                  <Wifi className="h-3 w-3 text-yellow-400 animate-pulse" />
+                ) : (
+                  <WifiOff className="h-3 w-3 text-red-400" />
+                )}
+              </div>
+
+              {/* Context tooltip */}
+              <div className="absolute bottom-full right-0 mb-2 bg-slate-800 text-white text-xs p-2 rounded-lg shadow-lg whitespace-nowrap">
+                {getContextualGreeting()}
+                {!aiService && (
+                  <div className="text-yellow-400 mt-1">
+                    ⚠️ AI not configured - Click AI Config button
+                  </div>
+                )}
+                <div className="absolute bottom-0 right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       {/* Chat window */}
       <AnimatePresence>
@@ -328,9 +367,23 @@ export default function FloatingAIAssistant({
               <div className="flex items-center space-x-2">
                 <Bot className="h-5 w-5" />
                 <span className="font-semibold">CannaAI Assistant</span>
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-green-400 animate-pulse' :
+                  connectionStatus === 'testing' ? 'bg-yellow-400 animate-pulse' :
+                  'bg-red-400'
+                }`} />
+                {connectionStatus === 'connected' && aiConfig && (
+                  <span className="text-xs text-green-100">
+                    ({aiConfig.provider === 'fallback' ? 'Fallback' : aiConfig.provider})
+                  </span>
+                )}
               </div>
               <div className="flex items-center space-x-1">
+                {!aiService && (
+                  <div className="text-xs text-yellow-200 mr-2">
+                    Configure AI
+                  </div>
+                )}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -454,6 +507,7 @@ export default function FloatingAIAssistant({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </AIConfigManager>
   );
 }
