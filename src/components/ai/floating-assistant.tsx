@@ -296,7 +296,10 @@ export default function FloatingAIAssistant({
               className="relative"
             >
               <Button
-                onClick={() => setIsOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(true);
+                }}
                 size="lg"
                 className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 text-white rounded-full shadow-lg border-2 border-white/20 h-14 w-14 sm:h-auto sm:w-auto sm:px-4"
                 style={{
@@ -388,7 +391,10 @@ export default function FloatingAIAssistant({
                   size="sm"
                   variant="ghost"
                   className="text-white hover:bg-white/20 h-8 w-8 p-0"
-                  onClick={() => setIsMinimized(!isMinimized)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMinimized(!isMinimized);
+                  }}
                 >
                   {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
                 </Button>
@@ -396,7 +402,10 @@ export default function FloatingAIAssistant({
                   size="sm"
                   variant="ghost"
                   className="text-white hover:bg-white/20 h-8 w-8 p-0"
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(false);
+                  }}
                 >
                   <X className="h-4 w-4" />
                 </Button>
