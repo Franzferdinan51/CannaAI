@@ -18,8 +18,11 @@ import {
   HardDrive,
   Clock,
   User,
-  Zap
+  Zap,
+  Save
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface LMStudioModel {
   id: string;
@@ -57,17 +60,32 @@ export function LMStudioSettings() {
   const [summary, setSummary] = useState<any>({});
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [lmStudioUrl, setLmStudioUrl] = useState('http://localhost:1234');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    loadSettings();
     loadModels();
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const response = await fetch('/api/settings');
+      const data = await response.json();
+      if (data.success && data.settings.lmStudio?.url) {
+        setLmStudioUrl(data.settings.lmStudio.url);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
 
   const loadModels = async () => {
     try {
       setIsLoading(true);
       setError('');
 
-      const response = await fetch('/api/lmstudio/models');
+      const response = await fetch(`/api/lmstudio/models?url=${encodeURIComponent(lmStudioUrl)}`);
       const data: LMStudioResponse = await response.json();
 
       if (data.status === 'success') {
@@ -89,6 +107,30 @@ export function LMStudioSettings() {
     setRefreshing(true);
     await loadModels();
     setRefreshing(false);
+  };
+
+  const handleSaveUrl = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_provider',
+          provider: 'lmstudio',
+          config: { url: lmStudioUrl }
+        })
+      });
+      const data = await response.json();
+      if (!data.success) {
+        setError(data.error || 'Failed to save URL');
+      }
+    } catch (error) {
+      setError('Failed to save URL');
+      console.error('Error saving URL:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSelectModel = (modelId: string) => {
@@ -181,6 +223,25 @@ export function LMStudioSettings() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="space-y-4 mb-6">
+            <Label htmlFor="lmstudio-url">LM Studio URL</Label>
+            <div className="flex gap-2">
+              <Input
+                id="lmstudio-url"
+                value={lmStudioUrl}
+                onChange={(e) => setLmStudioUrl(e.target.value)}
+                placeholder="http://localhost:1234"
+              />
+              <Button onClick={handleSaveUrl} disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
           {!lmStudioRunning && (
             <Alert className="mb-4">
               <AlertCircle className="h-4 w-4" />
