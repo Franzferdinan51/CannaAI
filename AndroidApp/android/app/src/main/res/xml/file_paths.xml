@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- External storage for app-specific files -->
+    <external-files-path
+        name="external_files"
+        path="." />
+
+    <!-- External cache directory for temporary files -->
+    <external-cache-path
+        name="external_cache"
+        path="." />
+
+    <!-- Internal storage for app-specific files -->
+    <files-path
+        name="internal_files"
+        path="." />
+
+    <!-- Internal cache directory -->
+    <cache-path
+        name="internal_cache"
+        path="." />
+
+    <!-- External storage root (for media files) -->
+    <external-path
+        name="external_storage"
+        path="Android/data/com.cannaai.pro/files/" />
+
+    <!-- Camera capture directory -->
+    <external-files-path
+        name="camera_images"
+        path="Pictures/CannaAI/" />
+
+    <!-- Plant analysis results directory -->
+    <external-files-path
+        name="plant_analysis"
+        path="Documents/CannaAI/Analysis/" />
+
+    <!-- Export directory for data sharing -->
+    <external-files-path
+        name="exports"
+        path="Documents/CannaAI/Exports/" />
+
+    <!-- Backup directory -->
+    <external-files-path
+        name="backups"
+        path="Documents/CannaAI/Backups/" />
+
+    <!-- Log files directory -->
+    <files-path
+        name="logs"
+        path="logs/" />
+
+    <!-- Database backups -->
+    <files-path
+        name="database_backups"
+        path="database/backups/" />
+
+    <!-- Sensor data exports -->
+    <external-files-path
+        name="sensor_data"
+        path="Documents/CannaAI/SensorData/" />
+
+    <!-- Shared media directory -->
+    <external-media-path
+        name="shared_media"
+        path="." />
+</paths>

@@ -1,0 +1,560 @@
+# CannaAI Pro Fastlane Configuration
+# Automated deployment for iOS and Android platforms
+
+# Change the syntax highlighting to Ruby
+# -*- coding: utf-8 -*-
+
+fastlane_version "2.220.0"
+
+default_platform(:android)
+
+# === Configuration ===
+ENV["FASTLANE_SKIP_UPDATE_CHECK"] = "1"
+
+# App identifiers
+APP_ID_PRODUCTION = "com.cannaai.pro"
+APP_ID_STAGING = "com.cannaai.staging"
+
+# Team information
+APPLE_TEAM_ID = "YOUR_TEAM_ID"
+ANDROID_TEAM_ID = "YOUR_ANDROID_TEAM_ID"
+
+# Firebase app IDs
+FIREBASE_APP_ID_PRODUCTION = "1:123456789:android:abcdef"
+FIREBASE_APP_ID_STAGING = "1:123456789:android:fedcba"
+
+# === Helper Functions ===
+def get_version_number
+  return load_json("../package.json")["version"]
+end
+
+def get_build_number
+  return Time.now.strftime("%Y%m%d%H%M")
+end
+
+def get_changelog
+  changelog_file = "../CHANGELOG.md"
+  if File.exist?(changelog_file)
+    content = File.read(changelog_file)
+    # Extract latest version changelog
+    if content.match(/## \[(\d+\.\d+\.\d+)\]([\s\S]*?)(?=## \[|\z)/m)
+      return $2.strip
+    end
+  end
+
+  return "• Bug fixes and improvements\n• Performance enhancements\n• Security updates"
+end
+
+def verify_environment
+  unless ENV["FASTLANE_USER"] && ENV["FASTLANE_PASSWORD"]
+    UI.error("Please set FASTLANE_USER and FASTLANE_PASSWORD environment variables")
+  end
+
+  unless Dir.exist?("../android") && Dir.exist?("../ios")
+    UI.error("Both android and ios directories must exist")
+  end
+end
+
+# === Android Lanes ===
+platform :android do
+  before_all do
+    verify_environment
+    setup_circle_ci if ENV['CI']
+  end
+
+  desc "Run all Android tests"
+  lane :test do
+    run_android_tests
+  end
+
+  desc "Build debug APK"
+  lane :build_debug do
+    build_android_debug
+  end
+
+  desc "Build release APK"
+  lane :build_release do
+    build_android_release
+  end
+
+  desc "Deploy to Firebase App Distribution (staging)"
+  lane :deploy_firebase_staging do
+    distribute_to_firebase_staging
+  end
+
+  desc "Deploy to Google Play Console (internal testing)"
+  lane :deploy_play_internal do
+    deploy_to_play_internal
+  end
+
+  desc "Deploy to Google Play Console (production)"
+  lane :deploy_play_production do
+    deploy_to_play_production
+  end
+
+  desc "Full Android release process"
+  lane :release_android do
+    # Ensure clean state
+    git_pull
+    ensure_git_branch(branch: "main")
+    ensure_git_status_clean
+
+    # Run tests
+    run_android_tests
+
+    # Build and deploy
+    build_android_release
+    deploy_to_play_production
+
+    # Create Git tag
+    create_git_tag
+
+    # Notify team
+    notify_slack(
+      message: "🚀 CannaAI Pro Android v#{get_version_number} deployed to Google Play Store!",
+      success: true
+    )
+  end
+
+  # === Private Android Lanes ===
+
+  private_lane :run_android_tests do
+    UI.header("Running Android Tests")
+
+    gradle(
+      task: "test",
+      flavor: "production",
+      build_type: "release",
+      project_dir: "android"
+    )
+
+    UI.success("All Android tests passed! 🎉")
+  end
+
+  private_lane :build_android_debug do
+    UI.header("Building Android Debug APK")
+
+    gradle(
+      task: "assembleDebug",
+      flavor: "development",
+      build_type: "debug",
+      project_dir: "android",
+      properties: {
+        "android.injected.signing.store.file" => "../android/debug.keystore",
+        "android.injected.signing.store.password" => "android",
+        "android.injected.signing.key.alias" => "androiddebugkey",
+        "android.injected.signing.key.password" => "android"
+      }
+    )
+
+    UI.success("Debug APK built successfully! 🎉")
+  end
+
+  private_lane :build_android_release do
+    UI.header("Building Android Release APK & Bundle")
+
+    # Clean previous builds
+    gradle(
+      task: "clean",
+      project_dir: "android"
+    )
+
+    # Build APK and AAB
+    gradle(
+      task: "assembleRelease",
+      flavor: "production",
+      build_type: "release",
+      project_dir: "android"
+    )
+
+    UI.success("Release APK & AAB built successfully! 🎉")
+  end
+
+  private_lane :distribute_to_firebase_staging do
+    UI.header("Distributing to Firebase App Distribution (Staging)")
+
+    build_android_release
+
+    firebase_app_distribution(
+      app: FIREBASE_APP_ID_STAGING,
+      groups: "internal-testers",
+      release_notes: get_changelog,
+      apk_path: lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH],
+      debug: true
+    )
+
+    UI.success("App distributed to Firebase staging! 🎉")
+  end
+
+  private_lane :deploy_to_play_internal do
+    UI.header("Deploying to Google Play Console (Internal Testing)")
+
+    build_android_release
+
+    upload_to_play_store(
+      track: "internal",
+      aab: lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH],
+      skip_upload_apk: true,
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      release_status: "draft",
+      changelog: get_changelog,
+      apk_paths: [lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH]]
+    )
+
+    UI.success("App deployed to Google Play internal testing! 🎉")
+  end
+
+  private_lane :deploy_to_play_production do
+    UI.header("Deploying to Google Play Console (Production)")
+
+    # Run additional production checks
+    verify_production_ready
+
+    build_android_release
+
+    upload_to_play_store(
+      track: "production",
+      aab: lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH],
+      skip_upload_apk: true,
+      skip_upload_metadata: true, # Metadata updated separately
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "completed",
+      changelog: get_changelog
+    )
+
+    UI.success("App deployed to Google Play production! 🚀")
+  end
+
+  private_lane :verify_production_ready do
+    UI.header("Verifying Production Readiness")
+
+    # Check version increment
+    current_version = google_play_track_version_code(
+      track: "production",
+      package_name: APP_ID_PRODUCTION
+    )
+
+    next_build = get_build_number.to_i
+
+    if next_build <= current_version
+      UI.user_error!("Build number must be greater than current production version (#{current_version})")
+    end
+
+    # Verify all tests pass
+    run_android_tests
+
+    # Check for any TODO/FIXME comments in release build
+    todo_results = scan_for_todos
+    if todo_results[:issues].any?
+      UI.important("⚠️  Found TODO/FIXME comments that should be addressed:")
+      todo_results[:issues].each { |issue| UI.important("  • #{issue}") }
+    end
+
+    UI.success("Production verification completed! ✅")
+  end
+
+  private_lane :create_git_tag do
+    version = get_version_number
+    build_number = get_build_number
+
+    git_tag(
+      tag: "v#{version}-#{build_number}",
+      message: "Release v#{version} (Build #{build_number})",
+      force: false
+    )
+
+    push_git_tags
+  end
+end
+
+# === iOS Lanes ===
+platform :ios do
+  desc "Run all iOS tests"
+  lane :test do
+    run_ios_tests
+  end
+
+  desc "Build iOS debug build"
+  lane :build_debug do
+    build_ios_debug
+  end
+
+  desc "Build iOS release build"
+  lane :build_release do
+    build_ios_release
+  end
+
+  desc "Deploy to TestFlight"
+  lane :deploy_testflight do
+    distribute_to_testflight
+  end
+
+  desc "Deploy to App Store"
+  lane :deploy_appstore do
+    deploy_to_appstore
+  end
+
+  desc "Full iOS release process"
+  lane :release_ios do
+    # Ensure clean state
+    git_pull
+    ensure_git_branch(branch: "main")
+    ensure_git_status_clean
+
+    # Run tests
+    run_ios_tests
+
+    # Build and deploy
+    build_ios_release
+    deploy_to_appstore
+
+    # Create Git tag
+    create_git_tag
+
+    # Notify team
+    notify_slack(
+      message: "🚀 CannaAI Pro iOS v#{get_version_number} deployed to App Store!",
+      success: true
+    )
+  end
+
+  # === Private iOS Lanes ===
+
+  private_lane :run_ios_tests do
+    UI.header("Running iOS Tests")
+
+    scan(
+      scheme: "Runner",
+      clean: true,
+      code_coverage: true,
+      output_directory: "ios/test_output"
+    )
+
+    UI.success("All iOS tests passed! 🎉")
+  end
+
+  private_lane :build_ios_debug do
+    UI.header("Building iOS Debug Build")
+
+    build_ios_app(
+      scheme: "Runner",
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "ios/build",
+      output_name: "CannaAI-Debug.ipa"
+    )
+
+    UI.success("Debug IPA built successfully! 🎉")
+  end
+
+  private_lane :build_ios_release do
+    UI.header("Building iOS Release Build")
+
+    # Update build number
+    update_build_number(
+      build_number: get_build_number,
+      xcodeproj: "ios/Runner.xcodeproj"
+    )
+
+    # Build and archive
+    build_ios_app(
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "ios/build",
+      output_name: "CannaAI-Release.ipa",
+      include_bitcode: false
+    )
+
+    UI.success("Release IPA built successfully! 🎉")
+  end
+
+  private_lane :distribute_to_testflight do
+    UI.header("Distributing to TestFlight")
+
+    build_ios_release
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      changelog: get_changelog,
+      distribute_external: false,
+      notify_external_testers: false
+    )
+
+    UI.success("App distributed to TestFlight! 🎉")
+  end
+
+  private_lane :deploy_to_appstore do
+    UI.header("Deploying to App Store")
+
+    # Verify production readiness
+    verify_ios_production_ready
+
+    build_ios_release
+
+    upload_to_app_store(
+      force: true,
+      reject_if_possible: true,
+      skip_metadata: false,
+      skip_screenshots: false,
+      precheck_include_in_app_purchases: false,
+      automatic_release: true,
+      submit_for_review: true
+    )
+
+    UI.success("App submitted to App Store! 🚀")
+  end
+
+  private_lane :verify_ios_production_ready do
+    UI.header("Verifying iOS Production Readiness")
+
+    # Check app version in Info.plist
+    info_plist_path = "ios/Runner/Info.plist"
+    info_plist = get_info_plist(path: info_plist_path)
+
+    unless info_plist["CFBundleShortVersionString"] == get_version_number
+      UI.user_error!("Info.plist version doesn't match package.json version")
+    end
+
+    # Run tests
+    run_ios_tests
+
+    UI.success("iOS production verification completed! ✅")
+  end
+end
+
+# === Cross-Platform Lanes ===
+
+desc "Release for both platforms"
+lane :release_all do
+  UI.header("Starting Full Release Process")
+
+  # Android release
+  release_android
+
+  # iOS release
+  release_ios
+
+  UI.success("Full release completed! 🎉")
+end
+
+desc "Deploy to staging (both platforms)"
+lane :deploy_staging do
+  UI.header("Deploying to Staging")
+
+  parallel do
+    deploy_firebase_staging
+    deploy_testflight
+  end
+
+  UI.success("Staging deployment completed! 🎉")
+end
+
+# === Metadata Management ===
+
+desc "Update app metadata"
+lane :update_metadata do
+  UI.header("Updating App Store and Play Store metadata")
+
+  # Update Android metadata
+  upload_to_play_store(
+    track: "production",
+    metadata_path: "fastlane/metadata/android",
+    skip_upload_apk: true,
+    skip_upload_aab: true
+  )
+
+  # Update iOS metadata
+  deliver(
+    skip_binary_upload: true,
+    skip_screenshots: true,
+    metadata_path: "fastlane/metadata/ios",
+    app_identifier: APP_ID_PRODUCTION
+  )
+
+  UI.success("Metadata updated successfully! 🎉")
+end
+
+desc "Upload screenshots"
+lane :upload_screenshots do
+  UI.header("Uploading Screenshots")
+
+  # Android screenshots
+  upload_to_play_store(
+    track: "production",
+    screenshots_path: "fastlane/metadata/android/images",
+    skip_upload_apk: true,
+    skip_upload_aab: true
+  )
+
+  # iOS screenshots
+  deliver(
+    skip_binary_upload: true,
+    skip_metadata: true,
+    screenshots_path: "fastlane/metadata/ios/screenshots",
+    app_identifier: APP_ID_PRODUCTION
+  )
+
+  UI.success("Screenshots uploaded successfully! 🎉")
+end
+
+# === Error Handling ===
+
+error do |lane, exception|
+  UI.error("Lane '#{lane}' failed with exception: #{exception}")
+
+  # Notify team on failure
+  notify_slack(
+    message: "❌ Lane '#{lane}' failed!\n\nError: #{exception}",
+    success: false
+  )
+end
+
+# === Slack Integration ===
+
+private_lane :notify_slack do |options|
+  return unless ENV["SLACK_URL"]
+
+  slack(
+    url: ENV["SLACK_URL"],
+    message: options[:message],
+    success: options[:success],
+    channel: "#releases",
+    payload: {
+      "Lane" => lane_context[Platform::Lane],
+      "Platform" => platform.is_android? ? "Android" : "iOS",
+      "Version" => get_version_number,
+      "Build" => get_build_number
+    }
+  )
+end
+
+# === Helper Functions ===
+
+private_lane :git_pull do
+  git_pull
+end
+
+private_lane :scan_for_todos do
+  UI.header("Scanning for TODO/FIXME comments")
+
+  results = {
+    issues: [],
+    total_count: 0
+  }
+
+  # Scan source files for TODO comments
+  Dir.glob("../lib/**/*.{dart,kt,swift}").each do |file|
+    File.readlines(file).each_with_index do |line, index|
+      if line.match(/(TODO|FIXME|HACK|XXX):?\s*(.+)/i)
+        results[:issues] << "#{File.basename(file)}:#{index + 1}: #{$1} - #{$2.strip}"
+        results[:total_count] += 1
+      end
+    end
+  end
+
+  results
+end

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme applied to the Android Application as soon as it is started.
+         This theme is visible to the user while the Flutter UI initializes.
+         After that, this theme continues to determine the Window background
+         behind the Flutter UI. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <!-- Show a splash screen on the activity. Automatically removed when
+             the Flutter engine draws its first frame -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <!-- Optional: Add status bar color -->
+        <item name="android:statusBarColor">#16a34a</item>
+        <!-- Optional: Add navigation bar color -->
+        <item name="android:navigationBarColor">#16a34a</item>
+    </style>
+
+    <!-- Theme applied to the Android Application as soon as it is started.
+         This theme is visible to the user while the Flutter UI initializes.
+         After that, this theme continues to determine the Window background
+         behind the Flutter UI. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <!-- Optional: Add status bar color -->
+        <item name="android:statusBarColor">#16a34a</item>
+        <!-- Optional: Add navigation bar color -->
+        <item name="android:navigationBarColor">#16a34a</item>
+        <!-- Make status bar icons dark -->
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

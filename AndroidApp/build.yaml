@@ -1,0 +1,188 @@
+# CannaAI Pro Build Configuration
+
+name: canna_ai_prod
+description: CannaAI Pro - Production build configuration
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.4.3
+
+  # HTTP & API
+  http: ^1.2.1
+  dio: ^5.4.3+1
+  retrofit: ^4.1.0
+
+  # Camera & Image Processing
+  camera: ^0.10.5+9
+  image_picker: ^1.0.7
+  image: ^4.1.7
+
+  # Charts & Data Visualization
+  fl_chart: ^0.68.0
+  charts_flutter: ^0.12.0
+  syncfusion_flutter_charts: ^26.2.8
+
+  # WebSocket & Real-time
+  socket_io_client: ^2.0.3+1
+  web_socket_channel: ^2.4.5
+
+  # Local Storage & Database
+  shared_preferences: ^2.2.3
+  sqflite: ^2.3.3+1
+  path_provider: ^2.1.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # File Handling & Permissions
+  file_picker: ^6.2.1
+  permission_handler: ^11.3.1
+  path: ^1.9.0
+
+  # UI Components & Material Design
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  material_symbols_icons: ^4.2719.3
+  flutter_svg: ^2.0.10+1
+
+  # Forms & Validation
+  flutter_form_builder: ^9.3.0
+  form_builder_validators: ^10.0.1
+
+  # Navigation & Routing
+  go_router: ^14.2.0
+
+  # Utilities & Helpers
+  intl: ^0.19.0
+  logger: ^2.4.0
+  uuid: ^4.4.2
+  crypto: ^3.0.3
+
+  # Date & Time
+  date_time_picker: ^2.1.0
+
+  # Device Information
+  device_info_plus: ^10.1.2
+  battery_plus: ^6.0.2
+
+  # Sensors
+  sensors_plus: ^4.0.2
+
+  # Notifications
+  flutter_local_notifications: ^17.2.3
+  firebase_messaging: ^14.9.4
+
+  # Bluetooth for sensor connectivity
+  flutter_bluetooth_serial: ^0.4.0
+
+  # Background processing
+  workmanager: ^0.5.2
+
+  # Caching
+  cached_network_image: ^3.3.1
+
+  # Animations
+  lottie: ^3.1.2
+
+  # QR Code for sensor setup
+  qr_flutter: ^4.1.0
+  qr_code_scanner: ^1.0.1
+
+  # Security & Encryption
+  flutter_secure_storage: ^9.2.2
+  encrypt: ^5.0.3
+
+  # Analytics & Monitoring
+  firebase_crashlytics: ^3.5.9
+  firebase_analytics: ^10.8.5
+  sentry_flutter: ^8.9.1
+
+  # Performance
+  flutter_performance: ^1.1.2
+  devicelocale: ^0.7.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Code Generation
+  build_runner: ^2.4.11
+  riverpod_generator: ^2.4.3
+  retrofit_generator: ^8.1.0
+  hive_generator: ^2.0.1
+  json_annotation: ^4.9.0
+  json_serializable: ^6.8.0
+
+  # Linting
+  flutter_lints: ^4.0.0
+  very_good_analysis: ^5.1.0
+
+  # Testing
+  mockito: ^5.4.4
+  integration_test:
+    sdk: flutter
+  golden_toolkit: ^0.15.0
+  flutter_driver:
+    sdk: flutter
+
+  # Build Tools
+  flutter_oss_licenses: ^2.0.2
+  very_good_cli: ^0.20.1
+
+  # Obfuscation & Security
+  flutter_obfuscate: ^2.1.0
+
+  # Performance Analysis
+  flutter_driver_slides: ^0.0.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+    - assets/config/
+    - assets/onboarding/
+
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+
+# Flutter specific configuration
+flutter_intl:
+  enabled: true
+  class_name: S
+  main_locale: en_US
+  arb_dir: lib/l10n
+  output_dir: lib/generated
+  output_localization_file: l10n.dart
+
+# Obfuscation configuration
+obfuscate:
+  enabled: true
+  exclude_patterns:
+    - "*.g.dart"
+    - "*.freezed.dart"
+    - "lib/generated/**"
+
+# Build configuration
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  adaptive_icon_background: "#4CAF50"
+  adaptive_icon_foreground: "assets/icons/app_icon_adaptive.png"

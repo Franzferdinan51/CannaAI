@@ -1,0 +1,84 @@
+buildscript {
+    ext.kotlin_version = '1.9.22'
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url 'https://storage.googleapis.com/r8-releases/raw'
+        }
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.4.1'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
+        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.7.7'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://storage.googleapis.com/r8-releases/raw' }
+    }
+
+    // Force consistent dependency versions
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.core:core-ktx:1.12.0'
+            force 'androidx.appcompat:appcompat:1.6.1'
+            force 'com.google.android.material:material:1.11.0'
+        }
+    }
+}
+
+// Global properties for the build
+ext {
+    compileSdkVersion = 34
+    targetSdkVersion = 34
+    minSdkVersion = 21
+    buildToolsVersion = "34.0.0"
+
+    // Dependency versions
+    androidx_core_version = '1.12.0'
+    androidx_appcompat_version = '1.6.1'
+    material_version = '1.11.0'
+    constraint_layout_version = '2.1.4'
+    lifecycle_version = '2.7.0'
+    room_version = '2.6.1'
+    work_manager_version = '2.9.1'
+    camera_version = '1.3.1'
+    biometric_version = '1.1.0'
+    security_version = '1.1.0-alpha06'
+
+    // Test versions
+    junit_version = '4.13.2'
+    espresso_version = '3.5.1'
+    androidx_test_version = '1.5.2'
+}
+
+// Clean task
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+// Gradle wrapper configuration
+wrapper {
+    gradleVersion = '8.5'
+    distributionType = Wrapper.DistributionType.BIN
+    distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-bin.zip"
+}
+
+// Enable R8 full mode for better code shrinking
+android.defaultConfig {
+    vectorDrawables.useSupportLibrary = true
+}
+
+// Enable Java 8+ features
+android.compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+}

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Domain configuration for production environment -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">cannaai.pro</domain>
+        <domain includeSubdomains="true">api.cannaai.pro</domain>
+        <domain includeSubdomains="true">cdn.cannaai.pro</domain>
+    </domain-config>
+
+    <!-- Allow cleartext traffic for development -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">192.168.0.0/16</domain>
+        <domain includeSubdomains="true">10.0.0.0/8</domain>
+    </domain-config>
+
+    <!-- Debug configuration - allows all traffic for development -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </debug-overrides>
+
+    <!-- Base configuration for all other domains -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- Pinning certificates for critical API endpoints (optional for production) -->
+    <!-- Uncomment for production use when you have the certificates -->
+    <!--
+    <domain-config>
+        <domain includeSubdomains="true">api.cannaai.pro</domain>
+        <pin-set>
+            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
+            <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
+        </pin-set>
+        <pin-set expiration="2025-12-31">
+            <pin digest="SHA-256">CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=</pin>
+        </pin-set>
+    </domain-config>
+    -->
+
+    <!-- Allow user-added CAs for certificate inspection during development -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>
