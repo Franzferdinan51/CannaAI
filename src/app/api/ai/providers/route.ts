@@ -152,6 +152,8 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
       return [];
     }
 
+    const { apiKey, model: manualModel } = settingsData.settings.openRouter;
+
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
         'Authorization': `Bearer ${settingsData.settings.openRouter.apiKey}`,
@@ -165,7 +167,14 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
     }
 
     const data = await response.json();
-    const models = data.data || [];
+    let models = data.data || [];
+
+    if (manualModel && !models.find((m: any) => m.id === manualModel)) {
+      models.unshift({
+        id: manualModel,
+        name: `${manualModel} (Manual)`,
+      });
+    }
 
     // Filter and sort models
     return models
@@ -199,6 +208,35 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
 
   } catch (error) {
     console.warn('OpenRouter models fetch error:', error);
+    return [];
+  }
+}
+
+async function getOpenAICompatibleModels(): Promise<AIModel[]> {
+  try {
+    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/settings`);
+    const settingsData = await settingsResponse.json();
+
+    if (!settingsData.success || !settingsData.settings.openai?.apiKey || !settingsData.settings.openai?.baseUrl) {
+      return [];
+    }
+
+    const { apiKey, baseUrl, model } = settingsData.settings.openai;
+
+    // For OpenAI-compatible endpoints, we can't always list models.
+    // We'll start with the user-provided model.
+    if (!model) {
+      return [];
+    }
+
+    return [{
+      id: model,
+      name: model,
+      provider: 'openai-compatible',
+      capabilities: determineCapabilities(model),
+    }];
+  } catch (error) {
+    console.warn('OpenAI-Compatible models fetch error:', error);
     return [];
   }
 }
@@ -309,6 +347,30 @@ async function getAvailableProviders(): Promise<AIProvider[]> {
       type: 'cloud',
       models: [],
       config: { baseUrl: 'https://openrouter.ai/api/v1' },
+      status: 'error',
+      lastChecked: new Date().toISOString()
+    });
+  }
+
+  // OpenAI-Compatible
+  try {
+    const openAICompatibleModels = await getOpenAICompatibleModels();
+    providers.push({
+      id: 'openai-compatible',
+      name: 'OpenAI-Compatible',
+      type: 'cloud',
+      models: openAICompatibleModels,
+      config: { baseUrl: '' }, // This will be pulled from settings
+      status: openAICompatibleModels.length > 0 ? 'available' : 'unavailable',
+      lastChecked: new Date().toISOString()
+    });
+  } catch (error) {
+    providers.push({
+      id: 'openai-compatible',
+      name: 'OpenAI-Compatible',
+      type: 'cloud',
+      models: [],
+      config: { baseUrl: '' },
       status: 'error',
       lastChecked: new Date().toISOString()
     });
