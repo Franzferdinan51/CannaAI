@@ -78,11 +78,10 @@ export function AIProviderSettings() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadProviders();
     loadSettings();
   }, []);
 
-  const loadProviders = async () => {
+  const loadProviders = async (currentSettings: Settings) => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/ai/providers');
@@ -91,11 +90,9 @@ export function AIProviderSettings() {
       if (data.success) {
         setProviders(data.providers);
 
-        // Set initial provider based on settings
-        if (settings && settings.aiProvider) {
-          setSelectedProvider(settings.aiProvider);
+        if (currentSettings && currentSettings.aiProvider) {
+          setSelectedProvider(currentSettings.aiProvider);
         } else if (data.providers.length > 0) {
-          // Default to first available provider
           const firstAvailable = data.providers.find(p => p.status === 'available');
           if (firstAvailable) {
             setSelectedProvider(firstAvailable.id);
@@ -120,7 +117,8 @@ export function AIProviderSettings() {
       if (data.success) {
         setSettings(data.settings);
         setSelectedProvider(data.settings.aiProvider);
-        setSelectedModel(data.settings.lmStudio?.model || data.settings.openRouter?.model || '');
+        setSelectedModel(data.settings.lmStudio?.model || data.settings.openRouter?.model || data.settings.openai?.model || '');
+        await loadProviders(data.settings);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
