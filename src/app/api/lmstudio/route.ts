@@ -6,7 +6,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 export async function POST(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     const body = await request.json();
     const { prompt, image, systemPrompt, temperature, maxTokens, modelId } = body;
@@ -99,6 +114,17 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   // Health check and model listing endpoint
   try {
     const response = await fetch('http://localhost:1234/v1/models');

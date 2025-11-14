@@ -3,6 +3,16 @@ import { withSecurity, securityConfig, createAPIResponse, createAPIError } from 
 import { analyzeRequestSchema, validateRequestBody, AnalyzeRequest } from '@/lib/validation';
 import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
 
+// Environment detection
+const isStaticExport = process.env.BUILD_MODE === 'static';
+
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
+// Runtime configuration for local development
+export const runtime = isStaticExport ? 'edge' : 'nodejs';
+
 // File size formatting helper
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
@@ -12,7 +22,63 @@ function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+export async function GET(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'AI analysis is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
+  // Full server-side functionality for local development
+  try {
+    const { withSecurity, securityConfig, createAPIResponse } = await import('@/lib/security');
+
+    return withSecurity(request, async (req, context) => {
+      return createAPIResponse({
+        success: true,
+        message: 'Plant analysis service is running (server mode)',
+        buildMode: 'server',
+        supportedFeatures: {
+          aiAnalysis: true,
+          purpleDetection: true,
+          imageProcessing: true,
+          fallbackAnalysis: true,
+          multiProviderSupport: true,
+          realTimeProcessing: true
+        },
+        requestId: context?.clientIP || 'unknown'
+      });
+    }, securityConfig.publicAPI);
+
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to initialize analysis service',
+        buildMode: 'server',
+        timestamp: new Date().toISOString()
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'AI analysis is handled client-side in static export mode. Please configure your AI provider using the AI Config button.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
+  // Full server-side functionality for local development
   return withSecurity(request, async (req, context) => {
     try {
       // Validate and parse request body using our enhanced validation
@@ -71,37 +137,40 @@ export async function POST(request: NextRequest) {
           };
 
           // Smart processing based on original image characteristics
+          // BACKUP: Original compression settings for reference
+          // Original values: quality: 85 (8K+), 80 (4K-8K), 75 (2MP+), 70 (standard)
+
           if (originalMegapixels > 20) {
-            // Ultra-high resolution images (8K+)
+            // Ultra-high resolution images (8K+) - Maintain 90% quality
             processingOptions = {
               ...processingOptions,
               width: 1600,
               height: 1600,
-              quality: 85 // Higher quality for large detailed images
+              quality: 90 // Highest quality for ultra-high resolution
             };
           } else if (originalMegapixels > 8) {
-            // High resolution images (4K-8K)
+            // High resolution images (4K-8K) - Maintain 90% quality
             processingOptions = {
               ...processingOptions,
               width: 1200,
               height: 1200,
-              quality: 80
+              quality: 90 // High quality maintained
             };
           } else if (originalMegapixels > 2) {
-            // Medium resolution images
+            // Medium resolution images - Maintain 90% quality
             processingOptions = {
               ...processingOptions,
               width: 1000,
               height: 1000,
-              quality: 75
+              quality: 90 // Quality improved to 90%
             };
           } else {
-            // Standard resolution images
+            // Standard resolution images - Maintain 90% quality
             processingOptions = {
               ...processingOptions,
               width: 800,
               height: 800,
-              quality: 70
+              quality: 90 // All images now maintain 90% quality minimum
             };
           }
 
@@ -112,8 +181,8 @@ export async function POST(request: NextRequest) {
           const compressionEfficiency = ((originalSize - processedImage.compressedSize) / originalSize) * 100;
 
           console.log(`🖼️ Ultra-high resolution image processed:`);
-          console.log(`   Original: ${formatFileSize(originalSize)} (${metadata.width}x${metadata.height}, ${originalMegapixels.toFixed(1)}MP)`);
-          console.log(`   Processed: ${formatFileSize(processedImage.compressedSize)} (${processedImage.metadata.width}x${processedImage.metadata.height})`);
+          console.log('   Original: ' + formatFileSize(originalSize) + ' (' + metadata.width + 'x' + metadata.height + ', ' + originalMegapixels.toFixed(1) + 'MP)');
+          console.log('   Processed: ' + formatFileSize(processedImage.compressedSize) + ' (' + processedImage.metadata.width + 'x' + processedImage.metadata.height + ')');
           console.log(`   Compression: ${compressionEfficiency.toFixed(1)}% reduction, Quality preserved: ${processingOptions.quality}%`);
 
           processedImageInfo = {
@@ -472,7 +541,7 @@ The provided image has been optimized for AI analysis while maintaining maximum 
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`LM Studio error: ${response.status} ${response.statusText}`);
+      throw new Error('LM Studio error: ' + response.status + ' ' + response.statusText);
     }
 
     const data = await response.json();
@@ -511,7 +580,7 @@ async function callOpenRouter(prompt: string): Promise<any> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': 'Bearer ' + apiKey,
         'HTTP-Referer': process.env.VERCEL_URL || 'http://localhost:3000',
         'X-Title': 'CannaAI Plant Analysis',
       },
@@ -536,7 +605,7 @@ async function callOpenRouter(prompt: string): Promise<any> {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Open Router error: ${response.status} ${response.statusText}`);
+      throw new Error('Open Router error: ' + response.status + ' ' + response.statusText);
     }
 
     const data = await response.json();
@@ -692,6 +761,12 @@ function generateFallbackAnalysis(
   let symptomsMatched: string[] = [];
   let isPurpleStrain = strainName.includes('purple');
 
+  // Declare urgencyLevel early to prevent reference errors
+  let urgencyLevel = 'medium';
+  let environmentalFactors: string[] = [];
+  let pestsDetected: string[] = [];
+  let diseasesDetected: string[] = [];
+
   // ENHANCED: Always provide comprehensive analysis even with minimal input
   if (leafSymptoms === "General symptoms" || symptoms === "general symptoms" || leafSymptoms.trim() === "" || symptoms.trim() === "") {
     // Perform comprehensive environmental analysis even without specific symptoms
@@ -805,12 +880,12 @@ function generateFallbackAnalysis(
       reasoning: [
         {
           step: 'Environmental Analysis',
-          explanation: `Comprehensive analysis of pH (${phValue || 'not measured'}), temperature (${tempValue || 'not measured'}°F), humidity (${humidityValue || 'not measured'}%) for optimal cannabis growing conditions`,
+          explanation: 'Comprehensive analysis of pH (' + (phValue || 'not measured') + '), temperature (' + (tempValue || 'not measured') + '°F), humidity (' + (humidityValue || 'not measured') + '%) for optimal cannabis growing conditions',
           weight: 60
         },
         {
           step: 'Growth Stage Assessment',
-          explanation: `Analysis based on ${growthStage || 'unspecified'} growth stage with appropriate recommendations`,
+          explanation: 'Analysis based on ' + (growthStage || 'unspecified') + ' growth stage with appropriate recommendations',
           weight: 30
         },
         {
@@ -1079,7 +1154,7 @@ function generateFallbackAnalysis(
   }
   // WHITEFLIES - Common greenhouse pest
   else if (symptoms.includes('whitefly') || (symptoms.includes('white') && symptoms.includes('fly')) ||
-           symptoms.includes('cloud') && symptoms.includes('white')) {
+           (symptoms.includes('cloud') && symptoms.includes('white'))) {
     diagnosis = 'Whitefly Infestation (Trialeurodes vaporariorum)';
     confidence = 80;
     healthScore = 70;
@@ -1426,10 +1501,7 @@ function generateFallbackAnalysis(
   if (symptomsMatched.length === 0) symptomsMatched = ['General symptoms observed'];
 
   // Determine urgency and environmental factors
-  let urgencyLevel = 'medium';
-  let environmentalFactors: string[] = [];
-  let pestsDetected: string[] = [];
-  let diseasesDetected: string[] = [];
+  // Variables already declared at the beginning of the function
 
   if (symptoms.includes('spider mite') || symptoms.includes('webbing')) {
     pestsDetected.push('Spider Mites');
@@ -1471,7 +1543,7 @@ function generateFallbackAnalysis(
     healthScore: Math.max(20, Math.min(100, healthScore)),
     strainSpecificAdvice: isPurpleStrain
       ? 'Purple strain: Monitor for actual deficiencies vs natural coloration. Focus on overall plant health rather than just purple coloration. Purple strains still need the same nutrient management as other strains.'
-      : `${strain}: ${getStrainSpecificAdvice(strain, diagnosis, growthStage)}`,
+      : strain + ': ' + getStrainSpecificAdvice(strain, diagnosis, growthStage),
     reasoning: [
       {
         step: 'Rule-Based Analysis',
@@ -1506,32 +1578,3 @@ function generateFallbackAnalysis(
   };
 }
 
-// GET endpoint for current analysis status
-export async function GET(request: NextRequest) {
-  return withSecurity(request, async (req, context) => {
-    return createAPIResponse({
-      success: true,
-      message: 'Plant analysis service is running',
-      supportedFeatures: {
-        aiAnalysis: true,
-        purpleDetection: true,
-        fallbackAnalysis: true,
-        multiProviderSupport: true,
-        realTimeProcessing: true
-      },
-      aiProviders: {
-        lmStudio: {
-          available: true,
-          endpoint: 'http://localhost:1234/v1/chat/completions',
-          timeout: 30000
-        },
-        openRouter: {
-          available: process.env.ENABLE_OPENROUTER === 'true' && !!process.env.OPENROUTER_API_KEY,
-          endpoint: 'https://openrouter.ai/api/v1/chat/completions',
-          timeout: 30000
-        }
-      },
-      requestId: context?.clientIP || 'unknown'
-    });
-  }, securityConfig.publicAPI);
-}

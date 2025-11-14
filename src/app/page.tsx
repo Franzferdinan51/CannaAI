@@ -14,7 +14,7 @@ import {
   TestTube, Beaker, Eye, Heart, Timer, Target, Award, Archive, ShoppingCart,
   Clipboard, Filter, Download, DownloadCloud, UploadCloud, BarChart3, ActivityIcon,
   Flame, Snowflake, AirVent, LightbulbOff, Volume2, VolumeX, X, Grid,
-  TrendingDown, Star
+  TrendingDown, Star, Wrench
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -446,6 +446,11 @@ export default function CultivAIPro() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
   const [sensorData, setSensorData] = useState(mockSensorData);
+
+  // Expose sensor data globally for AI assistant and header
+  useEffect(() => {
+    (window as any).sensorData = sensorData;
+  }, [sensorData]);
   const [showAIChat, setShowAIChat] = useState(false);
   const [aiMessages, setAIMessages] = useState([]);
   const [aiInput, setAIInput] = useState('');
@@ -1167,7 +1172,7 @@ export default function CultivAIPro() {
         />
       </div>
 
-      <div className="space-y-2 max-h-64 overflow-y-auto">
+      <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-visible">
         {pestDiseaseDatabase.map((item) => (
           <Card
             key={item.name}
@@ -1216,7 +1221,7 @@ export default function CultivAIPro() {
         Add Item
       </Button>
 
-      <div className="space-y-2 max-h-64 overflow-y-auto">
+      <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-visible">
         {inventory.map((item) => (
           <Card key={item.id} className="bg-slate-800/50 border-slate-600">
             <CardContent className="p-3">
@@ -1259,7 +1264,7 @@ export default function CultivAIPro() {
         Log Harvest
       </Button>
 
-      <div className="space-y-2 max-h-64 overflow-y-auto">
+      <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-visible">
         {harvestData.map((harvest) => (
           <Card key={harvest.id} className="bg-slate-800/50 border-slate-600">
             <CardContent className="p-3">
@@ -1297,9 +1302,9 @@ export default function CultivAIPro() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Clean Header with Hamburger Menu */}
-      <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-slate-700">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white pt-4">
+      {/* Content starts immediately below global header */}
+      <header>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Sheet open={sidePanelOpen} onOpenChange={setSidePanelOpen}>
@@ -1324,6 +1329,52 @@ export default function CultivAIPro() {
                     {/* Quick Tool Access */}
                     <div className="space-y-3">
                       <h3 className="text-sm font-semibold text-blue-300 mb-3">Quick Access Tools</h3>
+
+                      <Link href="/all-tools" className="block">
+                        <Card className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-blue-500 hover:border-blue-300 transition-all duration-300 hover:from-blue-800/50 hover:to-purple-800/50">
+                          <CardContent className="p-3">
+                            <div className="flex items-center">
+                              <Wrench className="h-4 w-4 text-blue-400 mr-3" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-blue-300">All Tools Suite</h4>
+                                <p className="text-xs text-slate-400">Complete toolkit - All tools in one place</p>
+                              </div>
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+
+  
+                      <Link href="/ai-assistant" className="block">
+                        <Card className="bg-gradient-to-r from-emerald-900/50 to-teal-900/50 border-emerald-500 hover:border-emerald-300 transition-all duration-300 hover:from-emerald-800/50 hover:to-teal-800/50">
+                          <CardContent className="p-3">
+                            <div className="flex items-center">
+                              <Bot className="h-4 w-4 text-emerald-400 mr-3" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-emerald-300">AI Cultivation Assistant</h4>
+                                <p className="text-xs text-slate-400">Expert guidance & plant analysis</p>
+                              </div>
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+
+                      <Link href="/live-vision" className="block">
+                        <Card className="bg-slate-800/50 border-slate-600 hover:border-green-400 transition-all duration-300 hover:bg-slate-800/70">
+                          <CardContent className="p-3">
+                            <div className="flex items-center">
+                              <Eye className="h-4 w-4 text-green-400 mr-3" />
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-green-300">Live Plant Vision</h4>
+                                <p className="text-xs text-slate-400">USB webcam & microscope analysis</p>
+                              </div>
+                              <ArrowLeft className="h-3 w-3 text-slate-400 rotate-180" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
 
                       <Link href="/tools/nutrient-calculator" className="block">
                         <Card className="bg-slate-800/50 border-slate-600 hover:border-blue-400 transition-all duration-300 hover:bg-slate-800/70">
@@ -1480,7 +1531,7 @@ export default function CultivAIPro() {
                 {plantHistory.length}
               </Badge>
             </Button>
-            
+  
             {/* Minimal Notification Bell */}
             <div className="relative">
               <Button variant="ghost" size="sm" className="text-slate-300 hover:text-blue-400">
@@ -1514,7 +1565,7 @@ export default function CultivAIPro() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                <div className="space-y-3 max-h-48 overflow-y-auto pr-2 scrollbar-visible">
                   {rooms.map((room) => (
                     <div 
                       key={room.id} 
@@ -1619,25 +1670,31 @@ export default function CultivAIPro() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
+  
                   <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <ZapIcon className="h-5 w-5 text-amber-400 mb-1" />
                     Water
                   </Button>
-                  
+
                   <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <Sun className="h-5 w-5 text-yellow-400 mb-1" />
                     Lights
                   </Button>
-                  
+
                   <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <Wind className="h-5 w-5 text-cyan-400 mb-1" />
                     Fans
                   </Button>
-                  
+
                   <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
                     <FlaskConical className="h-5 w-5 text-purple-400 mb-1" />
                     Nutrients
+                  </Button>
+
+                  <Button variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-600 flex flex-col items-center h-auto py-2 text-xs">
+                    <Camera className="h-5 w-5 text-blue-400 mb-1" />
+                    Scan
                   </Button>
                 </div>
               </CardContent>
@@ -2775,7 +2832,7 @@ export default function CultivAIPro() {
 
                             {/* Search dropdown */}
                             {showStrainDropdown && strainSearch && (
-                              <div className="absolute z-10 w-full mt-1 bg-slate-900 border border-slate-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              <div className="absolute z-10 w-full mt-1 bg-slate-900 border border-slate-600 rounded-md shadow-lg max-h-60 overflow-y-auto scrollbar-visible">
                                 {filteredStrains.length > 0 ? (
                                   filteredStrains.map(strain => (
                                     <div
@@ -3644,7 +3701,7 @@ export default function CultivAIPro() {
 
       {/* AI Chat Modal */}
       <Dialog open={showAIChat} onOpenChange={setShowAIChat}>
-        <DialogContent className="bg-slate-900 w-full max-w-md rounded-2xl border-slate-700 shadow-2xl max-h-[500px] flex flex-col">
+        <DialogContent className="bg-slate-900 w-[95vw] sm:w-full max-w-md rounded-2xl border-slate-700 shadow-2xl max-h-[80vh] sm:max-h-[500px] flex flex-col mx-4 sm:mx-auto">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-bold text-blue-300 flex items-center">
@@ -3662,9 +3719,9 @@ export default function CultivAIPro() {
             </div>
           </DialogHeader>
           
-          <div 
+          <div
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[300px]"
+            className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 max-h-[50vh] sm:max-h-[300px] scrollbar-chat chat-container"
           >
             {aiMessages.map((message, index) => (
               <div
@@ -3730,7 +3787,7 @@ export default function CultivAIPro() {
               </div>
             )}
 
-            <form onSubmit={handleAIChatSubmit} className="flex space-x-2">
+            <form onSubmit={handleAIChatSubmit} className="flex gap-2 sm:space-x-2">
               <Button
                 type="button"
                 variant="outline"
@@ -3745,7 +3802,7 @@ export default function CultivAIPro() {
                 value={aiInput}
                 onChange={(e) => setAIInput(e.target.value)}
                 placeholder="Ask about plant care..."
-                className="flex-1 bg-slate-800 border-slate-600 text-slate-200 placeholder-emerald-400"
+                className="flex-1 bg-slate-800 border-slate-600 text-slate-200 placeholder-emerald-400 text-sm sm:text-base min-h-[40px]"
               />
               <Button
                 type="submit"
@@ -3773,7 +3830,7 @@ export default function CultivAIPro() {
       
       {/* Strain Modal */}
       <Dialog open={showStrainModal} onOpenChange={setShowStrainModal}>
-        <DialogContent className="bg-slate-900 w-full max-w-2xl rounded-2xl border-slate-700 shadow-2xl max-h-[70vh] overflow-y-auto">
+        <DialogContent className="bg-slate-900 w-full max-w-2xl rounded-2xl border-slate-700 shadow-2xl max-h-[70vh] overflow-y-auto scrollbar-visible">
           <DialogHeader>
             <div className="flex justify-between items-center">
               <DialogTitle className="text-xl font-bold text-blue-300 flex items-center">
@@ -3874,6 +3931,7 @@ export default function CultivAIPro() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+
+      </div>
   );
 }

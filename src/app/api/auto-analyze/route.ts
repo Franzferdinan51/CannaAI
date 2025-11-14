@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server';
 import { withSecurity, securityConfig, createAPIResponse, createAPIError } from '@/lib/security';
 import { autoAnalyzeRequestSchema, validateRequestBody, AutoAnalyzeRequest } from '@/lib/validation';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Auto-analysis thresholds and rules
 const ANALYSIS_THRESHOLDS = {
   temperature: {
@@ -37,6 +41,17 @@ const ANALYSIS_THRESHOLDS = {
 };
 
 export async function POST(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   return withSecurity(request, async (req, context) => {
     try {
       // Validate and parse request body using enhanced validation
@@ -457,6 +472,17 @@ function enhanceAnalysisWithVisualSymptoms(analysis: any, visualSymptoms: string
 
 // GET endpoint for current analysis status
 export async function GET(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   return withSecurity(request, async (req, context) => {
     const { searchParams } = new URL(request.url);
     const room = searchParams.get('room');

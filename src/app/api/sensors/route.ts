@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Mock sensor data with realistic values
 let sensorData = {
   temperature: 22.5, // Internal Celsius for calculations
@@ -50,6 +54,17 @@ function updateSensorData() {
 }
 
 export async function GET() {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     // Update sensor data on each read
     updateSensorData();
@@ -83,6 +98,17 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     const body = await request.json();
     const { action, data } = body;

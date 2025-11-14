@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Test the exact path you mentioned
 const TEST_PATHS = [
   'C:\\Users\\Ryan\\.lmstudio\\models',
@@ -98,6 +102,17 @@ async function checkLMStudioRunning() {
 }
 
 export async function GET(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     console.log('=== LM Studio Debug Scan Started ===');
     console.log('Platform:', process.platform);

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Mock cost data
 let costData = {
   expenses: [
@@ -14,6 +18,17 @@ let costData = {
 };
 
 export async function GET() {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     const totalExpenses = costData.expenses.reduce((sum, expense) => sum + expense.amount, 0);
     const totalRevenue = costData.revenue.reduce((sum, revenue) => sum + revenue.total, 0);
@@ -45,6 +60,17 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     const body = await request.json();
     const { type, category, description, amount, date, strain, weight, pricePerGram } = body;

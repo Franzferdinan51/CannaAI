@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isStaticExport = process.env.BUILD_MODE === 'static';
+
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
@@ -7,11 +9,47 @@ const nextConfig: NextConfig = {
   },
   // 禁用 Next.js 热重载，由 nodemon 处理重编译
   reactStrictMode: false,
-  webpack: (config, { dev }) => {
+  // Output for static hosting (Netlify) - only when BUILD_MODE=static
+  ...(isStaticExport && {
+    output: 'export',
+    trailingSlash: false,
+    images: {
+      unoptimized: true
+    },
+  }),
+  // Ensure static export works properly
+  ...(isStaticExport && {
+    outputFileTracingIncludes: {
+      '*': ['src/components/**/*', 'src/lib/**/*', 'public/**/*'],
+    },
+  }),
+  webpack: (config, { dev, isServer }) => {
     if (dev) {
       // 禁用 webpack 的热模块替换
       config.watchOptions = {
         ignored: ['**/*'], // 忽略所有文件变化
+      };
+    }
+    // For static export, handle server-side imports
+    if (!dev && !isServer && isStaticExport) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        child_process: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        util: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        buffer: false,
+        process: false,
       };
     }
     return config;

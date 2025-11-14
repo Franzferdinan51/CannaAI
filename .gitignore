@@ -47,3 +47,8 @@ test
 prompt
 
 server.log
+
+# backup files
+*.zip
+*.tar.gz
+*.7z

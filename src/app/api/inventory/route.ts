@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Export configuration for dual-mode compatibility
+export const dynamic = 'auto';
+export const revalidate = false;
+
 // Mock inventory data
 let inventory = [
   { id: 1, name: 'General Hydroponics Flora Series', category: 'Nutrients', quantity: 2, unit: 'L', cost: 45, lastRestocked: '2024-05-01', lowStockThreshold: 1 },
@@ -10,6 +14,17 @@ let inventory = [
 ];
 
 export async function GET() {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     // Calculate inventory statistics
     const totalValue = inventory.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
@@ -40,6 +55,17 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     const body = await request.json();
     const { name, category, quantity, unit, cost, lowStockThreshold } = body;
@@ -83,6 +109,17 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
@@ -121,6 +158,17 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  // For static export, provide client-side compatibility response
+  const isStaticExport = process.env.BUILD_MODE === 'static';
+  if (isStaticExport) {
+    return NextResponse.json({
+      success: false,
+      message: 'This API is handled client-side in static export mode.',
+      clientSide: true,
+      buildMode: 'static'
+    });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
