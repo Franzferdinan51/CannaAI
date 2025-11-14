@@ -60,6 +60,11 @@ interface Settings {
     model: string;
     baseUrl: string;
   };
+  openai: {
+    apiKey: string;
+    model: string;
+    baseUrl: string;
+  };
 }
 
 export function AIProviderSettings() {
@@ -73,11 +78,10 @@ export function AIProviderSettings() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadProviders();
     loadSettings();
   }, []);
 
-  const loadProviders = async () => {
+  const loadProviders = async (currentSettings: Settings) => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/ai/providers');
@@ -86,11 +90,9 @@ export function AIProviderSettings() {
       if (data.success) {
         setProviders(data.providers);
 
-        // Set initial provider based on settings
-        if (settings && settings.aiProvider) {
-          setSelectedProvider(settings.aiProvider);
+        if (currentSettings && currentSettings.aiProvider) {
+          setSelectedProvider(currentSettings.aiProvider);
         } else if (data.providers.length > 0) {
-          // Default to first available provider
           const firstAvailable = data.providers.find(p => p.status === 'available');
           if (firstAvailable) {
             setSelectedProvider(firstAvailable.id);
@@ -115,7 +117,8 @@ export function AIProviderSettings() {
       if (data.success) {
         setSettings(data.settings);
         setSelectedProvider(data.settings.aiProvider);
-        setSelectedModel(data.settings.lmStudio?.model || data.settings.openRouter?.model || '');
+        setSelectedModel(data.settings.lmStudio?.model || data.settings.openRouter?.model || data.settings.openai?.model || '');
+        await loadProviders(data.settings);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -234,6 +237,60 @@ export function AIProviderSettings() {
       }
     } catch (error) {
       setError('Failed to update OpenRouter API key');
+    }
+  };
+
+  const handleOpenRouterModelChange = async (model: string) => {
+    if (!settings) return;
+
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_provider',
+          provider: 'openrouter',
+          config: { model }
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSettings({
+          ...settings,
+          openRouter: { ...settings.openRouter, model }
+        });
+        await loadProviders();
+      }
+    } catch (error) {
+      setError('Failed to update OpenRouter model');
+    }
+  }
+
+  const handleOpenAIChange = async (config: Partial<Settings['openai']>) => {
+    if (!settings) return;
+
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_provider',
+          provider: 'openai',
+          config
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSettings({
+          ...settings,
+          openai: { ...settings.openai, ...config }
+        });
+        await loadProviders();
+      }
+    } catch (error) {
+      setError('Failed to update OpenAI-Compatible settings');
     }
   };
 
@@ -415,6 +472,56 @@ export function AIProviderSettings() {
                   <Key className="h-4 w-4 mr-1" />
                   Get Key
                 </Button>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="openrouter-model" className="text-emerald-300">Manual Model Name</Label>
+                <Input
+                  id="openrouter-model"
+                  type="text"
+                  placeholder="Enter a model name"
+                  value={settings?.openRouter?.model || ''}
+                  onChange={(e) => handleOpenRouterModelChange(e.target.value)}
+                  className="bg-emerald-800 border-emerald-700 text-emerald-200"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* OpenAI-Compatible Settings */}
+          {selectedProvider === 'openai-compatible' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="openai-key" className="text-emerald-300">API Key</Label>
+                <Input
+                  id="openai-key"
+                  type="password"
+                  placeholder="Enter your API key"
+                  value={settings?.openai?.apiKey || ''}
+                  onChange={(e) => handleOpenAIChange({ apiKey: e.target.value })}
+                  className="bg-emerald-800 border-emerald-700 text-emerald-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="openai-url" className="text-emerald-300">Base URL</Label>
+                <Input
+                  id="openai-url"
+                  type="text"
+                  placeholder="https://api.openai.com/v1"
+                  value={settings?.openai?.baseUrl || ''}
+                  onChange={(e) => handleOpenAIChange({ baseUrl: e.target.value })}
+                  className="bg-emerald-800 border-emerald-700 text-emerald-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="openai-model" className="text-emerald-300">Model Name</Label>
+                <Input
+                  id="openai-model"
+                  type="text"
+                  placeholder="Enter the model name"
+                  value={settings?.openai?.model || ''}
+                  onChange={(e) => handleOpenAIChange({ model: e.target.value })}
+                  className="bg-emerald-800 border-emerald-700 text-emerald-200"
+                />
               </div>
             </div>
           )}
