@@ -11,7 +11,7 @@ export const dynamic = 'auto';
 export const revalidate = false;
 
 // Runtime configuration for local development
-export const runtime = isStaticExport ? 'edge' : 'nodejs';
+export const runtime = 'nodejs';
 
 // File size formatting helper
 function formatFileSize(bytes: number): string {
