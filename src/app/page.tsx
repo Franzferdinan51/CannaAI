@@ -407,13 +407,6 @@ export default function CultivAIPro() {
     additionalNotes: ''
   });
 
-  // Handle hydration mismatch by ensuring consistent client-side state
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [image, setImage] = useState(null);
@@ -447,10 +440,6 @@ export default function CultivAIPro() {
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
   const [sensorData, setSensorData] = useState(mockSensorData);
 
-  // Expose sensor data globally for AI assistant and header
-  useEffect(() => {
-    (window as any).sensorData = sensorData;
-  }, [sensorData]);
   const [showAIChat, setShowAIChat] = useState(false);
   const [aiMessages, setAIMessages] = useState([]);
   const [aiInput, setAIInput] = useState('');
@@ -485,7 +474,16 @@ export default function CultivAIPro() {
   const [showAdvancedAI, setShowAdvancedAI] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [activeSideTab, setActiveSideTab] = useState('tools');
-
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  // Expose sensor data globally for AI assistant and header
+  useEffect(() => {
+    if (mounted) {
+      (window as any).sensorData = sensorData;
+    }
+  }, [sensorData, mounted]);
   // Filter strains based on search
   const filteredStrains = React.useMemo(() => {
     return strains.filter(strain =>
@@ -1548,7 +1546,7 @@ export default function CultivAIPro() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Left Column - Live Sensors & Controls */}
           <div className="lg:col-span-1 space-y-6">
             {/* Room Management */}
@@ -1702,7 +1700,7 @@ export default function CultivAIPro() {
           </div>
           
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="md:col-span-2 lg:col-span-2 space-y-6">
             {/* Dashboard Navigation */}
             <Card className="bg-slate-950/70 backdrop-blur-sm border-slate-700">
               <CardContent className="p-3">
@@ -3701,7 +3699,7 @@ export default function CultivAIPro() {
 
       {/* AI Chat Modal */}
       <Dialog open={showAIChat} onOpenChange={setShowAIChat}>
-        <DialogContent className="bg-slate-900 w-[95vw] sm:w-full max-w-md rounded-2xl border-slate-700 shadow-2xl max-h-[80vh] sm:max-h-[500px] flex flex-col mx-4 sm:mx-auto">
+        <DialogContent className="bg-slate-900 w-full md:w-[95vw] sm:w-full max-w-md rounded-2xl border-slate-700 shadow-2xl max-h-[80vh] sm:max-h-[500px] flex flex-col mx-4 sm:mx-auto">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-bold text-blue-300 flex items-center">
