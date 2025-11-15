@@ -51,9 +51,9 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  try {
-    const startTime = Date.now();
+  const startTime = Date.now();
 
+  try {
     const body = await request.json();
     const { message, mode = 'chat', context, sensorData } = body;
 
@@ -111,6 +111,12 @@ export async function POST(request: NextRequest) {
           ].filter(Boolean)
         }
       });
+
+    } catch (innerError) {
+      // Handle specific AI execution errors
+      console.error('AI execution error:', innerError);
+      throw innerError; // Re-throw to be handled by outer catch
+    }
 
   } catch (error) {
     const totalTime = Date.now() - startTime;
