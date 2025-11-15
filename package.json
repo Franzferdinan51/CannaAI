@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon --exec \"npx tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
-    "dev:win": "nodemon --exec \"npx tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
+    "dev": "nodemon --exec \"node --loader tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
+    "dev:win": "nodemon --exec \"node --loader tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
     "build": "next build",
     "build:static": "cross-env BUILD_MODE=static next build",
     "build:netlify": "npm run build:static",
@@ -99,7 +99,7 @@
     "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
-    "nodemon": "^3.1.10",
+    "nodemon": "^3.1.11",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5"

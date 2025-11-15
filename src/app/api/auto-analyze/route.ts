@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { withSecurity, securityConfig, createAPIResponse, createAPIError } from '@/lib/security';
 import { autoAnalyzeRequestSchema, validateRequestBody, AutoAnalyzeRequest } from '@/lib/validation';
 
