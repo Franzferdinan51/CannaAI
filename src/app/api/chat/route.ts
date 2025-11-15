@@ -1,8 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { detectAvailableProviders, getProviderConfig, executeAIWithFallback } from '@/lib/ai-provider-detection';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
 export const revalidate = false;
+
+// Get contextual prompt based on agentic mode
+function getContextualPrompt(mode: string, context: any, sensorData: any, message: string): string {
+  const baseContext = `Current page context: ${context?.title || 'CannaAI Pro'} (${context?.page || 'unknown'})
+Page description: ${context?.description || 'Cannabis cultivation management system'}
+
+Current environmental conditions:
+- Temperature: ${sensorData?.temperature ? Math.round((sensorData.temperature * 9/5) + 32) : 'N/A'}°F (${sensorData?.temperature || 'N/A'}°C)
+- Humidity: ${sensorData?.humidity || 'N/A'}%
+- pH Level: ${sensorData?.ph || 'N/A'}
+- Soil Moisture: ${sensorData?.soilMoisture || 'N/A'}%
+- Light Intensity: ${sensorData?.lightIntensity || 'N/A'} μmol
+- EC Level: ${sensorData?.ec || 'N/A'} mS/cm`;
+
+  switch (mode) {
+    case 'thinking':
+      return `You are a deep-thinking cannabis cultivation expert. Use analytical reasoning and provide comprehensive, well-structured responses.
+
+${baseContext}
+
+User question: ${message}
+
+Please provide a thorough analysis with your reasoning process clearly explained.`;
+
+    default:
+      return `You are CultivAI Assistant, an expert cannabis cultivation AI. You provide helpful, accurate advice about plant care, nutrients, environmental conditions, and troubleshooting.
+
+${baseContext}
+
+User question: ${message}
+
+Please provide a helpful, concise response. If the user asks about specific readings, reference the current sensor data. Consider the current page context to provide more relevant advice.`;
+  }
+}
 
 export async function POST(request: NextRequest) {
   // For static export, provide client-side compatibility response
@@ -16,154 +51,11 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Full server-side functionality for local development
-  const runtime = 'nodejs';
-
-  // Default settings
-  let currentSettings = {
-    aiProvider: 'lm-studio',
-    lmStudio: {
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'llama-3-8b-instruct'
-    },
-    openRouter: {
-      apiKey: '',
-      model: 'meta-llama/llama-3.1-8b-instruct:free',
-      baseUrl: 'https://openrouter.ai/api/v1'
-    }
-  };
-
-  // Get contextual prompt based on agentic mode
-  function getContextualPrompt(mode: string, context: any, sensorData: any, message: string): string {
-    const baseContext = `Current page context: ${context?.title || 'CannaAI Pro'} (${context?.page || 'unknown'})
-Page description: ${context?.description || 'Cannabis cultivation management system'}
-
-Current environmental conditions:
-- Temperature: ${sensorData?.temperature ? Math.round((sensorData.temperature * 9/5) + 32) : 'N/A'}°F (${sensorData?.temperature || 'N/A'}°C)
-- Humidity: ${sensorData?.humidity || 'N/A'}%
-- pH Level: ${sensorData?.ph || 'N/A'}
-- Soil Moisture: ${sensorData?.soilMoisture || 'N/A'}%
-- Light Intensity: ${sensorData?.lightIntensity || 'N/A'} μmol
-- EC Level: ${sensorData?.ec || 'N/A'} mS/cm`;
-
-    switch (mode) {
-      case 'thinking':
-        return `You are a deep-thinking cannabis cultivation expert. Use analytical reasoning and provide comprehensive, well-structured responses.
-
-${baseContext}
-
-User question: ${message}
-
-Please provide a thorough analysis with your reasoning process clearly explained.`;
-
-      default:
-        return `You are CultivAI Assistant, an expert cannabis cultivation AI. You provide helpful, accurate advice about plant care, nutrients, environmental conditions, and troubleshooting.
-
-${baseContext}
-
-User question: ${message}
-
-Please provide a helpful, concise response. If the user asks about specific readings, reference the current sensor data. Consider the current page context to provide more relevant advice.`;
-    }
-  }
-
-  async function getSettings() {
-    try {
-      const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/settings`);
-      const data = await response.json();
-      if (data.success) {
-        currentSettings = { ...currentSettings, ...data.settings };
-      }
-    } catch (error) {
-      console.warn('Failed to load settings, using defaults:', error);
-    }
-    return currentSettings;
-  }
-
-  async function callLMStudio(messages: any[], modelId: string): Promise<{
-    content: string;
-    model: string;
-    usage?: any;
-    provider: string;
-  }> {
-    const startTime = Date.now();
-
-    try {
-      const response = await fetch(`${currentSettings.lmStudio.url}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(currentSettings.lmStudio.apiKey && { 'Authorization': `Bearer ${currentSettings.lmStudio.apiKey}` })
-        },
-        body: JSON.stringify({
-          model: modelId,
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 800,
-          stream: false
-        }),
-        signal: AbortSignal.timeout(60000)
-      });
-
-      const result = await response.json();
-      const content = result.choices?.[0]?.message?.content;
-
-      if (!content) {
-        throw new Error('No response from LM Studio');
-      }
-
-      return {
-        content,
-        model: result.model || modelId,
-        usage: result.usage,
-        provider: 'lm-studio'
-      };
-
-    } catch (error) {
-      throw new Error(`LM Studio communication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  async function callOpenRouter(messages: any[], modelId: string) {
-    try {
-      if (!currentSettings.openRouter.apiKey) {
-        throw new Error('OpenRouter API key not configured');
-      }
-
-      const response = await fetch(`${currentSettings.openRouter.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${currentSettings.openRouter.apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3000',
-          'X-Title': 'CannaAI Pro'
-        },
-        body: JSON.stringify({
-          model: modelId,
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 800
-        })
-      });
-
-      const result = await response.json();
-      return {
-        content: result.choices[0].message.content,
-        model: result.model,
-        usage: result.usage,
-        provider: 'openrouter'
-      };
-    } catch (error) {
-      throw new Error(`OpenRouter communication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
   try {
     const startTime = Date.now();
 
     const body = await request.json();
-    const { message, mode = 'chat' } = body;
+    const { message, mode = 'chat', context, sensorData } = body;
 
     // Validate required fields
     if (!message) {
@@ -173,74 +65,52 @@ Please provide a helpful, concise response. If the user asks about specific read
       );
     }
 
-    // Load current settings
-    const settings = await getSettings();
-    const selectedProvider = settings.aiProvider;
-    let selectedModel = '';
+    console.log('💬 Chat request received, detecting AI providers...');
 
-    // Get the appropriate model based on provider
-    if (selectedProvider === 'lm-studio') {
-      selectedModel = settings.lmStudio.model;
-    } else if (selectedProvider === 'openrouter') {
-      selectedModel = settings.openRouter.model;
-    }
+    // Detect available AI providers
+    const providerDetection = await detectAvailableProviders();
+    console.log(`📡 Primary chat provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
 
-    if (!selectedModel) {
-      return NextResponse.json(
-        { error: 'No model selected or available' },
-        { status: 400 }
-      );
-    }
+    // Get contextual prompt based on mode and current data
+    const contextPrompt = getContextualPrompt(mode, context || {}, sensorData || {}, message);
 
-    // Create context-aware prompt with sensor data and page context
-    let contextPrompt = getContextualPrompt(mode, {}, {}, message);
-
-    // Create message array for the AI model
-    let messages = [
-      {
-        role: 'system',
-        content: 'You are a helpful cannabis cultivation assistant. Provide accurate, practical advice based on the current sensor data and user questions.'
-      },
-      {
-        role: 'user',
-        content: contextPrompt
-      }
-    ];
-
-    let response;
-    let lastError = null;
-
-    // Try the primary provider first
     try {
-      if (selectedProvider === 'lm-studio') {
-        response = await callLMStudio(messages, selectedModel);
-      } else if (selectedProvider === 'openrouter') {
-        response = await callOpenRouter(messages, selectedModel);
-      } else {
-        throw new Error(`Unknown provider: ${selectedProvider}`);
-      }
-    } catch (error) {
-      lastError = error;
-      console.warn(`Primary provider ${selectedProvider} failed:`, error);
-    }
+      // Execute AI chat with automatic fallback
+      const aiResult = await executeAIWithFallback(contextPrompt, undefined, {
+        primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
+        timeout: 45000, // 45 second timeout for chat
+        maxRetries: 1
+      });
 
-    if (!response) {
-      throw new Error(`AI provider failed. Last error: ${lastError instanceof Error ? lastError.message : 'Unknown error'}`);
-    }
+      const totalTime = Date.now() - startTime;
+      console.log(`✅ Chat completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
 
-    const totalTime = Date.now() - startTime;
-
-    return NextResponse.json({
-      success: true,
-      response: response.content,
-      model: response.model,
-      provider: response.provider,
-      usage: response.usage,
-      timestamp: new Date().toISOString(),
-      processingTime: `${totalTime}ms`,
-      mode: mode,
-      buildMode: 'server'
-    });
+      return NextResponse.json({
+        success: true,
+        response: aiResult.result.content || typeof aiResult.result === 'string' ? aiResult.result : 'Chat response generated successfully',
+        model: aiResult.result.model || 'unknown',
+        provider: aiResult.provider,
+        usage: aiResult.result.usage,
+        timestamp: new Date().toISOString(),
+        processingTime: `${totalTime}ms`,
+        mode: mode,
+        buildMode: 'server',
+        fallback: aiResult.provider === 'fallback' ? {
+          used: true,
+          reason: aiResult.fallbackReason,
+          recommendations: providerDetection.recommendations
+        } : {
+          used: false,
+          recommendations: providerDetection.recommendations
+        },
+        providerInfo: {
+          primary: providerDetection.primary.provider,
+          available: [
+            providerDetection.primary.isAvailable ? providerDetection.primary.provider : null,
+            ...providerDetection.fallback.filter(f => f.isAvailable).map(f => f.provider)
+          ].filter(Boolean)
+        }
+      });
 
   } catch (error) {
     const totalTime = Date.now() - startTime;
@@ -274,36 +144,72 @@ export async function GET() {
     });
   }
 
-  // Full server-side functionality for local development
+  // Enhanced server-side functionality with provider detection
   try {
-    // Mock settings for static compatibility
+    console.log('🔍 Detecting AI providers for chat endpoint...');
+
+    // Detect available providers
+    const providerDetection = await detectAvailableProviders();
+
+    // Get configuration for each provider
+    const lmStudioConfig = getProviderConfig('lm-studio');
+    const openRouterConfig = getProviderConfig('openrouter');
+
     const settings = {
-      aiProvider: 'lm-studio',
+      aiProvider: providerDetection.primary.provider,
       lmStudio: {
-        url: 'http://localhost:1234',
-        model: 'llama-3-8b-instruct',
-        hasApiKey: false
+        url: lmStudioConfig.url,
+        model: lmStudioConfig.model,
+        hasApiKey: !!lmStudioConfig.apiKey,
+        timeout: lmStudioConfig.timeout
       },
       openRouter: {
-        baseUrl: 'https://openrouter.ai/api/v1',
-        model: 'meta-llama/llama-3.1-8b-instruct:free',
-        hasApiKey: false
+        baseUrl: openRouterConfig.baseUrl,
+        model: openRouterConfig.model,
+        hasApiKey: !!openRouterConfig.apiKey,
+        timeout: openRouterConfig.timeout
       }
     };
 
     return NextResponse.json({
       success: true,
-      currentProvider: settings.aiProvider,
-      availableProviders: ['lm-studio', 'openrouter'],
+      currentProvider: providerDetection.primary.provider,
+      primaryProvider: {
+        provider: providerDetection.primary.provider,
+        isAvailable: providerDetection.primary.isAvailable,
+        reason: providerDetection.primary.reason
+      },
+      availableProviders: [
+        providerDetection.primary.isAvailable ? providerDetection.primary.provider : null,
+        ...providerDetection.fallback.filter(f => f.isAvailable).map(f => f.provider)
+      ].filter(Boolean),
+      unavailableProviders: providerDetection.fallback.filter(f => !f.isAvailable).map(f => ({
+        provider: f.provider,
+        reason: f.reason,
+        recommendations: f.recommendations
+      })),
       settings: settings,
-      buildMode: 'server'
+      recommendations: providerDetection.recommendations,
+      environment: {
+        isServerless: !!process.env.NETLIFY || !!process.env.VERCEL,
+        platform: process.env.NETLIFY ? 'Netlify' : process.env.VERCEL ? 'Vercel' : 'Dedicated Server',
+        isDevelopment: process.env.NODE_ENV === 'development'
+      },
+      buildMode: 'server',
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
+    console.error('❌ Chat endpoint provider detection failed:', error);
+
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get settings',
-        timestamp: new Date().toISOString()
+        error: error instanceof Error ? error.message : 'Failed to detect AI providers',
+        timestamp: new Date().toISOString(),
+        fallback: {
+          provider: 'rule-based',
+          message: 'AI provider detection failed, but basic functionality is available'
+        }
       },
       { status: 500 }
     );

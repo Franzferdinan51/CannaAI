@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { withSecurity, securityConfig, createAPIResponse, createAPIError } from '@/lib/security';
 import { analyzeRequestSchema, validateRequestBody, AnalyzeRequest } from '@/lib/validation';
 import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
+import { executeAIWithFallback, detectAvailableProviders, getProviderConfig } from '@/lib/ai-provider-detection';
 
 // Environment detection
 const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -11,7 +12,7 @@ export const dynamic = 'auto';
 export const revalidate = false;
 
 // Runtime configuration for local development
-export const runtime = isStaticExport ? 'edge' : 'nodejs';
+export const runtime = 'nodejs';
 
 // File size formatting helper
 function formatFileSize(bytes: number): string {
@@ -398,38 +399,39 @@ Format your response as JSON with this structure:
   "followUpSchedule": "Recommended monitoring schedule"
 }`;
 
-      // Try LM Studio first (local), then Open Router (cloud)
+      // Use enhanced AI provider detection and fallback system
+      console.log('🔍 Detecting available AI providers...');
+      const providerDetection = await detectAvailableProviders();
+      console.log(`📡 Primary provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
+
       let analysisResult;
       let fallbackUsed = false;
       let fallbackReason = '';
+      let usedProvider = providerDetection.primary.provider;
 
       try {
-        // Try LM Studio (local) with enhanced multi-resolution image support
-        const lmStudioResponse = await callLMStudio(prompt, imageBase64ForAI, processedImageInfo);
-        if (lmStudioResponse) {
-          analysisResult = lmStudioResponse;
-        } else {
-          throw new Error('LM Studio not available');
-        }
-      } catch (lmError) {
-        console.log('LM Studio not available, trying Open Router...', lmError instanceof Error ? lmError.message : 'Unknown error');
+        // Execute AI analysis with automatic fallback
+        const aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
+          primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
+          timeout: 60000, // 60 second timeout for plant analysis
+          maxRetries: 1
+        });
 
-        try {
-          // Try Open Router (cloud)
-          const openRouterResponse = process.env.ENABLE_OPENROUTER === 'true' ? await callOpenRouter(prompt) : null;
-          if (openRouterResponse) {
-            analysisResult = openRouterResponse;
-          } else {
-            throw new Error('Open Router not available');
-          }
-        } catch (orError) {
-          console.log('Open Router not available, using fallback analysis...', orError instanceof Error ? orError.message : 'Unknown error');
+        analysisResult = aiResult.result;
+        usedProvider = aiResult.provider;
+        fallbackUsed = aiResult.provider === 'fallback';
+        fallbackReason = aiResult.fallbackReason || '';
 
-          // Fallback to rule-based analysis
-          analysisResult = generateFallbackAnalysis(strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage);
-          fallbackUsed = true;
-          fallbackReason = 'Both LM Studio and Open Router unavailable - using expert rule-based analysis';
-        }
+        console.log(`✅ Analysis completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
+
+      } catch (error) {
+        console.error('❌ All AI providers failed, using rule-based fallback:', error instanceof Error ? error.message : 'Unknown error');
+
+        // Final fallback to rule-based analysis
+        analysisResult = generateFallbackAnalysis(strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage);
+        fallbackUsed = true;
+        fallbackReason = 'All AI providers failed - using expert rule-based analysis';
+        usedProvider = 'fallback';
       }
 
       // Return the enhanced analysis result
@@ -446,6 +448,15 @@ Format your response as JSON with this structure:
         },
         fallbackUsed,
         fallbackReason,
+        provider: {
+          used: usedProvider,
+          primary: providerDetection.primary.provider,
+          available: [
+            providerDetection.primary.isAvailable ? providerDetection.primary.provider : null,
+            ...providerDetection.fallback.filter(f => f.isAvailable).map(f => f.provider)
+          ].filter(Boolean),
+          recommendations: providerDetection.recommendations
+        },
         timestamp: new Date().toISOString(),
         requestId: context?.clientIP || 'unknown'
       });
@@ -478,200 +489,6 @@ Format your response as JSON with this structure:
   }, securityConfig.analysisAPI);
 }
 
-async function callLMStudio(prompt: string, imageBase64?: string, imageInfo?: any): Promise<any> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-  try {
-    // Build messages array with optional image support
-    const messages: any[] = [
-      {
-        role: 'system',
-        content: `You are an expert cannabis cultivation specialist with deep knowledge of plant physiology, nutrient deficiencies, pests, diseases, and strain-specific characteristics. You provide detailed, accurate analysis with clear reasoning. You can analyze both text descriptions and plant images.
-
-${imageInfo ? `
-ULTRA HIGH RESOLUTION IMAGE ANALYSIS:
-- Original Resolution: ${imageInfo.originalDimensions} (${imageInfo.megapixels}MP)
-- Processed Resolution: ${imageInfo.dimensions} at ${imageInfo.qualityLevel}% quality
-- Image Quality: ${imageInfo.isUltraHighResolution ? 'ULTRA HIGH RESOLUTION (8K+)' : imageInfo.isHighResolution ? 'HIGH RESOLUTION (4K-8K)' : 'STANDARD RESOLUTION'}
-- Compression Efficiency: ${imageInfo.compressionEfficiency}% reduction while preserving diagnostic details
-
-The provided image has been optimized for AI analysis while maintaining maximum diagnostic detail. Please examine it thoroughly for subtle symptoms, early disease indicators, and precise symptom patterns that may only be visible in high-resolution imagery.` : ''}`
-      }
-    ];
-
-    // Add user message with or without image
-    if (imageBase64) {
-      messages.push({
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: prompt
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: imageBase64
-            }
-          }
-        ]
-      });
-    } else {
-      messages.push({
-        role: 'user',
-        content: prompt
-      });
-    }
-
-    const response = await fetch('http://localhost:1234/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'local-model', // LM Studio will use whatever model is loaded
-        messages,
-        temperature: 0.3,
-        max_tokens: 2000,
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error('LM Studio error: ' + response.status + ' ' + response.statusText);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content;
-
-    if (!aiResponse) {
-      throw new Error('No response from LM Studio');
-    }
-
-    return parseAIResponse(aiResponse);
-
-  } catch (error) {
-    clearTimeout(timeoutId);
-
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('LM Studio request timeout');
-    }
-
-    console.error('LM Studio error:', error);
-    throw error;
-  }
-}
-
-async function callOpenRouter(prompt: string): Promise<any> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('Open Router API key not configured');
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey,
-        'HTTP-Referer': process.env.VERCEL_URL || 'http://localhost:3000',
-        'X-Title': 'CannaAI Plant Analysis',
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet', // or another suitable model
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert cannabis cultivation specialist with deep knowledge of plant physiology, nutrient deficiencies, pests, diseases, and strain-specific characteristics. You provide detailed, accurate analysis with clear reasoning.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error('Open Router error: ' + response.status + ' ' + response.statusText);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content;
-
-    if (!aiResponse) {
-      throw new Error('No response from Open Router');
-    }
-
-    return parseAIResponse(aiResponse);
-
-  } catch (error) {
-    clearTimeout(timeoutId);
-
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Open Router request timeout');
-    }
-
-    console.error('Open Router error:', error);
-    throw error;
-  }
-}
-
-function parseAIResponse(aiResponse: string): any {
-  try {
-    // Try to parse as JSON first
-    return JSON.parse(aiResponse);
-  } catch (parseError) {
-    console.log('JSON parsing failed, creating structured response from text...');
-
-    // If JSON parsing fails, create a comprehensive structured response from the text
-    return {
-      diagnosis: 'Plant Analysis Complete',
-      confidence: 85,
-      symptomsMatched: ['Symptoms analyzed from text description'],
-      causes: ['Environmental and nutritional factors'],
-      treatment: ['Monitor plant closely', 'Adjust growing conditions as needed'],
-      healthScore: 75,
-      strainSpecificAdvice: 'Continue monitoring and provide optimal growing conditions',
-      reasoning: [
-        {
-          step: 'AI Analysis',
-          explanation: 'Based on AI analysis of provided symptoms and conditions',
-          weight: 100
-        }
-      ],
-      isPurpleStrain: false,
-      pestsDetected: [],
-      diseasesDetected: [],
-      environmentalFactors: [],
-      urgency: 'medium',
-      preventativeMeasures: ['Regular monitoring', 'Maintain optimal growing conditions'],
-      imageAnalysis: {
-        hasImage: false,
-        visualFindings: ['Text-based analysis only'],
-        confidence: 75
-      },
-      recommendations: {
-        immediate: ['Monitor plant health'],
-        shortTerm: ['Adjust environmental conditions if needed'],
-        longTerm: ['Maintain consistent care schedule']
-      },
-      followUpSchedule: 'Monitor daily for one week, then weekly'
-    };
-  }
-}
 
 // Comprehensive Cannabis Strain-Specific Advice Function
 function getStrainSpecificAdvice(strain: string, diagnosis: string, growthStage?: string): string {

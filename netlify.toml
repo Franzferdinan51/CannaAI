@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build:netlify"
+  command = "npm run build"
   publish = "out"
 
 [build.environment]
@@ -12,8 +12,57 @@
   to = "/index.html"
   status = 200
 
-# Fallback for API routes (will be handled by client-side)
+# API routes - redirect to serverless functions (if using Netlify Functions)
+[[redirects]]
+  from = "/api/analyze"
+  to = "/.netlify/functions/analyze"
+  status = 200
+
+[[redirects]]
+  from = "/api/chat"
+  to = "/.netlify/functions/chat"
+  status = 200
+
+[[redirects]]
+  from = "/api/lmstudio"
+  to = "/.netlify/functions/lmstudio"
+  status = 200
+
+[[redirects]]
+  from = "/api/lmstudio/*"
+  to = "/.netlify/functions/lmstudio/:splat"
+  status = 200
+
 [[redirects]]
   from = "/api/*"
   to = "/index.html"
   status = 200
+
+# Security headers for API endpoints
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# CORS headers for API endpoints
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Access-Control-Max-Age = "86400"
+
+# Cache static assets
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
