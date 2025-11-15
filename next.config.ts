@@ -58,6 +58,9 @@ const nextConfig: NextConfig = {
     // 构建时忽略ESLint错误
     ignoreDuringBuilds: true,
   },
+  env: {
+    NEXT_PUBLIC_BUILD_MODE: process.env.BUILD_MODE,
+  },
 };
 
 export default nextConfig;
