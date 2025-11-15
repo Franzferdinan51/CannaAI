@@ -483,7 +483,7 @@ The system will continue monitoring and take appropriate actions based on config
   }
 
   private getFallbackPlannerResponse(message: string, context?: any): string {
-    return return `📋 **Strategic Cultivation Plan**
+    return `📋 **Strategic Cultivation Plan**
 
 **Timeline Overview:**
 - Week 1-2: Current vegetative phase
@@ -628,7 +628,7 @@ The key considerations for this situation involve balancing plant physiological 
   }
 
   private getFallbackQuizResponse(message: string, context?: any): string {
-    return return `🎯 **Cannabis Cultivation Quiz**
+    return `🎯 **Cannabis Cultivation Quiz**
 
 **Question 1:**
 What is the optimal pH range for cannabis nutrient absorption?

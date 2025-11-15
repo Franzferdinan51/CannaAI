@@ -435,9 +435,13 @@ export async function GET(request: NextRequest) {
     console.log('Local AppData:', process.env.LOCALAPPDATA);
 
     // First check if LM Studio is running
+    const { searchParams } = new URL(request.url);
+    const url = searchParams.get('url') || 'http://localhost:1234';
+
+    // First check if LM Studio is running
     let lmStudioRunning = false;
     try {
-      const response = await fetch('http://localhost:1234/v1/models', {
+      const response = await fetch(`${url}/v1/models`, {
         signal: AbortSignal.timeout(2000) // 2 second timeout
       });
       lmStudioRunning = response.ok;
