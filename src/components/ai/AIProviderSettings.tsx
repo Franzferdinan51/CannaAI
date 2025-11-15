@@ -119,8 +119,13 @@ export function AIProviderSettings() {
         setSelectedProvider(data.settings.aiProvider);
         setSelectedModel(data.settings.lmStudio?.model || data.settings.openRouter?.model || data.settings.openai?.model || '');
         await loadProviders(data.settings);
+      } else {
+        setError(data.error || 'Failed to load settings');
+        setIsLoading(false);
       }
     } catch (error) {
+      setError('Failed to connect to settings API. Is the server running?');
+      setIsLoading(false);
       console.error('Error loading settings:', error);
     }
   };
@@ -210,7 +215,11 @@ export function AIProviderSettings() {
 
   const handleRefresh = async () => {
     setProviders([]);
-    await loadProviders();
+    if (settings) {
+      await loadProviders(settings);
+    } else {
+      await loadSettings();
+    }
   };
 
   const handleOpenRouterKeyChange = async (apiKey: string) => {
@@ -229,11 +238,12 @@ export function AIProviderSettings() {
 
       const data = await response.json();
       if (data.success) {
-        setSettings({
+        const newSettings = {
           ...settings,
           openRouter: { ...settings.openRouter, apiKey }
-        });
-        await loadProviders(); // Refresh providers to show OpenRouter models
+        };
+        setSettings(newSettings);
+        await loadProviders(newSettings); // Refresh providers to show OpenRouter models
       }
     } catch (error) {
       setError('Failed to update OpenRouter API key');
@@ -256,11 +266,12 @@ export function AIProviderSettings() {
 
       const data = await response.json();
       if (data.success) {
-        setSettings({
+        const newSettings = {
           ...settings,
           openRouter: { ...settings.openRouter, model }
-        });
-        await loadProviders();
+        };
+        setSettings(newSettings);
+        await loadProviders(newSettings);
       }
     } catch (error) {
       setError('Failed to update OpenRouter model');
@@ -283,11 +294,12 @@ export function AIProviderSettings() {
 
       const data = await response.json();
       if (data.success) {
-        setSettings({
+        const newSettings = {
           ...settings,
           openai: { ...settings.openai, ...config }
-        });
-        await loadProviders();
+        };
+        setSettings(newSettings);
+        await loadProviders(newSettings);
       }
     } catch (error) {
       setError('Failed to update OpenAI-Compatible settings');
