@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon --exec \"node --loader tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
-    "dev:win": "nodemon --exec \"node --loader tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
+    "dev": "nodemon --exec \"tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
+    "dev:win": "nodemon --exec \"tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
     "build": "next build",
     "build:static": "cross-env BUILD_MODE=static next build",
     "build:netlify": "npm run build:static",
