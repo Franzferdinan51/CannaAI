@@ -594,7 +594,7 @@ export default function CultivAIPro() {
   // Auto-analysis with dedupe, fixed interval, and backpressure
   const autoInFlightRef = useRef(false);
   useEffect(() => {
-    if (!autoAnalysisEnabled || process.env.NEXT_PUBLIC_BUILD_MODE === 'static') return;
+    if (!autoAnalysisEnabled) return;
 
     const performAutoAnalysis = async () => {
       if (autoInFlightRef.current) return;
