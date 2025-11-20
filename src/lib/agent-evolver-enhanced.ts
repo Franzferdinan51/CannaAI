@@ -306,14 +306,47 @@ Provide harvest window prediction and post-harvest recommendations.`,
   }
 
   /**
+   * Get evolution history (mock implementation)
+   */
+  private getEvolutionHistory(): any[] {
+    // Mock evolution history - in a real implementation this would come from a database
+    return [
+      {
+        promptId: 'plant-analysis',
+        timestamp: Date.now() - 86400000,
+        metrics: { avgFeedback: 0.85, accuracy: 0.9, helpfulness: 0.8, userSatisfaction: 0.85 }
+      },
+      {
+        promptId: 'nutrient-optimization',
+        timestamp: Date.now() - 172800000,
+        metrics: { avgFeedback: 0.78, accuracy: 0.82, helpfulness: 0.75, userSatisfaction: 0.77 }
+      }
+    ];
+  }
+
+  /**
+   * Record evolution data
+   */
+  private recordEvolution(data: any): void {
+    // Mock implementation - in real system this would save to database
+    console.log('Recording evolution:', data);
+  }
+
+  /**
    * Get evolution performance metrics
    */
   getEvolutionMetrics(): any {
+    const history = this.getEvolutionHistory();
     return {
-      totalEvolutions: this.getEvolutionHistory().length,
+      totalEvolutions: history.length,
       successRate: this.calculateSuccessRate(),
       activeTemplates: this.promptTemplates.length,
-      contextDepth: Object.keys(this.evolutionContext).length
+      contextDepth: Object.keys(this.evolutionContext).length,
+      recentActivity: history.slice(-5).map(record => ({
+        template: record.promptId,
+        timestamp: record.timestamp,
+        success: record.metrics?.avgFeedback > 0.7
+      }))
     };
   }
 

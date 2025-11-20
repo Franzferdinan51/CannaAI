@@ -111,7 +111,7 @@ async function getLMStudioModels(): Promise<AIModel[]> {
 
 async function getLMStudioLocalModels(): Promise<AIModel[]> {
   try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/lmstudio/models`, {
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/lmstudio/models`, {
       signal: AbortSignal.timeout(5000)
     });
 
@@ -157,7 +157,7 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
         'Authorization': `Bearer ${settingsData.settings.openRouter.apiKey}`,
-        'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+        'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3002',
         'X-Title': 'CannaAI Pro'
       }
     });
@@ -563,7 +563,7 @@ async function testProviderModel(providerId: string, modelId: string): Promise<a
         headers: {
           'Authorization': `Bearer ${settingsData.settings.openRouter.apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+          'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3002',
           'X-Title': 'CannaAI Pro'
         },
         body: JSON.stringify({
