@@ -559,7 +559,10 @@ export default function CultivAIPro() {
       }));
     }, 5000);
 
-// Handle URL parameters for dashboard navigation
+    return () => clearInterval(sensorInterval);
+  }, []);
+
+  // Handle URL parameters for dashboard navigation
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -579,9 +582,6 @@ export default function CultivAIPro() {
         setActiveDashboard('overview');
       }
     }
-  }, []);
-
-    return () => clearInterval(sensorInterval);
   }, []);
 
   // Scroll to bottom of chat when new messages arrive

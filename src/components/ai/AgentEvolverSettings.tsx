@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { enhancedAgentEvolver } from '@/lib/agent-evolver-enhanced';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,6 +22,7 @@ import {
   AlertCircle,
   RefreshCw,
   Brain,
+  Settings,
   Settings2,
   Zap,
   Target,
@@ -167,6 +169,14 @@ export function AgentEvolverSettings() {
     category: 'custom',
     enabled: true
   });
+
+  // Enhanced AI functionality state
+  const [testTemplate, setTestTemplate] = useState('');
+  const [isTestingEvolution, setIsTestingEvolution] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    templateName: string;
+    evolvedPrompt: string;
+  } | null>(null);
 
   useEffect(() => {
     loadAgentEvolverSettings();
@@ -318,6 +328,66 @@ export function AgentEvolverSettings() {
     }
   };
 
+  // Test Enhanced Evolution functionality
+  const testEnhancedEvolution = async () => {
+    if (!testTemplate) return;
+
+    setIsTestingEvolution(true);
+    setTestResult(null);
+
+    try {
+      // Update evolution context with current plant data
+      enhancedAgentEvolver.updateEvolutionContext({
+        plantData: {
+          strain: 'Blue Dream',
+          symptoms: ['Yellowing leaves', 'Slow growth'],
+          environmentalData: {
+            temperature: 75,
+            humidity: 60,
+            ph: 6.2,
+            ec: 1.4,
+            lightIntensity: 800,
+            co2: 1200
+          },
+          growthStage: 'vegetative'
+        },
+        userPreferences: {
+          riskTolerance: settings.riskTolerance,
+          focusAreas: ['yield_optimization', 'plant_health'],
+          preferredResponseStyle: 'detailed'
+        }
+      });
+
+      // Get evolved prompt
+      const evolvedPrompt = enhancedAgentEvolver.getEvolvedPrompt(testTemplate, {
+        strain: 'Blue Dream',
+        symptoms: 'Yellowing leaves, slow growth',
+        temperature: 75,
+        humidity: 60,
+        ph: 6.2,
+        ec: 1.4,
+        lightIntensity: 800,
+        co2: 1200,
+        growthStage: 'vegetative'
+      });
+
+      // Get template name
+      const template = enhancedAgentEvolver.getPromptTemplates().find(t => t.id === testTemplate);
+
+      setTestResult({
+        templateName: template?.name || 'Unknown',
+        evolvedPrompt: evolvedPrompt
+      });
+
+      setSuccess('Enhanced evolution test completed successfully');
+    } catch (error) {
+      console.error('Enhanced evolution test failed:', error);
+      setError('Enhanced evolution test failed');
+    } finally {
+      setIsTestingEvolution(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -394,7 +464,7 @@ export function AgentEvolverSettings() {
       </Card>
 
       <Tabs defaultValue="configuration" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-purple-900/20 border-purple-800">
+        <TabsList className="grid w-full grid-cols-6 bg-purple-900/20 border-purple-800">
           <TabsTrigger value="configuration" className="data-[state=active]:bg-purple-800 text-purple-200">
             <Settings className="h-4 w-4 mr-2" />
             Configuration
@@ -410,6 +480,10 @@ export function AgentEvolverSettings() {
           <TabsTrigger value="integration" className="data-[state=active]:bg-purple-800 text-purple-200">
             <Zap className="h-4 w-4 mr-2" />
             Integration
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="data-[state=active]:bg-purple-800 text-purple-200">
+            <Brain className="h-4 w-4 mr-2" />
+            Advanced AI
           </TabsTrigger>
           <TabsTrigger value="history" className="data-[state=active]:bg-purple-800 text-purple-200">
             <Clock className="h-4 w-4 mr-2" />
@@ -844,6 +918,145 @@ export function AgentEvolverSettings() {
                     onCheckedChange={(checked) => handleIntegrationChange('crossAgentLearning', checked)}
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Advanced AI Tab */}
+        <TabsContent value="advanced" className="space-y-6">
+          <Card className="bg-purple-900/30 border-purple-800">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold text-purple-300 flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Enhanced AI Evolution Engine
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert>
+                <Lightbulb className="h-4 w-4" />
+                <AlertDescription>
+                  Advanced AI Evolution provides cultivation-specific prompt templates and deep learning integration with your plant analysis system.
+                </AlertDescription>
+              </Alert>
+
+              {/* Evolution Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="bg-purple-800/50 border-purple-700">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-200">
+                      {enhancedAgentEvolver.getEvolutionMetrics().totalEvolutions}
+                    </div>
+                    <div className="text-sm text-purple-400">Total Evolutions</div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-purple-800/50 border-purple-700">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold text-green-400">
+                      {enhancedAgentEvolver.getEvolutionMetrics().successRate.toFixed(1)}%
+                    </div>
+                    <div className="text-sm text-purple-400">Success Rate</div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-purple-800/50 border-purple-700">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {enhancedAgentEvolver.getEvolutionMetrics().activeTemplates}
+                    </div>
+                    <div className="text-sm text-purple-400">Active Templates</div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-purple-800/50 border-purple-700">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {enhancedAgentEvolver.getEvolutionMetrics().contextDepth}
+                    </div>
+                    <div className="text-sm text-purple-400">Context Depth</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Prompt Templates */}
+              <div>
+                <Label className="text-purple-200 font-medium mb-3 block">
+                  Cultivation-Specific Templates
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {enhancedAgentEvolver.getPromptTemplates().map((template) => (
+                    <Card key={template.id} className="bg-purple-800/30 border-purple-700">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium text-purple-200">{template.name}</h3>
+                          <Badge variant="outline" className="text-xs">
+                            {template.category}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-purple-400 mb-2">
+                          Target: {template.evolutionTarget}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {template.variables.slice(0, 3).map((variable) => (
+                            <Badge key={variable} variant="secondary" className="text-xs">
+                              {variable}
+                            </Badge>
+                          ))}
+                          {template.variables.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{template.variables.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* Test Evolution */}
+              <div>
+                <Label className="text-purple-200 font-medium mb-3 block">
+                  Test Enhanced Evolution
+                </Label>
+                <div className="flex gap-2">
+                  <Select value={testTemplate} onValueChange={setTestTemplate}>
+                    <SelectTrigger className="bg-purple-800/50 border-purple-700 text-purple-200">
+                      <SelectValue placeholder="Select template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {enhancedAgentEvolver.getPromptTemplates().map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={testEnhancedEvolution}
+                    disabled={!testTemplate || isTestingEvolution}
+                    className="bg-purple-700 hover:bg-purple-600"
+                  >
+                    {isTestingEvolution ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4 mr-2" />
+                    )}
+                    Test Evolution
+                  </Button>
+                </div>
+                {testResult && (
+                  <Alert className="mt-3 bg-purple-800/30 border-purple-700">
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="text-purple-200">
+                        <strong>Template:</strong> {testResult.templateName}<br />
+                        <strong>Evolved Prompt:</strong><br />
+                        <code className="text-xs bg-purple-900/50 p-2 rounded block mt-1 whitespace-pre-wrap">
+                          {testResult.evolvedPrompt}
+                        </code>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
             </CardContent>
           </Card>

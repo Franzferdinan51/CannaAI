@@ -145,7 +145,7 @@ async function getLMStudioLocalModels(): Promise<AIModel[]> {
 async function getOpenRouterModels(): Promise<AIModel[]> {
   try {
     // First get settings to get API key
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/settings`);
+    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.openRouter.apiKey) {
@@ -214,7 +214,7 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
 
 async function getOpenAICompatibleModels(): Promise<AIModel[]> {
   try {
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/settings`);
+    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.openai?.apiKey || !settingsData.settings.openai?.baseUrl) {
@@ -546,7 +546,7 @@ async function testProviderModel(providerId: string, modelId: string): Promise<a
 
     if (providerId === 'openrouter') {
       // Get settings for API key
-      const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/settings`);
+      const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
       const settingsData = await settingsResponse.json();
 
       if (!settingsData.success || !settingsData.settings.openRouter.apiKey) {
