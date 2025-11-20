@@ -1,7 +1,6 @@
 # CannaAI - Cannabis Cultivation Management System
-(Some Features Still in Development)
 
-An advanced AI-powered cannabis cultivation management system built with Next.js 15, featuring real-time plant health analysis, sensor monitoring, automation controls, and comprehensive cultivation analytics.
+🌱 **CultivAI Pro** - An advanced AI-powered cannabis cultivation management system built with Next.js 15, featuring real-time plant health analysis, sensor monitoring, automation controls, and comprehensive cultivation analytics.
 
 ## 🌟 Features
 
@@ -44,39 +43,58 @@ An advanced AI-powered cannabis cultivation management system built with Next.js
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript 5
-- **Styling**: Tailwind CSS 4
-- **Components**: shadcn/ui
-- **Animations**: Framer Motion
-- **Charts**: Recharts
-- **State**: Zustand, TanStack Query
+- **Framework**: Next.js 15 with App Router and Custom Server
+- **Language**: TypeScript 5 with flexible strictness
+- **Styling**: Tailwind CSS 4 with shadcn/ui components
+- **Animations**: Framer Motion for smooth transitions
+- **Charts**: Recharts for data visualization
+- **State Management**: Zustand for client state, TanStack Query for server state
+- **UI Components**: 50+ Radix UI primitives via shadcn/ui
 
 ### Backend
-- **Runtime**: Node.js 18+
-- **Database**: SQLite with Prisma ORM
-- **Real-time**: Socket.IO WebSocket
-- **Validation**: Zod schemas
-- **AI**: LM Studio + OpenRouter integration
+- **Runtime**: Node.js 18+ with tsx TypeScript execution
+- **Database**: SQLite with Prisma ORM for type-safe operations
+- **Real-time**: Socket.IO WebSocket integration on `/api/socketio`
+- **Validation**: Zod schemas for runtime type checking
+- **AI Integration**: Z-AI Web Dev SDK with LM Studio + OpenRouter support
+- **File Processing**: HEIC image conversion, archive support
 
 ### Development Tools
-- **TypeScript**: tsx for execution
-- **Hot Reload**: nodemon for development
-- **Linting**: ESLint (flexible configuration)
-- **Building**: Next.js optimized builds
+- **Hot Reload**: Nodemon with tsx for rapid development
+- **Code Quality**: ESLint with flexible configuration
+- **Build System**: Optimized Next.js builds with error tolerance
+- **Type Safety**: TypeScript with relaxed strictness for flexibility
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- Git
+### Quick Start (Windows)
+```bash
+# Clone and setup
+git clone https://github.com/Franzferdinan51/CannaAI.git
+cd CannaAI
+npm install
 
-### Installation
+# Initialize database
+npm run db:generate
+npm run db:push
+
+# Start development server
+npm run dev:win
+# or simply double-click startup.bat
+
+# Access at http://localhost:3000
+```
+
+### Prerequisites
+- **Node.js**: 18+ (required for tsx execution)
+- **npm**: 9+ (for dependency management)
+- **Git**: For version control
+
+### Installation Steps
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Franzferdinan51/CannaAI.git
    cd CannaAI
    ```
 
@@ -85,7 +103,7 @@ An advanced AI-powered cannabis cultivation management system built with Next.js
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Set up environment variables** (Optional)
    ```bash
    cp .env.local.example .env.local
    ```
@@ -95,7 +113,7 @@ An advanced AI-powered cannabis cultivation management system built with Next.js
    # LM Studio (Local) - Optional
    LM_STUDIO_URL=http://localhost:1234
 
-   # Open Router (Cloud) - Optional
+   # OpenRouter (Cloud) - Optional
    OPENROUTER_API_KEY=your-openrouter-api-key-here
 
    # Enable/Disable services
@@ -109,9 +127,8 @@ An advanced AI-powered cannabis cultivation management system built with Next.js
    ```
 
 5. **Start development server**
-   ```bash
-   npm run dev
-   ```
+   - **Windows**: `npm run dev:win` or double-click `startup.bat`
+   - **Other**: `npm run dev`
 
 6. **Access the application**
    - Open [http://localhost:3000](http://localhost:3000) in your browser
@@ -143,9 +160,11 @@ src/
 
 ### Core Development
 ```bash
-npm run dev          # Start development server with hot reload
+npm run dev          # Start development server with hot reload (Unix)
+npm run dev:win      # Start development server on Windows
 npm run build        # Build production application
-npm run start        # Start production server
+npm run start        # Start production server (Unix)
+npm run start:win    # Start production server on Windows
 npm run lint         # Run ESLint checks
 ```
 
@@ -155,6 +174,12 @@ npm run db:generate  # Generate Prisma client
 npm run db:push      # Push schema changes (no migration)
 npm run db:migrate   # Run database migrations
 npm run db:reset     # Reset database to initial state
+```
+
+### Static Build (for Netlify)
+```bash
+npm run build:static # Build for static hosting
+npm run build:netlify # Alias for static build
 ```
 
 ### AI Service Setup
@@ -406,51 +431,50 @@ npm start
 ### Netlify Static Hosting
 The application now supports static hosting on Netlify with client-side AI configuration:
 
-#### 1. Automatic Build Deployment
+#### 🚀 Automatic Deployment
 1. Push your code to GitHub
 2. Connect your repository to Netlify
-3. Netlify will automatically build and deploy the static site
+3. Netlify automatically builds and deploys the static site
 
-#### 2. Client-Side AI Configuration
+#### 🔧 Client-Side AI Configuration
 Since static hosting doesn't support server-side APIs, the application includes:
-- **Browser-based AI service** for direct API calls
-- **Configuration UI** for setting up AI providers
-- **Fallback responses** when external providers are unavailable
+- **Browser-based AI service** for direct API calls to OpenRouter/LM Studio
+- **Configuration UI** for setting up AI providers in the app
+- **Fallback responses** with rule-based cultivation advice when offline
 
-#### 3. AI Provider Setup on Netlify
-1. **OpenRouter Configuration**:
-   - Click the "AI Config" button in the application
+#### ⚙️ AI Provider Setup on Netlify
+
+1. **OpenRouter Configuration** (Cloud AI):
+   - Click the "AI Config" button in the application header
    - Select "OpenRouter (Cloud)"
-   - Enter your OpenRouter API key
-   - Choose your preferred model
+   - Enter your OpenRouter API key from [OpenRouter.ai](https://openrouter.ai/)
+   - Choose your preferred model (Claude, GPT-4, Llama, etc.)
+   - Test connection and save settings
+
+2. **LM Studio Configuration** (Local AI):
+   - Install and run [LM Studio](https://lmstudio.ai/)
+   - Load a compatible model (Llama, Mistral, etc.)
+   - Start the server (default: http://localhost:1234)
+   - In the app: Select "LM Studio (Local)" and enter server URL
    - Test connection and save
 
-2. **LM Studio Configuration** (for local development):
-   - Click the "AI Config" button
-   - Select "LM Studio (Local)"
-   - Enter your LM Studio server URL
-   - Choose your loaded model
-   - Test connection and save
-
-3. **Fallback Mode** (Offline):
+3. **Fallback Mode** (Offline Operation):
    - Select "Fallback Mode" in AI configuration
    - Provides rule-based cultivation advice
-   - Works completely offline
+   - Works completely offline without external dependencies
 
-#### 4. Netlify Configuration Files
-The application includes:
-- `netlify.toml` - Build and redirect configuration
-- `next.config.ts` - Static export settings
-- Edge runtime declarations for API compatibility
+#### 📋 Netlify Configuration
+- `netlify.toml` - Build optimization and API redirect rules
+- `next.config.ts` - Static export with fallback configurations
+- Client-side API handlers for browser-based AI interactions
 
-#### 5. Build Process
+#### 🔨 Build Commands
 ```bash
-# Build for static hosting
-npm run build
+# For Netlify deployment
+npm run build:netlify
 
-# The build script now includes:
-# - next build (Next.js build)
-# - next export (Static files generation)
+# Manual static build
+npm run build:static
 ```
 
 ### Traditional Server Deployment
@@ -578,4 +602,27 @@ For support and questions:
 
 ---
 
+## 📊 Project Statistics
+
+- **Framework**: Next.js 15.3.5 with React 19
+- **Type Safety**: TypeScript 5 with flexible configuration
+- **Components**: 50+ shadcn/ui Radix-based components
+- **Real-time**: Socket.IO WebSocket integration
+- **AI Models**: Support for LM Studio, OpenRouter, and custom endpoints
+- **Database**: SQLite with Prisma ORM
+- **Deployment**: Supports both traditional servers and static hosting (Netlify)
+
+## 🏆 Key Achievements
+
+- ✅ **Node.js v22 Compatibility**: Updated build system for latest Node.js versions
+- ✅ **Static Hosting Support**: Full Netlify deployment capability
+- ✅ **Advanced AI Integration**: Multiple provider support with intelligent fallback
+- ✅ **Real-time Monitoring**: WebSocket-based sensor data streaming
+- ✅ **Cross-Platform**: Windows and Unix development environments
+- ✅ **Production Ready**: Optimized builds with comprehensive error handling
+
+---
+
 **Built with ❤️ for cannabis cultivation professionals**
+
+**Repository**: [github.com/Franzferdinan51/CannaAI](https://github.com/Franzferdinan51/CannaAI)
