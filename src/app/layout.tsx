@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import GlobalHeader from "@/components/layout/global-header";
 import UnifiedAIAssistant from "@/components/ai/unified-assistant";
+import Providers from "@/components/providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,12 +55,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <GlobalHeader />
-        <main className="min-h-screen">
-          {children}
-        </main>
-        <UnifiedAIAssistant />
-        <Toaster />
+        <Providers>
+          <GlobalHeader />
+          <main className="min-h-screen">
+            {children}
+          </main>
+          <UnifiedAIAssistant />
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );

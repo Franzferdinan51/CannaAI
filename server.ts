@@ -75,13 +75,7 @@ async function createCustomServer() {
     const handle = nextApp.getRequestHandler();
 
     // Create HTTP server that will handle both Next.js and Socket.IO
-    const server = createServer((req, res) => {
-      // Skip socket.io requests from Next.js handler
-      if (req.url?.startsWith('/api/socketio')) {
-        return;
-      }
-      handle(req, res);
-    });
+    const server = createServer();
 
     // Setup Socket.IO with enhanced security and dynamic CORS
     const io = new Server(server, {
@@ -186,6 +180,12 @@ async function createCustomServer() {
     setupSocket(io, {
       enableAuth: enableSocketAuth,
       securityConfig: securityConfig
+    });
+
+    // Attach Next.js request handler to the server
+    // Socket.IO will handle its own requests before Next.js
+    server.on('request', (req, res) => {
+      handle(req, res);
     });
 
     // Start the server

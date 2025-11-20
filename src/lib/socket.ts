@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 
 type SocketOptions = {
   enableAuth?: boolean;
+  securityConfig?: any;
 };
 export const setupSocket = (io: Server, options: SocketOptions = {}) => {
   io.on('connection', (socket) => {

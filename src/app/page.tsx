@@ -39,6 +39,7 @@ import { Progress } from '@/components/ui/progress';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
+import { AgentEvolverSettings } from '@/components/ai/AgentEvolverSettings';
 
 // Default strain database with purple strain indicators
 const defaultStrains = [
@@ -557,6 +558,28 @@ export default function CultivAIPro() {
         vpd: parseFloat((0.85 + (Math.random() - 0.5) * 0.2).toFixed(2))
       }));
     }, 5000);
+
+// Handle URL parameters for dashboard navigation
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const view = urlParams.get('view');
+      const tab = urlParams.get('tab');
+
+      // Set active dashboard based on URL parameter
+      if (view === 'settings' || tab === 'settings') {
+        setActiveDashboard('settings');
+      } else if (view === 'ai-tools' || tab === 'ai-tools') {
+        setActiveDashboard('ai-tools');
+      } else if (view === 'automation' || tab === 'automation') {
+        setActiveDashboard('automation');
+      } else if (view === 'analytics' || tab === 'analytics') {
+        setActiveDashboard('analytics');
+      } else if (view === 'overview' || tab === 'overview') {
+        setActiveDashboard('overview');
+      }
+    }
+  }, []);
 
     return () => clearInterval(sensorInterval);
   }, []);
@@ -3568,8 +3591,9 @@ export default function CultivAIPro() {
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="ai" className="w-full">
-                      <TabsList className="grid w-full grid-cols-3 bg-slate-800">
+                      <TabsList className="grid w-full grid-cols-4 bg-slate-800">
                         <TabsTrigger value="ai" className="text-slate-300">AI Provider</TabsTrigger>
+                        <TabsTrigger value="agent-evolver" className="text-slate-300">Agent Evolver</TabsTrigger>
                         <TabsTrigger value="notifications" className="text-slate-300">Notifications</TabsTrigger>
                         <TabsTrigger value="general" className="text-slate-300">General</TabsTrigger>
                       </TabsList>
@@ -3577,7 +3601,11 @@ export default function CultivAIPro() {
                       <TabsContent value="ai" className="space-y-6 mt-6">
                         <AIProviderSettings />
                       </TabsContent>
-                      
+
+                      <TabsContent value="agent-evolver" className="space-y-6 mt-6">
+                        <AgentEvolverSettings />
+                      </TabsContent>
+
                       <TabsContent value="notifications" className="space-y-6 mt-6">
                         <Card className="bg-slate-900/50 border-slate-700">
                           <CardHeader>
