@@ -22,6 +22,21 @@ const defaultSettings = {
     model: '',
     baseUrl: 'https://api.openai.com/v1'
   },
+  gemini: {
+    apiKey: '',
+    model: 'gemini-2.0-flash-exp',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
+  },
+  groq: {
+    apiKey: '',
+    model: 'llama-3.3-70b-versatile',
+    baseUrl: 'https://api.groq.com/openai/v1'
+  },
+  anthropic: {
+    apiKey: '',
+    model: 'claude-3-5-sonnet-20241022',
+    baseUrl: 'https://api.anthropic.com/v1'
+  },
   agentEvolver: {
     enabled: false,
     evolutionLevel: 'basic',
@@ -132,6 +147,12 @@ export async function POST(request: NextRequest) {
           settings.openRouter = { ...settings.openRouter, ...config };
         } else if (provider === 'openai') {
           settings.openai = { ...settings.openai, ...config };
+        } else if (provider === 'gemini') {
+          settings.gemini = { ...settings.gemini, ...config };
+        } else if (provider === 'groq') {
+          settings.groq = { ...settings.groq, ...config };
+        } else if (provider === 'anthropic') {
+          settings.anthropic = { ...settings.anthropic, ...config };
         } else {
           return NextResponse.json(
             { error: 'Invalid provider' },
@@ -153,7 +174,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        if (!['lm-studio', 'openrouter', 'openai'].includes(provider)) {
+        if (!['lm-studio', 'openrouter', 'openai', 'gemini', 'groq', 'anthropic'].includes(provider)) {
           return NextResponse.json(
             { error: 'Invalid provider' },
             { status: 400 }
@@ -428,7 +449,7 @@ export async function POST(request: NextRequest) {
 
 async function getProviderModels(provider: string) {
   try {
-    if (provider === 'lm-studio' || provider === 'lm-studio-local') {
+    if (provider === 'lm-studio') {
       // Get LM Studio models - doesn't need API key
       const response = await fetch(`${settings.lmStudio.url}/v1/models`, {
         method: 'GET',
@@ -573,6 +594,225 @@ async function getProviderModels(provider: string) {
           models: []
         };
       }
+    } else if (provider === 'gemini') {
+      // Get Google Gemini models
+      if (!settings.gemini.apiKey) {
+        return {
+          success: false,
+          message: 'Gemini API key required',
+          models: []
+        };
+      }
+
+      // Gemini uses OpenAI-compatible API
+      const response = await fetch(`${settings.gemini.baseUrl}models`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${settings.gemini.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.data || [];
+
+        const filteredModels = models
+          .filter((model: any) => model.id.includes('gemini'))
+          .map((model: any) => ({
+            id: model.id,
+            name: model.id,
+            provider: 'gemini',
+            capabilities: determineCapabilities(model.id),
+            contextLength: model.context_length || 32768
+          }));
+
+        // Add well-known models if not in response
+        const knownModels = [
+          {
+            id: 'gemini-2.0-flash-exp',
+            name: 'Gemini 2.0 Flash (Experimental)',
+            provider: 'gemini',
+            capabilities: ['text-generation', 'vision', 'long-context'],
+            contextLength: 1000000
+          },
+          {
+            id: 'gemini-1.5-pro',
+            name: 'Gemini 1.5 Pro',
+            provider: 'gemini',
+            capabilities: ['text-generation', 'vision', 'long-context'],
+            contextLength: 2000000
+          },
+          {
+            id: 'gemini-1.5-flash',
+            name: 'Gemini 1.5 Flash',
+            provider: 'gemini',
+            capabilities: ['text-generation', 'vision', 'long-context'],
+            contextLength: 1000000
+          }
+        ];
+
+        const allModels = [...filteredModels];
+        knownModels.forEach(known => {
+          if (!allModels.find(m => m.id === known.id)) {
+            allModels.push(known);
+          }
+        });
+
+        return {
+          success: true,
+          message: `Found ${allModels.length} Gemini models`,
+          models: allModels
+        };
+      } else {
+        // Return known models even if API fails
+        return {
+          success: true,
+          message: 'Using default Gemini models',
+          models: [
+            {
+              id: 'gemini-2.0-flash-exp',
+              name: 'Gemini 2.0 Flash (Experimental)',
+              provider: 'gemini',
+              capabilities: ['text-generation', 'vision', 'long-context'],
+              contextLength: 1000000
+            },
+            {
+              id: 'gemini-1.5-pro',
+              name: 'Gemini 1.5 Pro',
+              provider: 'gemini',
+              capabilities: ['text-generation', 'vision', 'long-context'],
+              contextLength: 2000000
+            },
+            {
+              id: 'gemini-1.5-flash',
+              name: 'Gemini 1.5 Flash',
+              provider: 'gemini',
+              capabilities: ['text-generation', 'vision', 'long-context'],
+              contextLength: 1000000
+            }
+          ]
+        };
+      }
+    } else if (provider === 'groq') {
+      // Get Groq models
+      if (!settings.groq.apiKey) {
+        return {
+          success: false,
+          message: 'Groq API key required',
+          models: []
+        };
+      }
+
+      // Groq uses OpenAI-compatible API
+      const response = await fetch(`${settings.groq.baseUrl}/models`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${settings.groq.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.data || [];
+
+        const filteredModels = models
+          .filter((model: any) => {
+            return model.id.includes('llama') ||
+                   model.id.includes('mixtral') ||
+                   model.id.includes('gemma');
+          })
+          .map((model: any) => ({
+            id: model.id,
+            name: model.id,
+            provider: 'groq',
+            capabilities: determineCapabilities(model.id),
+            contextLength: model.context_length || 8192
+          }));
+
+        return {
+          success: true,
+          message: `Found ${filteredModels.length} Groq models`,
+          models: filteredModels
+        };
+      } else {
+        // Return known models even if API fails
+        return {
+          success: true,
+          message: 'Using default Groq models',
+          models: [
+            {
+              id: 'llama-3.3-70b-versatile',
+              name: 'Llama 3.3 70B Versatile',
+              provider: 'groq',
+              capabilities: ['text-generation', 'long-context'],
+              contextLength: 32768
+            },
+            {
+              id: 'mixtral-8x7b-32768',
+              name: 'Mixtral 8x7B',
+              provider: 'groq',
+              capabilities: ['text-generation', 'long-context'],
+              contextLength: 32768
+            },
+            {
+              id: 'llama-3.1-70b-versatile',
+              name: 'Llama 3.1 70B Versatile',
+              provider: 'groq',
+              capabilities: ['text-generation', 'long-context'],
+              contextLength: 131072
+            }
+          ]
+        };
+      }
+    } else if (provider === 'anthropic') {
+      // Get Anthropic Claude models
+      if (!settings.anthropic.apiKey) {
+        return {
+          success: false,
+          message: 'Anthropic API key required',
+          models: []
+        };
+      }
+
+      // Anthropic doesn't have a models endpoint, return known models
+      return {
+        success: true,
+        message: 'Anthropic Claude models',
+        models: [
+          {
+            id: 'claude-3-5-sonnet-20241022',
+            name: 'Claude 3.5 Sonnet',
+            provider: 'anthropic',
+            capabilities: ['text-generation', 'vision', 'long-context', 'analysis'],
+            contextLength: 200000
+          },
+          {
+            id: 'claude-3-5-haiku-20241022',
+            name: 'Claude 3.5 Haiku',
+            provider: 'anthropic',
+            capabilities: ['text-generation', 'vision', 'long-context'],
+            contextLength: 200000
+          },
+          {
+            id: 'claude-3-opus-20240229',
+            name: 'Claude 3 Opus',
+            provider: 'anthropic',
+            capabilities: ['text-generation', 'vision', 'long-context', 'analysis'],
+            contextLength: 200000
+          },
+          {
+            id: 'claude-3-sonnet-20240229',
+            name: 'Claude 3 Sonnet',
+            provider: 'anthropic',
+            capabilities: ['text-generation', 'vision', 'long-context'],
+            contextLength: 200000
+          }
+        ]
+      };
     }
 
     return {
@@ -625,7 +865,7 @@ function determineCapabilities(modelId: string): string[] {
 
 async function testAIConnection(provider: string) {
   try {
-    if (provider === 'lm-studio' || provider === 'lm-studio-local') {
+    if (provider === 'lm-studio') {
       // Test LM Studio connection - no API key needed
       const response = await fetch(`${settings.lmStudio.url}/v1/models`, {
         method: 'GET',
@@ -711,6 +951,122 @@ async function testAIConnection(provider: string) {
         return {
           success: false,
           message: 'OpenAI-compatible connection failed',
+          details: { status: response.status, statusText: response.statusText }
+        };
+      }
+    } else if (provider === 'gemini') {
+      // Test Gemini connection
+      if (!settings.gemini.apiKey) {
+        return {
+          success: false,
+          message: 'Gemini API key required',
+          details: { error: 'Missing API key' }
+        };
+      }
+
+      const response = await fetch(`${settings.gemini.baseUrl}models`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${settings.gemini.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (response.ok) {
+        const models = await response.json();
+        return {
+          success: true,
+          message: 'Gemini connection successful',
+          details: {
+            availableModels: models.data?.length || 3,
+            note: 'Gemini uses OpenAI-compatible API format'
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Gemini connection failed',
+          details: { status: response.status, statusText: response.statusText }
+        };
+      }
+    } else if (provider === 'groq') {
+      // Test Groq connection
+      if (!settings.groq.apiKey) {
+        return {
+          success: false,
+          message: 'Groq API key required',
+          details: { error: 'Missing API key' }
+        };
+      }
+
+      const response = await fetch(`${settings.groq.baseUrl}/models`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${settings.groq.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (response.ok) {
+        const models = await response.json();
+        return {
+          success: true,
+          message: 'Groq connection successful',
+          details: {
+            availableModels: models.data?.length || 3,
+            note: 'Groq uses OpenAI-compatible API with fast inference'
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Groq connection failed',
+          details: { status: response.status, statusText: response.statusText }
+        };
+      }
+    } else if (provider === 'anthropic') {
+      // Test Anthropic connection
+      if (!settings.anthropic.apiKey) {
+        return {
+          success: false,
+          message: 'Anthropic API key required',
+          details: { error: 'Missing API key' }
+        };
+      }
+
+      // Test with a minimal request to Anthropic API
+      const response = await fetch(`${settings.anthropic.baseUrl}/messages`, {
+        method: 'POST',
+        headers: {
+          'x-api-key': settings.anthropic.apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: settings.anthropic.model,
+          max_tokens: 10,
+          messages: [
+            { role: 'user', content: 'Hello' }
+          ]
+        }),
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (response.ok) {
+        return {
+          success: true,
+          message: 'Anthropic connection successful',
+          details: {
+            model: settings.anthropic.model,
+            note: 'Anthropic uses custom API format (not OpenAI-compatible)'
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Anthropic connection failed',
           details: { status: response.status, statusText: response.statusText }
         };
       }

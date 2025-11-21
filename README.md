@@ -8,7 +8,9 @@
 - **Smart Symptom Detection**: Advanced analysis of plant health issues including nutrient deficiencies, pests, and diseases
 - **Purple Strain Intelligence**: Accurately distinguishes between genetic purple strains and phosphorus deficiency symptoms
 - **Flexible Input System**: Works with minimal user input - no strain information required
-- **Multi-Model Support**: Integrates LM Studio (local) and OpenRouter (cloud) AI services with intelligent fallback
+- **Multi-Model Support**: Integrates 7 AI providers (LM Studio, Google Gemini, Anthropic Claude, Groq, OpenRouter, OpenAI-compatible) with intelligent fallback and AgentEvolver prompt optimization
+- **Trichome Analysis**: Microscopic trichome maturity assessment for precise harvest timing
+- **Live Vision Monitoring**: Real-time webcam/microscope health monitoring with change detection
 
 ### 📊 Real-Time Monitoring
 - **Live Sensor Data**: Temperature, humidity, pH, EC, soil moisture, light intensity, CO2 levels
@@ -32,13 +34,36 @@
 - **Cultivation Chat**: Real-time advice from AI cultivation experts
 - **Problem Diagnosis**: Interactive troubleshooting guidance
 - **Optimization Tips**: Personalized recommendations based on current conditions
-- **Multiple AI Models**: Support for LM Studio, OpenRouter, and custom models
+- **Multiple AI Models**: Support for 7 AI providers - LM Studio (local), Google Gemini, Anthropic Claude, Groq, OpenRouter, OpenAI-compatible, and custom models
 
 ### 🗃️ Strain Management
 - **Custom Strain Database**: Add and manage your own strain profiles
 - **Optimal Conditions**: Store and recall strain-specific environmental parameters
 - **Deficiency Tracking**: Monitor common issues per strain
 - **Purple Strain Support**: Special handling for anthocyanin-producing varieties
+
+### 📊 Business Management
+- **Harvest Tracking**: Record wet/dry weights, THC/CBD percentages, quality grades, and yields per plant
+- **Inventory Management**: Track nutrients, equipment, soil/medium with cost tracking and low stock alerts
+- **Clone & Propagation**: Monitor cloning success rates, rooting methods, and batch tracking
+- **Cost Analysis**: Comprehensive expense/revenue tracking with profit margin analysis and cost-per-gram calculations
+- **Financial Analytics**: Real-time profitability metrics, category breakdowns, and ROI analysis
+
+### 🧠 AgentEvolver - Self-Evolving AI System
+- **Intelligent Prompt Optimization**: Automatically optimizes AI prompts based on context and task type
+- **Cannabis Domain Expertise**: Built-in knowledge of cannabis cultivation, strains, and symptoms
+- **Continuous Learning**: Tracks performance metrics and evolves strategies over time
+- **FastAPI Backend**: Runs as separate Python server on port 8001
+- **Evolution History**: Stores last 1000 optimization records for analysis
+- **Feedback Mechanism**: Learns from user feedback to improve recommendations
+- **Dual-Mode Operation**: Run standalone or integrated with Next.js server
+
+### 🚀 Deployment & Access
+- **9 Startup Modes**: Development, production, remote access, AI backend, database reset, and more via startup.bat
+- **Remote Access**: Network-accessible mode (0.0.0.0:3000) with Tailscale and LAN support
+- **Static Hosting**: Full Netlify deployment with client-side AI configuration
+- **Traditional Server**: Custom Node.js server with Socket.IO and full API support
+- **Cross-Platform**: Windows batch scripts and Unix shell scripts for all platforms
 
 ## 🛠️ Technology Stack
 
@@ -182,6 +207,26 @@ npm run build:static # Build for static hosting
 npm run build:netlify # Alias for static build
 ```
 
+### Startup Modes (Windows - startup.bat)
+
+The `startup.bat` script provides 9 comprehensive startup modes:
+
+1. **Development Mode (Local)** - Standard dev server (127.0.0.1:3000)
+2. **Development + AgentEvolver** - Dev server + AI optimization backend
+3. **Production Mode (Local)** - Optimized build for local use
+4. **Production + AgentEvolver** - Full production with AI backend
+5. **Development + Database Reset** - Reset DB and start dev mode
+6. **Install Dependencies Only** - npm install without starting server
+7. **Remote Development Mode** - Network accessible (0.0.0.0:3000)
+8. **AgentEvolver Server Only** - Python backend only (port 8001)
+9. **Exit** - Clean shutdown
+
+**Recommended Modes:**
+- **Local Development**: Mode 1
+- **With AI Optimization**: Mode 2
+- **Remote Access**: Mode 7
+- **Production Deployment**: Mode 3 or 4
+
 ### AI Service Setup
 
 #### LM Studio (Local AI)
@@ -195,6 +240,44 @@ npm run build:netlify # Alias for static build
 2. Get your API key from the dashboard
 3. Set `OPENROUTER_API_KEY=your-key-here` in `.env.local`
 4. Set `ENABLE_OPENROUTER=true` to enable
+
+#### Google Gemini (Cloud AI)
+1. Get API key from [Google AI Studio](https://ai.google.dev/)
+2. Set `GEMINI_API_KEY=your-key-here` in `.env.local`
+3. Select Gemini models (gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash)
+4. Features: 1-2M token context window, vision support, FREE during preview
+
+#### Anthropic Claude (Premium AI)
+1. Sign up at [Anthropic](https://www.anthropic.com/)
+2. Get API key from the console
+3. Set `ANTHROPIC_API_KEY=your-key-here` in `.env.local`
+4. Features: Advanced reasoning, 200k context window, vision support
+
+#### Groq (Fast Inference)
+1. Sign up at [Groq](https://groq.com/)
+2. Get API key from the console
+3. Set `GROQ_API_KEY=your-key-here` in `.env.local`
+4. Features: Ultra-fast inference (10-100x faster), long context support
+
+#### AgentEvolver (Self-Evolving AI)
+1. Python 3.8+ required
+2. Install dependencies: `pip install -r agentevolver/requirements.txt`
+3. Start with CannaAI: Use startup.bat Mode 2 or 4
+4. Standalone mode: Use startup.bat Mode 8
+5. Access API at `http://localhost:8001`
+
+**AgentEvolver Features:**
+- `/optimize` - Optimize prompts for better AI responses
+- `/metrics` - View performance statistics
+- `/history` - Browse evolution history
+- `/config` - Configure optimization settings
+- `/feedback` - Submit result feedback
+
+**Benefits:**
+- Improved AI accuracy for cultivation questions
+- Context-aware prompt enhancement
+- Strain and symptom-specific optimizations
+- Automatic fallback handling
 
 ## 🤖 AI Analysis Features
 
@@ -231,30 +314,235 @@ curl -X POST http://localhost:3000/api/analyze \
   }'
 ```
 
-## 🔧 Configuration
 
-### Environment Variables
-```env
-# Server Configuration
-PORT=3000
-HOST=127.0.0.1
+### Advanced Analysis Features
 
-# AI Services
-LM_STUDIO_URL=http://localhost:1234
-OPENROUTER_API_KEY=your-api-key
-ENABLE_OPENROUTER=false
+#### Trichome Analysis (Harvest Timing)
+Microscopic analysis of plant trichomes to determine optimal harvest readiness.
 
-# Socket.IO
-SOCKET_IO_ORIGINS=http://localhost:3000
-SOCKET_IO_AUTH=false
+**Supported Devices:**
+- USB digital microscopes (60x-1000x magnification)
+- Mobile phone camera with macro lens
+- USB webcams with close-up capability
 
-# Database
-DATABASE_URL="file:./db/custom.db"
+**Analysis Capabilities:**
+- **Trichome Maturity Detection**: Identifies clear, cloudy, amber, and mixed stages
+- **Harvest Readiness**: Calculates optimal harvest window based on trichome ratios
+- **Density Analysis**: Measures trichome coverage and density
+- **Quality Assessment**: Evaluates image sharpness, lighting, and magnification
+- **Timing Recommendations**: Provides estimated days until optimal harvest
+
+**Input Requirements:**
+- Clear, well-lit microscope image (Base64 encoded)
+- Device information (type, resolution, magnification level)
+- Optional: Strain type, desired effect (energetic vs sedative)
+
+**Output Provided:**
+- Trichome distribution percentages (clear/cloudy/amber)
+- Harvest readiness score (Not Ready / Almost Ready / Ready / Overripe)
+- Estimated days until optimal harvest
+- Confidence score for accuracy assessment
+- Detailed findings with severity levels
+
+**Usage:**
+```bash
+POST /api/trichome-analysis
+Content-Type: application/json
+
+{
+  "image": "data:image/jpeg;base64,...",
+  "device": {
+    "type": "usb_microscope",
+    "resolution": "1920x1080",
+    "magnification": 400
+  },
+  "strain": "Blue Dream",
+  "desiredEffect": "balanced"
+}
 ```
+
+---
+
+#### Live Vision Monitoring
+Real-time plant health monitoring via webcam or microscope with intelligent change detection.
+
+**Supported Devices:**
+- Standard webcams
+- USB microscopes
+- IP cameras
+- Mobile device cameras
+
+**Analysis Capabilities:**
+- **Real-Time Health Assessment**: Continuous monitoring of plant condition
+- **Change Detection**: Identifies changes between analysis sessions
+- **Multi-Focus Analysis**: Analyze specific areas (leaves, stems, roots, flowers)
+- **Health Scoring**: Numerical health score with trend tracking
+- **Urgency Levels**: Automatic priority assessment (low/medium/high/critical)
+- **Context Tracking**: Maintains plant history for better analysis
+
+**Input Requirements:**
+- Live image capture (Base64 encoded)
+- Device information (type, resolution)
+- Plant context (strain, growth stage, medium, environment)
+- Analysis options (focus area, urgency level)
+
+**Output Provided:**
+- Current health score and status
+- Changes detected since last analysis
+- Specific health issues identified
+- Actionable recommendations
+- Confidence score
+- Historical comparison data
+
+**Usage:**
+```bash
+POST /api/live-vision
+Content-Type: application/json
+
+{
+  "image": "data:image/jpeg;base64,...",
+  "device": {
+    "type": "webcam",
+    "resolution": "1280x720"
+  },
+  "plantContext": {
+    "strain": "Northern Lights",
+    "growthStage": "Vegetative",
+    "medium": "Soil",
+    "environment": {
+      "temperature": 24,
+      "humidity": 60,
+      "ph": 6.5
+    }
+  },
+  "analysisOptions": {
+    "focusArea": "leaves",
+    "urgencyLevel": "standard"
+  }
+}
+```
+
+**Key Features:**
+- Captures timestamp for each analysis
+- Detects subtle changes over time
+- Provides trend analysis
+- Integrates with sensor data for comprehensive assessment
+- Supports multiple plants with individual tracking
+
+## 🔧 Environment Variables - Complete Reference
+
+### Core Server Configuration
+```env
+# Server Binding
+PORT=3000                        # Server port (default: 3000)
+HOST=127.0.0.1                   # Bind address (use 0.0.0.0 for network access)
+
+# Node Environment
+NODE_ENV=development             # Environment: development | production
+
+# Build Configuration
+BUILD_MODE=server                # Build mode: server | static (for Netlify)
+```
+
+### AI Provider Configuration
+```env
+# LM Studio (Local AI)
+LM_STUDIO_URL=http://localhost:1234
+LM_STUDIO_TIMEOUT=30000          # Connection timeout (ms)
+
+# OpenRouter (Cloud AI)
+OPENROUTER_API_KEY=your-api-key-here
+OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
+OPENROUTER_TIMEOUT=60000         # Request timeout (ms)
+OPENROUTER_MAX_TOKENS=4096       # Max response tokens
+OPENROUTER_TEMPERATURE=0.7       # Response creativity (0.0-2.0)
+ENABLE_OPENROUTER=false          # Enable/disable OpenRouter
+
+# Google Gemini
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.0-flash-exp
+GEMINI_TIMEOUT=60000
+
+# Anthropic Claude
+ANTHROPIC_API_KEY=your-anthropic-api-key
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+ANTHROPIC_TIMEOUT=60000
+
+# Groq (Fast Inference)
+GROQ_API_KEY=your-groq-api-key
+GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_TIMEOUT=30000
+
+# Fallback AI Configuration
+ENABLE_FALLBACK=true             # Enable rule-based fallback
+FALLBACK_CONFIDENCE=0.6          # Confidence threshold for fallback
+```
+
+### Database Configuration
+```env
+DATABASE_URL="file:./db/custom.db"    # SQLite database path
+```
+
+### Socket.IO Configuration
+```env
+SOCKET_IO_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+SOCKET_IO_AUTH=false             # Enable WebSocket authentication (development: false)
+```
+
+### Debug & Development
+```env
+DEBUG_AI_PROVIDERS=false         # Enable AI provider debug logging
+DEBUG=*                          # Enable all debug logging (verbose)
+```
+
+---
+
+### Configuration by Environment
+
+**Local Development:**
+```env
+NODE_ENV=development
+HOST=127.0.0.1
+PORT=3000
+LM_STUDIO_URL=http://localhost:1234
+ENABLE_OPENROUTER=false
+SOCKET_IO_AUTH=false
+```
+
+**Remote Development (Network Access):**
+```env
+NODE_ENV=development
+HOST=0.0.0.0                     # Allow network access
+PORT=3000
+SOCKET_IO_ORIGINS=http://localhost:3000,http://*:3000
+```
+
+**Production (Server):**
+```env
+NODE_ENV=production
+HOST=0.0.0.0
+PORT=3000
+ENABLE_OPENROUTER=true
+OPENROUTER_API_KEY=your-production-key
+SOCKET_IO_AUTH=true              # Enable authentication
+```
+
+**Static Export (Netlify):**
+```env
+BUILD_MODE=static                # Enable static export mode
+ENABLE_OPENROUTER=true
+```
+
+---
 
 ### AI Model Configuration
 - **Local Models**: Supports any model loaded in LM Studio
-- **Cloud Models**: Configurable OpenRouter models (Claude, GPT, etc.)
+- **Cloud Models**:
+  - **Google Gemini**: 1-2M token context window, vision support, FREE during preview
+  - **Anthropic Claude**: Advanced reasoning capabilities, 200k context window
+  - **Groq**: Ultra-fast inference (10-100x faster than standard APIs)
+  - **OpenRouter**: Access to multiple models (Claude, GPT, Llama, etc.)
+  - **OpenAI-compatible**: Any OpenAI-compatible endpoint
 - **Fallback System**: Rule-based analysis when AI services unavailable
 
 ## 🚨 Advanced Features
@@ -344,23 +632,89 @@ The system includes sophisticated logic to distinguish between:
 3. Receive context-aware advice based on current sensor data
 4. Follow recommendations for optimal results
 
-## 🔌 API Endpoints
-### Health & Version
-```
-GET /api/health
-GET /api/version
+### Business Management Features
+
+#### Harvest Tracking
+1. Navigate to the **Analytics** tab → **Harvest** section
+2. Record harvest details:
+   - Harvest date and strain
+   - Wet weight and dry weight
+   - Quality grade (A, A+, B, etc.)
+   - THC/CBD percentages
+   - Flowering time duration
+   - Terpene profile notes
+3. View statistics:
+   - Total harvested amount
+   - Average yield per plant
+   - Average THC/CBD levels
+   - Best performing strains
+
+#### Inventory Management
+1. Go to **Settings** → **Inventory**
+2. Add items by category:
+   - Nutrients (N-P-K values, quantity, cost)
+   - Equipment (tools, lights, fans, etc.)
+   - Growing medium (soil, coco, hydro supplies)
+3. Set low stock alerts
+4. Track restock dates
+5. Monitor total inventory value
+
+#### Clone & Propagation Tracking
+1. Navigate to **Cloning** section
+2. Create clone batch:
+   - Mother plant strain
+   - Number of clones
+   - Rooting method (aerocloner, rockwool, water, soil)
+   - Rooting hormone used
+   - Expected root date
+3. Update clone status as they develop
+4. Track success rates by method and strain
+5. View overall propagation statistics
+
+#### Cost & Profitability Analysis
+1. Go to **Analytics** → **Costs**
+2. Log expenses by category:
+   - Nutrients and amendments
+   - Equipment purchases
+   - Utilities (electricity, water)
+   - Miscellaneous supplies
+3. Record revenue from harvests
+4. View automatic calculations:
+   - Total profit/loss
+   - Profit margin percentage
+   - Cost per gram produced
+   - Category expense breakdown
+   - ROI analysis
+
+## 🔌 Complete API Reference
+
+### System Health & Version
+```bash
+GET /api/health          # System health check
+GET /api/version         # API version information
 ```
 
-### Analysis APIs
-- `POST /api/analyze` - Manual plant health analysis
-- `POST /api/auto-analyze` - Automatic sensor-based analysis
-- `GET /api/analyze` - Get analysis history
-
-### Plant Analysis
+**Response Example:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-11-20T10:30:00Z",
+  "version": "1.0.0"
+}
 ```
+
+---
+
+### Plant Analysis Endpoints
+
+#### Manual Plant Health Analysis
+```bash
 POST /api/analyze
 Content-Type: application/json
+```
 
+**Request Body:**
+```json
 {
   "strain": "Blue Dream",
   "leafSymptoms": "Purple leaves, yellowing, curling",
@@ -368,15 +722,162 @@ Content-Type: application/json
   "temperature": 75,
   "humidity": 60,
   "medium": "Soil",
-  "growthStage": "Flowering"
+  "growthStage": "Flowering",
+  "plantImage": "data:image/jpeg;base64,..."
 }
 ```
 
-### AI Chat
+**Response:**
+```json
+{
+  "diagnosis": "Phosphorus deficiency detected",
+  "confidence": 0.92,
+  "recommendations": ["Increase P nutrients", "Check pH levels"],
+  "severity": "moderate",
+  "findings": [
+    {
+      "type": "nutrient_deficiency",
+      "name": "Phosphorus Deficiency",
+      "confidence": 0.92
+    }
+  ]
+}
 ```
+
+#### Automatic Sensor-Based Analysis
+```bash
+POST /api/auto-analyze
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "roomId": "room1",
+  "sensorData": {
+    "temperature": 75,
+    "humidity": 60,
+    "ph": 6.2,
+    "ec": 1.8
+  }
+}
+```
+
+#### Analysis History
+```bash
+GET /api/history         # Get all analysis history
+POST /api/history        # Save analysis to history
+```
+
+**History Response:**
+```json
+{
+  "analyses": [
+    {
+      "id": "123",
+      "timestamp": "2025-11-20T10:00:00Z",
+      "strain": "Blue Dream",
+      "diagnosis": "Phosphorus deficiency",
+      "recommendations": ["..."]
+    }
+  ]
+}
+```
+
+---
+
+### Advanced Analysis Endpoints
+
+#### Trichome Analysis (Harvest Timing)
+```bash
+POST /api/trichome-analysis
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "image": "data:image/jpeg;base64,...",
+  "device": {
+    "type": "usb_microscope",
+    "resolution": "1920x1080",
+    "magnification": 400
+  },
+  "strain": "Blue Dream",
+  "desiredEffect": "balanced"
+}
+```
+
+**Response:**
+```json
+{
+  "trichomeDistribution": {
+    "clear": 10,
+    "cloudy": 70,
+    "amber": 20
+  },
+  "harvestReadiness": "Ready",
+  "estimatedDaysUntilHarvest": 0,
+  "confidence": 0.88,
+  "recommendations": ["Harvest within 3-5 days for balanced effect"]
+}
+```
+
+#### Live Vision Monitoring
+```bash
+POST /api/live-vision
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "image": "data:image/jpeg;base64,...",
+  "device": {
+    "type": "webcam",
+    "resolution": "1280x720"
+  },
+  "plantContext": {
+    "strain": "Northern Lights",
+    "growthStage": "Vegetative",
+    "medium": "Soil",
+    "environment": {
+      "temperature": 24,
+      "humidity": 60,
+      "ph": 6.5
+    }
+  },
+  "analysisOptions": {
+    "focusArea": "leaves",
+    "urgencyLevel": "standard"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "healthScore": 85,
+  "status": "Healthy",
+  "changes": ["New growth detected", "Leaf color improved"],
+  "issues": [],
+  "recommendations": ["Continue current regimen"],
+  "confidence": 0.91
+}
+```
+
+---
+
+### AI Services
+
+#### AI Cultivation Assistant
+```bash
 POST /api/chat
 Content-Type: application/json
+```
 
+**Request Body:**
+```json
 {
   "message": "Why are my leaves turning yellow?",
   "model": "lm-studio",
@@ -388,18 +889,277 @@ Content-Type: application/json
 }
 ```
 
-### Strain Management
+**Response:**
+```json
+{
+  "response": "Yellowing leaves can indicate nitrogen deficiency...",
+  "model": "lm-studio",
+  "confidence": 0.87
+}
 ```
+
+#### AI Providers Management
+```bash
+GET /api/ai/providers          # List available AI providers & models
+POST /api/ai/providers         # Test provider connection
+```
+
+**Test Connection Request:**
+```json
+{
+  "action": "test",
+  "provider": "openrouter",
+  "apiKey": "your-api-key"
+}
+```
+
+---
+
+### LM Studio Integration
+
+#### Direct LM Studio Operations
+```bash
+POST /api/lmstudio              # Direct LM Studio API calls
+GET /api/lmstudio/models        # List available LM Studio models
+POST /api/lmstudio/chat         # Direct LM Studio chat endpoint
+```
+
+**LM Studio Chat:**
+```json
+POST /api/lmstudio/chat
+{
+  "model": "llama-2-7b",
+  "messages": [
+    {"role": "user", "content": "How do I fix nutrient burn?"}
+  ]
+}
+```
+
+---
+
+### Business Management
+
+#### Harvest Tracking
+```bash
+GET /api/harvest                # Get harvest history
+POST /api/harvest               # Record new harvest
+```
+
+**Record Harvest:**
+```json
+{
+  "strain": "Blue Dream",
+  "harvestDate": "2025-11-20",
+  "wetWeight": 1200,
+  "dryWeight": 300,
+  "thcPercentage": 22.5,
+  "cbdPercentage": 0.8,
+  "qualityGrade": "A+",
+  "floweringTime": 63
+}
+```
+
+#### Inventory Management
+```bash
+GET /api/inventory              # Get inventory items
+POST /api/inventory             # Add/update inventory item
+```
+
+**Add Inventory:**
+```json
+{
+  "category": "nutrients",
+  "name": "CalMag Plus",
+  "quantity": 5,
+  "unit": "bottles",
+  "cost": 15.99,
+  "lowStockAlert": 2
+}
+```
+
+#### Cloning & Propagation
+```bash
+GET /api/cloning                # Get clone batches
+POST /api/cloning               # Create/update clone batch
+```
+
+**Create Clone Batch:**
+```json
+{
+  "strain": "Northern Lights",
+  "numberOfClones": 12,
+  "rootingMethod": "aerocloner",
+  "rootingHormone": "Clonex Gel",
+  "startDate": "2025-11-20",
+  "expectedRootDate": "2025-12-04"
+}
+```
+
+#### Cost & Revenue Tracking
+```bash
+GET /api/costs                  # Get expense/revenue data
+POST /api/costs                 # Log expense or revenue
+```
+
+**Log Expense:**
+```json
+{
+  "type": "expense",
+  "category": "nutrients",
+  "amount": 45.99,
+  "description": "Advanced Nutrients pH Perfect Trio",
+  "date": "2025-11-20"
+}
+```
+
+**Log Revenue:**
+```json
+{
+  "type": "revenue",
+  "amount": 800,
+  "description": "100g Blue Dream harvest sale",
+  "date": "2025-11-20"
+}
+```
+
+---
+
+### Cultivation Management
+
+#### Strain Management
+```bash
 GET /api/strains          # Get all strains
 POST /api/strains         # Create new strain
-PUT /api/strains          # Update strain
+PUT /api/strains          # Update existing strain
 DELETE /api/strains?id=x  # Delete strain
 ```
 
-### Sensor Data
+**Create Strain:**
+```json
+{
+  "name": "Blue Dream",
+  "type": "Hybrid",
+  "isPurpleStrain": false,
+  "optimalPH": 6.2,
+  "optimalTemp": 75,
+  "optimalHumidity": 60,
+  "commonDeficiencies": ["nitrogen", "phosphorus"],
+  "notes": "High yielding, easy to grow"
+}
 ```
-GET /api/sensors          # Get current sensor data
-POST /api/sensors         # Control automation
+
+#### Sensor Data & Automation
+```bash
+GET /api/sensors                # Get current sensor data
+POST /api/sensors               # Control automation systems
+```
+
+**Sensor Response:**
+```json
+{
+  "room1": {
+    "temperature": 75.2,
+    "humidity": 58,
+    "ph": 6.3,
+    "ec": 1.8,
+    "soilMoisture": 65,
+    "lightIntensity": 850,
+    "co2": 1200,
+    "vpd": 1.2
+  }
+}
+```
+
+**Control Automation:**
+```json
+{
+  "action": "start_watering",
+  "room": "room1",
+  "duration": 300
+}
+```
+
+---
+
+### Application Settings
+
+#### Settings Management
+```bash
+GET /api/settings               # Get application settings
+POST /api/settings              # Update settings
+```
+
+**Settings Actions:**
+```json
+// Get provider models
+{
+  "action": "get_provider_models",
+  "provider": "openrouter"
+}
+
+// Update provider
+{
+  "action": "update_provider",
+  "provider": "gemini",
+  "apiKey": "your-api-key",
+  "model": "gemini-2.0-flash-exp"
+}
+
+// Test connection
+{
+  "action": "test_connection",
+  "provider": "anthropic",
+  "apiKey": "your-api-key"
+}
+
+// AgentEvolver configuration
+{
+  "action": "get_agentevolver_config"
+}
+
+{
+  "action": "update_agentevolver_config",
+  "enabled": true,
+  "apiUrl": "http://localhost:8001",
+  "optimizationLevel": "advanced"
+}
+```
+
+---
+
+### Debug Tools (Development)
+
+```bash
+GET /api/debug/lmstudio-scan    # Scan for LM Studio models
+GET /api/debug/models-test      # Test all AI model connections
+```
+
+---
+
+## 🔧 API Authentication & Rate Limiting
+
+### Current Implementation
+- **Authentication**: Optional (configurable via SOCKET_IO_AUTH)
+- **Rate Limiting**: Implemented for abuse prevention
+- **CORS**: Configured for local and remote access
+- **Input Validation**: Zod schemas for all endpoints
+- **Error Handling**: Comprehensive error responses
+
+### Future Enhancements
+- User authentication system
+- API key management
+- Role-based access control
+- Enhanced rate limiting per endpoint
+- WebSocket authentication tokens
+
+### Error Response Format
+```json
+{
+  "error": "Error message",
+  "code": "ERROR_CODE",
+  "details": {},
+  "timestamp": "2025-11-20T10:30:00Z"
+}
 ```
 
 ## 🎨 Customization
@@ -420,96 +1180,135 @@ Edit prompts in API route files:
 2. Add new sensor cards to main dashboard
 3. Implement real-time updates via WebSocket
 
-## 🚀 Deployment
+## 🚀 Deployment Options
 
-### Local Development
+### Deployment Mode Comparison
+
+| Feature | Server Mode | Static Export (Netlify) |
+|---------|------------|------------------------|
+| **Build Command** | `npm run build` | `npm run build:netlify` |
+| **Output** | `.next/` directory | `out/` directory |
+| **API Routes** | ✅ Full support | ❌ Client-side only |
+| **Database** | ✅ SQLite support | ❌ Browser storage only |
+| **Socket.IO** | ✅ Real-time WebSocket | ❌ Not available |
+| **AI Providers** | ✅ All 7 providers | ⚠️ Client-side APIs only |
+| **Best For** | Full-featured apps | Static hosting, demos |
+
+---
+
+### 1. Local Development Server
+
+**Quick Start:**
 ```bash
+# Windows
+startup.bat
+# Select Mode 1 (Development) or Mode 2 (Development + AgentEvolver)
+
+# Other platforms
+npm run dev
+```
+
+**Features:**
+- Hot reload with nodemon
+- Full API and database support
+- Socket.IO real-time features
+- AgentEvolver integration (Mode 2)
+
+---
+
+### 2. Production Server (VPS, Cloud, Docker)
+
+**Build & Deploy:**
+```bash
+# Build production
 npm run build
-npm start
+
+# Start production server
+npm run start           # Unix/Linux
+npm run start:win       # Windows
+
+# Or use startup.bat Mode 3 (Production)
 ```
 
-### Netlify Static Hosting
-The application now supports static hosting on Netlify with client-side AI configuration:
+**Environment Requirements:**
+- Node.js 18+
+- SQLite support
+- Port 3000 available (configurable)
+- Optional: Python 3.8+ for AgentEvolver
 
-#### 🚀 Automatic Deployment
-1. Push your code to GitHub
-2. Connect your repository to Netlify
-3. Netlify automatically builds and deploys the static site
-
-#### 🔧 Client-Side AI Configuration
-Since static hosting doesn't support server-side APIs, the application includes:
-- **Browser-based AI service** for direct API calls to OpenRouter/LM Studio
-- **Configuration UI** for setting up AI providers in the app
-- **Fallback responses** with rule-based cultivation advice when offline
-
-#### ⚙️ AI Provider Setup on Netlify
-
-1. **OpenRouter Configuration** (Cloud AI):
-   - Click the "AI Config" button in the application header
-   - Select "OpenRouter (Cloud)"
-   - Enter your OpenRouter API key from [OpenRouter.ai](https://openrouter.ai/)
-   - Choose your preferred model (Claude, GPT-4, Llama, etc.)
-   - Test connection and save settings
-
-2. **LM Studio Configuration** (Local AI):
-   - Install and run [LM Studio](https://lmstudio.ai/)
-   - Load a compatible model (Llama, Mistral, etc.)
-   - Start the server (default: http://localhost:1234)
-   - In the app: Select "LM Studio (Local)" and enter server URL
-   - Test connection and save
-
-3. **Fallback Mode** (Offline Operation):
-   - Select "Fallback Mode" in AI configuration
-   - Provides rule-based cultivation advice
-   - Works completely offline without external dependencies
-
-#### 📋 Netlify Configuration
-- `netlify.toml` - Build optimization and API redirect rules
-- `next.config.ts` - Static export with fallback configurations
-- Client-side API handlers for browser-based AI interactions
-
-#### 🔨 Build Commands
-```bash
-# For Netlify deployment
-npm run build:netlify
-
-# Manual static build
-npm run build:static
-```
-
-### Traditional Server Deployment
-
-#### Environment Setup
-1. Configure production database
-2. Set up AI API keys
-3. Configure SSL certificates
-4. Set up monitoring and logging
-
-#### Deployment Options
+**Recommended Platforms:**
 - **VPS**: DigitalOcean, Vultr, Linode
-- **Cloud**: AWS, Google Cloud, Azure
-- **Container**: Docker, Podman
-- **PaaS**: Heroku, Railway, Render
+- **Cloud**: AWS EC2, Google Compute Engine, Azure VM
+- **Container**: Docker, Kubernetes, Podman
+- **PaaS**: Railway, Render, Fly.io
 
-#### Server Configuration
-For traditional server deployment with full API support:
+---
 
-1. **Environment Variables**:
-```env
-# AI Services
-LM_STUDIO_URL=http://localhost:1234
-OPENROUTER_API_KEY=your-api-key
-ENABLE_OPENROUTER=true
+### 3. Netlify Static Hosting
 
-# Database
-DATABASE_URL="file:./db/custom.db"
-```
+**Automatic Deployment:**
+1. Push code to GitHub repository
+2. Connect repository to Netlify
+3. Netlify automatically builds with `npm run build:netlify`
+4. Site deploys to `out/` directory
 
-2. **Production Commands**:
+**Manual Build:**
 ```bash
-npm run build
-npm run start:prod  # or npm run start:win on Windows
+npm run build:netlify
+# Upload out/ directory to Netlify
 ```
+
+**Limitations:**
+- No server-side API routes
+- No database support
+- Client-side AI API calls only
+- Limited to OpenRouter, Gemini, Groq (browser-compatible)
+
+**Configuration:**
+- AI providers configured in-app (client-side)
+- Demo mode with fallback analysis
+- Optimal for showcasing features
+
+---
+
+### 4. Remote Access Setup (Tailscale, LAN)
+
+For network or remote access from other devices:
+
+**Using startup.bat Mode 7:**
+```bash
+startup.bat
+# Select Mode 7 (Remote Development Mode)
+# Server binds to 0.0.0.0:3000
+```
+
+**Manual Setup:**
+```bash
+# Set environment
+set HOST=0.0.0.0
+npm run dev
+```
+
+**Access URLs:**
+- **Local**: http://localhost:3000
+- **LAN**: http://[your-local-ip]:3000
+- **Tailscale**: http://[tailscale-hostname]:3000
+
+**Firewall Configuration:**
+- Allow TCP port 3000 inbound
+- Windows: `netsh advfirewall firewall add rule name="CannaAI" dir=in action=allow protocol=TCP localport=3000`
+
+**Security Note:** Only use `HOST=0.0.0.0` on trusted networks or with proper authentication enabled.
+
+---
+
+## 🐳 Docker Support (Coming Soon)
+
+Docker containerization is planned for future releases to simplify deployment:
+- Pre-configured environment
+- Multi-platform support (AMD64, ARM64)
+- AgentEvolver integration
+- One-command deployment
 
 ## 🐛 Troubleshooting
 
@@ -604,22 +1403,54 @@ For support and questions:
 
 ## 📊 Project Statistics
 
-- **Framework**: Next.js 15.3.5 with React 19
+- **Framework**: Next.js 15.3.5 with React 19 and Custom Server
 - **Type Safety**: TypeScript 5 with flexible configuration
-- **Components**: 50+ shadcn/ui Radix-based components
-- **Real-time**: Socket.IO WebSocket integration
-- **AI Models**: Support for LM Studio, OpenRouter, and custom endpoints
+- **UI Components**: 50+ shadcn/ui Radix-based primitives
+- **Backend**: Custom Node.js server with Socket.IO integration
 - **Database**: SQLite with Prisma ORM
-- **Deployment**: Supports both traditional servers and static hosting (Netlify)
+- **AI Integration**: Z-AI Web Dev SDK + 7 provider support
+- **Real-time**: Socket.IO WebSocket (bidirectional communication)
+- **Code Quality**: ESLint with relaxed rules for rapid development
+- **Build System**: Optimized for both server and static deployment
+- **Lines of Code**: 26,000+ (main dashboard), 50,000+ total
+- **API Endpoints**: 19 RESTful endpoints for comprehensive control
+- **Supported AI Providers**: 7 (LM Studio, Google Gemini, Anthropic Claude, Groq, OpenRouter, OpenAI-compatible, Fallback)
+- **Startup Modes**: 9 different modes via startup.bat (Windows)
+- **Image Formats**: HEIC, JPEG, PNG, WebP with automatic conversion
+- **Deployment Options**: Traditional server, static export (Netlify), remote access
+- **AgentEvolver**: Self-evolving AI backend with 1000-record evolution history
+- **Business Features**: Harvest tracking, inventory management, clone tracking, cost analysis
+- **Advanced Analysis**: Trichome microscopy, live vision monitoring, purple strain intelligence
 
 ## 🏆 Key Achievements
 
-- ✅ **Node.js v22 Compatibility**: Updated build system for latest Node.js versions
-- ✅ **Static Hosting Support**: Full Netlify deployment capability
-- ✅ **Advanced AI Integration**: Multiple provider support with intelligent fallback
-- ✅ **Real-time Monitoring**: WebSocket-based sensor data streaming
-- ✅ **Cross-Platform**: Windows and Unix development environments
-- ✅ **Production Ready**: Optimized builds with comprehensive error handling
+### Core Features
+- ✅ **7 AI Provider Support**: LM Studio (local), Google Gemini, Anthropic Claude, Groq, OpenRouter, OpenAI-compatible, and intelligent fallback system
+- ✅ **AgentEvolver Integration**: Self-evolving AI system with cannabis domain expertise and continuous learning
+- ✅ **Advanced Analysis Suite**: Trichome microscopy, live vision monitoring, and purple strain intelligence
+- ✅ **Business Management**: Complete harvest tracking, inventory management, clone tracking, and profitability analysis
+- ✅ **Real-time Monitoring**: WebSocket integration for live sensor data, environmental alerts, and automation control
+
+### Development & Deployment
+- ✅ **Node.js v22 Compatibility**: Full support for latest Node.js with optimized build system
+- ✅ **Dual Deployment Modes**: Traditional server deployment AND static hosting (Netlify)
+- ✅ **9 Startup Modes**: Flexible startup options for development, production, remote access, and AI backend
+- ✅ **Cross-Platform**: Windows and Unix development environments with platform-specific scripts
+- ✅ **Remote Access**: Network-accessible mode with Tailscale and LAN support
+
+### AI & Automation
+- ✅ **Intelligent Prompt Optimization**: AgentEvolver automatically enhances AI prompts for better results
+- ✅ **Multi-Model Fallback**: Automatic failover between 7 AI providers with rule-based fallback
+- ✅ **Context-Aware Analysis**: Strain-specific, symptom-specific, and environment-aware AI responses
+- ✅ **Harvest Timing Precision**: Microscopic trichome analysis for optimal harvest windows
+- ✅ **Live Change Detection**: Real-time monitoring with intelligent change detection between analyses
+
+### Production Ready
+- ✅ **Comprehensive API**: 19 RESTful endpoints covering all cultivation and business management needs
+- ✅ **Error Tolerance**: Relaxed TypeScript/ESLint for rapid iteration and flexibility
+- ✅ **Performance Optimized**: Fast builds, efficient hot reload, optimized production bundles
+- ✅ **Scalable Architecture**: Component-based design ready for feature expansion
+- ✅ **Professional Documentation**: Comprehensive README, setup guides, and API reference
 
 ---
 

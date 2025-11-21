@@ -76,38 +76,102 @@ if not errorlevel 1 (
     echo The following processes are using port 3000:
     netstat -ano | findstr :3000
     echo.
-    echo Select an option:
-    echo 1. Kill process^(es^) using port 3000
-    echo 2. Use alternative port ^(3001^)
-    echo 3. Continue anyway ^(may fail^)
-    echo 4. Exit
-    set /p port_choice="Enter your choice (1-4): "
 
-    if "!port_choice!"=="1" (
-        echo [INFO] Terminating processes using port 3000...
-        for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
-            echo [INFO] Killing PID: %%a
-            taskkill /PID %%a /F >nul 2>&1
+    :: Check if port 3001 is also in use before offering it
+    echo [INFO] Checking if alternative port 3001 is available...
+    netstat -ano | findstr :3001 >nul
+    if not errorlevel 1 (
+        echo [ERROR] Port 3001 is also in use!
+        echo.
+        echo The following processes are using port 3001:
+        netstat -ano | findstr :3001
+        echo.
+        echo [ERROR] Both ports 3000 and 3001 are occupied!
+        echo.
+        echo Select an option:
+        echo 1. Kill process^(es^) using port 3000
+        echo 2. Kill process^(es^) using port 3001
+        echo 3. Kill all processes using ports 3000 and 3001
+        echo 4. Exit
+        set /p port_choice="Enter your choice (1-4): "
+
+        if "!port_choice!"=="1" (
+            echo [INFO] Terminating processes using port 3000...
+            for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
+                echo [INFO] Killing PID: %%a
+                taskkill /PID %%a /F >nul 2>&1
+            )
+            echo [SUCCESS] Port 3000 should now be available
+            echo.
+            set USE_ALT_PORT=0
         )
-        echo [SUCCESS] Port 3000 should now be available
-        echo.
-        set USE_ALT_PORT=0
-    )
 
-    if "!port_choice!"=="2" (
-        set USE_ALT_PORT=1
-        echo [INFO] Will use port 3001 instead
-        echo.
-    )
+        if "!port_choice!"=="2" (
+            echo [INFO] Terminating processes using port 3001...
+            for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3001') do (
+                echo [INFO] Killing PID: %%a
+                taskkill /PID %%a /F >nul 2>&1
+            )
+            echo [SUCCESS] Port 3001 should now be available
+            echo.
+            set USE_ALT_PORT=1
+        )
 
-    if "!port_choice!"=="3" (
-        set USE_ALT_PORT=0
-        echo [WARNING] Continuing with potential port conflict...
-        echo.
-    )
+        if "!port_choice!"=="3" (
+            echo [INFO] Terminating processes using ports 3000 and 3001...
+            for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
+                echo [INFO] Killing PID: %%a
+                taskkill /PID %%a /F >nul 2>&1
+            )
+            for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3001') do (
+                echo [INFO] Killing PID: %%a
+                taskkill /PID %%a /F >nul 2>&1
+            )
+            echo [SUCCESS] Both ports should now be available
+            echo.
+            set USE_ALT_PORT=0
+        )
 
-    if "!port_choice!"=="4" (
-        goto END
+        if "!port_choice!"=="4" (
+            echo [INFO] Exiting as requested...
+            goto END
+        )
+    ) else (
+        echo [INFO] Port 3001 is available as alternative
+        echo.
+        echo Select an option:
+        echo 1. Kill process^(es^) using port 3000
+        echo 2. Use alternative port ^(3001^)
+        echo 3. Continue anyway ^(may fail^)
+        echo 4. Exit
+        set /p port_choice="Enter your choice (1-4): "
+
+        if "!port_choice!"=="1" (
+            echo [INFO] Terminating processes using port 3000...
+            for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
+                echo [INFO] Killing PID: %%a
+                taskkill /PID %%a /F >nul 2>&1
+            )
+            echo [SUCCESS] Port 3000 should now be available
+            echo.
+            set USE_ALT_PORT=0
+        )
+
+        if "!port_choice!"=="2" (
+            set USE_ALT_PORT=1
+            echo [INFO] Will use port 3001 instead
+            echo.
+        )
+
+        if "!port_choice!"=="3" (
+            set USE_ALT_PORT=0
+            echo [WARNING] Continuing with potential port conflict...
+            echo.
+        )
+
+        if "!port_choice!"=="4" (
+            goto END
+        )
     )
 ) else (
     set USE_ALT_PORT=0
@@ -160,7 +224,8 @@ echo.
 
 :: Set PORT environment variable and start
 echo [INFO] Starting server with PORT=!PORT!...
-cmd /c "set PORT=!PORT! && npm run dev"
+set PORT=!PORT!
+npm run dev
 goto END
 
 :PROD_MODE
@@ -188,7 +253,8 @@ echo.
 
 :: Set PORT environment variable and start
 echo [INFO] Starting server with PORT=!PORT!...
-cmd /c "set PORT=!PORT! && npm run start"
+set PORT=!PORT!
+npm run start
 goto END
 
 :DEV_RESET
@@ -221,7 +287,8 @@ echo.
 
 :: Set PORT environment variable and start
 echo [INFO] Starting server with PORT=!PORT!...
-cmd /c "set PORT=!PORT! && npm run dev"
+set PORT=!PORT!
+npm run dev
 goto END
 
 :INSTALL_ONLY
@@ -258,7 +325,9 @@ echo.
 
 :: Set HOST and PORT environment variables for remote access and start
 echo [INFO] Starting remote server with HOST=0.0.0.0 and PORT=!PORT!...
-cmd /c "set HOST=0.0.0.0 && set PORT=!PORT! && npm run dev"
+set HOST=0.0.0.0
+set PORT=!PORT!
+npm run dev
 goto END
 
 :DEV_MODE_AGENTEVOLVER
