@@ -4,6 +4,21 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'auto';
 export const revalidate = false;
 
+/**
+ * Default Settings Configuration
+ *
+ * Environment Variables Supported:
+ * - GEMINI_API_KEY, GEMINI_MODEL, GEMINI_BASE_URL
+ * - GROQ_API_KEY, GROQ_MODEL, GROQ_BASE_URL
+ * - ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_BASE_URL
+ * - OPENROUTER_API_KEY, OPENROUTER_MODEL
+ * - LM_STUDIO_URL
+ *
+ * Custom Base URLs allow using proxy services like:
+ * - https://ai.gigamind.dev/claude-code (Claude via GigaMind)
+ * - https://api.z.ai/api/anthropic (Claude via Z.AI)
+ */
+
 // Default settings
 const defaultSettings = {
   aiProvider: 'lm-studio',
@@ -23,19 +38,19 @@ const defaultSettings = {
     baseUrl: 'https://api.openai.com/v1'
   },
   gemini: {
-    apiKey: '',
-    model: 'gemini-2.0-flash-exp',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
+    apiKey: process.env.GEMINI_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp',
+    baseUrl: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/'
   },
   groq: {
-    apiKey: '',
-    model: 'llama-3.3-70b-versatile',
-    baseUrl: 'https://api.groq.com/openai/v1'
+    apiKey: process.env.GROQ_API_KEY || '',
+    model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+    baseUrl: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1'
   },
   anthropic: {
-    apiKey: '',
-    model: 'claude-3-5-sonnet-20241022',
-    baseUrl: 'https://api.anthropic.com/v1'
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+    model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
+    baseUrl: process.env.ANTHROPIC_BASE_URL || 'https://ai.gigamind.dev/claude-code'
   },
   agentEvolver: {
     enabled: false,
