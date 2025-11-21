@@ -282,22 +282,27 @@ echo [INFO] Python version: %PYTHON_VERSION%
 
 :: Install AgentEvolver dependencies
 echo [INFO] Installing AgentEvolver dependencies...
-cd agentevolver
-python -m pip install -r requirements.txt >nul 2>&1
-if errorlevel 1 (
-    echo [WARNING] Some AgentEvolver dependencies may have failed to install
-    echo AgentEvolver may not function properly
+if exist "agentevolver" (
+    cd agentevolver
+    python -m pip install -r requirements.txt >nul 2>&1
+    if errorlevel 1 (
+        echo [WARNING] Some AgentEvolver dependencies may have failed to install
+        echo AgentEvolver may not function properly
+    ) else (
+        echo [SUCCESS] AgentEvolver dependencies installed
+    )
+    cd ..
+
+    :: Start AgentEvolver in background
+    echo [INFO] Starting AgentEvolver server...
+    start "AgentEvolver Server" /min cmd /c "cd agentevolver && python server.py"
+    timeout /t 3 /nobreak >nul
+    echo [INFO] AgentEvolver starting on http://localhost:8001
 ) else (
-    echo [SUCCESS] AgentEvolver dependencies installed
+    echo [WARNING] AgentEvolver directory not found. Running without AgentEvolver features.
+    echo [INFO] To enable AgentEvolver, create the agentevolver directory with required files.
 )
-cd ..
 
-:: Start AgentEvolver in background
-echo [INFO] Starting AgentEvolver server...
-start "AgentEvolver Server" /min cmd /c "cd agentevolver && python server.py"
-timeout /t 3 /nobreak >nul
-
-echo [INFO] AgentEvolver starting on http://localhost:8001
 echo.
 echo [INFO] Starting CannaAI Development Server...
 
@@ -308,13 +313,17 @@ if "!USE_ALT_PORT!"=="1" (
     echo [INFO] CannaAI will be available at: http://127.0.0.1:3000
     set PORT=3000
 )
-echo [INFO] AgentEvolver AI enhancements enabled
-echo [INFO] Press Ctrl+C to stop both servers
+if exist "agentevolver" (
+    echo [INFO] AgentEvolver AI enhancements enabled
+) else (
+    echo [INFO] Running in standard mode (AgentEvolver not available)
+)
+echo [INFO] Press Ctrl+C to stop the server
 echo.
 
 :: Set PORT environment variable and start
-echo [INFO] Starting CannaAI with PORT=!PORT! and AgentEvolver integration...
-cmd /c "set PORT=!PORT! && npm run dev"
+echo [INFO] Starting CannaAI with PORT=!PORT!...
+call npm run dev
 goto END
 
 :PROD_MODE_AGENTEVOLVER
@@ -334,20 +343,26 @@ if errorlevel 1 (
 
 :: Install AgentEvolver dependencies
 echo [INFO] Installing AgentEvolver dependencies...
-cd agentevolver
-python -m pip install -r requirements.txt >nul 2>&1
-if errorlevel 1 (
-    echo [WARNING] Some AgentEvolver dependencies may have failed to install
-    echo AgentEvolver may not function properly
-) else (
-    echo [SUCCESS] AgentEvolver dependencies installed
-)
-cd ..
+if exist "agentevolver" (
+    cd agentevolver
+    python -m pip install -r requirements.txt >nul 2>&1
+    if errorlevel 1 (
+        echo [WARNING] Some AgentEvolver dependencies may have failed to install
+        echo AgentEvolver may not function properly
+    ) else (
+        echo [SUCCESS] AgentEvolver dependencies installed
+    )
+    cd ..
 
-:: Start AgentEvolver in background
-echo [INFO] Starting AgentEvolver server...
-start "AgentEvolver Server" /min cmd /c "cd agentevolver && python server.py"
-timeout /t 3 /nobreak >nul
+    :: Start AgentEvolver in background
+    echo [INFO] Starting AgentEvolver server...
+    start "AgentEvolver Server" /min cmd /c "cd agentevolver && python server.py"
+    timeout /t 3 /nobreak >nul
+    echo [INFO] AgentEvolver server running on http://localhost:8001
+) else (
+    echo [WARNING] AgentEvolver directory not found. Building without AgentEvolver.
+    echo [INFO] To enable AgentEvolver, create the agentevolver directory with required files.
+)
 
 echo [INFO] Building CannaAI for Production...
 call npm run build
@@ -358,8 +373,7 @@ if errorlevel 1 (
 )
 
 echo [SUCCESS] Build completed successfully
-echo [INFO] AgentEvolver server running on http://localhost:8001
-echo [INFO] Starting CannaAI Production Server with AgentEvolver...
+echo [INFO] Starting CannaAI Production Server...
 
 if "!USE_ALT_PORT!"=="1" (
     echo [INFO] CannaAI will be available at: http://127.0.0.1:3001
@@ -368,13 +382,17 @@ if "!USE_ALT_PORT!"=="1" (
     echo [INFO] CannaAI will be available at: http://127.0.0.1:3000
     set PORT=3000
 )
-echo [INFO] AgentEvolver AI enhancements enabled in production mode
-echo [INFO] Press Ctrl+C to stop both servers
+if exist "agentevolver" (
+    echo [INFO] AgentEvolver AI enhancements enabled in production mode
+) else (
+    echo [INFO] Running in standard production mode (AgentEvolver not available)
+)
+echo [INFO] Press Ctrl+C to stop the server
 echo.
 
 :: Set PORT environment variable and start
-echo [INFO] Starting production server with PORT=!PORT! and AgentEvolver...
-cmd /c "set PORT=!PORT! && npm run start"
+echo [INFO] Starting production server with PORT=!PORT!...
+call npm run start
 goto END
 
 :AGENTEVOLVER_ONLY
@@ -397,14 +415,22 @@ echo [INFO] Python version: %PYTHON_VERSION%
 
 :: Install AgentEvolver dependencies
 echo [INFO] Installing AgentEvolver dependencies...
-cd agentevolver
-python -m pip install -r requirements.txt
-if errorlevel 1 (
-    echo [ERROR] Failed to install AgentEvolver dependencies
+if exist "agentevolver" (
+    cd agentevolver
+    python -m pip install -r requirements.txt
+    if errorlevel 1 (
+        echo [ERROR] Failed to install AgentEvolver dependencies
+        cd ..
+        pause
+        exit /b 1
+    )
+    cd ..
+) else (
+    echo [ERROR] AgentEvolver directory not found.
+    echo [INFO] Please create the agentevolver directory with required files.
     pause
     exit /b 1
 )
-cd ..
 
 echo [SUCCESS] Dependencies installed successfully
 echo [INFO] Starting AgentEvolver server...
@@ -418,9 +444,15 @@ echo    • Attribution-based credit assignment
 echo    • Continuous capability evolution
 echo.
 
-cd agentevolver
-python server.py
-cd ..
+if exist "agentevolver" (
+    cd agentevolver
+    python server.py
+    cd ..
+) else (
+    echo [ERROR] AgentEvolver directory not found.
+    pause
+    exit /b 1
+)
 goto END
 
 :END
