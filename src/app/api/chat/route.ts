@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { detectAvailableProviders, getProviderConfig, executeAIWithFallback } from '@/lib/ai-provider-detection';
+import { agentEvolverClient } from '@/lib/agent-evolver';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -75,32 +76,69 @@ export async function POST(request: NextRequest) {
     const contextPrompt = getContextualPrompt(mode, context || {}, sensorData || {}, message);
 
     try {
-      // Execute AI chat with automatic fallback
-      const aiResult = await executeAIWithFallback(contextPrompt, undefined, {
-        primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
-        timeout: 45000, // 45 second timeout for chat
-        maxRetries: 1
-      });
+      let chatResult;
+      let usedProvider = 'agent-evolver';
+      let evolutionMetrics = null;
+      let agentLearning = [];
+      let fallbackUsed = false;
+      let fallbackReason = '';
+
+      // Try AgentEvolver enhanced chat first
+      try {
+        console.log('🤖 Attempting AgentEvolver enhanced chat...');
+        const agentEvolverResult = await agentEvolverClient.chatWithFallback({
+          message: message,
+          context: { ...context, sensorData },
+          mode: mode
+        });
+
+        if (agentEvolverResult.provider === 'agent-evolver') {
+          chatResult = {
+            content: agentEvolverResult.response,
+            model: 'AgentEvolver-Enhanced'
+          };
+          usedProvider = 'agent-evolver';
+          evolutionMetrics = agentEvolverResult.evolutionMetrics;
+          agentLearning = agentEvolverResult.agentLearning || [];
+          fallbackUsed = agentEvolverResult.fallback?.used || false;
+          fallbackReason = agentEvolverResult.fallback?.reason || '';
+          console.log('🤖 AgentEvolver chat completed successfully');
+        } else {
+          throw new Error('AgentEvolver not available - using fallback');
+        }
+
+      } catch (agentEvolverError) {
+        console.warn('⚠️ AgentEvolver chat failed, using traditional AI providers:', agentEvolverError instanceof Error ? agentEvolverError.message : 'Unknown error');
+
+        // Fallback to traditional AI providers
+        const aiResult = await executeAIWithFallback(contextPrompt, undefined, {
+          primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
+          timeout: 45000, // 45 second timeout for chat
+          maxRetries: 1
+        });
+
+        chatResult = aiResult.result;
+        usedProvider = aiResult.provider;
+        fallbackUsed = aiResult.provider === 'fallback';
+        fallbackReason = aiResult.fallbackReason || '';
+        console.log(`✅ Traditional AI chat completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
+      }
 
       const totalTime = Date.now() - startTime;
-      console.log(`✅ Chat completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
 
       return NextResponse.json({
         success: true,
-        response: aiResult.result.content || typeof aiResult.result === 'string' ? aiResult.result : 'Chat response generated successfully',
-        model: aiResult.result.model || 'unknown',
-        provider: aiResult.provider,
-        usage: aiResult.result.usage,
+        response: chatResult.content || typeof chatResult === 'string' ? chatResult : 'Chat response generated successfully',
+        model: chatResult.model || 'unknown',
+        provider: usedProvider,
+        usage: chatResult.usage,
         timestamp: new Date().toISOString(),
         processingTime: `${totalTime}ms`,
         mode: mode,
         buildMode: 'server',
-        fallback: aiResult.provider === 'fallback' ? {
-          used: true,
-          reason: aiResult.fallbackReason,
-          recommendations: providerDetection.recommendations
-        } : {
-          used: false,
+        fallback: {
+          used: fallbackUsed,
+          reason: fallbackReason,
           recommendations: providerDetection.recommendations
         },
         providerInfo: {
@@ -109,6 +147,21 @@ export async function POST(request: NextRequest) {
             providerDetection.primary.isAvailable ? providerDetection.primary.provider : null,
             ...providerDetection.fallback.filter(f => f.isAvailable).map(f => f.provider)
           ].filter(Boolean)
+        },
+        // AgentEvolver specific enhancements
+        agentEvolver: usedProvider === 'agent-evolver' ? {
+          enabled: true,
+          evolutionMetrics: evolutionMetrics,
+          agentLearning: agentLearning,
+          selfEvolutionCapabilities: {
+            selfQuestioning: true,
+            selfNavigating: true,
+            selfAttributing: true,
+            continuousLearning: true
+          }
+        } : {
+          enabled: false,
+          reason: fallbackReason || 'AgentEvolver not available'
         }
       });
 

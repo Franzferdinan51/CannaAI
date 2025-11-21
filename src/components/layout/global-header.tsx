@@ -34,36 +34,49 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
     { href: '/', label: 'Dashboard', icon: Home, pageId: 'dashboard' },
     { href: '/live-vision', label: 'Live Vision', icon: Camera, pageId: 'live-vision' },
     { href: '/all-tools', label: 'All Tools', icon: Wrench, pageId: 'all-tools' },
-    { href: '/settings', label: 'Settings', icon: Settings, pageId: 'settings' }
+    { href: '/dashboard?view=settings', label: 'Settings', icon: Settings, pageId: 'settings' }
   ];
 
   // Get current page context
   const getCurrentPageContext = () => {
     const currentPath = pathname;
 
-    if (currentPath === '/' || currentPath === '/dashboard') {
+    // Check URL parameters for view/tab
+    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const view = urlParams?.get("view");
+    const tab = urlParams?.get("tab");
+
+    if (currentPath === "/" || currentPath.startsWith("/dashboard")) {
+      // Check for settings view parameter on main page
+      if (view === "settings" || tab === "settings") {
+        return {
+          page: "settings",
+          title: "Settings",
+          description: "System configuration and preferences"
+        };
+      }
       return {
-        page: 'dashboard',
-        title: 'Dashboard',
-        description: 'Overview of your cultivation system'
+        page: "dashboard",
+        title: "Dashboard",
+        description: "Overview of your cultivation system"
       };
-    } else if (currentPath.startsWith('/live-vision')) {
+    } else if (currentPath.startsWith("/live-vision")) {
       return {
-        page: 'live-vision',
-        title: 'Live Vision',
-        description: 'Real-time plant analysis and monitoring'
+        page: "live-vision",
+        title: "Live Vision",
+        description: "Real-time plant analysis and monitoring"
       };
-    } else if (currentPath.startsWith('/all-tools')) {
+    } else if (currentPath.startsWith("/all-tools")) {
       return {
-        page: 'all-tools',
-        title: 'Cultivation Tools',
-        description: 'Complete toolkit for plant management'
+        page: "all-tools",
+        title: "Cultivation Tools",
+        description: "Complete toolkit for plant management"
       };
-    } else if (currentPath.startsWith('/settings')) {
+    } else if (currentPath.startsWith("/settings")) {
       return {
-        page: 'settings',
-        title: 'Settings',
-        description: 'System configuration and preferences'
+        page: "settings",
+        title: "Settings",
+        description: "System configuration and preferences"
       };
     }
 
@@ -119,7 +132,10 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
           <nav className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href ||
+                (item.pageId === "settings" &&
+                 ((pathname === "/" || pathname === "/dashboard") &&
+                  (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("view") === "settings" : false)));
 
               return (
                 <Link key={item.href} href={item.href}>
@@ -178,7 +194,10 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
             <nav className="py-2 space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href ||
+                  (item.pageId === "settings" &&
+                   ((pathname === "/" || pathname === "/dashboard") &&
+                    (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("view") === "settings" : false)));
 
                 return (
                   <Link key={item.href} href={item.href}>

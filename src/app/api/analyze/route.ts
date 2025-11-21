@@ -3,6 +3,7 @@ import { withSecurity, securityConfig, createAPIResponse, createAPIError } from 
 import { analyzeRequestSchema, validateRequestBody, AnalyzeRequest } from '@/lib/validation';
 import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig } from '@/lib/ai-provider-detection';
+import { agentEvolverClient } from '@/lib/agent-evolver';
 
 // Environment detection
 const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -399,42 +400,88 @@ Format your response as JSON with this structure:
   "followUpSchedule": "Recommended monitoring schedule"
 }`;
 
-      // Use enhanced AI provider detection and fallback system
-      console.log('🔍 Detecting available AI providers...');
-      const providerDetection = await detectAvailableProviders();
-      console.log(`📡 Primary provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
+      // Enhanced analysis with AgentEvolver integration
+      console.log('🤖 Starting enhanced analysis with AgentEvolver...');
 
       let analysisResult;
       let fallbackUsed = false;
       let fallbackReason = '';
-      let usedProvider = providerDetection.primary.provider;
+      let usedProvider = 'agent-evolver';
+      let evolutionMetrics = null;
+      let agentImprovements = [];
 
       try {
-        // Execute AI analysis with automatic fallback
-        const aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-          primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
-          timeout: 60000, // 60 second timeout for plant analysis
-          maxRetries: 1
+        // First, try AgentEvolver enhanced analysis
+        const agentEvolverAnalysis = await agentEvolverClient.analyzeWithFallback({
+          strain: strain,
+          symptoms: leafSymptoms,
+          phLevel: phLevel ? parseFloat(phLevel) : undefined,
+          temperature: temperatureCelsius,
+          humidity: humidity ? parseFloat(humidity) : undefined,
+          growthStage: growthStage,
+          imageData: imageBase64ForAI
         });
 
-        analysisResult = aiResult.result;
-        usedProvider = aiResult.provider;
-        fallbackUsed = aiResult.provider === 'fallback';
-        fallbackReason = aiResult.fallbackReason || '';
-
-        console.log(`✅ Analysis completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
+        // Check if AgentEvolver was used
+        if (agentEvolverAnalysis.provider === 'agent-evolver' || agentEvolverAnalysis.provider === 'agent-evolver-enhanced') {
+          analysisResult = agentEvolverAnalysis;
+          evolutionMetrics = agentEvolverAnalysis.evolutionMetrics;
+          agentImprovements = agentEvolverAnalysis.agentImprovements || [];
+          fallbackUsed = agentEvolverAnalysis.fallback?.used || false;
+          fallbackReason = agentEvolverAnalysis.fallback?.reason || '';
+          usedProvider = 'agent-evolver';
+          console.log('🤖 AgentEvolver analysis completed successfully');
+        } else {
+          // AgentEvolver wasn't available, use traditional AI analysis
+          console.log('📡 AgentEvolver unavailable, using traditional AI providers...');
+          throw new Error('AgentEvolver not available - falling back to traditional AI');
+        }
 
       } catch (error) {
-        console.error('❌ All AI providers failed, using rule-based fallback:', error instanceof Error ? error.message : 'Unknown error');
+        console.warn('⚠️ AgentEvolver analysis failed, falling back to traditional AI providers:', error instanceof Error ? error.message : 'Unknown error');
 
-        // Final fallback to rule-based analysis
-        analysisResult = generateFallbackAnalysis(strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage);
-        fallbackUsed = true;
-        fallbackReason = 'All AI providers failed - using expert rule-based analysis';
-        usedProvider = 'fallback';
+        // Fallback to traditional AI analysis
+        try {
+          const providerDetection = await detectAvailableProviders();
+          console.log(`📡 Traditional AI provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
+
+          // Execute traditional AI analysis
+          const aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
+            primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
+            timeout: 60000, // 60 second timeout for plant analysis
+            maxRetries: 1
+          });
+
+          analysisResult = aiResult.result;
+          usedProvider = aiResult.provider;
+          fallbackUsed = aiResult.provider === 'fallback';
+          fallbackReason = aiResult.fallbackReason || '';
+          console.log(`✅ Traditional AI analysis completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
+
+        } catch (traditionalError) {
+          console.error('❌ All AI providers failed, using rule-based fallback:', traditionalError instanceof Error ? traditionalError.message : 'Unknown error');
+
+          // Final fallback to rule-based analysis
+          analysisResult = generateFallbackAnalysis(strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage);
+          fallbackUsed = true;
+          fallbackReason = 'All AI providers failed - using expert rule-based analysis';
+          usedProvider = 'fallback';
+        }
       }
 
-      // Return the enhanced analysis result
+      // Detect available providers for response information
+      let providerDetection;
+      try {
+        providerDetection = await detectAvailableProviders();
+      } catch (e) {
+        providerDetection = {
+          primary: { provider: 'unknown', isAvailable: false, reason: 'Detection failed' },
+          fallback: [],
+          recommendations: []
+        };
+      }
+
+      // Return the enhanced analysis result with AgentEvolver metrics
       return createAPIResponse({
         success: true,
         analysis: analysisResult,
@@ -444,7 +491,8 @@ Format your response as JSON with this structure:
           pestDetection: true,
           diseaseIdentification: true,
           nutrientAnalysis: true,
-          environmentalStressDetection: true
+          environmentalStressDetection: true,
+          evolutionLearning: usedProvider === 'agent-evolver'
         },
         fallbackUsed,
         fallbackReason,
@@ -456,6 +504,21 @@ Format your response as JSON with this structure:
             ...providerDetection.fallback.filter(f => f.isAvailable).map(f => f.provider)
           ].filter(Boolean),
           recommendations: providerDetection.recommendations
+        },
+        // AgentEvolver specific metrics
+        agentEvolver: usedProvider === 'agent-evolver' ? {
+          enabled: true,
+          evolutionMetrics: evolutionMetrics,
+          agentImprovements: agentImprovements,
+          selfEvolutionCapabilities: {
+            selfQuestioning: true,
+            selfNavigating: true,
+            selfAttributing: true,
+            continuousLearning: true
+          }
+        } : {
+          enabled: false,
+          reason: fallbackReason || 'AgentEvolver not available'
         },
         timestamp: new Date().toISOString(),
         requestId: context?.clientIP || 'unknown'
