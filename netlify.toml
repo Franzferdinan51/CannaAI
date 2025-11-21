@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm run build:netlify"
   publish = "out"
 
 [build.environment]
@@ -31,6 +31,11 @@
 [[redirects]]
   from = "/api/lmstudio/*"
   to = "/.netlify/functions/lmstudio/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/agent-evolver/*"
+  to = "/.netlify/functions/agent-evolver/:splat"
   status = 200
 
 [[redirects]]
