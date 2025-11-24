@@ -65,6 +65,38 @@ interface Settings {
     model: string;
     baseUrl: string;
   };
+  gemini: {
+    apiKey: string;
+    model: string;
+    baseUrl: string;
+  };
+  groq: {
+    apiKey: string;
+    model: string;
+    baseUrl: string;
+  };
+  anthropic: {
+    apiKey: string;
+    model: string;
+    baseUrl: string;
+  };
+  agentEvolver: {
+    enabled: boolean;
+    evolutionLevel: string;
+    learningRate: number;
+    performanceThreshold: number;
+    autoOptimization: boolean;
+    riskTolerance: string;
+  };
+  notifications: {
+    enabled: boolean;
+    sound: boolean;
+    desktop: boolean;
+  };
+  units: {
+    temperature: string;
+    weight: string;
+  };
 }
 
 export function AIProviderSettings() {
@@ -76,6 +108,11 @@ export function AIProviderSettings() {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const [error, setError] = useState('');
+
+  // Add save state management
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [tempSettings, setTempSettings] = useState<Settings | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -116,8 +153,9 @@ export function AIProviderSettings() {
 
       if (data.success) {
         setSettings(data.settings);
+        setTempSettings(data.settings);
         setSelectedProvider(data.settings.aiProvider);
-        setSelectedModel(data.settings.lmStudio?.model || data.settings.openRouter?.model || data.settings.openai?.model || '');
+        setSelectedModel(data.settings.lmStudio?.model || data.settings.openRouter?.model || data.settings.openai?.model || data.settings.gemini?.model || data.settings.groq?.model || data.settings.anthropic?.model || '');
         await loadProviders(data.settings);
       } else {
         setError(data.error || 'Failed to load settings');
@@ -130,53 +168,131 @@ export function AIProviderSettings() {
     }
   };
 
+  const updateTempSettings = (updates: Partial<Settings>) => {
+    setTempSettings(prev => prev ? { ...prev, ...updates } : null);
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    if (!tempSettings || !hasChanges || !settings) return;
+
+    setIsSaving(true);
+    try {
+      // Update the AI provider if changed
+      if (tempSettings.aiProvider !== settings.aiProvider) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'switch_provider',
+            provider: tempSettings.aiProvider
+          })
+        });
+      }
+
+      // Update each provider's config if changed
+      if (JSON.stringify(tempSettings.lmStudio) !== JSON.stringify(settings.lmStudio)) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_provider',
+            provider: 'lm-studio',
+            config: tempSettings.lmStudio
+          })
+        });
+      }
+
+      if (JSON.stringify(tempSettings.openRouter) !== JSON.stringify(settings.openRouter)) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_provider',
+            provider: 'openrouter',
+            config: tempSettings.openRouter
+          })
+        });
+      }
+
+      if (JSON.stringify(tempSettings.openai) !== JSON.stringify(settings.openai)) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_provider',
+            provider: 'openai',
+            config: tempSettings.openai
+          })
+        });
+      }
+
+      if (JSON.stringify(tempSettings.gemini) !== JSON.stringify(settings.gemini)) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_provider',
+            provider: 'gemini',
+            config: tempSettings.gemini
+          })
+        });
+      }
+
+      if (JSON.stringify(tempSettings.groq) !== JSON.stringify(settings.groq)) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_provider',
+            provider: 'groq',
+            config: tempSettings.groq
+          })
+        });
+      }
+
+      if (JSON.stringify(tempSettings.anthropic) !== JSON.stringify(settings.anthropic)) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_provider',
+            provider: 'anthropic',
+            config: tempSettings.anthropic
+          })
+        });
+      }
+
+      setSettings(tempSettings);
+      setHasChanges(false);
+      await loadProviders(tempSettings); // Refresh providers
+      setError('');
+    } catch (error) {
+      setError('Failed to save settings');
+      console.error('Save error:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleProviderChange = async (providerId: string) => {
     setSelectedProvider(providerId);
     setSelectedModel(''); // Reset model when provider changes
-
-    // Save provider change
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'switch_provider',
-          provider: providerId
-        })
-      });
-
-      const data = await response.json();
-      if (!data.success) {
-        setError(data.error);
-      }
-    } catch (error) {
-      setError('Failed to switch provider');
-    }
+    updateTempSettings({ aiProvider: providerId });
   };
 
   const handleModelChange = async (modelId: string) => {
     setSelectedModel(modelId);
 
-    // Save model change
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update_provider',
-          provider: selectedProvider,
-          config: {
-            model: modelId
-          }
-        })
-      });
-
-      const data = await response.json();
-      if (!data.success) {
-        setError(data.error);
+    // Update the correct provider's model setting
+    if (tempSettings) {
+      if (providerId === 'lm-studio') {
+        updateTempSettings({ lmStudio: { ...tempSettings.lmStudio, model: modelId } });
+      } else if (providerId === 'openrouter') {
+        updateTempSettings({ openRouter: { ...tempSettings.openRouter, model: modelId } });
+      } else if (providerId === 'openai-compatible') {
+        updateTempSettings({ openai: { ...tempSettings.openai, model: modelId } });
       }
-    } catch (error) {
-      setError('Failed to update model');
     }
   };
 
@@ -222,88 +338,22 @@ export function AIProviderSettings() {
     }
   };
 
-  const handleOpenRouterKeyChange = async (apiKey: string) => {
-    if (!settings) return;
-
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update_provider',
-          provider: 'openrouter',
-          config: { apiKey }
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        const newSettings = {
-          ...settings,
-          openRouter: { ...settings.openRouter, apiKey }
-        };
-        setSettings(newSettings);
-        await loadProviders(newSettings); // Refresh providers to show OpenRouter models
-      }
-    } catch (error) {
-      setError('Failed to update OpenRouter API key');
-    }
+  const handleOpenRouterKeyChange = (apiKey: string) => {
+    updateTempSettings({
+      openRouter: { ...tempSettings?.openRouter, apiKey }
+    });
   };
 
-  const handleOpenRouterModelChange = async (model: string) => {
-    if (!settings) return;
+  const handleOpenRouterModelChange = (model: string) => {
+    updateTempSettings({
+      openRouter: { ...tempSettings?.openRouter, model }
+    });
+  };
 
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update_provider',
-          provider: 'openrouter',
-          config: { model }
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        const newSettings = {
-          ...settings,
-          openRouter: { ...settings.openRouter, model }
-        };
-        setSettings(newSettings);
-        await loadProviders(newSettings);
-      }
-    } catch (error) {
-      setError('Failed to update OpenRouter model');
-    }
-  }
-
-  const handleOpenAIChange = async (config: Partial<Settings['openai']>) => {
-    if (!settings) return;
-
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update_provider',
-          provider: 'openai',
-          config
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        const newSettings = {
-          ...settings,
-          openai: { ...settings.openai, ...config }
-        };
-        setSettings(newSettings);
-        await loadProviders(newSettings);
-      }
-    } catch (error) {
-      setError('Failed to update OpenAI-Compatible settings');
-    }
+  const handleOpenAIChange = (config: Partial<Settings['openai']>) => {
+    updateTempSettings({
+      openai: { ...tempSettings?.openai, ...config }
+    });
   };
 
   const getCapabilityIcon = (capability: string) => {
@@ -378,16 +428,32 @@ export function AIProviderSettings() {
           <CardTitle className="text-lg font-bold text-lime-300 flex items-center gap-2">
             <Bot className="h-5 w-5 mr-2 text-purple-400" />
             AI Provider Settings
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="ml-auto"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="ml-auto flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isLoading}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              {hasChanges && (
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  )}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -476,7 +542,7 @@ export function AIProviderSettings() {
                   id="openrouter-key"
                   type="password"
                   placeholder="Enter your OpenRouter API key"
-                  value={settings?.openRouter?.apiKey || ''}
+                  value={tempSettings?.openRouter?.apiKey || ''}
                   onChange={(e) => handleOpenRouterKeyChange(e.target.value)}
                   className="bg-emerald-800 border-emerald-700 text-emerald-200"
                 />
@@ -491,7 +557,7 @@ export function AIProviderSettings() {
                   id="openrouter-model"
                   type="text"
                   placeholder="Enter a model name"
-                  value={settings?.openRouter?.model || ''}
+                  value={tempSettings?.openRouter?.model || ''}
                   onChange={(e) => handleOpenRouterModelChange(e.target.value)}
                   className="bg-emerald-800 border-emerald-700 text-emerald-200"
                 />
@@ -508,7 +574,7 @@ export function AIProviderSettings() {
                   id="openai-key"
                   type="password"
                   placeholder="Enter your API key"
-                  value={settings?.openai?.apiKey || ''}
+                  value={tempSettings?.openai?.apiKey || ''}
                   onChange={(e) => handleOpenAIChange({ apiKey: e.target.value })}
                   className="bg-emerald-800 border-emerald-700 text-emerald-200"
                 />
@@ -519,7 +585,7 @@ export function AIProviderSettings() {
                   id="openai-url"
                   type="text"
                   placeholder="https://api.openai.com/v1"
-                  value={settings?.openai?.baseUrl || ''}
+                  value={tempSettings?.openai?.baseUrl || ''}
                   onChange={(e) => handleOpenAIChange({ baseUrl: e.target.value })}
                   className="bg-emerald-800 border-emerald-700 text-emerald-200"
                 />
@@ -530,7 +596,7 @@ export function AIProviderSettings() {
                   id="openai-model"
                   type="text"
                   placeholder="Enter the model name"
-                  value={settings?.openai?.model || ''}
+                  value={tempSettings?.openai?.model || ''}
                   onChange={(e) => handleOpenAIChange({ model: e.target.value })}
                   className="bg-emerald-800 border-emerald-700 text-emerald-200"
                 />

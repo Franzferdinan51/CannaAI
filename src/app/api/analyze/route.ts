@@ -297,15 +297,16 @@ Format your response as JSON with this structure:
 
     console.log('🤖 Starting simplified analysis...');
 
+    // Use the simplified AI provider detection
+    const providerDetection = await detectAvailableProviders();
+    console.log(`📡 AI provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
+
     let analysisResult;
     let fallbackUsed = false;
     let fallbackReason = '';
     let usedProvider = 'unknown';
 
     try {
-      // Use the simplified AI provider detection
-      const providerDetection = await detectAvailableProviders();
-      console.log(`📡 AI provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
 
       // Execute AI analysis with fallback
       const aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
