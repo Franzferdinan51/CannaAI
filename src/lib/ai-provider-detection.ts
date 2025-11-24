@@ -45,7 +45,7 @@ export async function detectAvailableProviders(): Promise<{
   const results: ProviderDetectionResult[] = [];
   const recommendations: string[] = [];
 
-  // Check LM Studio (only in non-serverless environments)
+  // Check LM Studio
   const lmStudioResult = await checkLMStudio();
   results.push(lmStudioResult);
 
@@ -61,13 +61,18 @@ export async function detectAvailableProviders(): Promise<{
   let primary: ProviderDetectionResult;
 
   if (availableProviders.length > 0) {
-    // Prefer LM Studio in development, OpenRouter in production/serverless
-    if (isDevelopment && lmStudioResult.isAvailable) {
-      primary = lmStudioResult;
-    } else if (openRouterResult.isAvailable) {
+    // Testing mode: Prefer OpenRouter (LM Studio disabled)
+    if (openRouterResult.isAvailable) {
       primary = openRouterResult;
     } else {
-      primary = lmStudioResult;
+      // Fallback to rule-based if no cloud providers
+      primary = {
+        isAvailable: true,
+        provider: 'fallback',
+        reason: 'No cloud AI providers configured - using rule-based analysis',
+        config: { type: 'rule-based' },
+        recommendations: ['Configure OpenRouter API key for cloud-based AI analysis']
+      };
     }
   } else {
     // No providers available - use fallback
@@ -123,9 +128,9 @@ async function checkLMStudio(): Promise<ProviderDetectionResult> {
 
   const config: LMStudioConfig = {
     url: process.env.LM_STUDIO_URL || 'http://localhost:1234',
-    model: process.env.LM_STUDIO_MODEL || 'auto',
+    model: process.env.LM_STUDIO_MODEL || 'granite-4.0-micro',
     apiKey: process.env.LM_STUDIO_API_KEY,
-    timeout: parseInt(process.env.LM_STUDIO_TIMEOUT || '30000')
+    timeout: parseInt(process.env.LM_STUDIO_TIMEOUT || '120000') // 2 minutes
   };
 
   try {
@@ -253,27 +258,52 @@ async function checkOpenRouter(): Promise<ProviderDetectionResult> {
 
 /**
  * Get provider configuration for use in API calls
+ * Now fetches user settings to respect manual model selections
  */
-export function getProviderConfig(provider: 'lm-studio' | 'openrouter' | 'fallback'): any {
+export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | 'fallback'): Promise<any> {
+  const SETTINGS_BASE = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+  let userSettings = null;
+
+  try {
+    // Fetch user settings from the settings API
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
+
+    if (settingsResponse.ok) {
+      const settingsData = await settingsResponse.json();
+      userSettings = settingsData.success ? settingsData.settings : null;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch user settings, using environment variables:', error);
+  }
+
   switch (provider) {
     case 'lm-studio':
       return {
-        url: process.env.LM_STUDIO_URL || 'http://localhost:1234',
-        model: process.env.LM_STUDIO_MODEL || 'auto',
-        apiKey: process.env.LM_STUDIO_API_KEY,
-        timeout: parseInt(process.env.LM_STUDIO_TIMEOUT || '30000'),
-        maxTokens: parseInt(process.env.LM_STUDIO_MAX_TOKENS || '2000'),
-        temperature: parseFloat(process.env.LM_STUDIO_TEMPERATURE || '0.3')
+        url: userSettings?.lmStudio?.url || process.env.LM_STUDIO_URL || 'http://localhost:1234',
+        model: userSettings?.lmStudio?.model || process.env.LM_STUDIO_MODEL || 'granite-4.0-micro',
+        apiKey: userSettings?.lmStudio?.apiKey || process.env.LM_STUDIO_API_KEY,
+        timeout: parseInt(userSettings?.lmStudio?.timeout || process.env.LM_STUDIO_TIMEOUT || '120000'), // 2 minutes
+        maxTokens: parseInt(userSettings?.lmStudio?.maxTokens || process.env.LM_STUDIO_MAX_TOKENS || '2000'),
+        temperature: parseFloat(userSettings?.lmStudio?.temperature || process.env.LM_STUDIO_TEMPERATURE || '0.3')
       };
 
     case 'openrouter':
+      // CRITICAL: Use user's manual model selection from settings
+      const userSelectedModel = userSettings?.openRouter?.model;
+      const fallbackModel = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free';
+
+      console.log(`🎯 OpenRouter Model Selection:`);
+      console.log(`   User Manual Model: ${userSelectedModel || 'Not set'}`);
+      console.log(`   Environment Fallback: ${fallbackModel}`);
+      console.log(`   Final Model: ${userSelectedModel || fallbackModel}`);
+
       return {
-        apiKey: process.env.OPENROUTER_API_KEY,
-        model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free',
+        apiKey: userSettings?.openRouter?.apiKey || process.env.OPENROUTER_API_KEY,
+        model: userSelectedModel || fallbackModel, // User's manual selection takes priority
         baseUrl: 'https://openrouter.ai/api/v1',
-        timeout: parseInt(process.env.OPENROUTER_TIMEOUT || '30000'),
-        maxTokens: parseInt(process.env.OPENROUTER_MAX_TOKENS || '2000'),
-        temperature: parseFloat(process.env.OPENROUTER_TEMPERATURE || '0.3'),
+        timeout: parseInt(userSettings?.openRouter?.timeout || process.env.OPENROUTER_TIMEOUT || '30000'),
+        maxTokens: parseInt(userSettings?.openRouter?.maxTokens || process.env.OPENROUTER_MAX_TOKENS || '2000'),
+        temperature: parseFloat(userSettings?.openRouter?.temperature || process.env.OPENROUTER_TEMPERATURE || '0.3'),
         referer: process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000',
         title: 'CannaAI Pro'
       };
@@ -339,7 +369,7 @@ export async function executeAIWithFallback(
   // Try each provider in order
   for (const provider of providerOrder) {
     try {
-      const config = getProviderConfig(provider);
+      const config = await getProviderConfig(provider);
 
       if (provider === 'fallback') {
         return {
@@ -431,12 +461,36 @@ async function callAIProvider(
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    let content = data.choices?.[0]?.message?.content;
 
-    if (!content) {
-      throw new Error(`No response content from ${provider}`);
+    // Handle LM Studio models that put content in reasoning_content
+    if (!content && data.choices?.[0]?.message?.reasoning_content) {
+      content = data.choices[0].message.reasoning_content;
     }
 
+    // Enhanced content parsing for different model formats
+    if (!content) {
+      // Try alternative content locations
+      content = data.choices?.[0]?.text ||
+                 data.content ||
+                 data.response ||
+                 data.output;
+
+      // Log the response structure for debugging
+      console.warn(`🔍 Content parsing for ${provider}:`, {
+        hasChoices: !!data.choices,
+        choiceCount: data.choices?.length,
+        firstChoiceKeys: data.choices?.[0] ? Object.keys(data.choices[0]) : [],
+        dataKeys: Object.keys(data),
+        responseStructure: JSON.stringify(data).substring(0, 200) + '...'
+      });
+    }
+
+    if (!content) {
+      throw new Error(`No response content from ${provider}. Response structure: ${JSON.stringify(Object.keys(data))}`);
+    }
+
+    console.log(`✅ ${provider} response received successfully`);
     return parseAIResponse(content);
 
   } catch (error) {

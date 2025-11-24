@@ -24,12 +24,7 @@ const nextConfig: NextConfig = {
     },
   }),
   webpack: (config, { dev, isServer }) => {
-    if (dev) {
-      // 禁用 webpack 的热模块替换
-      config.watchOptions = {
-        ignored: ['**/*'], // 忽略所有文件变化
-      };
-    }
+    // Removed file watching ignore to allow API routes to work in development
     // For static export, handle server-side imports
     if (!dev && !isServer && isStaticExport) {
       config.resolve.fallback = {

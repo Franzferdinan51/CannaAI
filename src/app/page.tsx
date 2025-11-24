@@ -713,6 +713,20 @@ export default function CultivAIPro() {
     };
   }, []);
 
+  // Debug: Monitor analysisResult changes
+  useEffect(() => {
+    console.log('👀 [DEBUG] analysisResult changed:', analysisResult);
+    console.log('🎭 [DEBUG] Should show results section?', !!analysisResult);
+  }, [analysisResult]);
+
+  // Debug: Monitor autoAnalysis and loading states
+  useEffect(() => {
+    console.log('🤖 [DEBUG] autoAnalysis:', autoAnalysis);
+    console.log('🔄 [DEBUG] isLoading:', isLoading);
+    console.log('🎛️ [DEBUG] autoAnalysisEnabled:', autoAnalysisEnabled);
+    console.log('🖼️ [DEBUG] image present:', !!image);
+  }, [autoAnalysis, isLoading, autoAnalysisEnabled, image]);
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file && (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif'))) {
@@ -737,6 +751,9 @@ export default function CultivAIPro() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    console.log('🚀 [DEBUG] handleFormSubmit called!');
+    console.log('📝 [DEBUG] Form data:', formData);
+    console.log('🖼️ [DEBUG] Image present:', !!image, 'Image length:', image?.length);
     setIsLoading(true);
 
     // Create AbortController for this request
@@ -746,6 +763,8 @@ export default function CultivAIPro() {
     // The API will handle unknown/missing values with defaults
 
     try {
+      console.log('🔄 [DEBUG] Starting API call to /api/analyze...');
+
       // Call the real AI analysis API
       const response = await fetch('/api/analyze', {
         method: 'POST',
@@ -770,6 +789,7 @@ export default function CultivAIPro() {
       });
 
       if (!response.ok) {
+        console.log('❌ [DEBUG] Response not OK:', response.status, response.statusText);
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || response.statusText;
         throw new Error(`Analysis failed: ${errorMessage}`);
@@ -842,15 +862,16 @@ export default function CultivAIPro() {
         setPlantHistory(prev => [newHistoryItem, ...prev]);
 
         // Show success notification with fallback indication
-        const notificationMessage = result.fallbackUsed
+        // Use fallbackUsed from the correct location in the response structure
+        const notificationMessage = analysisResult.fallbackUsed
           ? `Analysis Complete (Rule-based): ${analysisResult.healthScore}/100 - ${analysisResult.diagnosis}`
           : `Analysis Complete (AI-powered): ${analysisResult.healthScore}/100 - ${analysisResult.diagnosis}`;
 
         setNotifications(prev => [
           {
             id: Date.now(),
-            type: result.fallbackUsed ? 'warning' : 'success',
-            title: result.fallbackUsed ? 'Analysis Complete (Fallback Mode)' : 'Analysis Complete',
+            type: analysisResult.fallbackUsed ? 'warning' : 'success',
+            title: analysisResult.fallbackUsed ? 'Analysis Complete (Fallback Mode)' : 'Analysis Complete',
             message: notificationMessage,
             time: 'just now'
           },
@@ -906,8 +927,11 @@ export default function CultivAIPro() {
         totalIssues: 1
       };
 
+      console.log('🔄 [DEBUG] Setting fallback analysis result:', fallbackAnalysis);
       setAnalysisResult(fallbackAnalysis);
+      console.log('✅ [DEBUG] Fallback analysis result set successfully');
     } finally {
+      console.log('🏁 [DEBUG] handleFormSubmit completed, setting isLoading to false');
       setIsLoading(false);
     }
   };

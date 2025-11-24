@@ -12,6 +12,7 @@ interface AIProvider {
   config: any;
   status: 'available' | 'unavailable' | 'error';
   lastChecked: string;
+  metadata?: any; // Additional provider-specific metadata
 }
 
 interface AIModel {
@@ -22,7 +23,12 @@ interface AIModel {
   contextLength?: number;
   size?: string;
   quantization?: string;
+  source?: 'running' | 'local' | 'both'; // For LM Studio: where model is available
+  filepath?: string; // For LM Studio local models
+  metadata?: any; // Additional model-specific metadata
 }
+
+const SETTINGS_BASE = process.env.NEXTAUTH_URL || process.env.SITE_URL || 'http://localhost:3000';
 
 async function getLMStudioModels(): Promise<AIModel[]> {
   // Check if we're on a serverless platform
@@ -111,7 +117,7 @@ async function getLMStudioModels(): Promise<AIModel[]> {
 
 async function getLMStudioLocalModels(): Promise<AIModel[]> {
   try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/lmstudio/models`, {
+    const response = await fetch(`${SETTINGS_BASE}/api/lmstudio/models`, {
       signal: AbortSignal.timeout(5000)
     });
 
@@ -128,12 +134,13 @@ async function getLMStudioLocalModels(): Promise<AIModel[]> {
     return data.models.map((model: any) => ({
       id: model.id,
       name: `${model.name} (${model.author})`,
-      provider: 'lm-studio-local',
+      provider: 'lm-studio',
       capabilities: model.capabilities || ['text-generation'],
       contextLength: model.contextLength,
       size: model.sizeFormatted,
       quantization: model.quantization,
-      filepath: model.filepath
+      filepath: model.filepath,
+      source: 'local' // Mark as local filesystem model
     }));
 
   } catch (error) {
@@ -142,10 +149,52 @@ async function getLMStudioLocalModels(): Promise<AIModel[]> {
   }
 }
 
+/**
+ * Unified LM Studio model fetcher that combines running instance and local models
+ * Returns deduplicated models with source information
+ */
+async function getUnifiedLMStudioModels(): Promise<AIModel[]> {
+  const runningModels = await getLMStudioModels();
+  const localModels = await getLMStudioLocalModels();
+
+  // Mark running models with source
+  const markedRunningModels = runningModels.map(model => ({
+    ...model,
+    source: 'running' as 'running' | 'local' | 'both' // Mark as from running instance
+  }));
+
+  // Merge and deduplicate models by ID
+  const modelMap = new Map<string, AIModel>();
+
+  // Add running models first
+  markedRunningModels.forEach(model => {
+    modelMap.set(model.id, model as AIModel);
+  });
+
+  // Add local models, merging if they exist in running
+  localModels.forEach(localModel => {
+    const existing = modelMap.get(localModel.id);
+    if (existing) {
+      // Model exists in both - merge information
+      modelMap.set(localModel.id, {
+        ...existing,
+        ...localModel,
+        source: 'both' as 'running' | 'local' | 'both', // Available in both running instance and locally
+        name: existing.name, // Prefer running instance name format
+      } as AIModel);
+    } else {
+      // Local-only model
+      modelMap.set(localModel.id, localModel as AIModel);
+    }
+  });
+
+  return Array.from(modelMap.values());
+}
+
 async function getOpenRouterModels(): Promise<AIModel[]> {
   try {
     // First get settings to get API key
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.openRouter.apiKey) {
@@ -157,7 +206,7 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
         'Authorization': `Bearer ${settingsData.settings.openRouter.apiKey}`,
-        'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3002',
+        'HTTP-Referer': SETTINGS_BASE,
         'X-Title': 'CannaAI Pro'
       }
     });
@@ -169,11 +218,23 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
     const data = await response.json();
     let models = data.data || [];
 
-    if (manualModel && !models.find((m: any) => m.id === manualModel)) {
-      models.unshift({
-        id: manualModel,
-        name: `${manualModel} (Manual)`,
-      });
+    // Always include manual model at the top if it exists
+    if (manualModel) {
+      const existingModelIndex = models.findIndex((m: any) => m.id === manualModel);
+      if (existingModelIndex >= 0) {
+        // Move existing model to the top
+        const [existingModel] = models.splice(existingModelIndex, 1);
+        models.unshift({
+          ...existingModel,
+          name: `${existingModel.name} (Selected)`
+        });
+      } else {
+        // Add manual model to the top
+        models.unshift({
+          id: manualModel,
+          name: `${manualModel} (Manual)`,
+        });
+      }
     }
 
     // Filter and sort models
@@ -214,7 +275,7 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
 
 async function getOpenAICompatibleModels(): Promise<AIModel[]> {
   try {
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.openai?.apiKey || !settingsData.settings.openai?.baseUrl) {
@@ -237,6 +298,187 @@ async function getOpenAICompatibleModels(): Promise<AIModel[]> {
     }];
   } catch (error) {
     console.warn('OpenAI-Compatible models fetch error:', error);
+    return [];
+  }
+}
+
+async function getGeminiModels(): Promise<AIModel[]> {
+  try {
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
+    const settingsData = await settingsResponse.json();
+
+    if (!settingsData.success || !settingsData.settings.gemini?.apiKey) {
+      return [];
+    }
+
+    const { apiKey, baseUrl } = settingsData.settings.gemini;
+
+    const response = await fetch(`${baseUrl}models`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!response.ok) {
+      // Return known models if API fails
+      return [
+        {
+          id: 'gemini-2.0-flash-exp',
+          name: 'Gemini 2.0 Flash (Experimental)',
+          provider: 'gemini',
+          capabilities: ['text-generation', 'vision', 'long-context'],
+          contextLength: 1000000
+        },
+        {
+          id: 'gemini-1.5-pro',
+          name: 'Gemini 1.5 Pro',
+          provider: 'gemini',
+          capabilities: ['text-generation', 'vision', 'long-context'],
+          contextLength: 2000000
+        },
+        {
+          id: 'gemini-1.5-flash',
+          name: 'Gemini 1.5 Flash',
+          provider: 'gemini',
+          capabilities: ['text-generation', 'vision', 'long-context'],
+          contextLength: 1000000
+        }
+      ];
+    }
+
+    const data = await response.json();
+    let models = data.data || [];
+
+    return models
+      .filter((model: any) => model.id.includes('gemini'))
+      .map((model: any) => ({
+        id: model.id,
+        name: model.id,
+        provider: 'gemini',
+        capabilities: determineCapabilities(model.id),
+        contextLength: model.context_length || 32768
+      }));
+
+  } catch (error) {
+    console.warn('Gemini models fetch error:', error);
+    return [];
+  }
+}
+
+async function getGroqModels(): Promise<AIModel[]> {
+  try {
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
+    const settingsData = await settingsResponse.json();
+
+    if (!settingsData.success || !settingsData.settings.groq?.apiKey) {
+      return [];
+    }
+
+    const { apiKey, baseUrl } = settingsData.settings.groq;
+
+    const response = await fetch(`${baseUrl}/models`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!response.ok) {
+      // Return known models if API fails
+      return [
+        {
+          id: 'llama-3.3-70b-versatile',
+          name: 'Llama 3.3 70B Versatile',
+          provider: 'groq',
+          capabilities: ['text-generation', 'long-context'],
+          contextLength: 32768
+        },
+        {
+          id: 'mixtral-8x7b-32768',
+          name: 'Mixtral 8x7B',
+          provider: 'groq',
+          capabilities: ['text-generation', 'long-context'],
+          contextLength: 32768
+        },
+        {
+          id: 'llama-3.1-70b-versatile',
+          name: 'Llama 3.1 70B Versatile',
+          provider: 'groq',
+          capabilities: ['text-generation', 'long-context'],
+          contextLength: 131072
+        }
+      ];
+    }
+
+    const data = await response.json();
+    const models = data.data || [];
+
+    return models
+      .filter((model: any) => {
+        return model.id.includes('llama') ||
+               model.id.includes('mixtral') ||
+               model.id.includes('gemma');
+      })
+      .map((model: any) => ({
+        id: model.id,
+        name: model.id,
+        provider: 'groq',
+        capabilities: determineCapabilities(model.id),
+        contextLength: model.context_length || 8192
+      }));
+
+  } catch (error) {
+    console.warn('Groq models fetch error:', error);
+    return [];
+  }
+}
+
+async function getAnthropicModels(): Promise<AIModel[]> {
+  try {
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
+    const settingsData = await settingsResponse.json();
+
+    if (!settingsData.success || !settingsData.settings.anthropic?.apiKey) {
+      return [];
+    }
+
+    // Anthropic doesn't have a models endpoint, return known models
+    return [
+      {
+        id: 'claude-3-5-sonnet-20241022',
+        name: 'Claude 3.5 Sonnet',
+        provider: 'anthropic',
+        capabilities: ['text-generation', 'vision', 'long-context', 'analysis'],
+        contextLength: 200000
+      },
+      {
+        id: 'claude-3-5-haiku-20241022',
+        name: 'Claude 3.5 Haiku',
+        provider: 'anthropic',
+        capabilities: ['text-generation', 'vision', 'long-context'],
+        contextLength: 200000
+      },
+      {
+        id: 'claude-3-opus-20240229',
+        name: 'Claude 3 Opus',
+        provider: 'anthropic',
+        capabilities: ['text-generation', 'vision', 'long-context', 'analysis'],
+        contextLength: 200000
+      },
+      {
+        id: 'claude-3-sonnet-20240229',
+        name: 'Claude 3 Sonnet',
+        provider: 'anthropic',
+        capabilities: ['text-generation', 'vision', 'long-context'],
+        contextLength: 200000
+      }
+    ];
+
+  } catch (error) {
+    console.warn('Anthropic models fetch error:', error);
     return [];
   }
 }
@@ -280,46 +522,38 @@ function determineCapabilities(modelId: string): string[] {
 async function getAvailableProviders(): Promise<AIProvider[]> {
   const providers: AIProvider[] = [];
 
-  // LM Studio (running instance)
+  // LM Studio (unified: combines running instance + local models)
   try {
-    const lmStudioModels = await getLMStudioModels();
-    providers.push({
-      id: 'lm-studio',
-      name: 'LM Studio (Running)',
-      type: 'local',
-      models: lmStudioModels,
-      config: { url: 'http://localhost:1234' },
-      status: lmStudioModels.length > 0 ? 'available' : 'unavailable',
-      lastChecked: new Date().toISOString()
-    });
-  } catch (error) {
-    providers.push({
-      id: 'lm-studio',
-      name: 'LM Studio (Running)',
-      type: 'local',
-      models: [],
-      config: { url: 'http://localhost:1234' },
-      status: 'error',
-      lastChecked: new Date().toISOString()
-    });
-  }
+    const unifiedModels = await getUnifiedLMStudioModels();
 
-  // LM Studio (local models)
-  try {
-    const localLMStudioModels = await getLMStudioLocalModels();
+    // Determine status based on model sources
+    let status: 'available' | 'unavailable' | 'error' = 'unavailable';
+    if (unifiedModels.length > 0) {
+      const hasRunning = unifiedModels.some((m: any) => m.source === 'running' || m.source === 'both');
+      status = hasRunning ? 'available' : 'unavailable';
+    }
+
     providers.push({
-      id: 'lm-studio-local',
-      name: 'LM Studio (Local Models)',
+      id: 'lm-studio',
+      name: 'LM Studio',
       type: 'local',
-      models: localLMStudioModels,
-      config: { url: 'http://localhost:1234' },
-      status: localLMStudioModels.length > 0 ? 'available' : 'unavailable',
-      lastChecked: new Date().toISOString()
+      models: unifiedModels,
+      config: {
+        url: 'http://localhost:1234',
+        note: 'Unified provider combining running instance and local models'
+      },
+      status,
+      lastChecked: new Date().toISOString(),
+      metadata: {
+        totalModels: unifiedModels.length,
+        runningModels: unifiedModels.filter((m: any) => m.source === 'running' || m.source === 'both').length,
+        localModels: unifiedModels.filter((m: any) => m.source === 'local' || m.source === 'both').length
+      }
     });
   } catch (error) {
     providers.push({
-      id: 'lm-studio-local',
-      name: 'LM Studio (Local Models)',
+      id: 'lm-studio',
+      name: 'LM Studio',
       type: 'local',
       models: [],
       config: { url: 'http://localhost:1234' },
@@ -371,6 +605,78 @@ async function getAvailableProviders(): Promise<AIProvider[]> {
       type: 'cloud',
       models: [],
       config: { baseUrl: '' },
+      status: 'error',
+      lastChecked: new Date().toISOString()
+    });
+  }
+
+  // Google Gemini
+  try {
+    const geminiModels = await getGeminiModels();
+    providers.push({
+      id: 'gemini',
+      name: 'Google Gemini',
+      type: 'cloud',
+      models: geminiModels,
+      config: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/' },
+      status: geminiModels.length > 0 ? 'available' : 'unavailable',
+      lastChecked: new Date().toISOString()
+    });
+  } catch (error) {
+    providers.push({
+      id: 'gemini',
+      name: 'Google Gemini',
+      type: 'cloud',
+      models: [],
+      config: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/' },
+      status: 'error',
+      lastChecked: new Date().toISOString()
+    });
+  }
+
+  // Groq
+  try {
+    const groqModels = await getGroqModels();
+    providers.push({
+      id: 'groq',
+      name: 'Groq (Fast Inference)',
+      type: 'cloud',
+      models: groqModels,
+      config: { baseUrl: 'https://api.groq.com/openai/v1' },
+      status: groqModels.length > 0 ? 'available' : 'unavailable',
+      lastChecked: new Date().toISOString()
+    });
+  } catch (error) {
+    providers.push({
+      id: 'groq',
+      name: 'Groq (Fast Inference)',
+      type: 'cloud',
+      models: [],
+      config: { baseUrl: 'https://api.groq.com/openai/v1' },
+      status: 'error',
+      lastChecked: new Date().toISOString()
+    });
+  }
+
+  // Anthropic Claude
+  try {
+    const anthropicModels = await getAnthropicModels();
+    providers.push({
+      id: 'anthropic',
+      name: 'Anthropic Claude',
+      type: 'cloud',
+      models: anthropicModels,
+      config: { baseUrl: 'https://api.anthropic.com/v1' },
+      status: anthropicModels.length > 0 ? 'available' : 'unavailable',
+      lastChecked: new Date().toISOString()
+    });
+  } catch (error) {
+    providers.push({
+      id: 'anthropic',
+      name: 'Anthropic Claude',
+      type: 'cloud',
+      models: [],
+      config: { baseUrl: 'https://api.anthropic.com/v1' },
       status: 'error',
       lastChecked: new Date().toISOString()
     });
@@ -512,7 +818,7 @@ export async function POST(request: NextRequest) {
 
 async function testProviderModel(providerId: string, modelId: string): Promise<any> {
   try {
-    if (providerId === 'lm-studio' || providerId === 'lm-studio-local') {
+    if (providerId === 'lm-studio') {
       const response = await fetch('http://localhost:1234/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -546,7 +852,7 @@ async function testProviderModel(providerId: string, modelId: string): Promise<a
 
     if (providerId === 'openrouter') {
       // Get settings for API key
-      const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+      const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
       const settingsData = await settingsResponse.json();
 
       if (!settingsData.success || !settingsData.settings.openRouter.apiKey) {
@@ -563,7 +869,7 @@ async function testProviderModel(providerId: string, modelId: string): Promise<a
         headers: {
           'Authorization': `Bearer ${settingsData.settings.openRouter.apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3002',
+          'HTTP-Referer': SETTINGS_BASE,
           'X-Title': 'CannaAI Pro'
         },
         body: JSON.stringify({
