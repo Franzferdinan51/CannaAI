@@ -12,13 +12,25 @@ const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const MAX_REQUESTS_PER_WINDOW = 20;
 const requestTracker = new Map<string, { count: number; resetTime: number }>();
 
-// Enhanced validation schema with Zod
+// Enhanced validation schema with Zod - more flexible for frontend compatibility
 const AnalysisRequestSchema = z.object({
   strain: z.string().min(1).max(100).transform(val => val.trim()),
-  leafSymptoms: z.string().min(1).max(1000).transform(val => val.trim()),
-  phLevel: z.string().regex(/^\d*\.?\d*$/).optional().transform(val => val ? parseFloat(val) : undefined),
-  temperature: z.union([z.string().regex(/^\d*\.?\d*$/), z.number()]).optional().transform(val => typeof val === 'string' ? parseFloat(val) : val),
-  humidity: z.union([z.string().regex(/^\d*\.?\d*$/), z.number()]).optional().transform(val => typeof val === 'string' ? parseFloat(val) : val),
+  leafSymptoms: z.string().max(1000).transform(val => {
+    const trimmed = val.trim();
+    return trimmed === '' ? 'No symptoms specified' : trimmed;
+  }),
+  phLevel: z.union([
+    z.string().regex(/^\d*\.?\d*$/).transform(val => val === '' ? undefined : parseFloat(val)),
+    z.number().optional()
+  ]).optional().transform(val => isNaN(val) ? undefined : val),
+  temperature: z.union([
+    z.string().regex(/^\d*\.?\d*$/).transform(val => val === '' ? undefined : parseFloat(val)),
+    z.number().optional()
+  ]).optional().transform(val => isNaN(val) ? undefined : val),
+  humidity: z.union([
+    z.string().regex(/^\d*\.?\d*$/).transform(val => val === '' ? undefined : parseFloat(val)),
+    z.number().optional()
+  ]).optional().transform(val => isNaN(val) ? undefined : val),
   medium: z.string().max(100).optional().transform(val => val?.trim()),
   growthStage: z.string().max(100).optional().transform(val => val?.trim()),
   temperatureUnit: z.enum(['C', 'F']).optional().default('F'),
@@ -174,10 +186,43 @@ export async function POST(request: NextRequest) {
       body = AnalysisRequestSchema.parse(rawBody);
     } catch (validationError) {
       console.error('❌ Validation failed:', validationError);
+      console.error('❌ Raw body data:', JSON.stringify(rawBody, null, 2));
+
+      // Enhanced error details for debugging
+      let errorMessage = 'Invalid request format';
+      let validationDetails = 'Validation error';
+
+      if (validationError instanceof Error) {
+        validationDetails = validationError.message;
+
+        // Specific validation error handling for better debugging
+        if (validationError.message.includes('phLevel')) {
+          errorMessage = 'Invalid pH level format';
+        } else if (validationError.message.includes('temperature')) {
+          errorMessage = 'Invalid temperature format';
+        } else if (validationError.message.includes('humidity')) {
+          errorMessage = 'Invalid humidity format';
+        } else if (validationError.message.includes('strain')) {
+          errorMessage = 'Strain is required';
+        } else if (validationError.message.includes('leafSymptoms')) {
+          errorMessage = 'Symptoms description is required';
+        }
+      }
+
       const response = NextResponse.json({
         success: false,
-        error: 'Invalid request format',
-        details: validationError instanceof Error ? validationError.message : 'Validation error',
+        error: errorMessage,
+        details: validationDetails,
+        debugData: process.env.NODE_ENV === 'development' ? {
+          receivedFields: Object.keys(rawBody),
+          sampleData: {
+            strain: rawBody.strain,
+            leafSymptoms: rawBody.leafSymptoms?.substring(0, 50) + '...',
+            phLevel: rawBody.phLevel,
+            temperature: rawBody.temperature,
+            humidity: rawBody.humidity
+          }
+        } : undefined,
         timestamp: new Date().toISOString()
       }, { status: 400 });
       return addSecurityHeaders(response);
