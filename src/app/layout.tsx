@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import GlobalHeader from "@/components/layout/global-header";
-import UnifiedAIAssistant from "@/components/ai/unified-assistant";
 import Providers from "@/components/providers";
 
 const geistSans = Geist({
@@ -60,7 +59,6 @@ export default function RootLayout({
           <main className="min-h-screen">
             {children}
           </main>
-          <UnifiedAIAssistant />
           <Toaster />
         </Providers>
       </body>
