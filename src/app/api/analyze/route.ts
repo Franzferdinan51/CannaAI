@@ -316,7 +316,7 @@ Format your response as JSON with this structure:
 
       // Execute AI analysis with fallback
       const aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-        primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
+        primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
         timeout: 60000,
         maxRetries: 1
       });
@@ -374,7 +374,7 @@ Format your response as JSON with this structure:
       if (error.message.includes('timeout')) {
         statusCode = 504;
         errorMessage = 'Analysis service timed out';
-      } else if (error.message.includes('LM Studio') || error.message.includes('Open Router')) {
+      } else if (error.message.includes('Open Router')) {
         statusCode = 503;
         errorMessage = 'AI analysis services are currently unavailable';
       }

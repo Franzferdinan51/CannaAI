@@ -22,7 +22,7 @@ export default function SettingsPage() {
             <div>
               <h1 className="text-3xl font-bold text-slate-100">Settings</h1>
               <p className="text-slate-400">
-                Configure AI providers, local LM Studio, and AgentEvolver without losing any options.
+                Configure AI providers and AgentEvolver without losing any options.
               </p>
             </div>
           </div>

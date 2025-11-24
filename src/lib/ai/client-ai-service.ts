@@ -1,11 +1,6 @@
 // Client-side AI service for static hosting compatibility
 interface AIConfig {
-  provider: 'lm-studio' | 'openrouter' | 'fallback';
-  lmStudio: {
-    url: string;
-    model: string;
-    apiKey: string;
-  };
+  provider: 'openrouter' | 'fallback';
   openRouter: {
     apiKey: string;
     model: string;
@@ -39,11 +34,6 @@ class ClientAIService {
     if (typeof window === 'undefined') {
       return {
         provider: 'openrouter',
-        lmStudio: {
-          url: 'http://localhost:1234',
-          model: 'llama-3-8b-instruct',
-          apiKey: ''
-        },
         openRouter: {
           apiKey: '',
           model: 'meta-llama/llama-3.1-8b-instruct:free',
@@ -111,8 +101,6 @@ class ClientAIService {
 
     if (this.config.provider === 'openrouter') {
       return await this.callOpenRouter(basePrompt, context);
-    } else if (this.config.provider === 'lm-studio') {
-      return await this.callLMStudio(basePrompt, context);
     }
 
     throw new Error('Unknown provider');
@@ -152,54 +140,6 @@ class ClientAIService {
       response: aiResponse,
       model: this.config.openRouter.model,
       provider: 'OpenRouter',
-    };
-  }
-
-  private async callLMStudio(prompt: string, context?: any): Promise<AIResponse> {
-    // Check if LM Studio is running on localhost
-    try {
-      const healthCheck = await fetch(`${this.config.lmStudio.url}/health`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000),
-      });
-
-      if (!healthCheck.ok) {
-        throw new Error('LM Studio not responding');
-      }
-    } catch (error) {
-      throw new Error('Cannot connect to LM Studio - make sure it\'s running');
-    }
-
-    const response = await fetch(`${this.config.lmStudio.url}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: this.config.lmStudio.model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`LM Studio error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content || 'No response generated';
-
-    return {
-      success: true,
-      response: aiResponse,
-      model: this.config.lmStudio.model,
-      provider: 'LM Studio',
     };
   }
 

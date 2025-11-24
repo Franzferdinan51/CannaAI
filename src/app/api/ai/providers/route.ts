@@ -23,144 +23,10 @@ interface AIModel {
   contextLength?: number;
   size?: string;
   quantization?: string;
-  source?: 'running' | 'local' | 'both'; // For LM Studio: where model is available
-  filepath?: string; // For LM Studio local models
   metadata?: any; // Additional model-specific metadata
 }
 
 const SETTINGS_BASE = process.env.NEXTAUTH_URL || process.env.SITE_URL || 'http://localhost:3000';
-
-async function getLMStudioModels(): Promise<AIModel[]> {
-  // Check if we're on a serverless platform
-  const isServerless = !!process.env.NETLIFY ||
-                      !!process.env.VERCEL ||
-                      !process.platform;
-
-  if (isServerless) {
-    console.log('Serverless platform detected - returning demo LM Studio models');
-    return [
-      {
-        id: 'demo_llava_vision',
-        name: 'LLaVA Vision (Demo - Serverless)',
-        provider: 'lm-studio-demo',
-        capabilities: ['text-generation', 'vision', 'image-analysis', 'plant-analysis'],
-        contextLength: 4096,
-        size: '4.1 GB (Demo)',
-        quantization: 'Q4_K_M',
-        metadata: {
-          note: 'Demo data - Real LM Studio requires local deployment',
-          platform: 'serverless'
-        }
-      },
-      {
-        id: 'demo_cannabis_expert',
-        name: 'Cannabis Expert (Demo - Serverless)',
-        provider: 'lm-studio-demo',
-        capabilities: ['text-generation', 'plant-analysis', 'classification', 'analysis'],
-        contextLength: 8192,
-        size: '8.5 GB (Demo)',
-        quantization: 'Q5_K_M',
-        metadata: {
-          note: 'Demo data - Real LM Studio requires local deployment',
-          platform: 'serverless'
-        }
-      }
-    ];
-  }
-
-  try {
-    console.log('Fetching LM Studio models from http://localhost:1234/v1/models');
-    const response = await fetch('http://localhost:1234/v1/models', {
-      signal: AbortSignal.timeout(5000),
-      headers: {
-        'Content-Type': 'application/json'
-        // No API key needed for LM Studio
-      }
-    });
-
-    console.log(`LM Studio response status: ${response.status}`);
-
-    if (!response.ok) {
-      throw new Error(`LM Studio not responding: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const models = data.data || [];
-    console.log(`LM Studio returned ${models.length} models`);
-
-    const formattedModels = models.map((model: any) => {
-      const capabilities = determineCapabilities(model.id);
-      return {
-        id: model.id,
-        name: model.id,
-        provider: 'lm-studio',
-        capabilities: capabilities,
-        contextLength: model.context_length || 4096,
-        size: model.size || 'Unknown',
-        details: {
-          object: model.object,
-          created: model.created,
-          owned_by: model.owned_by,
-          permission: model.permission
-        }
-      };
-    });
-
-    console.log(`Formatted ${formattedModels.length} LM Studio models`);
-    return formattedModels;
-
-  } catch (error) {
-    console.warn('LM Studio models fetch error:', error);
-    return [];
-  }
-}
-
-async function getLMStudioLocalModels(): Promise<AIModel[]> {
-  // Local scanning is not supported on Netlify/Serverless environments
-  return [];
-}
-
-/**
- * Unified LM Studio model fetcher that combines running instance and local models
- * Returns deduplicated models with source information
- */
-async function getUnifiedLMStudioModels(): Promise<AIModel[]> {
-  const runningModels = await getLMStudioModels();
-  const localModels = await getLMStudioLocalModels();
-
-  // Mark running models with source
-  const markedRunningModels = runningModels.map(model => ({
-    ...model,
-    source: 'running' as 'running' | 'local' | 'both' // Mark as from running instance
-  }));
-
-  // Merge and deduplicate models by ID
-  const modelMap = new Map<string, AIModel>();
-
-  // Add running models first
-  markedRunningModels.forEach(model => {
-    modelMap.set(model.id, model as AIModel);
-  });
-
-  // Add local models, merging if they exist in running
-  localModels.forEach(localModel => {
-    const existing = modelMap.get(localModel.id);
-    if (existing) {
-      // Model exists in both - merge information
-      modelMap.set(localModel.id, {
-        ...existing,
-        ...localModel,
-        source: 'both' as 'running' | 'local' | 'both', // Available in both running instance and locally
-        name: existing.name, // Prefer running instance name format
-      } as AIModel);
-    } else {
-      // Local-only model
-      modelMap.set(localModel.id, localModel as AIModel);
-    }
-  });
-
-  return Array.from(modelMap.values());
-}
 
 async function getOpenRouterModels(): Promise<AIModel[]> {
   try {
@@ -493,46 +359,6 @@ function determineCapabilities(modelId: string): string[] {
 async function getAvailableProviders(): Promise<AIProvider[]> {
   const providers: AIProvider[] = [];
 
-  // LM Studio (unified: combines running instance + local models)
-  try {
-    const unifiedModels = await getUnifiedLMStudioModels();
-
-    // Determine status based on model sources
-    let status: 'available' | 'unavailable' | 'error' = 'unavailable';
-    if (unifiedModels.length > 0) {
-      const hasRunning = unifiedModels.some((m: any) => m.source === 'running' || m.source === 'both');
-      status = hasRunning ? 'available' : 'unavailable';
-    }
-
-    providers.push({
-      id: 'lm-studio',
-      name: 'LM Studio',
-      type: 'local',
-      models: unifiedModels,
-      config: {
-        url: 'http://localhost:1234',
-        note: 'Unified provider combining running instance and local models'
-      },
-      status,
-      lastChecked: new Date().toISOString(),
-      metadata: {
-        totalModels: unifiedModels.length,
-        runningModels: unifiedModels.filter((m: any) => m.source === 'running' || m.source === 'both').length,
-        localModels: unifiedModels.filter((m: any) => m.source === 'local' || m.source === 'both').length
-      }
-    });
-  } catch (error) {
-    providers.push({
-      id: 'lm-studio',
-      name: 'LM Studio',
-      type: 'local',
-      models: [],
-      config: { url: 'http://localhost:1234' },
-      status: 'error',
-      lastChecked: new Date().toISOString()
-    });
-  }
-
   // OpenRouter
   try {
     const openRouterModels = await getOpenRouterModels();
@@ -702,7 +528,6 @@ export async function GET(request: NextRequest) {
       response.deploymentInfo = {
         platform: 'Serverless (Netlify/Vercel)',
         limitations: [
-          'LM Studio requires local deployment',
           'Local network access is restricted',
           'File system access is limited'
         ],
@@ -789,38 +614,6 @@ export async function POST(request: NextRequest) {
 
 async function testProviderModel(providerId: string, modelId: string): Promise<any> {
   try {
-    if (providerId === 'lm-studio') {
-      const response = await fetch('http://localhost:1234/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: modelId,
-          messages: [
-            { role: 'user', content: 'Hello, this is a test.' }
-          ],
-          max_tokens: 10,
-          temperature: 0.7
-        })
-      });
-
-      if (response.ok) {
-        return {
-          success: true,
-          message: 'Model test successful',
-          provider: providerId,
-          model: modelId
-        };
-      } else {
-        return {
-          success: false,
-          message: 'Model test failed',
-          provider: providerId,
-          model: modelId,
-          error: `${response.status}: ${response.statusText}`
-        };
-      }
-    }
-
     if (providerId === 'openrouter') {
       // Get settings for API key
       const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);

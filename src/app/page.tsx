@@ -480,7 +480,7 @@ export default function CultivAIPro() {
   const [compactView, setCompactView] = useState(false);
   const [analysisTrend, setAnalysisTrend] = useState('stable'); // 'improving', 'declining', 'stable'
   const [storageMode, setStorageMode] = useState('local');
-  const [aiModel, setAIModel] = useState('lm-studio');
+  const [aiModel, setAIModel] = useState('openrouter');
   const [availableModels, setAvailableModels] = useState([
     'llama-3-70b-chat', 'mistral-7b-instruct', 'gemma-7b-it', 'nous-hermes-llama2-13b'
   ]);
@@ -499,12 +499,7 @@ export default function CultivAIPro() {
 
   // Settings state
   const [settings, setSettings] = useState({
-    aiProvider: 'lm-studio',
-    lmStudio: {
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'llama-3-8b-instruct'
-    },
+    aiProvider: 'openrouter',
     openRouter: {
       apiKey: '',
       model: 'meta-llama/llama-3.1-8b-instruct:free',
@@ -3871,7 +3866,7 @@ export default function CultivAIPro() {
               />
             </form>
             <p className="text-xs text-slate-400 mt-2 text-center">
-              Powered by {settings.aiProvider === 'lm-studio' ? 'LM Studio' : 'OpenRouter'} •
+              Powered by OpenRouter •
               {chatImage ? ' Image attached' : ' Click upload button to add image'} •
               AI-generated responses for informational purposes only
             </p>
