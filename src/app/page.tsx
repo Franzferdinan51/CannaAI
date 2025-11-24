@@ -40,7 +40,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
 import { AgentEvolverSettings } from '@/components/ai/AgentEvolverSettings';
-import { UnifiedAIAssistant } from '@/components/ai/unified-assistant';
+import UnifiedAIAssistant from '@/components/ai/unified-assistant';
 
 // Default strain database with purple strain indicators
 const defaultStrains = [
