@@ -30,49 +30,36 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   // Navigation items
+  // Use static labels to avoid SSR/CSR text drift
   const navItems = [
     { href: '/', label: 'Dashboard', icon: Home, pageId: 'dashboard' },
     { href: '/live-vision', label: 'Live Vision', icon: Camera, pageId: 'live-vision' },
     { href: '/all-tools', label: 'All Tools', icon: Wrench, pageId: 'all-tools' },
-    { href: '/dashboard?view=settings', label: 'Settings', icon: Settings, pageId: 'settings' }
+    { href: '/settings', label: 'Settings', icon: Settings, pageId: 'settings' }
   ];
 
   // Get current page context
   const getCurrentPageContext = () => {
-    const currentPath = pathname;
-
-    // Check URL parameters for view/tab
-    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-    const view = urlParams?.get("view");
-    const tab = urlParams?.get("tab");
-
-    if (currentPath === "/" || currentPath.startsWith("/dashboard")) {
-      // Check for settings view parameter on main page
-      if (view === "settings" || tab === "settings") {
-        return {
-          page: "settings",
-          title: "Settings",
-          description: "System configuration and preferences"
-        };
-      }
+    // Use path only; avoid client-only search params during SSR to prevent hydration drift
+    if (pathname === "/" || pathname.startsWith("/dashboard")) {
       return {
         page: "dashboard",
         title: "Dashboard",
         description: "Overview of your cultivation system"
       };
-    } else if (currentPath.startsWith("/live-vision")) {
+    } else if (pathname.startsWith("/live-vision")) {
       return {
         page: "live-vision",
         title: "Live Vision",
         description: "Real-time plant analysis and monitoring"
       };
-    } else if (currentPath.startsWith("/all-tools")) {
+    } else if (pathname.startsWith("/all-tools")) {
       return {
         page: "all-tools",
         title: "Cultivation Tools",
         description: "Complete toolkit for plant management"
       };
-    } else if (currentPath.startsWith("/settings")) {
+    } else if (pathname.startsWith("/settings")) {
       return {
         page: "settings",
         title: "Settings",
@@ -95,7 +82,7 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
     if ((window as any).updateAIContext) {
       (window as any).updateAIContext({
         ...pageContext,
-        sensorData: window.sensorData || {}
+        sensorData: (window as any).sensorData || {}
       });
     }
   }, [pathname]);
@@ -132,10 +119,7 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
           <nav className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href ||
-                (item.pageId === "settings" &&
-                 ((pathname === "/" || pathname === "/dashboard") &&
-                  (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("view") === "settings" : false)));
+              const isActive = pathname === item.href;
 
               return (
                 <Link key={item.href} href={item.href}>
@@ -192,30 +176,27 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
             className="md:hidden border-t border-slate-700"
           >
             <nav className="py-2 space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href ||
-                  (item.pageId === "settings" &&
-                   ((pathname === "/" || pathname === "/dashboard") &&
-                    (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("view") === "settings" : false)));
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
 
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isActive ? 'default' : 'ghost'}
-                      className={`w-full justify-start flex items-center space-x-2 ${
-                        isActive
-                          ? 'bg-green-600 text-white hover:bg-green-500'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                      }`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </Button>
-                  </Link>
-                );
-              })}
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    variant={isActive ? 'default' : 'ghost'}
+                    className={`w-full justify-start flex items-center space-x-2 ${
+                      isActive
+                        ? 'bg-green-600 text-white hover:bg-green-500'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Button>
+                </Link>
+              );
+            })}
             </nav>
           </motion.div>
         )}

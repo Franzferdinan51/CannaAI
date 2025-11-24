@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,8 +53,11 @@ import {
   Info,
   AlertTriangle,
   ChevronRight,
-  Play
+  Play,
+  ThumbsDown,
+  ThumbsUp
 } from 'lucide-react';
+import { enhancedAgentEvolver } from '@/lib/agent-evolver-enhanced';
 
 interface Message {
   id: string;
@@ -98,6 +101,19 @@ interface PageContext {
   title: string;
   data?: any;
   sensorData?: any;
+}
+
+interface PageSnapshot {
+  url: string;
+  title: string;
+  scrollY: number;
+  viewport: { width: number; height: number };
+  activeElement?: string;
+  lastClickText?: string;
+  lastClickTag?: string;
+  lastClickId?: string;
+  recentEvents?: string[];
+  timestamp: number;
 }
 
 interface PlantContext {
@@ -364,6 +380,32 @@ export default function UnifiedAIAssistant({
   initialContext,
   className = ""
 }: UnifiedAIAssistantProps) {
+  const createPageSnapshot = useCallback((extras: Partial<PageSnapshot> = {}): PageSnapshot => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return {
+        url: '',
+        title: '',
+        scrollY: 0,
+        viewport: { width: 0, height: 0 },
+        timestamp: Date.now(),
+        ...extras
+      };
+    }
+
+    const activeElement = document.activeElement as HTMLElement | null;
+    const baseSnapshot: PageSnapshot = {
+      url: window.location.href,
+      title: document.title,
+      scrollY: window.scrollY,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      activeElement: activeElement?.tagName?.toLowerCase(),
+      timestamp: Date.now(),
+      ...extras
+    };
+
+    return baseSnapshot;
+  }, []);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -373,6 +415,7 @@ export default function UnifiedAIAssistant({
     page: 'unknown',
     title: 'CannaAI Pro'
   });
+  const [pageSnapshot, setPageSnapshot] = useState<PageSnapshot>(() => createPageSnapshot());
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -436,9 +479,11 @@ export default function UnifiedAIAssistant({
   const [agenticEnabled, setAgenticEnabled] = useState(true);
   const [environmentalHistory, setEnvironmentalHistory] = useState<EnvironmentalData[]>([]);
   const [lastAnalysis, setLastAnalysis] = useState<Date | null>(null);
+  const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -465,6 +510,48 @@ export default function UnifiedAIAssistant({
     };
   }, []);
 
+  // Page snapshot and event tracking
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const updateSnapshot = (extrasBuilder?: (prev: PageSnapshot) => Partial<PageSnapshot>) => {
+      setPageSnapshot(prev => {
+        const extras = extrasBuilder ? extrasBuilder(prev) : {};
+        const recentEvents = extras.recentEvents ?? prev.recentEvents ?? [];
+        return createPageSnapshot({ ...extras, recentEvents });
+      });
+    };
+
+    const handleScroll = () => updateSnapshot();
+    const handleVisibilityChange = () => updateSnapshot();
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      updateSnapshot(prev => {
+        const newEvent = `click:${target.tagName.toLowerCase()}#${target.id || ''}:${target.innerText?.trim().slice(0, 60) || ''}`;
+        const nextEvents = [
+          newEvent,
+          ...(prev.recentEvents || []).slice(0, 4)
+        ];
+        return {
+          lastClickText: target.innerText?.trim().slice(0, 120),
+          lastClickTag: target.tagName.toLowerCase(),
+          lastClickId: target.id || undefined,
+          recentEvents: nextEvents
+        };
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('click', handleClick);
+    };
+  }, [createPageSnapshot]);
+
   // ===== AGENTIC FUNCTIONALITY =====
 
   // Autonomous monitoring and analysis
@@ -478,7 +565,7 @@ export default function UnifiedAIAssistant({
     }, 30000); // Check every 30 seconds
 
     return () => clearInterval(interval);
-  }, [agenticEnabled, isOpen, agenticContext]);
+  }, [agenticEnabled, isOpen, agenticContext, plantContext, environmentalHistory, agenticTriggers]);
 
   // Update plant context from sensor data
   useEffect(() => {
@@ -609,7 +696,7 @@ export default function UnifiedAIAssistant({
       timestamp: new Date(),
       messageType: 'proactive',
       urgency: issues.some(i => i.severity === 'critical') ? 'critical' :
-               issues.some(i => i.severity === 'high') ? 'high' : 'medium',
+        issues.some(i => i.severity === 'high') ? 'high' : 'medium',
       confidence: 0.92
     };
 
@@ -764,7 +851,7 @@ export default function UnifiedAIAssistant({
       title: 'Autonomous Action Plan',
       description: `AI-generated plan to address ${issues.length} detected issues`,
       priority: issues.some(i => i.severity === 'critical') ? 'urgent' :
-               issues.some(i => i.severity === 'high') ? 'high' : 'medium',
+        issues.some(i => i.severity === 'high') ? 'high' : 'medium',
       steps: issues.map((issue, index) => ({
         id: `step-${index}`,
         title: `Address ${issue.type}`,
@@ -887,7 +974,13 @@ export default function UnifiedAIAssistant({
       image: capturedImage || undefined
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    let latestMessages: Message[] = [];
+
+    setMessages(prev => {
+      const next = [...prev, userMessage];
+      latestMessages = next;
+      return next;
+    });
     setInput('');
     setIsLoading(true);
     setCapturedImage(null); // Clear captured image after sending
@@ -916,6 +1009,7 @@ export default function UnifiedAIAssistant({
           mode: chatMode,
           sensorData: context.sensorData,
           image: capturedImage,
+          pageSnapshot,
           agenticData: {
             triggers: agenticTriggers,
             userPreferences: agenticContext.userPreferences,
@@ -961,7 +1055,11 @@ export default function UnifiedAIAssistant({
           setAutonomousActions(prev => [...prev, data.autonomousAction]);
         }
 
-        setMessages(prev => [...prev, assistantMessage]);
+        setMessages(prev => {
+          const next = [...prev, assistantMessage];
+          latestMessages = next;
+          return next;
+        });
 
         // If autonomous action was suggested, execute it if enabled
         if (data.autonomousAction && agenticEnabled && agenticContext.userPreferences.automationLevel !== 'manual') {
@@ -981,12 +1079,17 @@ export default function UnifiedAIAssistant({
         urgency: 'medium'
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => {
+        const next = [...prev, errorMessage];
+        latestMessages = next;
+        return next;
+      });
     } finally {
       setIsLoading(false);
-      // Auto-save chat after each interaction
-      if (messages.length > 0) {
-        setTimeout(() => saveChatHistory(), 1000);
+      // Auto-save chat after each interaction using the latest buffered messages
+      if (latestMessages.length > 0) {
+        const snapshot = [...latestMessages];
+        setTimeout(() => saveChatHistory(snapshot), 1000);
       }
     }
   };
@@ -1002,7 +1105,7 @@ export default function UnifiedAIAssistant({
   // Generate contextual greeting based on mode
   const getContextualGreeting = () => {
     const modeInfo = allModes[chatMode];
-    return `${modeInfo.icon} ${modeInfo.name} Mode: ${modeInfo.description}`;
+    return `${modeInfo.name} Mode: ${modeInfo.description}`;
   };
 
   // Render contextual indicator
@@ -1080,17 +1183,38 @@ export default function UnifiedAIAssistant({
     setInput('Analyze this plant image for health issues and recommendations.');
   };
 
-  const saveChatHistory = () => {
-    if (messages.length === 0) return;
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
 
-    const title = messages.find(m => m.type === 'user')?.content.slice(0, 50) + '...' || 'New Chat';
-    const category = categorizeChat(messages);
+  const handleImageUploadChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setCapturedImage(result);
+      setChatMode('analysis');
+      setInput('Analyze this plant image for health issues and recommendations.');
+    };
+    reader.readAsDataURL(file);
+    // reset input to allow same file re-upload
+    event.target.value = '';
+  };
+
+  const saveChatHistory = (messageList: Message[] = messages) => {
+    if (messageList.length === 0) return;
+
+    const firstUserMessage = messageList.find(m => m.type === 'user' && m.content);
+    const title = firstUserMessage ? `${firstUserMessage.content.slice(0, 50)}...` : 'New Chat';
+    const category = categorizeChat(messageList);
 
     const newChat: ChatHistory = {
       id: Date.now().toString(),
       title,
       category,
-      messages: [...messages],
+      messages: [...messageList],
       timestamp: new Date(),
       isPinned: false,
       plantContext: { ...plantContext }
@@ -1101,12 +1225,56 @@ export default function UnifiedAIAssistant({
   };
 
   const categorizeChat = (msgs: Message[]): ChatHistory['category'] => {
-    const content = msgs.map(m => m.content.toLowerCase()).join(' ');
+    const content = msgs
+      .map(m => (m.content || '').toLowerCase())
+      .join(' ');
     if (content.includes('harvest') || content.includes('ready') || content.includes('trichome')) return 'Harvest';
     if (content.includes('nutrient') || content.includes('feeding') || content.includes('ph') || content.includes('ec')) return 'Nutrients';
     if (content.includes('health') || content.includes('sick') || content.includes('problem') || content.includes('issue')) return 'Health';
     if (content.includes('strain') || content.includes('genetic') || content.includes('breed')) return 'Genetics';
     return 'General';
+  };
+
+  const handleFeedback = (message: Message, sentiment: 'up' | 'down') => {
+    setFeedbackMap(prev => ({ ...prev, [message.id]: sentiment }));
+
+    const templateByType: Record<string, string> = {
+      analysis: 'plant-analysis',
+      recommendation: 'nutrient-optimization',
+      troubleshoot: 'pest-disease',
+      diagnosis: 'plant-analysis',
+      autonomous: 'plant-analysis',
+      proactive: 'plant-analysis'
+    };
+
+    const templateId = templateByType[message.messageType || ''] || 'plant-analysis';
+
+    try {
+      enhancedAgentEvolver.evolvePromptFromFeedback(
+        templateId,
+        message.content || '',
+        {
+          accuracy: sentiment === 'up' ? 0.9 : 0.4,
+          helpfulness: sentiment === 'up' ? 0.9 : 0.4,
+          userSatisfaction: sentiment === 'up' ? 0.9 : 0.35
+        }
+      );
+    } catch (error) {
+      console.error('Failed to send feedback to evolver', error);
+    }
+
+    // Also notify server-side evolver
+    fetch('/api/agent-feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messageId: message.id,
+        sentiment,
+        mode: message.messageType || chatMode,
+        content: message.content,
+        provider: message.context?.provider
+      })
+    }).catch(err => console.error('Failed to submit feedback server-side', err));
   };
 
   const loadChatHistory = (chatId: string) => {
@@ -1341,7 +1509,7 @@ export default function UnifiedAIAssistant({
 
       // Prevent too frequent triggers
       if (trigger.lastTriggered &&
-          (currentTime.getTime() - trigger.lastTriggered.getTime()) < 300000) { // 5 minutes
+        (currentTime.getTime() - trigger.lastTriggered.getTime()) < 300000) { // 5 minutes
         return;
       }
 
@@ -1350,15 +1518,15 @@ export default function UnifiedAIAssistant({
       switch (trigger.type) {
         case 'threshold':
           if (trigger.condition.parameter === 'temperature' &&
-              currentEnv.temperature > trigger.condition.value) {
+            currentEnv.temperature > trigger.condition.value) {
             shouldTrigger = true;
           }
           if (trigger.condition.parameter === 'humidity' &&
-              currentEnv.humidity > trigger.condition.value) {
+            currentEnv.humidity > trigger.condition.value) {
             shouldTrigger = true;
           }
           if (trigger.condition.parameter === 'ph' &&
-              (currentEnv.ph < trigger.condition.min || currentEnv.ph > trigger.condition.max)) {
+            (currentEnv.ph < trigger.condition.min || currentEnv.ph > trigger.condition.max)) {
             shouldTrigger = true;
           }
           break;
@@ -1370,9 +1538,8 @@ export default function UnifiedAIAssistant({
           id: Date.now().toString(),
           type: 'alert',
           title: `Trigger Activated: ${trigger.condition.parameter}`,
-          description: `Threshold exceeded: ${trigger.condition.parameter} = ${
-            currentEnv[trigger.condition.parameter as keyof typeof currentEnv]
-          }`,
+          description: `Threshold exceeded: ${trigger.condition.parameter} = ${currentEnv[trigger.condition.parameter as keyof typeof currentEnv]
+            }`,
           executed: true,
           impact: trigger.condition.impact || 'medium'
         };
@@ -1594,15 +1761,14 @@ export default function UnifiedAIAssistant({
                   <button
                     key={oIdx}
                     onClick={() => handleQuizAnswer(messageId, qIdx, oIdx)}
-                    className={`w-full text-left p-2 rounded text-xs transition-colors ${
-                      isSelected && isCorrect
+                    className={`w-full text-left p-2 rounded text-xs transition-colors ${isSelected && isCorrect
                         ? 'bg-green-600 text-white'
                         : isSelected && !isCorrect
-                        ? 'bg-red-600 text-white'
-                        : isCorrect && question.userAnswerIndex !== undefined
-                        ? 'bg-green-800 text-green-200'
-                        : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                    }`}
+                          ? 'bg-red-600 text-white'
+                          : isCorrect && question.userAnswerIndex !== undefined
+                            ? 'bg-green-800 text-green-200'
+                            : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                      }`}
                     disabled={question.userAnswerIndex !== undefined}
                   >
                     {option}
@@ -1629,11 +1795,10 @@ export default function UnifiedAIAssistant({
         </CardTitle>
         <p className="text-xs text-slate-400">{plan.description}</p>
         <div className="flex items-center space-x-2">
-          <Badge className={`text-xs ${
-            plan.priority === 'urgent' ? 'bg-red-600' :
-            plan.priority === 'high' ? 'bg-orange-600' :
-            plan.priority === 'medium' ? 'bg-yellow-600' : 'bg-green-600'
-          } text-white`}>
+          <Badge className={`text-xs ${plan.priority === 'urgent' ? 'bg-red-600' :
+              plan.priority === 'high' ? 'bg-orange-600' :
+                plan.priority === 'medium' ? 'bg-yellow-600' : 'bg-green-600'
+            } text-white`}>
             {plan.priority.toUpperCase()}
           </Badge>
           <span className="text-xs text-slate-400">⏱ {plan.estimatedTime}</span>
@@ -1645,11 +1810,10 @@ export default function UnifiedAIAssistant({
           <div className="space-y-2">
             {plan.steps.map((step, idx) => (
               <div key={step.id} className="bg-slate-700 p-2 rounded flex items-center space-x-2">
-                <div className={`w-4 h-4 rounded-full border-2 ${
-                  step.status === 'completed' ? 'bg-green-500 border-green-500' :
-                  step.status === 'in_progress' ? 'bg-blue-500 border-blue-500' :
-                  'border-slate-500'
-                }`}>
+                <div className={`w-4 h-4 rounded-full border-2 ${step.status === 'completed' ? 'bg-green-500 border-green-500' :
+                    step.status === 'in_progress' ? 'bg-blue-500 border-blue-500' :
+                      'border-slate-500'
+                  }`}>
                   {step.status === 'completed' && <span className="text-white text-xs">✓</span>}
                 </div>
                 <div className="flex-1">
@@ -1707,10 +1871,9 @@ export default function UnifiedAIAssistant({
           <div className="flex items-center space-x-1">
             <div className="w-full bg-slate-600 rounded-full h-2 max-w-[60px]">
               <div
-                className={`h-2 rounded-full ${
-                  analysis.confidence > 80 ? 'bg-green-500' :
-                  analysis.confidence > 60 ? 'bg-yellow-500' : 'bg-red-500'
-                }`}
+                className={`h-2 rounded-full ${analysis.confidence > 80 ? 'bg-green-500' :
+                    analysis.confidence > 60 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}
                 style={{ width: `${analysis.confidence}%` }}
               />
             </div>
@@ -1830,13 +1993,12 @@ export default function UnifiedAIAssistant({
           </div>
           <div className="bg-slate-700 p-2 rounded">
             <span className="text-slate-400">Health:</span>
-            <span className={`ml-1 font-medium ${
-              plantContext.lastAnalysis?.healthScore && plantContext.lastAnalysis.healthScore > 80
+            <span className={`ml-1 font-medium ${plantContext.lastAnalysis?.healthScore && plantContext.lastAnalysis.healthScore > 80
                 ? 'text-green-400'
                 : plantContext.lastAnalysis?.healthScore && plantContext.lastAnalysis.healthScore > 60
-                ? 'text-yellow-400'
-                : 'text-red-400'
-            }`}>
+                  ? 'text-yellow-400'
+                  : 'text-red-400'
+              }`}>
               {plantContext.lastAnalysis?.healthScore || 'N/A'}%
             </span>
           </div>
@@ -1954,9 +2116,8 @@ export default function UnifiedAIAssistant({
             chatHistory.map((chat) => (
               <div
                 key={chat.id}
-                className={`p-2 bg-slate-700 rounded cursor-pointer hover:bg-slate-600 transition-colors ${
-                  currentChatId === chat.id ? 'ring-2 ring-blue-500' : ''
-                }`}
+                className={`p-2 bg-slate-700 rounded cursor-pointer hover:bg-slate-600 transition-colors ${currentChatId === chat.id ? 'ring-2 ring-blue-500' : ''
+                  }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0" onClick={() => loadChatHistory(chat.id)}>
@@ -2047,13 +2208,12 @@ export default function UnifiedAIAssistant({
         )}
         {message.content && (
           <div>
-            <div className={`p-3 rounded-lg text-sm ${
-              message.type === 'user'
+            <div className={`p-3 rounded-lg text-sm ${message.type === 'user'
                 ? 'bg-blue-600 text-white ml-auto'
                 : message.type === 'agentic'
-                ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white'
-                : 'bg-slate-700 text-slate-200'
-            }`}>
+                  ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white'
+                  : 'bg-slate-700 text-slate-200'
+              }`}>
               {/* Message type indicator */}
               {(message.type === 'assistant' || message.type === 'agentic') && message.messageType && (
                 <div className="flex items-center space-x-2 mb-2">
@@ -2086,18 +2246,31 @@ export default function UnifiedAIAssistant({
               <p className="whitespace-pre-wrap">{message.content}</p>
 
               {/* Confidence score */}
-              {message.confidence && (
+              {typeof message.confidence === 'number' && (
                 <div className="mt-2 flex items-center space-x-2">
-                  <div className="flex-1 bg-slate-600 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        message.confidence > 80 ? 'bg-green-500' :
-                        message.confidence > 60 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${message.confidence}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-slate-400">{message.confidence}%</span>
+                  {(() => {
+                    const normalizedConfidence = Math.min(
+                      100,
+                      message.confidence > 1 ? message.confidence : message.confidence * 100
+                    );
+                    const confidenceColor = normalizedConfidence > 80
+                      ? 'bg-green-500'
+                      : normalizedConfidence > 60
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500';
+
+                    return (
+                      <>
+                        <div className="flex-1 bg-slate-600 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${confidenceColor}`}
+                            style={{ width: `${normalizedConfidence}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-slate-400">{normalizedConfidence.toFixed(0)}%</span>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -2114,13 +2287,36 @@ export default function UnifiedAIAssistant({
             </div>
           </div>
         )}
-        <div className={`flex items-center justify-between mt-1 text-xs ${
-          message.type === 'user' ? 'text-blue-200' :
-          message.type === 'agentic' ? 'text-violet-200' : 'text-slate-400'
-        }`}>
+        <div className={`flex items-center justify-between mt-1 text-xs ${message.type === 'user' ? 'text-blue-200' :
+            message.type === 'agentic' ? 'text-violet-200' : 'text-slate-400'
+          }`}>
           <span>
             {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
+          {(message.type === 'assistant' || message.type === 'agentic') && message.content && (
+            <div className="flex items-center space-x-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className={`h-7 px-2 text-xs ${feedbackMap[message.id] === 'up' ? 'bg-green-600 text-white' : 'bg-slate-800 text-slate-200'}`}
+                onClick={() => handleFeedback(message, 'up')}
+                disabled={!!feedbackMap[message.id]}
+              >
+                <ThumbsUp className="h-3 w-3 mr-1" />
+                Helpful
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className={`h-7 px-2 text-xs ${feedbackMap[message.id] === 'down' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-200'}`}
+                onClick={() => handleFeedback(message, 'down')}
+                disabled={!!feedbackMap[message.id]}
+              >
+                <ThumbsDown className="h-3 w-3 mr-1" />
+                Not helpful
+              </Button>
+            </div>
+          )}
           <div className="flex items-center space-x-2">
             {message.type === 'agentic' && (
               <Badge className="bg-violet-600 text-white text-xs">
@@ -2283,11 +2479,10 @@ export default function UnifiedAIAssistant({
                                 key={mode}
                                 size="sm"
                                 variant={chatMode === mode ? "default" : "outline"}
-                                className={`text-xs justify-start ${
-                                  chatMode === mode
+                                className={`text-xs justify-start ${chatMode === mode
                                     ? 'bg-blue-600 text-white'
                                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                }`}
+                                  }`}
                                 onClick={() => {
                                   setChatMode(mode as ChatMode);
                                   setShowModeSelector(false);
@@ -2448,6 +2643,22 @@ export default function UnifiedAIAssistant({
                     >
                       {cameraActive ? <CameraOff className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-slate-700 text-slate-200 hover:bg-slate-600"
+                      onClick={triggerImageUpload}
+                      title="Upload plant photo"
+                    >
+                      <Image className="h-4 w-4" />
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      className="hidden"
+                      onChange={handleImageUploadChange}
+                    />
                     <Input
                       ref={inputRef}
                       value={input}

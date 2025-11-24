@@ -28,6 +28,8 @@ interface AIModel {
   metadata?: any; // Additional model-specific metadata
 }
 
+const SETTINGS_BASE = process.env.NEXTAUTH_URL || process.env.SITE_URL || 'http://localhost:3000';
+
 async function getLMStudioModels(): Promise<AIModel[]> {
   // Check if we're on a serverless platform
   const isServerless = !!process.env.NETLIFY ||
@@ -115,7 +117,7 @@ async function getLMStudioModels(): Promise<AIModel[]> {
 
 async function getLMStudioLocalModels(): Promise<AIModel[]> {
   try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/lmstudio/models`, {
+    const response = await fetch(`${SETTINGS_BASE}/api/lmstudio/models`, {
       signal: AbortSignal.timeout(5000)
     });
 
@@ -192,7 +194,7 @@ async function getUnifiedLMStudioModels(): Promise<AIModel[]> {
 async function getOpenRouterModels(): Promise<AIModel[]> {
   try {
     // First get settings to get API key
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.openRouter.apiKey) {
@@ -204,7 +206,7 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
         'Authorization': `Bearer ${settingsData.settings.openRouter.apiKey}`,
-        'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3002',
+        'HTTP-Referer': SETTINGS_BASE,
         'X-Title': 'CannaAI Pro'
       }
     });
@@ -216,11 +218,23 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
     const data = await response.json();
     let models = data.data || [];
 
-    if (manualModel && !models.find((m: any) => m.id === manualModel)) {
-      models.unshift({
-        id: manualModel,
-        name: `${manualModel} (Manual)`,
-      });
+    // Always include manual model at the top if it exists
+    if (manualModel) {
+      const existingModelIndex = models.findIndex((m: any) => m.id === manualModel);
+      if (existingModelIndex >= 0) {
+        // Move existing model to the top
+        const [existingModel] = models.splice(existingModelIndex, 1);
+        models.unshift({
+          ...existingModel,
+          name: `${existingModel.name} (Selected)`
+        });
+      } else {
+        // Add manual model to the top
+        models.unshift({
+          id: manualModel,
+          name: `${manualModel} (Manual)`,
+        });
+      }
     }
 
     // Filter and sort models
@@ -261,7 +275,7 @@ async function getOpenRouterModels(): Promise<AIModel[]> {
 
 async function getOpenAICompatibleModels(): Promise<AIModel[]> {
   try {
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.openai?.apiKey || !settingsData.settings.openai?.baseUrl) {
@@ -290,7 +304,7 @@ async function getOpenAICompatibleModels(): Promise<AIModel[]> {
 
 async function getGeminiModels(): Promise<AIModel[]> {
   try {
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.gemini?.apiKey) {
@@ -355,7 +369,7 @@ async function getGeminiModels(): Promise<AIModel[]> {
 
 async function getGroqModels(): Promise<AIModel[]> {
   try {
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.groq?.apiKey) {
@@ -424,7 +438,7 @@ async function getGroqModels(): Promise<AIModel[]> {
 
 async function getAnthropicModels(): Promise<AIModel[]> {
   try {
-    const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
     const settingsData = await settingsResponse.json();
 
     if (!settingsData.success || !settingsData.settings.anthropic?.apiKey) {
@@ -838,7 +852,7 @@ async function testProviderModel(providerId: string, modelId: string): Promise<a
 
     if (providerId === 'openrouter') {
       // Get settings for API key
-      const settingsResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/settings`);
+      const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
       const settingsData = await settingsResponse.json();
 
       if (!settingsData.success || !settingsData.settings.openRouter.apiKey) {
@@ -855,7 +869,7 @@ async function testProviderModel(providerId: string, modelId: string): Promise<a
         headers: {
           'Authorization': `Bearer ${settingsData.settings.openRouter.apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3002',
+          'HTTP-Referer': SETTINGS_BASE,
           'X-Title': 'CannaAI Pro'
         },
         body: JSON.stringify({
