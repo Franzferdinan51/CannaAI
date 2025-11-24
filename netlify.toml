@@ -1,47 +1,10 @@
 [build]
-  command = "npm run build:netlify"
-  publish = "out"
+  command = "npm run build"
+  publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
-
-# Handle SPA routing for static export
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# API routes - redirect to serverless functions (if using Netlify Functions)
-[[redirects]]
-  from = "/api/analyze"
-  to = "/.netlify/functions/analyze"
-  status = 200
-
-[[redirects]]
-  from = "/api/chat"
-  to = "/.netlify/functions/chat"
-  status = 200
-
-[[redirects]]
-  from = "/api/lmstudio"
-  to = "/.netlify/functions/lmstudio"
-  status = 200
-
-[[redirects]]
-  from = "/api/lmstudio/*"
-  to = "/.netlify/functions/lmstudio/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/api/agent-evolver/*"
-  to = "/.netlify/functions/agent-evolver/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/api/*"
-  to = "/index.html"
-  status = 200
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
 
 # Security headers for API endpoints
 [[headers]]

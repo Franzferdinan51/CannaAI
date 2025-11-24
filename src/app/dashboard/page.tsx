@@ -25,7 +25,6 @@ import {
     BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, RadarChart, PolarGrid,
     PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
-import { io } from 'socket.io-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -159,27 +158,7 @@ function DashboardContent() {
         fetchStrains();
     }, []);
 
-    // Real-time Sensor Data (Socket.IO)
-    useEffect(() => {
-        let socket: any;
-        try {
-            socket = io(undefined, { path: '/api/socketio', transports: ['websocket', 'polling'] });
-
-            socket.on('connect', () => {
-                console.log('Connected to WebSocket');
-            });
-
-            socket.on('sensor-data', (data: any) => {
-                setSensorData(prev => ({ ...prev, ...data }));
-            });
-        } catch (e) {
-            console.warn('WebSocket connection failed (expected on serverless environments):', e);
-        }
-
-        return () => {
-            if (socket) socket.disconnect();
-        };
-    }, []);
+    // Real-time Sensor Data (Socket.IO removed for Netlify compatibility)
 
     // Expose sensor data globally
     useEffect(() => {
