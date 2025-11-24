@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
     Leaf, AlertTriangle, Droplet, Droplets, Sun, Settings, CheckCircle, XCircle,
     RefreshCw, Image as ImageIcon, Upload, Database, Search, Trash2, Plus, Edit, Save,
@@ -90,7 +90,7 @@ const dashboardItems = [
     { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export default function CultivAIPro() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
@@ -757,5 +757,13 @@ export default function CultivAIPro() {
                 </ScrollArea >
             </main >
         </div >
+    );
+}
+
+export default function CultivAIPro() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-screen bg-slate-950"><Loader2 className="w-8 h-8 text-emerald-500 animate-spin" /></div>}>
+            <DashboardContent />
+        </Suspense>
     );
 }
