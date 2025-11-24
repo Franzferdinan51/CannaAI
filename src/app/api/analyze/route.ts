@@ -1,8 +1,6 @@
-// Backup of the original route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig } from '@/lib/ai-provider-detection';
-import sharp from 'sharp';
 
 // Environment detection
 const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -72,12 +70,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    console.log('🚀 POST /api/analyze - Starting analysis request');
-
     // Parse request body directly - no complex validation middleware
     const body = await request.json();
-    console.log('✅ Request body parsed successfully');
-
     const {
       strain,
       leafSymptoms,
@@ -112,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     if (plantImage) {
       try {
-        const { buffer } = base64ToBuffer(plantImage.startsWith('data:') ? plantImage : `data:image/jpeg;base64,${plantImage}`);
+        const { buffer } = base64ToBuffer(plantImage);
 
         // Check initial image size and validate
         const originalSize = buffer.length;
@@ -121,12 +115,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Get image metadata for adaptive processing
-        const metadata = await sharp(buffer).metadata();
+        const sharp = await import('sharp');
+        const metadata = await sharp.default(buffer).metadata();
         const originalMegapixels = (metadata.width || 0) * (metadata.height || 0) / 1000000;
 
         // Adaptive compression based on image size and quality requirements
-        let processingOptions: any = {
-          format: 'JPEG',
+        let processingOptions = {
+          format: 'JPEG' as const,
           withoutEnlargement: true,
           fastShrinkOnLoad: false
         };
@@ -306,12 +301,10 @@ Format your response as JSON with this structure:
     let fallbackUsed = false;
     let fallbackReason = '';
     let usedProvider = 'unknown';
-    let providerDetection;
 
     try {
-      console.log('🔍 Detecting AI providers...');
       // Use the simplified AI provider detection
-      providerDetection = await detectAvailableProviders();
+      const providerDetection = await detectAvailableProviders();
       console.log(`📡 AI provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
 
       // Execute AI analysis with fallback

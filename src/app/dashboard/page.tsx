@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
     Leaf, AlertTriangle, Droplet, Droplets, Sun, Settings, CheckCircle, XCircle,
     RefreshCw, Image as ImageIcon, Upload, Database, Search, Trash2, Plus, Edit, Save,
@@ -90,7 +90,8 @@ const dashboardItems = [
     { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export default function CultivAIPro() {
+// Dashboard component that uses searchParams
+function DashboardContent() {
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
@@ -757,5 +758,26 @@ export default function CultivAIPro() {
                 </ScrollArea >
             </main >
         </div >
+    );
+}
+
+// Loading fallback for Suspense
+function DashboardLoading() {
+    return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+            <div className="flex flex-col items-center space-y-4">
+                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                <p className="text-slate-400">Loading dashboard...</p>
+            </div>
+        </div>
+    );
+}
+
+// Main export with Suspense boundary
+export default function CultivAIPro() {
+    return (
+        <Suspense fallback={<DashboardLoading />}>
+            <DashboardContent />
+        </Suspense>
     );
 }
