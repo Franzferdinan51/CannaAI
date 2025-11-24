@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { detectAvailableProviders, getProviderConfig, executeAIWithFallback } from '@/lib/ai-provider-detection';
-import { agentEvolverClient } from '@/lib/agent-evolver';
+import { getAgentEvolverClient } from '@/lib/agent-evolver';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -85,28 +85,32 @@ export async function POST(request: NextRequest) {
 
       // Try AgentEvolver enhanced chat first
       try {
-        console.log('🤖 Attempting AgentEvolver enhanced chat...');
-        const agentEvolverResult = await agentEvolverClient.chatWithFallback({
-          message: message,
-          context: { ...context, sensorData },
-          mode: mode
-        });
+        const evolverClient = getAgentEvolverClient();
+        if (evolverClient && evolverClient.getConfig().enabled) {
+          console.log('🤖 Attempting AgentEvolver enhanced chat...');
+          const agentEvolverResult = await evolverClient.chatWithFallback({
+            message: message,
+            context: { ...context, sensorData },
+            mode: mode
+          });
 
-        if (agentEvolverResult.provider === 'agent-evolver') {
-          chatResult = {
-            content: agentEvolverResult.response,
-            model: 'AgentEvolver-Enhanced'
-          };
-          usedProvider = 'agent-evolver';
-          evolutionMetrics = agentEvolverResult.evolutionMetrics;
-          agentLearning = agentEvolverResult.agentLearning || [];
-          fallbackUsed = agentEvolverResult.fallback?.used || false;
-          fallbackReason = agentEvolverResult.fallback?.reason || '';
-          console.log('🤖 AgentEvolver chat completed successfully');
+          if (agentEvolverResult.provider === 'agent-evolver') {
+            chatResult = {
+              content: agentEvolverResult.response,
+              model: 'AgentEvolver-Enhanced'
+            };
+            usedProvider = 'agent-evolver';
+            evolutionMetrics = agentEvolverResult.evolutionMetrics;
+            agentLearning = agentEvolverResult.agentLearning || [];
+            fallbackUsed = agentEvolverResult.fallback?.used || false;
+            fallbackReason = agentEvolverResult.fallback?.reason || '';
+            console.log('🤖 AgentEvolver chat completed successfully');
+          } else {
+            throw new Error('AgentEvolver returned fallback response - using traditional AI');
+          }
         } else {
-          throw new Error('AgentEvolver not available - using fallback');
+          throw new Error('AgentEvolver client not available - using traditional AI');
         }
-
       } catch (agentEvolverError) {
         console.warn('⚠️ AgentEvolver chat failed, using traditional AI providers:', agentEvolverError instanceof Error ? agentEvolverError.message : 'Unknown error');
 

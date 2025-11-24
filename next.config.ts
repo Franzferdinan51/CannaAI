@@ -56,6 +56,10 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_BUILD_MODE: process.env.BUILD_MODE,
   },
+  // Support for both serverless and server-based deployments
+  experimental: {
+    serverComponentsExternalPackages: ['sharp', 'socket.io'],
+  },
 };
 
 export default nextConfig;
