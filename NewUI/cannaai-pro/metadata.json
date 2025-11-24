@@ -1,0 +1,7 @@
+{
+  "name": "CannaAI Pro",
+  "description": "Professional Cannabis Plant Health Scanner and Analysis Dashboard powered by Gemini 2.5",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
