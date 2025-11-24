@@ -270,8 +270,16 @@ export class RateLimiter {
 export const apiRateLimiter = new RateLimiter(60000, 100); // 100 requests per minute
 export const analysisRateLimiter = new RateLimiter(60000, 20); // 20 analyses per minute
 
-// Cleanup rate limiters periodically
-setInterval(() => {
+// Ensure the cleanup interval is created only once to avoid leaks in dev/serverless
+const globalForRateLimiter = globalThis as typeof globalThis & {
+  __rateLimiterCleanupInterval?: ReturnType<typeof setInterval>;
+};
+
+if (globalForRateLimiter.__rateLimiterCleanupInterval) {
+  clearInterval(globalForRateLimiter.__rateLimiterCleanupInterval);
+}
+
+globalForRateLimiter.__rateLimiterCleanupInterval = setInterval(() => {
   apiRateLimiter.cleanup();
   analysisRateLimiter.cleanup();
 }, 300000); // Every 5 minutes
