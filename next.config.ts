@@ -58,6 +58,26 @@ const nextConfig: NextConfig = {
   },
   // Support for both serverless and server-based deployments
   serverExternalPackages: ['sharp', 'socket.io'],
+  // Redirects for removed duplicate settings pages
+  async redirects() {
+    return [
+      {
+        source: '/settings/ai',
+        destination: '/settings?tab=ai',
+        permanent: true,
+      },
+      {
+        source: '/settings/lmstudio',
+        destination: '/settings?tab=lmstudio',
+        permanent: true,
+      },
+      {
+        source: '/ai-assistant',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

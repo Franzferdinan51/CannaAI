@@ -45,8 +45,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
 import { AgentDashboard } from '@/components/agent/AgentDashboard';
+import { CannaAIAssistantSidebar } from '@/components/ai/cannai-assistant-sidebar';
 
 // Default strain database with purple strain indicators (Fallback)
 const defaultStrains = [
@@ -87,9 +87,9 @@ const dashboardItems = [
     { id: 'agent', label: 'Agent Evolution', icon: Bot },
     { id: 'environment', label: 'Environment', icon: Thermometer },
     { id: 'strains', label: 'Strain Database', icon: Sprout },
-    { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
+// Dashboard component that uses searchParams
 function DashboardContent() {
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
@@ -126,6 +126,7 @@ function DashboardContent() {
   const [activeDashboard, setActiveDashboard] = useState('overview');
     const [sidePanelOpen, setSidePanelOpen] = useState(true);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [aiSidebarOpen, setAiSidebarOpen] = useState(true);
 
     // Hydration fix & Query Param Handling
     useEffect(() => {
@@ -163,21 +164,47 @@ function DashboardContent() {
     useEffect(() => {
         let socket: any;
         try {
-            socket = io(undefined, { path: '/api/socketio', transports: ['websocket', 'polling'] });
+            // Determine the correct server URL based on environment
+            const serverUrl = process.env.NODE_ENV === 'production'
+                ? window.location.origin
+                : `http://${window.location.hostname}:3000`;
+
+            console.log(`🔌 Connecting to Socket.IO server at: ${serverUrl}`);
+
+            socket = io(serverUrl, {
+                path: '/api/socketio',
+                transports: ['websocket', 'polling'],
+                withCredentials: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 20000
+            });
 
             socket.on('connect', () => {
-                console.log('Connected to WebSocket');
+                console.log('✅ Connected to Socket.IO server:', socket.id);
+            });
+
+            socket.on('connect_error', (error: any) => {
+                console.error('❌ Socket.IO connection error:', error);
+                console.log('⚠️ This is expected if the server is not running or if there are network issues');
+            });
+
+            socket.on('disconnect', (reason: string) => {
+                console.log('❌ Socket.IO disconnected:', reason);
             });
 
             socket.on('sensor-data', (data: any) => {
                 setSensorData(prev => ({ ...prev, ...data }));
             });
         } catch (e) {
-            console.warn('WebSocket connection failed (expected on serverless environments):', e);
+            console.warn('❌ WebSocket initialization failed:', e);
         }
 
         return () => {
-            if (socket) socket.disconnect();
+            if (socket) {
+                console.log('🔌 Disconnecting Socket.IO...');
+                socket.disconnect();
+            }
         };
     }, []);
 
@@ -315,6 +342,18 @@ function DashboardContent() {
                         <Button variant="outline" size="sm" className="hidden md:flex border-slate-700 bg-slate-800/50 text-slate-300 hover:bg-slate-700 hover:text-white">
                             <Plus className="w-4 h-4 mr-2" />
                             New Grow
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`relative text-slate-400 hover:text-white hover:bg-slate-800 ${aiSidebarOpen ? 'text-emerald-400 bg-emerald-500/10' : ''}`}
+                            onClick={() => setAiSidebarOpen(!aiSidebarOpen)}
+                            title={aiSidebarOpen ? 'Hide AI Assistant' : 'Show AI Assistant'}
+                        >
+                            <Bot className="w-5 h-5" />
+                            {aiSidebarOpen && (
+                                <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900" />
+                            )}
                         </Button>
                         <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-white hover:bg-slate-800">
                             <Bell className="w-5 h-5" />
@@ -501,7 +540,7 @@ function DashboardContent() {
                                                             <ClipboardList className="w-4 h-4 mr-2 text-emerald-400" />
                                                             Recommended Actions
                                                         </h4>
-                                                        {Array.isArray(analysisResult.recommendations) ? (
+                                                        {analysisResult.recommendations && Array.isArray(analysisResult.recommendations) ? (
                                                             <ul className="space-y-2">
                                                                 {analysisResult.recommendations.map((rec: string, i: number) => (
                                                                     <li key={i} className="flex items-start text-sm text-slate-400">
@@ -510,9 +549,9 @@ function DashboardContent() {
                                                                     </li>
                                                                 ))}
                                                             </ul>
-                                                        ) : (
+                                                        ) : analysisResult.recommendations && typeof analysisResult.recommendations === 'object' ? (
                                                             <div className="space-y-4">
-                                                                {analysisResult.recommendations.immediate && (
+                                                                {analysisResult.recommendations.immediate && Array.isArray(analysisResult.recommendations.immediate) && (
                                                                     <div>
                                                                         <h5 className="text-xs font-semibold text-red-400 uppercase mb-2">Immediate Action</h5>
                                                                         <ul className="space-y-2">
@@ -525,7 +564,7 @@ function DashboardContent() {
                                                                         </ul>
                                                                     </div>
                                                                 )}
-                                                                {analysisResult.recommendations.shortTerm && (
+                                                                {analysisResult.recommendations.shortTerm && Array.isArray(analysisResult.recommendations.shortTerm) && (
                                                                     <div>
                                                                         <h5 className="text-xs font-semibold text-amber-400 uppercase mb-2">Short Term</h5>
                                                                         <ul className="space-y-2">
@@ -538,7 +577,7 @@ function DashboardContent() {
                                                                         </ul>
                                                                     </div>
                                                                 )}
-                                                                {analysisResult.recommendations.longTerm && (
+                                                                {analysisResult.recommendations.longTerm && Array.isArray(analysisResult.recommendations.longTerm) && (
                                                                     <div>
                                                                         <h5 className="text-xs font-semibold text-blue-400 uppercase mb-2">Long Term</h5>
                                                                         <ul className="space-y-2">
@@ -552,6 +591,8 @@ function DashboardContent() {
                                                                     </div>
                                                                 )}
                                                             </div>
+                                                        ) : (
+                                                            <p className="text-sm text-slate-500 italic">No recommendations available</p>
                                                         )}
                                                     </div>
                                                 </div>
@@ -580,6 +621,30 @@ function DashboardContent() {
                                         </Card>
                                     ))}
                                 </div>
+
+                                {/* Settings Redirect Card */}
+                                <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm shadow-lg">
+                                    <CardHeader>
+                                        <CardTitle className="text-slate-100 flex items-center">
+                                            <Settings className="w-5 h-5 mr-2 text-emerald-400" />
+                                            Settings
+                                        </CardTitle>
+                                        <CardDescription className="text-slate-400">Configure AI providers, models, and system settings</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6">
+                                        <div className="space-y-4">
+                                            <p className="text-sm text-slate-300">
+                                                Access the unified settings page to manage AI providers, configure models, adjust system preferences, and customize your cultivation experience.
+                                            </p>
+                                            <Link href="/settings">
+                                                <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(5,150,105,0.3)] transition-all duration-300">
+                                                    <Settings className="w-4 h-4 mr-2" />
+                                                    Open Settings
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </CardContent>
+                                </Card>
 
                                 {/* Trends and Alerts */}
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -659,21 +724,7 @@ function DashboardContent() {
                             </div>
                         )}
 
-                        {/* Settings Dashboard */}
-                        {activeDashboard === 'settings' && (
-                            <div className="max-w-2xl mx-auto">
-                                <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm">
-                                    <CardHeader>
-                                        <CardTitle className="text-slate-100">Settings</CardTitle>
-                                        <CardDescription className="text-slate-400">Manage your preferences and AI configuration</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <AIProviderSettings />
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
-
+  
                         {/* Analytics Dashboard (Placeholder/Alternative) */}
                         {activeDashboard === 'analytics' && (
                             <div className="grid grid-cols-1 gap-6">
@@ -690,7 +741,7 @@ function DashboardContent() {
                                             {/* Same recommendations logic */}
                                             <div className="mt-6">
                                                 <h4 className="text-sm font-medium text-slate-300 mb-3">Recommendations</h4>
-                                                {Array.isArray(analysisResult.recommendations) ? (
+                                                {analysisResult.recommendations && Array.isArray(analysisResult.recommendations) ? (
                                                     <ul className="space-y-2">
                                                         {analysisResult.recommendations.map((rec: string, i: number) => (
                                                             <li key={i} className="flex items-start text-sm text-slate-400">
@@ -699,9 +750,9 @@ function DashboardContent() {
                                                             </li>
                                                         ))}
                                                     </ul>
-                                                ) : (
+                                                ) : analysisResult.recommendations && typeof analysisResult.recommendations === 'object' ? (
                                                     <div className="space-y-4">
-                                                        {analysisResult.recommendations.immediate && (
+                                                        {analysisResult.recommendations.immediate && Array.isArray(analysisResult.recommendations.immediate) && (
                                                             <div>
                                                                 <h5 className="text-xs font-semibold text-red-400 uppercase mb-2">Immediate Action</h5>
                                                                 <ul className="space-y-2">
@@ -714,7 +765,7 @@ function DashboardContent() {
                                                                 </ul>
                                                             </div>
                                                         )}
-                                                        {analysisResult.recommendations.shortTerm && (
+                                                        {analysisResult.recommendations.shortTerm && Array.isArray(analysisResult.recommendations.shortTerm) && (
                                                             <div>
                                                                 <h5 className="text-xs font-semibold text-amber-400 uppercase mb-2">Short Term</h5>
                                                                 <ul className="space-y-2">
@@ -727,7 +778,7 @@ function DashboardContent() {
                                                                 </ul>
                                                             </div>
                                                         )}
-                                                        {analysisResult.recommendations.longTerm && (
+                                                        {analysisResult.recommendations.longTerm && Array.isArray(analysisResult.recommendations.longTerm) && (
                                                             <div>
                                                                 <h5 className="text-xs font-semibold text-blue-400 uppercase mb-2">Long Term</h5>
                                                                 <ul className="space-y-2">
@@ -741,6 +792,8 @@ function DashboardContent() {
                                                             </div>
                                                         )}
                                                     </div>
+                                                ) : (
+                                                    <p className="text-sm text-slate-500 italic">No recommendations available</p>
                                                 )}
                                             </div>
                                         </CardContent>
@@ -756,13 +809,50 @@ function DashboardContent() {
                     </div>
                 </ScrollArea >
             </main >
+
+            {/* AI Assistant Sidebar */}
+            <AnimatePresence>
+                {aiSidebarOpen && (
+                    <CannaAIAssistantSidebar
+                        sensorData={sensorData}
+                        currentModel={{
+                            name: 'CannaAI Assistant',
+                            provider: 'auto',
+                            hasVision: true,
+                            isAvailable: true
+                        }}
+                        initialContext={{
+                            page: 'dashboard',
+                            title: 'CannaAI Pro Dashboard',
+                            data: {
+                                activeTab: activeDashboard,
+                                analysisResult: analysisResult
+                            }
+                        }}
+                        onToggleCollapse={setAiSidebarOpen}
+                    />
+                )}
+            </AnimatePresence>
         </div >
     );
 }
 
+// Loading fallback for Suspense
+function DashboardLoading() {
+    return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+            <div className="flex flex-col items-center space-y-4">
+                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                <p className="text-slate-400">Loading dashboard...</p>
+            </div>
+        </div>
+    );
+}
+
+// Main export with Suspense boundary
 export default function CultivAIPro() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center h-screen bg-slate-950"><Loader2 className="w-8 h-8 text-emerald-500 animate-spin" /></div>}>
+        <Suspense fallback={<DashboardLoading />}>
             <DashboardContent />
         </Suspense>
     );

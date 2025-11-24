@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { detectAvailableProviders, getProviderConfig, executeAIWithFallback } from '@/lib/ai-provider-detection';
+import { detectAvailableProviders, getProviderConfig, executeAIWithFallback, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { getAgentEvolverClient } from '@/lib/agent-evolver';
 
 // Export configuration for dual-mode compatibility
@@ -71,6 +71,22 @@ export async function POST(request: NextRequest) {
     // Detect available AI providers
     const providerDetection = await detectAvailableProviders();
     console.log(`📡 Primary chat provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
+
+    // Check if AI providers are available before processing
+    if (!providerDetection.primary.isAvailable || providerDetection.primary.provider === 'fallback') {
+      throw new AIProviderUnavailableError(
+        'No AI providers are configured. Please connect an AI provider to use the chat assistant.',
+        {
+          recommendations: [
+            'Configure OpenRouter API key for cloud-based AI chat',
+            'Set up LM Studio for local development (non-serverless only)',
+            'Visit Settings to configure your AI provider'
+          ],
+          availableProviders: [],
+          setupRequired: true
+        }
+      );
+    }
 
     // Get contextual prompt based on mode and current data
     const contextPrompt = getContextualPrompt(mode, context || {}, sensorData || {}, message);
@@ -177,6 +193,37 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     const totalTime = Date.now() - startTime;
+
+    // Handle AI provider unavailability specifically
+    if (error instanceof AIProviderUnavailableError) {
+      console.error('❌ AI provider unavailable for chat:', error.message);
+
+      return NextResponse.json({
+        success: false,
+        error: {
+          type: 'ai_provider_unavailable',
+          message: 'AI Provider Required',
+          userMessage: 'An AI provider is required for the chat assistant. Please configure an AI provider in Settings.',
+          details: error.message,
+          recommendations: error.recommendations,
+          setupRequired: error.setupRequired,
+          timestamp: new Date().toISOString(),
+          processingTime: `${totalTime}ms`,
+          buildMode: 'server'
+        },
+        setupGuide: {
+          title: 'Configure AI Provider for Chat',
+          steps: [
+            'Go to Settings → AI Configuration',
+            'Configure OpenRouter API key (recommended for production)',
+            'Or set up LM Studio for local development',
+            'Test connection and return to chat'
+          ],
+          helpText: 'AI chat assistant requires an active AI provider connection. Fallback responses have been removed to ensure quality.'
+        }
+      }, { status: 503 }); // Service Unavailable
+    }
+
     console.error('Chat API error:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       processingTime: `${totalTime}ms`
@@ -269,12 +316,10 @@ export async function GET() {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to detect AI providers',
         timestamp: new Date().toISOString(),
-        fallback: {
-          provider: 'rule-based',
-          message: 'AI provider detection failed, but basic functionality is available'
-        }
+        aiProviderRequired: true,
+        message: 'AI provider detection failed - chat functionality requires an active AI provider'
       },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }

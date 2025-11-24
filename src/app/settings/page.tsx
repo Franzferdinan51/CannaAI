@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
@@ -10,6 +11,49 @@ import { Brain, Cpu, ServerCog, Settings2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
+
+function SettingsContent() {
+  const searchParams = useSearchParams();
+  const [defaultTab, setDefaultTab] = useState('ai');
+
+  useEffect(() => {
+    const tab = searchParams?.get('tab');
+    if (tab && ['ai', 'lmstudio', 'evolver'].includes(tab)) {
+      setDefaultTab(tab);
+    }
+  }, [searchParams]);
+
+  return (
+    <Tabs defaultValue={defaultTab} className="space-y-6">
+      <TabsList className="bg-slate-800/60 text-slate-300">
+        <TabsTrigger value="ai" className="data-[state=active]:text-emerald-300">
+          <Brain className="w-4 h-4 mr-2" />
+          AI Providers
+        </TabsTrigger>
+        <TabsTrigger value="lmstudio" className="data-[state=active]:text-emerald-300">
+          <ServerCog className="w-4 h-4 mr-2" />
+          LM Studio
+        </TabsTrigger>
+        <TabsTrigger value="evolver" className="data-[state=active]:text-emerald-300">
+          <Cpu className="w-4 h-4 mr-2" />
+          AgentEvolver
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="ai" className="space-y-4">
+        <AIProviderSettings />
+      </TabsContent>
+
+      <TabsContent value="lmstudio" className="space-y-4">
+        <LMStudioSettings />
+      </TabsContent>
+
+      <TabsContent value="evolver" className="space-y-4">
+        <AgentEvolverSettings />
+      </TabsContent>
+    </Tabs>
+  );
+}
 
 export default function SettingsPage() {
   return (
@@ -37,34 +81,13 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="ai" className="space-y-6">
-              <TabsList className="bg-slate-800/60 text-slate-300">
-                <TabsTrigger value="ai" className="data-[state=active]:text-emerald-300">
-                  <Brain className="w-4 h-4 mr-2" />
-                  AI Providers
-                </TabsTrigger>
-                <TabsTrigger value="lmstudio" className="data-[state=active]:text-emerald-300">
-                  <ServerCog className="w-4 h-4 mr-2" />
-                  LM Studio
-                </TabsTrigger>
-                <TabsTrigger value="evolver" className="data-[state=active]:text-emerald-300">
-                  <Cpu className="w-4 h-4 mr-2" />
-                  AgentEvolver
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="ai" className="space-y-4">
-                <AIProviderSettings />
-              </TabsContent>
-
-              <TabsContent value="lmstudio" className="space-y-4">
-                <LMStudioSettings />
-              </TabsContent>
-
-              <TabsContent value="evolver" className="space-y-4">
-                <AgentEvolverSettings />
-              </TabsContent>
-            </Tabs>
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
+              </div>
+            }>
+              <SettingsContent />
+            </Suspense>
           </CardContent>
         </Card>
       </div>

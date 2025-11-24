@@ -36,9 +36,11 @@ export const analyzeRequestSchema = z.object({
     .default("Unknown strain"),
 
   leafSymptoms: z.string()
-    .min(1, "Symptoms description required")
     .max(2000, "Symptoms description too long")
-    .transform(sanitizeString)
+    .transform(val => {
+      const sanitized = sanitizeString(val);
+      return sanitized === '' ? 'No symptoms specified' : sanitized;
+    })
     .optional()
     .default("General symptoms"),
 

@@ -23,7 +23,7 @@ import {
   X
 } from 'lucide-react';
 
-export type ViewMode = 'chat' | 'live-vision' | 'plant-health' | 'nutrients' | 'genetics' | 'pest-disease' | 'tools' | 'settings';
+export type ViewMode = 'chat' | 'live-vision' | 'plant-health' | 'nutrients' | 'genetics' | 'pest-disease' | 'tools';
 export type ChatMode = 'chat' | 'analysis' | 'diagnosis' | 'recommendation' | 'trichome' | 'harvest';
 
 interface Message {
@@ -59,7 +59,7 @@ const mainTools = [
 
 const assistantModes: { mode: ChatMode; label: string; icon: ReactElement; description: string }[] = [
   { mode: 'analysis', label: 'Plant Analysis', icon: <Bug className="h-5 w-5" />, description: 'Analyze plant health and issues' },
-  { mode: 'diagnosis', label: 'Problem Diagnosis', icon: <Settings className="h-5 w-5" />, description: 'Diagnose cultivation problems' },
+  { mode: 'diagnosis', label: 'Problem Diagnosis', icon: <Wrench className="h-5 w-5" />, description: 'Diagnose cultivation problems' },
   { mode: 'recommendation', label: 'Growing Advice', icon: <TrendingUp className="h-5 w-5" />, description: 'Get cultivation recommendations' },
   { mode: 'trichome', label: 'Trichome Analysis', icon: <Beaker className="h-5 w-5" />, description: 'Analyze trichome development' },
   { mode: 'harvest', label: 'Harvest Planning', icon: <Package className="h-5 w-5" />, description: 'Optimize harvest timing' },
@@ -295,16 +295,11 @@ const CannaAISidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Footer */}
+        {/* Footer - Settings removed to avoid duplication */}
         <div className="p-4 border-t border-slate-700 flex-shrink-0">
-          <Button
-            onClick={() => handleActionClick(() => setActiveView('settings'))}
-            variant="outline"
-            className="w-full border-slate-600 text-slate-300 hover:bg-slate-700/50"
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
+          <div className="text-xs text-slate-500 text-center">
+            Use the main navigation to access Settings
+          </div>
         </div>
       </aside>
     </>
