@@ -45,9 +45,9 @@ export async function detectAvailableProviders(): Promise<{
   const results: ProviderDetectionResult[] = [];
   const recommendations: string[] = [];
 
-  // Skip LM Studio for testing (local models disabled)
-  // const lmStudioResult = await checkLMStudio();
-  // results.push(lmStudioResult);
+  // Check LM Studio
+  const lmStudioResult = await checkLMStudio();
+  results.push(lmStudioResult);
 
   // Check OpenRouter (works everywhere)
   const openRouterResult = await checkOpenRouter();

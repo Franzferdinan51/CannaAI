@@ -504,9 +504,9 @@ export function validateImageSize(buffer: Buffer, maxSizeInMB: number = 10): voi
 /**
  * Check if image has valid dimensions
  */
-export function validateImageDimensions(buffer: Buffer, minWidth: number = 1, minHeight: number = 1): void {
+export async function validateImageDimensions(buffer: Buffer, minWidth: number = 1, minHeight: number = 1): Promise<void> {
   try {
-    const metadata = sharp(buffer).metadata();
+    const metadata = await sharp(buffer).metadata();
 
     if (!metadata.width || !metadata.height) {
       throw new ImageProcessingError('Unable to determine image dimensions');
@@ -571,7 +571,7 @@ export async function handleImageUpload(
     validateImageSize(inputBuffer, maxSizeInMB);
 
     // Validate dimensions
-    validateImageDimensions(inputBuffer);
+    await validateImageDimensions(inputBuffer);
 
     // Auto-orient image based on EXIF
     const orientedBuffer = await autoOrientImage(inputBuffer);
