@@ -4,9 +4,8 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
-import { LMStudioSettings } from '@/components/lmstudio/LMStudioSettings';
 import { AgentEvolverSettings } from '@/components/ai/AgentEvolverSettings';
-import { Brain, Cpu, ServerCog, Settings2 } from 'lucide-react';
+import { Brain, Cpu, Settings2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -43,10 +42,6 @@ export default function SettingsPage() {
                   <Brain className="w-4 h-4 mr-2" />
                   AI Providers
                 </TabsTrigger>
-                <TabsTrigger value="lmstudio" className="data-[state=active]:text-emerald-300">
-                  <ServerCog className="w-4 h-4 mr-2" />
-                  LM Studio
-                </TabsTrigger>
                 <TabsTrigger value="evolver" className="data-[state=active]:text-emerald-300">
                   <Cpu className="w-4 h-4 mr-2" />
                   AgentEvolver
@@ -55,10 +50,6 @@ export default function SettingsPage() {
 
               <TabsContent value="ai" className="space-y-4">
                 <AIProviderSettings />
-              </TabsContent>
-
-              <TabsContent value="lmstudio" className="space-y-4">
-                <LMStudioSettings />
               </TabsContent>
 
               <TabsContent value="evolver" className="space-y-4">
