@@ -40,6 +40,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
 import { AgentEvolverSettings } from '@/components/ai/AgentEvolverSettings';
+import { UnifiedAIAssistant } from '@/components/ai/unified-assistant';
 
 // Default strain database with purple strain indicators
 const defaultStrains = [
@@ -797,51 +798,49 @@ export default function CultivAIPro() {
 
       const result = await response.json();
 
-      // Handle the wrapped response structure from createAPIResponse
-      const responseData = result.data || result;
-
-      if (responseData.success && responseData.analysis) {
+      // Direct response structure - no wrapper needed
+      if (result.success && result.analysis) {
         // Transform the AI analysis result to match the expected frontend format
         const analysisResult = {
-          diagnosis: responseData.analysis.diagnosis,
-          confidence: responseData.analysis.confidence,
-          symptomsMatched: responseData.analysis.symptomsMatched || [],
-          causes: responseData.analysis.causes || [],
-          treatment: responseData.analysis.treatment || [],
-          healthScore: responseData.analysis.healthScore,
-          strainSpecificAdvice: responseData.analysis.strainSpecificAdvice,
-          reasoning: responseData.analysis.reasoning || [],
-          isPurpleStrain: responseData.analysis.isPurpleStrain || false,
-          recommendations: responseData.analysis.recommendations || [],
+          diagnosis: result.analysis.diagnosis,
+          confidence: result.analysis.confidence,
+          symptomsMatched: result.analysis.symptomsMatched || [],
+          causes: result.analysis.causes || [],
+          treatment: result.analysis.treatment || [],
+          healthScore: result.analysis.healthScore,
+          strainSpecificAdvice: result.analysis.strainSpecificAdvice,
+          reasoning: result.analysis.reasoning || [],
+          isPurpleStrain: result.analysis.isPurpleStrain || false,
+          recommendations: result.analysis.recommendations || [],
           // NEW COMPREHENSIVE DIAGNOSTIC FIELDS
-          pestsDetected: responseData.analysis.pestsDetected || [],
-          diseasesDetected: responseData.analysis.diseasesDetected || [],
-          environmentalFactors: responseData.analysis.environmentalFactors || [],
-          urgency: responseData.analysis.urgency || 'medium',
-          preventativeMeasures: responseData.analysis.preventativeMeasures || [],
-          imageAnalysis: responseData.analysis.imageAnalysis || { hasImage: false, visualFindings: [], confidence: 0 },
-          detailedRecommendations: responseData.analysis.recommendations || {
+          pestsDetected: result.analysis.pestsDetected || [],
+          diseasesDetected: result.analysis.diseasesDetected || [],
+          environmentalFactors: result.analysis.environmentalFactors || [],
+          urgency: result.analysis.urgency || 'medium',
+          preventativeMeasures: result.analysis.preventativeMeasures || [],
+          imageAnalysis: result.analysis.imageAnalysis || { hasImage: false, visualFindings: [], confidence: 0 },
+          detailedRecommendations: result.analysis.recommendations || {
             immediate: [],
             shortTerm: [],
             longTerm: []
           },
-          followUpSchedule: responseData.analysis.followUpSchedule || 'Monitor regularly',
+          followUpSchedule: result.analysis.followUpSchedule || 'Monitor regularly',
           // Additional fields for enhanced display
           primaryIssue: {
-            name: responseData.analysis.diagnosis,
-            severity: responseData.analysis.healthScore > 70 ? 'low' : responseData.analysis.healthScore > 40 ? 'medium' : 'high',
-            confidence: responseData.analysis.confidence,
-            urgency: responseData.analysis.urgency || 'medium'
+            name: result.analysis.diagnosis,
+            severity: result.analysis.healthScore > 70 ? 'low' : result.analysis.healthScore > 40 ? 'medium' : 'high',
+            confidence: result.analysis.confidence,
+            urgency: result.analysis.urgency || 'medium'
           },
-          totalIssues: (responseData.analysis.causes?.length || 0) +
-                     (responseData.analysis.pestsDetected?.length || 0) +
-                     (responseData.analysis.diseasesDetected?.length || 0),
+          totalIssues: (result.analysis.causes?.length || 0) +
+                     (result.analysis.pestsDetected?.length || 0) +
+                     (result.analysis.diseasesDetected?.length || 0),
           // Add fallback information
-          fallbackUsed: responseData.fallbackUsed || false,
-          fallbackReason: responseData.fallbackReason || null,
+          fallbackUsed: result.fallbackUsed || false,
+          fallbackReason: result.fallbackReason || null,
           // Add diagnostic capabilities
-          diagnosticCapabilities: responseData.diagnosticCapabilities || {},
-          imageInfo: responseData.imageInfo || null
+          diagnosticCapabilities: result.diagnosticCapabilities || {},
+          imageInfo: result.imageInfo || null
         };
 
         setAnalysisResult(analysisResult);
@@ -3983,6 +3982,17 @@ export default function CultivAIPro() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Unified AI Assistant */}
+      <UnifiedAIAssistant
+        initialContext={{
+          page: 'dashboard',
+          title: 'CannaAI Pro Dashboard',
+          section: activeDashboard,
+          sensorData: sensorData,
+          currentAnalysis: analysisResult
+        }}
+      />
 
       </div>
   );
