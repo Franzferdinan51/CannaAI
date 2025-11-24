@@ -47,6 +47,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
 import { AgentDashboard } from '@/components/agent/AgentDashboard';
+import UnifiedAIAssistant from '@/components/ai/unified-assistant';
 
 // Default strain database with purple strain indicators (Fallback)
 const defaultStrains = [
@@ -757,6 +758,17 @@ function DashboardContent() {
                     </div>
                 </ScrollArea >
             </main >
+
+            {/* Unified AI Assistant */}
+            <UnifiedAIAssistant
+                initialContext={{
+                    page: 'dashboard',
+                    title: 'CannaAI Pro Dashboard',
+                    section: activeDashboard,
+                    sensorData: sensorData,
+                    currentAnalysis: analysisResult
+                }}
+            />
         </div >
     );
 }
