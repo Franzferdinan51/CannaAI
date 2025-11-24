@@ -2,14 +2,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { ChatInput } from '@/components/chat/ChatInput';
-import { ChatMessage } from '@/components/chat/ChatMessage';
-import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import {
   Bot,
   MessageSquare,
@@ -27,66 +19,354 @@ import {
   Thermometer,
   Sun,
   Loader2,
-  Send,
   Camera,
   Trash2,
   Download,
   RefreshCw,
   Eye,
-  Brain
+  Brain,
+  Send,
+  Image as ImageIcon
 } from 'lucide-react';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  image?: string;
-  model?: string;
-  provider?: string;
-  processingTime?: string;
-  isTyping?: boolean;
-  context?: any;
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
+import { Badge } from './ui/Badge';
+import { ScrollArea } from './ui/ScrollArea';
+import { Separator } from './ui/Separator';
+import { Input } from './ui/Input';
+import { Alert } from './ui/Alert';
+
+import {
+  Message,
+  SensorData,
+  AIModel,
+  PageContext,
+  CannaAIAssistantSidebarProps
+} from '../types';
+
+import { apiClient, isNetworkError, getErrorMessage } from '../services/api';
+
+// Chat input component
+interface ChatInputProps {
+  input: string;
+  setInput: (value: string) => void;
+  selectedImage: string | null;
+  onSendMessage: () => void;
+  onImageUpload: (file: File) => void;
+  onRemoveImage: () => void;
+  isLoading: boolean;
+  isDragging: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
 }
 
-interface SensorData {
-  temperature: number;
-  humidity: number;
-  ph: number;
-  soilMoisture: number;
-  lightIntensity: number;
-  ec: number;
-  co2?: number;
-  vpd?: number;
+function ChatInput({
+  input,
+  setInput,
+  selectedImage,
+  onSendMessage,
+  onImageUpload,
+  onRemoveImage,
+  isLoading,
+  isDragging,
+  onDragOver,
+  onDragLeave,
+  onDrop
+}: ChatInputProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageSelect = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      onImageUpload(file);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageSelect(file);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onSendMessage();
+    }
+  };
+
+  return (
+    <div className={`border-t border-slate-700 p-4 space-y-3 ${
+      isDragging ? 'bg-emerald-950/20' : 'bg-slate-900/50'
+    }`}>
+      {/* Image Preview */}
+      {selectedImage && (
+        <div className="relative bg-slate-800/50 rounded-lg p-2 border border-slate-700">
+          <img
+            src={selectedImage}
+            alt="Selected"
+            className="w-full h-24 object-contain rounded"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute top-1 right-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 h-6 w-6 p-0"
+            onClick={onRemoveImage}
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      )}
+
+      {/* Input Area */}
+      <div
+        className="relative border border-slate-700 rounded-lg bg-slate-950/30 transition-colors hover:border-slate-600"
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        <div className="flex items-center">
+          {/* Image Upload Button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-slate-400 hover:text-slate-200 h-10 w-10 p-0 rounded-l-lg border-r border-slate-700"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading}
+          >
+            <Camera className="w-4 h-4" />
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileInput}
+          />
+
+          {/* Text Input */}
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={selectedImage ? "Add a message with your image..." : "Ask about cultivation, plant health, or growing conditions..."}
+            className="border-0 bg-transparent focus:ring-0 flex-1 text-slate-200 placeholder-slate-500"
+            disabled={isLoading}
+          />
+
+          {/* Send Button */}
+          <Button
+            type="button"
+            onClick={onSendMessage}
+            disabled={isLoading || (!input.trim() && !selectedImage)}
+            className="text-emerald-400 hover:text-emerald-300 h-10 w-10 p-0 rounded-r-lg border-l border-slate-700"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Drag Overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-emerald-500/10 border-2 border-emerald-500/50 rounded-lg flex items-center justify-center pointer-events-none">
+          <div className="text-center">
+            <ImageIcon className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+            <p className="text-sm text-emerald-300">Drop image here</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-interface AIModel {
-  name: string;
-  provider: string;
-  hasVision: boolean;
-  isAvailable: boolean;
-}
-
-interface PageContext {
-  page: string;
-  title: string;
-  data?: any;
-}
-
-interface CannaAIAssistantSidebarProps {
+// Quick actions sidebar component
+interface ChatSidebarActionsProps {
+  onClearChat: () => void;
+  onExportChat: () => void;
   sensorData: SensorData;
   currentModel?: AIModel;
-  initialContext?: PageContext;
-  onToggleCollapse?: (collapsed: boolean) => void;
-  className?: string;
 }
 
-export function CannaAIAssistantSidebar({
+function ChatSidebarActions({ onClearChat, onExportChat, sensorData, currentModel }: ChatSidebarActionsProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="space-y-4">
+      {/* Quick Actions */}
+      <div className="space-y-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setExpanded(!expanded)}
+          className="w-full justify-start text-slate-400 hover:text-slate-200"
+        >
+          <Leaf className="w-4 h-4 mr-2" />
+          Quick Actions
+        </Button>
+
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-2 pl-6"
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-slate-400 hover:text-slate-200 text-xs"
+                onClick={() => navigator.clipboard.writeText(`Current conditions: ${sensorData.temperature}°F, ${sensorData.humidity}% humidity`)}
+              >
+                <Thermometer className="w-3 h-3 mr-2" />
+                Copy Conditions
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-slate-400 hover:text-slate-200 text-xs"
+                onClick={() => window.open('/dashboard?view=analysis', '_self')}
+              >
+                <Brain className="w-3 h-3 mr-2" />
+                New Analysis
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Management Actions */}
+      <Separator className="bg-slate-700" />
+      <div className="space-y-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClearChat}
+          className="w-full justify-start text-slate-400 hover:text-slate-200"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Clear Chat
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onExportChat}
+          className="w-full justify-start text-slate-400 hover:text-slate-200"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Export Chat
+        </Button>
+      </div>
+
+      {/* Model Info */}
+      {currentModel && (
+        <>
+          <Separator className="bg-slate-700" />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">Current Model</span>
+              <Badge variant="outline" className="border-emerald-500/50 text-emerald-400">
+                {currentModel.name}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">Provider</span>
+              <span className="text-slate-400">{currentModel.provider}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">Vision</span>
+              <span className={currentModel.hasVision ? 'text-emerald-400' : 'text-slate-500'}>
+                {currentModel.hasVision ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Message display component
+function MessageDisplay({ message }: { message: Message }) {
+  if (message.isTyping) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex justify-start"
+      >
+        <div className="bg-emerald-800/50 border border-emerald-600/30 text-emerald-100 p-3 rounded-lg max-w-[80%]">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Thinking...</span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  const isUser = message.role === 'user';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+    >
+      <div className={`max-w-[80%] ${isUser ? 'order-2' : 'order-1'}`}>
+        {/* Message content */}
+        <div className={`p-3 rounded-lg ${
+          isUser
+            ? 'bg-blue-600/20 border border-blue-500/30 text-blue-100'
+            : 'bg-emerald-800/50 border border-emerald-600/30 text-emerald-100'
+        }`}>
+          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+
+          {/* Image attachment */}
+          {message.image && (
+            <div className="mt-2">
+              <img
+                src={message.image}
+                alt="Attached"
+                className="w-full h-32 object-contain rounded bg-slate-900/50"
+              />
+            </div>
+          )}
+
+          {/* Metadata */}
+          <div className="flex items-center justify-between mt-2 text-xs opacity-70">
+            <span>{message.timestamp.toLocaleTimeString()}</span>
+            {message.provider && (
+              <Badge variant="outline" className="border-current/30 text-current">
+                {message.provider}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Processing info for assistant messages */}
+        {!isUser && message.processingTime && (
+          <div className="text-xs text-slate-500 mt-1">
+            Processed in {message.processingTime}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+export function AIAssistantSidebar({
   sensorData,
   currentModel,
   initialContext = { page: 'dashboard', title: 'CannaAI Pro Dashboard' },
   onToggleCollapse,
-  className = ""
+  className = ''
 }: CannaAIAssistantSidebarProps) {
   // State management
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -95,11 +375,11 @@ export function CannaAIAssistantSidebar({
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [width, setWidth] = useState(400);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('disconnected');
   const [context, setContext] = useState<PageContext>(initialContext);
   const [isDraggingWidth, setIsDraggingWidth] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -144,10 +424,8 @@ export function CannaAIAssistantSidebar({
     const testConnection = async () => {
       setConnectionStatus('testing');
       try {
-        const response = await fetch('/api/chat');
-        const data = await response.json();
-
-        if (data.success && data.currentProvider !== 'fallback') {
+        const response = await apiClient.healthCheck();
+        if (response.status === 'ok') {
           setConnectionStatus('connected');
         } else {
           setConnectionStatus('disconnected');
@@ -201,7 +479,7 @@ export function CannaAIAssistantSidebar({
   }, [isCollapsed, onToggleCollapse]);
 
   // Send message to AI
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if ((!input.trim() && !selectedImage) || isLoading) return;
 
     const userMessage: Message = {
@@ -229,38 +507,30 @@ export function CannaAIAssistantSidebar({
     setMessages(prev => [...prev, typingMessage]);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: userMessage.content,
-          image: userMessage.image,
-          context: context,
-          sensorData: sensorData,
-          mode: 'chat'
-        })
+      const response = await apiClient.sendMessage({
+        message: userMessage.content,
+        image: userMessage.image,
+        context: context,
+        sensorData: sensorData,
+        mode: 'chat'
       });
-
-      const data = await response.json();
 
       // Remove typing indicator
       setMessages(prev => prev.filter(msg => msg.id !== typingId));
 
-      if (data.success) {
+      if (response.success) {
         const assistantMessage: Message = {
           id: (Date.now() + 2).toString(),
           role: 'assistant',
-          content: data.response,
+          content: response.response,
           timestamp: new Date(),
-          model: data.model,
-          provider: data.provider,
-          processingTime: data.processingTime,
+          model: response.model,
+          provider: response.provider,
+          processingTime: response.processingTime,
           context: {
-            fallback: data.fallback,
-            providerInfo: data.providerInfo,
-            agentEvolver: data.agentEvolver
+            fallback: response.fallback,
+            providerInfo: response.providerInfo,
+            agentEvolver: response.agentEvolver
           }
         };
         setMessages(prev => [...prev, assistantMessage]);
@@ -268,7 +538,7 @@ export function CannaAIAssistantSidebar({
         const errorMessage: Message = {
           id: (Date.now() + 2).toString(),
           role: 'assistant',
-          content: data.error?.userMessage || data.error || 'Sorry, I encountered an error. Please check your AI provider configuration.',
+          content: response.error?.userMessage || response.error?.message || 'Sorry, I encountered an error. Please check your AI provider configuration.',
           timestamp: new Date()
         };
         setMessages(prev => [...prev, errorMessage]);
@@ -277,26 +547,33 @@ export function CannaAIAssistantSidebar({
       // Remove typing indicator
       setMessages(prev => prev.filter(msg => msg.id !== typingId));
 
-      const errorMessage: Message = {
+      let errorMessage = 'Connection failed. Please check your internet connection and AI provider configuration.';
+      if (isNetworkError(error)) {
+        errorMessage = 'Network error. Unable to reach AI service.';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      const errorResponse: Message = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: 'Connection failed. Please check your internet connection and AI provider configuration.',
+        content: errorMessage,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorResponse]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [input, selectedImage, isLoading, context, sensorData]);
 
   // Clear chat history
-  const clearChat = () => {
+  const clearChat = useCallback(() => {
     setMessages([]);
     localStorage.removeItem('cannai-chat-history');
-  };
+  }, []);
 
   // Export chat history
-  const exportChat = () => {
+  const exportChat = useCallback(() => {
     const chatContent = messages.map(msg =>
       `[${msg.timestamp.toLocaleString()}] ${msg.role.toUpperCase()}: ${msg.content}`
     ).join('\n\n');
@@ -310,31 +587,29 @@ export function CannaAIAssistantSidebar({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }, [messages]);
 
   // Handle image upload
-  const handleImageUpload = (file: File) => {
+  const handleImageUpload = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setSelectedImage(reader.result as string);
     };
     reader.readAsDataURL(file);
-  };
+  }, []);
 
   // Handle drag and drop
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(true);
-  };
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
 
@@ -342,10 +617,10 @@ export function CannaAIAssistantSidebar({
     if (file && file.type.startsWith('image/')) {
       handleImageUpload(file);
     }
-  };
+  }, [handleImageUpload]);
 
   // Contextual greeting based on current page
-  const getContextualGreeting = () => {
+  const getContextualGreeting = useCallback(() => {
     switch (context.page) {
       case 'dashboard':
         return "🌱 Welcome back! I'm here to help with your cultivation overview.";
@@ -358,7 +633,7 @@ export function CannaAIAssistantSidebar({
       default:
         return "🌿 Hello! I'm your CannaAI assistant. How can I help with your cultivation today?";
     }
-  };
+  }, [context.page]);
 
   // If collapsed, show only toggle button
   if (isCollapsed) {
@@ -409,7 +684,7 @@ export function CannaAIAssistantSidebar({
     >
       {/* Width resize handle */}
       <div
-        className="absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-emerald-500 transition-colors"
+        className="absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-emerald-500 transition-colors z-10"
         onMouseDown={handleWidthDragStart}
       />
 
@@ -498,7 +773,9 @@ export function CannaAIAssistantSidebar({
                 {messages.length === 0 ? (
                   <div className="text-center text-slate-400 py-8">
                     <Bot className="h-12 w-12 mx-auto mb-3 text-slate-500" />
-                    <p className="text-sm font-medium text-slate-300">{getContextualGreeting()}</p>
+                    <p className="text-sm font-medium text-slate-300">
+                      {getContextualGreeting()}
+                    </p>
                     <p className="text-xs mt-2 text-slate-500">
                       {connectionStatus === 'connected'
                         ? 'Ask me anything about cannabis cultivation!'
@@ -506,31 +783,25 @@ export function CannaAIAssistantSidebar({
                       }
                     </p>
                     {connectionStatus === 'disconnected' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-3 border-emerald-600 text-emerald-400 hover:bg-emerald-900/20"
-                        onClick={() => window.location.href = '/settings'}
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Configure AI
-                      </Button>
+                      <Alert className="mt-4 border-amber-500/50 bg-amber-950/20">
+                        <AlertCircle className="h-4 w-4" />
+                        <Alert.Description className="text-amber-300">
+                          AI provider is not configured.
+                          <Button
+                            variant="link"
+                            className="p-0 h-auto ml-1 text-amber-400 hover:text-amber-300"
+                            onClick={() => window.location.href = '/settings'}
+                          >
+                            Configure now
+                          </Button>
+                        </Alert.Description>
+                      </Alert>
                     )}
                   </div>
                 ) : (
                   messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
+                    <MessageDisplay key={message.id} message={message} />
                   ))
-                )}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-emerald-800/50 border border-emerald-600/30 text-emerald-100 p-3 rounded-lg max-w-[80%]">
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Thinking...</span>
-                      </div>
-                    </div>
-                  </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -554,7 +825,7 @@ export function CannaAIAssistantSidebar({
 
           {/* Quick actions sidebar */}
           <div className="border-t border-slate-700 p-4">
-            <ChatSidebar
+            <ChatSidebarActions
               onClearChat={clearChat}
               onExportChat={exportChat}
               sensorData={sensorData}

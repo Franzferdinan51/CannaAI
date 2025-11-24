@@ -1,0 +1,2664 @@
+[33m[nodemon] 3.1.10[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): server.ts src\**\*[39m
+[33m[nodemon] watching extensions: ts,tsx,js,jsx[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: oQ0Nguau4dvmMCeaAAAA (Total: 1)
+Client connected: ZAEmenK_CKA5CnF0AAAB
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 4.1s (3109 modules)
+Client disconnected: ZAEmenK_CKA5CnF0AAAB
+ GET /dashboard 200 in 5355ms
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: DXDk_uE5d1W_IRlIAAAC (Total: 2)
+Client connected: W3-syxrNYiiZSCbNAAAD
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1110ms (3130 modules)
+ GET /favicon.ico 200 in 1114ms
+ GET /api/strains 200 in 1256ms
+ GET /dashboard 200 in 180ms
+ GET /favicon.ico 200 in 8ms
+ GET /favicon.ico 200 in 6ms
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: iiGH0fUJQcr-xRgdAAAA (Total: 1)
+Client connected: AhPfLNrdh-mRVndkAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 6YPhpOjT4re9Zji-AAAA (Total: 1)
+Client connected: A-l82CuEpu3QrUCtAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 4boYLLDo00JrQ7abAAAA (Total: 1)
+Client connected: m3nun-vnEo9SvlYvAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: ELRW5WSepdoKpL4cAAAA (Total: 1)
+Client connected: uyZx0O2JS7yqgxsKAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: mBL3G7Q9ftzWLyMMAAAA (Total: 1)
+Client connected: E60qHA1KerlAQKsSAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: jMyh1GaCEsSvM3RMAAAA (Total: 1)
+Client connected: c7bE4gnPW7jUz1gmAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: k5F-03senJO1-4zxAAAA (Total: 1)
+Client connected: Q6qKgXw6gy0uvs66AAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: Lp8qgOBdmyr-j3VfAAAA (Total: 1)
+Client connected: s_KIHZ0lpJCMzySsAAAB
+ ○ Compiling /api/analyze ...
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: flowering, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ GET /api/settings 200 in 452ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 7ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 790ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 2143ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: flowering, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 7ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 5ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 233ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 489ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: flowering, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 6ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 5ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 245ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 319ms
+[32m[nodemon] restarting due to changes...[39m
+ ✓ Compiled /api/settings in 29ms
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 3sQNXDSWhOxfzxJtAAAA (Total: 1)
+Client connected: mhIR6vtqB30hXckvAAAB
+ ○ Compiling /api/analyze ...
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ GET /api/analyze 200 in 1364ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: undefined, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ GET /api/settings 200 in 391ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 8ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 585ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 731ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: undefined, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 8ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 6ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 264ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 540ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: undefined, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 7ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 8ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 238ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 368ms
+ GET /api/analyze 200 in 8ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: undefined, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 7ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 6ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 231ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 369ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: undefined, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 8ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 6ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 240ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 308ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Test Strain, Stage: undefined, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 6ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 5ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 245ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 316ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: GDP, Stage: undefined, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 6ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 7ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 250ms
+   Fallback used: true
+   Image analysis: false
+ POST /api/analyze 200 in 328ms
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ POST /api/analyze 404 in 3058ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\Ryan\Desktop\CannaAI\.next\server\app\api\analyze\route.js'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\Ryan\\Desktop\\CannaAI\\.next\\server\\app\\api\\analyze\\route.js',
+  page: '/api/analyze'
+}
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ POST /api/analyze 500 in 2434ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\Ryan\Desktop\CannaAI\.next\server\app\api\analyze\route.js'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\Ryan\\Desktop\\CannaAI\\.next\\server\\app\\api\\analyze\\route.js',
+  page: '/api/analyze'
+}
+ POST /api/analyze 500 in 288ms
+ POST /api/analyze 404 in 527ms
+ GET /api/analyze 404 in 230ms
+ POST /api/analyze 404 in 231ms
+ POST /api/analyze 404 in 227ms
+ POST /api/analyze 404 in 216ms
+Client disconnected: mhIR6vtqB30hXckvAAAB
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 2.6s (3095 modules)
+ GET /dashboard 200 in 3187ms
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: heha9FyR2KAMGrRVAAAA (Total: 1)
+Client connected: fHNfa5xU8RpSRzgVAAAB
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 789ms (3116 modules)
+ GET /favicon.ico 200 in 768ms
+ GET /api/strains 200 in 932ms
+ ○ Compiling /api/analyze ...
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+🖼️ Ultra-high resolution image processed:
+   Original: 113.38 KB (300x300, 0.1MP)
+   Processed: 25.36 KB (300x300)
+   Compression: 77.6% reduction, Quality preserved: 90%
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Select Strain, Stage: flowering, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ GET /api/settings 200 in 320ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 6ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 607ms
+   Fallback used: true
+   Image analysis: true
+ POST /api/analyze 200 in 1705ms
+🖼️ Ultra-high resolution image processed:
+   Original: 914.25 KB (3000x4000, 12.0MP)
+   Processed: 348.88 KB (900x1200)
+   Compression: 61.8% reduction, Quality preserved: 90%
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Select Strain, Stage: flowering, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 7ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+ GET /api/settings 200 in 6ms
+✅ Analysis completed successfully:
+   Provider: fallback
+   Processing time: 395ms
+   Fallback used: true
+   Image analysis: true
+ POST /api/analyze 200 in 933ms
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: I5yj_7ryGGHJTR5JAAAA (Total: 1)
+Client connected: d-i6e6qTCGAxXf1XAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 71prW01XOq7NcvVwAAAA (Total: 1)
+Client connected: b3qjpfZFXAdp0zMHAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: P0KKGMjCDwSbA8aaAAAA (Total: 1)
+Client connected: 98RpZ2NSzV_JQZzWAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: cM6V_chewGmB_UzkAAAA (Total: 1)
+Client connected: HkoraiVccMJ7GlmSAAAB
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: doukTloIplFb-XzCAAAA (Total: 1)
+Client connected: N-TOmgdsjoPxSDhhAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: JOKVWToUwvAsg5GpAAAA (Total: 1)
+Client connected: IExkFvIh0n_wa8ZWAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 7mN5v5MWiKT59346AAAA (Total: 1)
+Client connected: KWlxkBeajwuaFiDPAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: DY7eMwa-XVlJDG2xAAAA (Total: 1)
+Client connected: c4D0SRdNwUKRLDpiAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: Adzt3HFHWBy-c_ysAAAA (Total: 1)
+Client connected: itqKer2iEExpSySBAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: a8pQPKw8JuA8H7b9AAAA (Total: 1)
+Client connected: x9RVFkzD1z9fBKSmAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 6HAaRiaAVffUaKblAAAA (Total: 1)
+Client connected: iQauXgETjYsnkj9MAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: TfcfJrIhRaz4fmwQAAAA (Total: 1)
+Client connected: 1_oJb99zER4U8ZF_AAAB
+ ○ Compiling /api/analyze ...
+ ⚠ ./src/app/api/analyze/route.ts
+Attempted import error: 'base64ToBuffer' is not exported from '@/lib/ai-provider-detection' (imported as 'base64ToBuffer').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+
+./src/app/api/analyze/route.ts
+Attempted import error: 'processImageForVisionModel' is not exported from '@/lib/ai-provider-detection' (imported as 'processImageForVisionModel').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+ GET /api/analyze 200 in 1054ms
+ ⚠ ./src/app/api/analyze/route.ts
+Attempted import error: 'base64ToBuffer' is not exported from '@/lib/ai-provider-detection' (imported as 'base64ToBuffer').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+
+./src/app/api/analyze/route.ts
+Attempted import error: 'processImageForVisionModel' is not exported from '@/lib/ai-provider-detection' (imported as 'processImageForVisionModel').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+ ⚠ ./src/app/api/analyze/route.ts
+Attempted import error: 'base64ToBuffer' is not exported from '@/lib/ai-provider-detection' (imported as 'base64ToBuffer').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+
+./src/app/api/analyze/route.ts
+Attempted import error: 'processImageForVisionModel' is not exported from '@/lib/ai-provider-detection' (imported as 'processImageForVisionModel').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 587ms
+ ⚠ ./src/app/api/analyze/route.ts
+Attempted import error: 'base64ToBuffer' is not exported from '@/lib/ai-provider-detection' (imported as 'base64ToBuffer').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+
+./src/app/api/analyze/route.ts
+Attempted import error: 'processImageForVisionModel' is not exported from '@/lib/ai-provider-detection' (imported as 'processImageForVisionModel').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+ ⚠ ./src/app/api/analyze/route.ts
+Attempted import error: 'base64ToBuffer' is not exported from '@/lib/ai-provider-detection' (imported as 'base64ToBuffer').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+
+./src/app/api/analyze/route.ts
+Attempted import error: 'processImageForVisionModel' is not exported from '@/lib/ai-provider-detection' (imported as 'processImageForVisionModel').
+
+Import trace for requested module:
+./src/app/api/analyze/route.ts
+ GET /api/settings 200 in 206ms
+ GET /api/settings 200 in 206ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+💬 Chat request received, detecting AI providers...
+📡 Primary chat provider: openrouter (OpenRouter API is accessible and configured)
+🤖 Attempting AgentEvolver enhanced chat...
+⚠️ AgentEvolver chat failed, using traditional AI providers: AgentEvolver returned fallback response - using traditional AI
+ GET /api/settings 200 in 6ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+AI execution error: Error [AIProviderUnavailableError]: All AI providers failed. Last error: openrouter API error: 401 Unauthorized
+    at executeAIWithFallback (src\lib\ai-provider-detection.ts:432:8)
+    at async POST (src\app\api\chat\route.ts:134:25)
+  430 |   };
+  431 |
+> 432 |   throw new AIProviderUnavailableError(
+      |        ^
+  433 |     `All AI providers failed. Last error: ${lastError?.message || 'Unknown error'}`,
+  434 |     errorDetails
+  435 |   ); {
+  recommendations: [Array],
+  availableProviders: undefined,
+  setupRequired: undefined,
+  attemptedProviders: [Array]
+}
+❌ AI provider unavailable for chat: All AI providers failed. Last error: openrouter API error: 401 Unauthorized
+ POST /api/chat 503 in 450ms
+🚀 Starting enhanced cannabis plant analysis...
+📊 Analysis parameters: Blue Dream, Stage: undefined, Urgency: medium
+📡 AI provider detected: openrouter (OpenRouter API is accessible and configured)
+ GET /api/settings 200 in 9ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+Provider openrouter failed: openrouter API error: 401 Unauthorized
+❌ AI provider unavailable: All AI providers failed. Last error: openrouter API error: 401 Unauthorized
+ POST /api/analyze 503 in 436ms
+[32m[nodemon] restarting due to changes...[39m
+ ✓ Compiled /api/settings in 157ms (278 modules)
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: Wvl_3So-TPJyqOqXAAAA (Total: 1)
+Client connected: 7AtBWrhvC_-cL-86AAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 3zxKiMgvh28tM6jqAAAA (Total: 1)
+Client connected: nqiHvdgWW0k2vg5XAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 5_nqajTHuJRQ1BDqAAAA (Total: 1)
+Client connected: EXR9JE0pHpPBFAWWAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: X2qGFYhUiZ43o38RAAAA (Total: 1)
+Client connected: Z1x00c8x33gWUQqJAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: iIc0LeQnrrTfSlywAAAA (Total: 1)
+Client connected: nyfNj3IapwegeJCUAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: NqiOgyr33RgFxhGtAAAA (Total: 1)
+Client connected: J3kmeUQPlu40Fl3wAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: AmgCVhH8n1R0i77IAAAA (Total: 1)
+Client connected: 2_HN-Ar2oHDv19UdAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: RnxEXi86QZReabCXAAAA (Total: 1)
+Client connected: gmjxmsQh8tobquLWAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: a8nTKqX1hiCFwV6lAAAA (Total: 1)
+Client connected: YhJAIfYrNxEZ6E4vAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 7m_3d4EkBvbPeIhlAAAA (Total: 1)
+Client connected: VfEJPeZkaqlXMFNdAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: BexRzK6rKBce8tYmAAAA (Total: 1)
+Client connected: 9-LJaUinleN7dKQwAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: GQErCsn3PXTygvJbAAAA (Total: 1)
+Client connected: tvAEpKQEfz4t6TKqAAAB
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+ ○ Compiling /dashboard ...
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: SvqdkiODQ_un6zpiAAAA (Total: 1)
+Client connected: 4yZXFMntXrQEVYnKAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: NZw9IieJQAvtTpvEAAAA (Total: 1)
+Client connected: 730wCIZ-P1yZMNaFAAAB
+ ○ Compiling /dashboard ...
+[32m[nodemon] restarting due to changes...[39m
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: u42j-XdObzWBbDMLAAAC (Total: 2)
+Client connected: EZO8WOrpWhBj-MaRAAAD
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+ ○ Compiling /dashboard ...
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: ma-JUxEhnWJ2COiRAAAA (Total: 1)
+Client connected: uYyEqR4oQSsaUhEzAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: H4ukCZR-PF4Qt41VAAAA (Total: 1)
+Client connected: OLVe23BqZ8QhOa_nAAAB
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: xxVpxdHvd0xp9wqkAAAC (Total: 2)
+Client connected: seA4LeFlFAFF_o3ZAAAD
+ ○ Compiling /api/chat ...
+ ✓ Compiled /api/chat in 835ms (364 modules)
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 1242ms
+ ✓ Compiled /api/settings in 118ms (366 modules)
+ GET /api/settings 200 in 195ms
+ GET /api/settings 200 in 196ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 177ms
+ GET /api/settings 200 in 14ms
+ GET /api/settings 200 in 22ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 156ms
+ GET /api/settings 200 in 16ms
+ GET /api/settings 200 in 23ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 152ms
+ GET /api/settings 200 in 10ms
+ GET /api/settings 200 in 15ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 159ms
+ GET /api/settings 200 in 9ms
+ GET /api/settings 200 in 13ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 140ms
+ GET /api/settings 200 in 11ms
+ GET /api/settings 200 in 16ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 228ms
+ GET /api/settings 200 in 8ms
+ GET /api/settings 200 in 15ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 145ms
+ GET /api/settings 200 in 8ms
+ GET /api/settings 200 in 11ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 147ms
+ GET /api/settings 200 in 10ms
+ GET /api/settings 200 in 14ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+🔍 Detecting AI providers for chat endpoint...
+ GET /api/chat 200 in 138ms
+ GET /api/settings 200 in 12ms
+🎯 OpenRouter Model Selection:
+   User Manual Model: meta-llama/llama-3.1-8b-instruct:free
+   Environment Fallback: anthropic/claude-3.5-sonnet
+   Final Model: meta-llama/llama-3.1-8b-instruct:free
+ GET /api/settings 200 in 14ms
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+[32m[nodemon] restarting due to changes...[39m
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: VKjo4l1cv5lG1sucAAAA (Total: 1)
+Client connected: SVKVMZ-XGUr5jfxLAAAB
+[32m[nodemon] restarting due to changes...[39m
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: IxDcOufRt_rcx3pzAAAC (Total: 2)
+Client connected: ju75RdA65RYkIdVzAAAD
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.22.224.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: 6veFbqKaogrXty5KAAAA (Total: 1)
+Client connected: yAv4_qw3DSMC2KsbAAAB
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: UyycgTkDVEVq-f9MAAAC (Total: 2)
+Client connected: uMcwT2LKkN3gW85jAAAD
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://0.0.0.0:5173',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/100\.\d+\.\d+\.\d+:5173$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:5173$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:5173$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:5173$/,
+  /^http:\/\/[\w\.-]+:3000$/,
+  /^http:\/\/[\w\.-]+:5173$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

@@ -14,17 +14,27 @@ const allowedOrigins = process.env.SOCKET_IO_ORIGINS
   ? process.env.SOCKET_IO_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : dev
     ? [
+        // Backend (Next.js) origins
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'http://0.0.0.0:3000',
-        // Allow any Tailscale IP (100.x.x.x range)
+        // Frontend (New UI Vite) origins
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://0.0.0.0:5173',
+        // Allow any Tailscale IP (100.x.x.x range) for both ports
         /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
-        // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+        /^http:\/\/100\.\d+\.\d+\.\d+:5173$/,
+        // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) for both ports
         /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+        /^http:\/\/192\.168\.\d+\.\d+:5173$/,
         /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+        /^http:\/\/10\.\d+\.\d+\.\d+:5173$/,
         /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
-        // Allow any hostname with port 3000 for flexibility
-        /^http:\/\/[\w\.-]+:3000$/
+        /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:5173$/,
+        // Allow any hostname with ports 3000 or 5173 for flexibility
+        /^http:\/\/[\w\.-]+:3000$/,
+        /^http:\/\/[\w\.-]+:5173$/
       ] // Development origins including remote access
     : []; // Production requires explicit configuration
 
