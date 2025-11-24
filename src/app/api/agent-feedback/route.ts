@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { agentEvolverClient } from '@/lib/agent-evolver';
+import { getAgentEvolverClient } from '@/lib/agent-evolver';
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,12 +20,17 @@ export async function POST(req: NextRequest) {
     };
 
     // Submit to Agent Evolver if available
+    const evolverClient = getAgentEvolverClient();
     try {
-      await agentEvolverClient.optimizePrompt(
-        content || 'feedback',
-        feedback,
-        { taskType: mode || 'analysis' }
-      );
+      if (evolverClient && evolverClient.getConfig().enabled) {
+        await evolverClient.optimizePrompt(
+          content || 'feedback',
+          feedback,
+          { taskType: mode || 'analysis' }
+        );
+      } else {
+        console.warn('AgentEvolver client not available or disabled - feedback not recorded');
+      }
     } catch (e) {
       console.warn('AgentEvolver feedback failed', e);
     }
@@ -34,7 +39,8 @@ export async function POST(req: NextRequest) {
       success: true,
       messageId,
       provider: provider || 'unknown',
-      mode: mode || 'analysis'
+      mode: mode || 'analysis',
+      agentEvolverStatus: (evolverClient && evolverClient.getConfig().enabled) ? 'active' : 'unavailable'
     });
   } catch (error) {
     return NextResponse.json(
