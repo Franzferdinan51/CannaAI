@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 
         // Fallback to traditional AI providers
         const aiResult = await executeAIWithFallback(contextPrompt, undefined, {
-          primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
+          primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
           timeout: 45000, // 45 second timeout for chat
           maxRetries: 1
         });
@@ -215,17 +215,10 @@ export async function GET() {
     const providerDetection = await detectAvailableProviders();
 
     // Get configuration for each provider
-    const lmStudioConfig = getProviderConfig('lm-studio');
-    const openRouterConfig = getProviderConfig('openrouter');
+    const openRouterConfig = await getProviderConfig('openrouter');
 
     const settings = {
       aiProvider: providerDetection.primary.provider,
-      lmStudio: {
-        url: lmStudioConfig.url,
-        model: lmStudioConfig.model,
-        hasApiKey: !!lmStudioConfig.apiKey,
-        timeout: lmStudioConfig.timeout
-      },
       openRouter: {
         baseUrl: openRouterConfig.baseUrl,
         model: openRouterConfig.model,

@@ -11,12 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Settings, Zap, Globe, Key, Save, Check, X, AlertCircle } from 'lucide-react';
 
 interface AIConfig {
-  provider: 'lm-studio' | 'openrouter' | 'fallback';
-  lmStudio: {
-    url: string;
-    model: string;
-    apiKey: string;
-  };
+  provider: 'openrouter' | 'fallback';
   openRouter: {
     apiKey: string;
     model: string;
@@ -27,11 +22,6 @@ interface AIConfig {
 
 const DEFAULT_CONFIG: AIConfig = {
   provider: 'openrouter',
-  lmStudio: {
-    url: 'http://localhost:1234',
-    model: 'llama-3-8b-instruct',
-    apiKey: ''
-  },
   openRouter: {
     apiKey: '',
     model: 'meta-llama/llama-3.1-8b-instruct:free',
@@ -46,16 +36,6 @@ const OPENROUTER_MODELS = [
   { value: 'google/gemma-2-9b-it:free', label: 'Gemma 2 9B (Free)' },
   { value: 'microsoft/phi-3-medium-128k-instruct:free', label: 'Phi-3 Medium (Free)' },
   { value: 'anthropic/claude-3-haiku:free', label: 'Claude 3 Haiku (Free)' },
-];
-
-const LM_STUDIO_MODELS = [
-  'llama-3.1-8b-instruct',
-  'llama-3.2-3b-instruct',
-  'mixtral-8x7b-instruct-v0.1',
-  'qwen2.5-7b-instruct',
-  'deepseek-coder-6.7b-instruct',
-  'mistral-7b-instruct-v0.2',
-  'phi-3-mini-4k-instruct',
 ];
 
 interface AIConfigManagerProps {
@@ -110,19 +90,6 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
         } else {
           throw new Error('Failed to fetch models from OpenRouter');
         }
-      } else if (config.provider === 'lm-studio') {
-        // Test LM Studio connection
-        const response = await fetch(`${config.lmStudio.url}/v1/models`, {
-          method: 'GET',
-        });
-
-        if (response.ok) {
-          const models = await response.json();
-          setTestResults([`✅ Connected to LM Studio - ${models.data?.length || 0} models available`]);
-          setConnectionStatus('success');
-        } else {
-          throw new Error('Failed to connect to LM Studio');
-        }
       }
     } catch (error) {
       setTestResults([`❌ Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`]);
@@ -133,9 +100,6 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
   const hasRequiredConfig = () => {
     if (config.provider === 'openrouter') {
       return config.openRouter.apiKey.trim() !== '';
-    }
-    if (config.provider === 'lm-studio') {
-      return config.lmStudio.url.trim() !== '' && config.lmStudio.model.trim() !== '';
     }
     return true;
   };
@@ -178,7 +142,7 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
                 <Label>AI Provider</Label>
                 <Select
                   value={config.provider}
-                  onValueChange={(value: 'lm-studio' | 'openrouter' | 'fallback') =>
+                  onValueChange={(value: 'openrouter' | 'fallback') =>
                     saveConfig({ ...config, provider: value })
                   }
                 >
@@ -186,12 +150,6 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
                     <SelectValue placeholder="Select provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lm-studio">
-                      <div className="flex items-center">
-                        <Globe className="h-4 w-4 mr-2" />
-                        LM Studio (Local)
-                      </div>
-                    </SelectItem>
                     <SelectItem value="openrouter">
                       <div className="flex items-center">
                         <Globe className="h-4 w-4 mr-2" />
@@ -207,68 +165,6 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* LM Studio Configuration */}
-              {config.provider === 'lm-studio' && (
-                <div className="space-y-4 p-4 bg-muted rounded-lg">
-                  <h3 className="font-medium">LM Studio Configuration</h3>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="lm-studio-url">Server URL</Label>
-                    <Input
-                      id="lm-studio-url"
-                      placeholder="http://localhost:1234"
-                      value={config.lmStudio.url}
-                      onChange={(e) =>
-                        saveConfig({
-                          ...config,
-                          lmStudio: { ...config.lmStudio, url: e.target.value }
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="lm-studio-model">Model</Label>
-                    <Select
-                      value={config.lmStudio.model}
-                      onValueChange={(value) =>
-                        saveConfig({
-                          ...config,
-                          lmStudio: { ...config.lmStudio, model: value }
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LM_STUDIO_MODELS.map((model) => (
-                          <SelectItem key={model} value={model}>
-                            {model}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="lm-studio-key">API Key (Optional)</Label>
-                    <Input
-                      id="lm-studio-key"
-                      type="password"
-                      placeholder="Enter API key if required"
-                      value={config.lmStudio.apiKey}
-                      onChange={(e) =>
-                        saveConfig({
-                          ...config,
-                          lmStudio: { ...config.lmStudio, apiKey: e.target.value }
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              )}
 
               {/* OpenRouter Configuration */}
               {config.provider === 'openrouter' && (

@@ -14,7 +14,7 @@ export default function AISettingsPage() {
           AI Provider Settings
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Configure AI providers (LM Studio, OpenRouter) and select models for plant analysis and cultivation assistance.
+          Configure AI providers and select models for plant analysis and cultivation assistance.
         </p>
       </div>
 

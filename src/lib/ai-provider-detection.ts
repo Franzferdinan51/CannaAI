@@ -12,18 +12,10 @@ export const isVercel = !!process.env.VERCEL;
 // Provider detection results
 export interface ProviderDetectionResult {
   isAvailable: boolean;
-  provider: 'lm-studio' | 'openrouter' | 'fallback';
+  provider: 'openrouter' | 'fallback';
   reason: string;
   config: any;
   recommendations: string[];
-}
-
-// LM Studio configuration
-interface LMStudioConfig {
-  url: string;
-  model: string;
-  apiKey?: string;
-  timeout: number;
 }
 
 // OpenRouter configuration
@@ -45,10 +37,6 @@ export async function detectAvailableProviders(): Promise<{
   const results: ProviderDetectionResult[] = [];
   const recommendations: string[] = [];
 
-  // Check LM Studio
-  const lmStudioResult = await checkLMStudio();
-  results.push(lmStudioResult);
-
   // Check OpenRouter (works everywhere)
   const openRouterResult = await checkOpenRouter();
   results.push(openRouterResult);
@@ -61,19 +49,13 @@ export async function detectAvailableProviders(): Promise<{
   let primary: ProviderDetectionResult;
 
   if (availableProviders.length > 0) {
-    // Testing mode: Prefer OpenRouter (LM Studio disabled)
-    if (openRouterResult.isAvailable) {
-      primary = openRouterResult;
-    } else {
-      // Fallback to rule-based if no cloud providers
-      primary = {
-        isAvailable: true,
-        provider: 'fallback',
-        reason: 'No cloud AI providers configured - using rule-based analysis',
-        config: { type: 'rule-based' },
-        recommendations: ['Configure OpenRouter API key for cloud-based AI analysis']
-      };
-    }
+    primary = openRouterResult.isAvailable ? openRouterResult : {
+      isAvailable: true,
+      provider: 'fallback',
+      reason: 'No cloud AI providers configured - using rule-based analysis',
+      config: { type: 'rule-based' },
+      recommendations: ['Configure OpenRouter API key for cloud-based AI analysis']
+    };
   } else {
     // No providers available - use fallback
     primary = {
@@ -82,23 +64,14 @@ export async function detectAvailableProviders(): Promise<{
       reason: 'No AI providers configured - using rule-based analysis',
       config: { type: 'rule-based' },
       recommendations: [
-        'Configure OpenRouter API key for cloud-based AI analysis',
-        'Set up LM Studio for local development (non-serverless only)'
+        'Configure OpenRouter API key for cloud-based AI analysis'
       ]
     };
   }
 
   // Generate recommendations
-  if (isServerless && lmStudioResult.isAvailable) {
-    recommendations.push('LM Studio detected but will not work in serverless environments - configure OpenRouter for production');
-  }
-
   if (!openRouterResult.isAvailable) {
     recommendations.push('Configure OpenRouter API key for reliable AI analysis in production');
-  }
-
-  if (isDevelopment && !lmStudioResult.isAvailable) {
-    recommendations.push('Start LM Studio locally for development and testing');
   }
 
   return {
@@ -106,78 +79,6 @@ export async function detectAvailableProviders(): Promise<{
     fallback: unavailableProviders,
     recommendations
   };
-}
-
-/**
- * Check LM Studio availability
- */
-async function checkLMStudio(): Promise<ProviderDetectionResult> {
-  // LM Studio doesn't work in serverless environments
-  if (isServerless) {
-    return {
-      isAvailable: false,
-      provider: 'lm-studio',
-      reason: 'LM Studio is not supported in serverless environments (Netlify, Vercel, etc.)',
-      config: null,
-      recommendations: [
-        'Use OpenRouter for cloud-based AI analysis in serverless deployments',
-        'Deploy to a VPS/dedicated server for LM Studio support'
-      ]
-    };
-  }
-
-  const config: LMStudioConfig = {
-    url: process.env.LM_STUDIO_URL || 'http://localhost:1234',
-    model: process.env.LM_STUDIO_MODEL || 'granite-4.0-micro',
-    apiKey: process.env.LM_STUDIO_API_KEY,
-    timeout: parseInt(process.env.LM_STUDIO_TIMEOUT || '120000') // 2 minutes
-  };
-
-  try {
-    // Quick health check with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for health check
-
-    const response = await fetch(`${config.url}/v1/models`, {
-      method: 'GET',
-      signal: controller.signal,
-      headers: {
-        ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` })
-      }
-    });
-
-    clearTimeout(timeoutId);
-
-    if (response.ok) {
-      const models = await response.json();
-      return {
-        isAvailable: true,
-        provider: 'lm-studio',
-        reason: `LM Studio is running and available with ${models.data?.length || 0} models`,
-        config,
-        recommendations: [
-          'LM Studio is ready for local development',
-          'Configure OpenRouter as fallback for production deployments'
-        ]
-      };
-    } else {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    return {
-      isAvailable: false,
-      provider: 'lm-studio',
-      reason: `LM Studio is not available: ${errorMsg}`,
-      config,
-      recommendations: [
-        'Start LM Studio application on your local machine',
-        'Verify LM Studio is running on the correct port (default: 1234)',
-        'Check if LM Studio API server is enabled in settings'
-      ]
-    };
-  }
 }
 
 /**
@@ -260,7 +161,7 @@ async function checkOpenRouter(): Promise<ProviderDetectionResult> {
  * Get provider configuration for use in API calls
  * Now fetches user settings to respect manual model selections
  */
-export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | 'fallback'): Promise<any> {
+export async function getProviderConfig(provider: 'openrouter' | 'fallback'): Promise<any> {
   const SETTINGS_BASE = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
   let userSettings = null;
 
@@ -277,16 +178,6 @@ export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | '
   }
 
   switch (provider) {
-    case 'lm-studio':
-      return {
-        url: userSettings?.lmStudio?.url || process.env.LM_STUDIO_URL || 'http://localhost:1234',
-        model: userSettings?.lmStudio?.model || process.env.LM_STUDIO_MODEL || 'granite-4.0-micro',
-        apiKey: userSettings?.lmStudio?.apiKey || process.env.LM_STUDIO_API_KEY,
-        timeout: parseInt(userSettings?.lmStudio?.timeout || process.env.LM_STUDIO_TIMEOUT || '120000'), // 2 minutes
-        maxTokens: parseInt(userSettings?.lmStudio?.maxTokens || process.env.LM_STUDIO_MAX_TOKENS || '2000'),
-        temperature: parseFloat(userSettings?.lmStudio?.temperature || process.env.LM_STUDIO_TEMPERATURE || '0.3')
-      };
-
     case 'openrouter':
       // CRITICAL: Use user's manual model selection from settings
       const userSelectedModel = userSettings?.openRouter?.model;
@@ -327,13 +218,13 @@ export async function executeAIWithFallback(
   prompt: string,
   imageBase64?: string,
   options: {
-    primaryProvider?: 'lm-studio' | 'openrouter';
+    primaryProvider?: 'openrouter';
     maxRetries?: number;
     timeout?: number;
   } = {}
 ): Promise<{
   result: any;
-  provider: 'lm-studio' | 'openrouter' | 'fallback';
+  provider: 'openrouter' | 'fallback';
   fallbackReason?: string;
   processingTime: number;
 }> {
@@ -344,7 +235,7 @@ export async function executeAIWithFallback(
   const { primary, fallback: fallbackProviders } = await detectAvailableProviders();
 
   // Determine provider order
-  const providerOrder: ('lm-studio' | 'openrouter' | 'fallback')[] = [];
+  const providerOrder: ('openrouter' | 'fallback')[] = [];
 
   if (primaryProvider && primary.provider === primaryProvider && primary.isAvailable) {
     providerOrder.push(primaryProvider);
@@ -405,7 +296,7 @@ export async function executeAIWithFallback(
  * Call specific AI provider
  */
 async function callAIProvider(
-  provider: 'lm-studio' | 'openrouter',
+  provider: 'openrouter',
   prompt: string,
   imageBase64: string | undefined,
   config: any,
@@ -437,22 +328,17 @@ async function callAIProvider(
       stream: false
     };
 
-    const response = await fetch(
-      provider === 'lm-studio' ? `${config.url}/v1/chat/completions` : `${config.baseUrl}/chat/completions`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` }),
-          ...(provider === 'openrouter' && {
-            'HTTP-Referer': config.referer,
-            'X-Title': config.title
-          })
-        },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal
-      }
-    );
+    const response = await fetch(`${config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` }),
+        'HTTP-Referer': config.referer,
+        'X-Title': config.title
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -463,9 +349,9 @@ async function callAIProvider(
     const data = await response.json();
     let content = data.choices?.[0]?.message?.content;
 
-    // Handle LM Studio models that put content in reasoning_content
-    if (!content && data.choices?.[0]?.message?.reasoning_content) {
-      content = data.choices[0].message.reasoning_content;
+    const reasoningContent = data.choices?.[0]?.message?.reasoning_content;
+    if (!content && reasoningContent) {
+      content = reasoningContent;
     }
 
     // Enhanced content parsing for different model formats

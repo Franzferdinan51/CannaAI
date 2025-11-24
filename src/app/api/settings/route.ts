@@ -12,7 +12,6 @@ export const revalidate = false;
  * - GROQ_API_KEY, GROQ_MODEL, GROQ_BASE_URL
  * - ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_BASE_URL
  * - OPENROUTER_API_KEY, OPENROUTER_MODEL
- * - LM_STUDIO_URL
  *
  * Custom Base URLs allow using proxy services like:
  * - https://ai.gigamind.dev/claude-code (Claude via GigaMind)
@@ -21,12 +20,7 @@ export const revalidate = false;
 
 // Default settings
 const defaultSettings = {
-  aiProvider: 'lm-studio',
-  lmStudio: {
-    url: 'http://localhost:1234',
-    apiKey: '',
-    model: 'llama-3-8b-instruct'
-  },
+  aiProvider: 'openrouter',
   openRouter: {
     apiKey: '',
     model: 'meta-llama/llama-3.1-8b-instruct:free',
@@ -156,9 +150,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        if (provider === 'lm-studio') {
-          settings.lmStudio = { ...settings.lmStudio, ...config };
-        } else if (provider === 'openrouter') {
+        if (provider === 'openrouter') {
           settings.openRouter = { ...settings.openRouter, ...config };
         } else if (provider === 'openai') {
           settings.openai = { ...settings.openai, ...config };
@@ -189,7 +181,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        if (!['lm-studio', 'openrouter', 'openai', 'gemini', 'groq', 'anthropic'].includes(provider)) {
+        if (!['openrouter', 'openai', 'gemini', 'groq', 'anthropic'].includes(provider)) {
           return NextResponse.json(
             { error: 'Invalid provider' },
             { status: 400 }
@@ -464,44 +456,7 @@ export async function POST(request: NextRequest) {
 
 async function getProviderModels(provider: string) {
   try {
-    if (provider === 'lm-studio') {
-      // Get LM Studio models - doesn't need API key
-      const response = await fetch(`${settings.lmStudio.url}/v1/models`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-          // No API key needed for LM Studio
-        },
-        signal: AbortSignal.timeout(5000)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const models = data.data || [];
-
-        // Format models for frontend
-        const formattedModels = models.map((model: any) => ({
-          id: model.id,
-          name: model.id,
-          provider: 'lm-studio',
-          capabilities: determineCapabilities(model.id),
-          contextLength: model.context_length || 4096,
-          size: model.size || 'Unknown'
-        }));
-
-        return {
-          success: true,
-          message: `Found ${models.length} LM Studio models`,
-          models: formattedModels
-        };
-      } else {
-        return {
-          success: false,
-          message: 'LM Studio not responding',
-          models: []
-        };
-      }
-    } else if (provider === 'openrouter') {
+    if (provider === 'openrouter') {
       // Get OpenRouter models
       if (!settings.openRouter.apiKey) {
         return {
@@ -880,30 +835,7 @@ function determineCapabilities(modelId: string): string[] {
 
 async function testAIConnection(provider: string) {
   try {
-    if (provider === 'lm-studio') {
-      // Test LM Studio connection - no API key needed
-      const response = await fetch(`${settings.lmStudio.url}/v1/models`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const models = await response.json();
-        return {
-          success: true,
-          message: 'LM Studio connection successful',
-          details: { availableModels: models.data?.length || 0 }
-        };
-      } else {
-        return {
-          success: false,
-          message: 'LM Studio connection failed',
-          details: { status: response.status, statusText: response.statusText }
-        };
-      }
-    } else if (provider === 'openrouter') {
+    if (provider === 'openrouter') {
       // Test OpenRouter connection
       if (!settings.openRouter.apiKey) {
         return {
