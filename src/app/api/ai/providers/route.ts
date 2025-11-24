@@ -116,37 +116,8 @@ async function getLMStudioModels(): Promise<AIModel[]> {
 }
 
 async function getLMStudioLocalModels(): Promise<AIModel[]> {
-  try {
-    const response = await fetch(`${SETTINGS_BASE}/api/lmstudio/models`, {
-      signal: AbortSignal.timeout(5000)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Local LM Studio scanner error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.status !== 'success') {
-      throw new Error(data.error || 'Scanner error');
-    }
-
-    return data.models.map((model: any) => ({
-      id: model.id,
-      name: `${model.name} (${model.author})`,
-      provider: 'lm-studio',
-      capabilities: model.capabilities || ['text-generation'],
-      contextLength: model.contextLength,
-      size: model.sizeFormatted,
-      quantization: model.quantization,
-      filepath: model.filepath,
-      source: 'local' // Mark as local filesystem model
-    }));
-
-  } catch (error) {
-    console.warn('Local LM Studio models fetch error:', error);
-    return [];
-  }
+  // Local scanning is not supported on Netlify/Serverless environments
+  return [];
 }
 
 /**
