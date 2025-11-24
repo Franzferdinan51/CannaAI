@@ -45,7 +45,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
 import { AgentDashboard } from '@/components/agent/AgentDashboard';
 import { CannaAIAssistantSidebar } from '@/components/ai/cannai-assistant-sidebar';
 
@@ -88,7 +87,6 @@ const dashboardItems = [
     { id: 'agent', label: 'Agent Evolution', icon: Bot },
     { id: 'environment', label: 'Environment', icon: Thermometer },
     { id: 'strains', label: 'Strain Database', icon: Sprout },
-    { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 // Dashboard component that uses searchParams
@@ -624,6 +622,30 @@ function DashboardContent() {
                                     ))}
                                 </div>
 
+                                {/* Settings Redirect Card */}
+                                <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm shadow-lg">
+                                    <CardHeader>
+                                        <CardTitle className="text-slate-100 flex items-center">
+                                            <Settings className="w-5 h-5 mr-2 text-emerald-400" />
+                                            Settings
+                                        </CardTitle>
+                                        <CardDescription className="text-slate-400">Configure AI providers, models, and system settings</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6">
+                                        <div className="space-y-4">
+                                            <p className="text-sm text-slate-300">
+                                                Access the unified settings page to manage AI providers, configure models, adjust system preferences, and customize your cultivation experience.
+                                            </p>
+                                            <Link href="/settings">
+                                                <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(5,150,105,0.3)] transition-all duration-300">
+                                                    <Settings className="w-4 h-4 mr-2" />
+                                                    Open Settings
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
                                 {/* Trends and Alerts */}
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                                     <Card className="lg:col-span-2 border-slate-800 bg-slate-900/40 backdrop-blur-sm">
@@ -702,21 +724,7 @@ function DashboardContent() {
                             </div>
                         )}
 
-                        {/* Settings Dashboard */}
-                        {activeDashboard === 'settings' && (
-                            <div className="max-w-2xl mx-auto">
-                                <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm">
-                                    <CardHeader>
-                                        <CardTitle className="text-slate-100">Settings</CardTitle>
-                                        <CardDescription className="text-slate-400">Manage your preferences and AI configuration</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <AIProviderSettings />
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
-
+  
                         {/* Analytics Dashboard (Placeholder/Alternative) */}
                         {activeDashboard === 'analytics' && (
                             <div className="grid grid-cols-1 gap-6">
