@@ -165,21 +165,47 @@ function DashboardContent() {
     useEffect(() => {
         let socket: any;
         try {
-            socket = io(undefined, { path: '/api/socketio', transports: ['websocket', 'polling'] });
+            // Determine the correct server URL based on environment
+            const serverUrl = process.env.NODE_ENV === 'production'
+                ? window.location.origin
+                : `http://${window.location.hostname}:3000`;
+
+            console.log(`🔌 Connecting to Socket.IO server at: ${serverUrl}`);
+
+            socket = io(serverUrl, {
+                path: '/api/socketio',
+                transports: ['websocket', 'polling'],
+                withCredentials: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 20000
+            });
 
             socket.on('connect', () => {
-                console.log('Connected to WebSocket');
+                console.log('✅ Connected to Socket.IO server:', socket.id);
+            });
+
+            socket.on('connect_error', (error: any) => {
+                console.error('❌ Socket.IO connection error:', error);
+                console.log('⚠️ This is expected if the server is not running or if there are network issues');
+            });
+
+            socket.on('disconnect', (reason: string) => {
+                console.log('❌ Socket.IO disconnected:', reason);
             });
 
             socket.on('sensor-data', (data: any) => {
                 setSensorData(prev => ({ ...prev, ...data }));
             });
         } catch (e) {
-            console.warn('WebSocket connection failed (expected on serverless environments):', e);
+            console.warn('❌ WebSocket initialization failed:', e);
         }
 
         return () => {
-            if (socket) socket.disconnect();
+            if (socket) {
+                console.log('🔌 Disconnecting Socket.IO...');
+                socket.disconnect();
+            }
         };
     }, []);
 
@@ -503,7 +529,7 @@ function DashboardContent() {
                                                             <ClipboardList className="w-4 h-4 mr-2 text-emerald-400" />
                                                             Recommended Actions
                                                         </h4>
-                                                        {Array.isArray(analysisResult.recommendations) ? (
+                                                        {analysisResult.recommendations && Array.isArray(analysisResult.recommendations) ? (
                                                             <ul className="space-y-2">
                                                                 {analysisResult.recommendations.map((rec: string, i: number) => (
                                                                     <li key={i} className="flex items-start text-sm text-slate-400">
@@ -512,9 +538,9 @@ function DashboardContent() {
                                                                     </li>
                                                                 ))}
                                                             </ul>
-                                                        ) : (
+                                                        ) : analysisResult.recommendations && typeof analysisResult.recommendations === 'object' ? (
                                                             <div className="space-y-4">
-                                                                {analysisResult.recommendations.immediate && (
+                                                                {analysisResult.recommendations.immediate && Array.isArray(analysisResult.recommendations.immediate) && (
                                                                     <div>
                                                                         <h5 className="text-xs font-semibold text-red-400 uppercase mb-2">Immediate Action</h5>
                                                                         <ul className="space-y-2">
@@ -527,7 +553,7 @@ function DashboardContent() {
                                                                         </ul>
                                                                     </div>
                                                                 )}
-                                                                {analysisResult.recommendations.shortTerm && (
+                                                                {analysisResult.recommendations.shortTerm && Array.isArray(analysisResult.recommendations.shortTerm) && (
                                                                     <div>
                                                                         <h5 className="text-xs font-semibold text-amber-400 uppercase mb-2">Short Term</h5>
                                                                         <ul className="space-y-2">
@@ -540,7 +566,7 @@ function DashboardContent() {
                                                                         </ul>
                                                                     </div>
                                                                 )}
-                                                                {analysisResult.recommendations.longTerm && (
+                                                                {analysisResult.recommendations.longTerm && Array.isArray(analysisResult.recommendations.longTerm) && (
                                                                     <div>
                                                                         <h5 className="text-xs font-semibold text-blue-400 uppercase mb-2">Long Term</h5>
                                                                         <ul className="space-y-2">
@@ -554,6 +580,8 @@ function DashboardContent() {
                                                                     </div>
                                                                 )}
                                                             </div>
+                                                        ) : (
+                                                            <p className="text-sm text-slate-500 italic">No recommendations available</p>
                                                         )}
                                                     </div>
                                                 </div>
@@ -692,7 +720,7 @@ function DashboardContent() {
                                             {/* Same recommendations logic */}
                                             <div className="mt-6">
                                                 <h4 className="text-sm font-medium text-slate-300 mb-3">Recommendations</h4>
-                                                {Array.isArray(analysisResult.recommendations) ? (
+                                                {analysisResult.recommendations && Array.isArray(analysisResult.recommendations) ? (
                                                     <ul className="space-y-2">
                                                         {analysisResult.recommendations.map((rec: string, i: number) => (
                                                             <li key={i} className="flex items-start text-sm text-slate-400">
@@ -701,9 +729,9 @@ function DashboardContent() {
                                                             </li>
                                                         ))}
                                                     </ul>
-                                                ) : (
+                                                ) : analysisResult.recommendations && typeof analysisResult.recommendations === 'object' ? (
                                                     <div className="space-y-4">
-                                                        {analysisResult.recommendations.immediate && (
+                                                        {analysisResult.recommendations.immediate && Array.isArray(analysisResult.recommendations.immediate) && (
                                                             <div>
                                                                 <h5 className="text-xs font-semibold text-red-400 uppercase mb-2">Immediate Action</h5>
                                                                 <ul className="space-y-2">
@@ -716,7 +744,7 @@ function DashboardContent() {
                                                                 </ul>
                                                             </div>
                                                         )}
-                                                        {analysisResult.recommendations.shortTerm && (
+                                                        {analysisResult.recommendations.shortTerm && Array.isArray(analysisResult.recommendations.shortTerm) && (
                                                             <div>
                                                                 <h5 className="text-xs font-semibold text-amber-400 uppercase mb-2">Short Term</h5>
                                                                 <ul className="space-y-2">
@@ -729,7 +757,7 @@ function DashboardContent() {
                                                                 </ul>
                                                             </div>
                                                         )}
-                                                        {analysisResult.recommendations.longTerm && (
+                                                        {analysisResult.recommendations.longTerm && Array.isArray(analysisResult.recommendations.longTerm) && (
                                                             <div>
                                                                 <h5 className="text-xs font-semibold text-blue-400 uppercase mb-2">Long Term</h5>
                                                                 <ul className="space-y-2">
@@ -743,6 +771,8 @@ function DashboardContent() {
                                                             </div>
                                                         )}
                                                     </div>
+                                                ) : (
+                                                    <p className="text-sm text-slate-500 italic">No recommendations available</p>
                                                 )}
                                             </div>
                                         </CardContent>

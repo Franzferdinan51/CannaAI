@@ -20,17 +20,36 @@ export default function SocketDemo() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const socketInstance = io({
+    // Determine the correct server URL based on environment
+    const serverUrl = process.env.NODE_ENV === 'production'
+      ? window.location.origin
+      : `http://${window.location.hostname}:3000`;
+
+    console.log(`🔌 Connecting to Socket.IO server at: ${serverUrl}`);
+
+    const socketInstance = io(serverUrl, {
       path: '/api/socketio',
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000
     });
 
     setSocket(socketInstance);
 
     socketInstance.on('connect', () => {
+      console.log('✅ Connected to Socket.IO server:', socketInstance.id);
       setIsConnected(true);
     });
 
-    socketInstance.on('disconnect', () => {
+    socketInstance.on('connect_error', (error: any) => {
+      console.error('❌ Socket.IO connection error:', error);
+      setIsConnected(false);
+    });
+
+    socketInstance.on('disconnect', (reason: string) => {
+      console.log('❌ Socket.IO disconnected:', reason);
       setIsConnected(false);
     });
 
@@ -39,6 +58,7 @@ export default function SocketDemo() {
     });
 
     return () => {
+      console.log('🔌 Disconnecting Socket.IO...');
       socketInstance.disconnect();
     };
   }, []);

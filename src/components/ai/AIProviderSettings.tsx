@@ -286,12 +286,18 @@ export function AIProviderSettings() {
 
     // Update the correct provider's model setting
     if (tempSettings) {
-      if (providerId === 'lm-studio') {
+      if (selectedProvider === 'lm-studio') {
         updateTempSettings({ lmStudio: { ...tempSettings.lmStudio, model: modelId } });
-      } else if (providerId === 'openrouter') {
+      } else if (selectedProvider === 'openrouter') {
         updateTempSettings({ openRouter: { ...tempSettings.openRouter, model: modelId } });
-      } else if (providerId === 'openai-compatible') {
+      } else if (selectedProvider === 'openai-compatible') {
         updateTempSettings({ openai: { ...tempSettings.openai, model: modelId } });
+      } else if (selectedProvider === 'gemini') {
+        updateTempSettings({ gemini: { ...tempSettings.gemini, model: modelId } });
+      } else if (selectedProvider === 'groq') {
+        updateTempSettings({ groq: { ...tempSettings.groq, model: modelId } });
+      } else if (selectedProvider === 'anthropic') {
+        updateTempSettings({ anthropic: { ...tempSettings.anthropic, model: modelId } });
       }
     }
   };
