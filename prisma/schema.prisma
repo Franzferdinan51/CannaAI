@@ -13,20 +13,156 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model Room {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
+  name      String
+  temp      Float?
+  humidity  Float?
+  co2       Float?
+  active    Boolean  @default(true)
+  sensors   Sensor[]
+  plants    Plant[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Post {
+model Sensor {
+  id          String           @id @default(cuid())
+  name        String
+  type        String
+  locationId  String?
+  room        Room?            @relation(fields: [locationId], references: [id])
+  enabled     Boolean          @default(true)
+  calibration Json?
+  lastValue   Float?
+  lastUpdated DateTime?
+  readings    SensorReading[]
+  alerts      Alert[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model SensorReading {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
+  sensorId  String
+  sensor    Sensor   @relation(fields: [sensorId], references: [id])
+  value     Float?
+  data      Json?
+  timestamp DateTime @default(now())
+}
+
+model Alert {
+  id           String   @id @default(cuid())
+  sensorId     String?
+  sensor       Sensor?  @relation(fields: [sensorId], references: [id])
+  type         String
+  severity     String
+  message      String
+  acknowledged Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  type           String
+  title          String?
+  message        String
+  acknowledged   Boolean  @default(false)
+  acknowledgedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AutomationSetting {
+  id        Int      @id @default(1)
+  config    Json
   updatedAt DateTime @updatedAt
+}
+
+model Strain {
+  id                 String   @id @default(cuid())
+  name               String
+  type               String
+  lineage            String?
+  description        String?
+  isPurpleStrain     Boolean  @default(false)
+  optimalConditions  Json?
+  commonDeficiencies Json?
+  characteristics    Json?
+  growingDifficulty  String?
+  floweringTime      Int?
+  thcLevel           Float?
+  cbdLevel           Float?
+  effects            Json?
+  medicalUses        Json?
+  flavors            Json?
+  aroma              Json?
+  plants             Plant[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Plant {
+  id          String   @id @default(cuid())
+  name        String
+  strainId    String?
+  strain      Strain?  @relation(fields: [strainId], references: [id])
+  stage       String?
+  health      Json?
+  age         Int?
+  plantedDate DateTime?
+  locationId  String?
+  room        Room?    @relation(fields: [locationId], references: [id])
+  images      Json?
+  notes       String?
+  tags        Json?
+  metadata    Json?
+  isActive    Boolean  @default(true)
+  tasks       Task[]
+  actions     Action[]
+  analyses    PlantAnalysis[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  type            String?
+  priority        String?
+  status          String   @default("pending")
+  notes           String?
+  data            Json?
+  plantId         String?
+  plant           Plant?   @relation(fields: [plantId], references: [id])
+  scheduledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Action {
+  id          String   @id @default(cuid())
+  plantId     String?
+  plant       Plant?   @relation(fields: [plantId], references: [id])
+  type        String
+  description String
+  status      String   @default("pending")
+  data        Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PlantAnalysis {
+  id         String   @id @default(cuid())
+  plantId    String?
+  plant      Plant?   @relation(fields: [plantId], references: [id])
+  request    Json?
+  result     Json?
+  provider   String?
+  imageInfo  Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

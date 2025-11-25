@@ -11,7 +11,9 @@ import {
   MessageCircle,
   Leaf,
   Bell,
-  User
+  User,
+  Bot,
+  Activity
 } from 'lucide-react';
 import { useSocketContext } from '../contexts/SocketContext';
 
@@ -20,42 +22,76 @@ interface SidebarItemProps {
   label: string;
   path: string;
   active?: boolean;
+  shortcut?: string;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, path, active }) => {
+const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, path, active, shortcut }) => {
   const navigate = useNavigate();
 
   return (
     <button
       onClick={() => navigate(path)}
       className={`
-        group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mb-1 w-full text-left
+        group flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mb-1 w-full text-left
         ${active
           ? 'bg-[#252A33] text-white shadow-sm border-l-2 border-emerald-500'
           : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
         }
       `}
     >
-      <span className={`${active ? 'text-emerald-400' : 'text-gray-500 group-hover:text-gray-300'}`}>
-        {icon}
-      </span>
-      {label}
+      <div className="flex items-center gap-3">
+        <span className={`${active ? 'text-emerald-400' : 'text-gray-500 group-hover:text-gray-300'}`}>
+          {icon}
+        </span>
+        {label}
+      </div>
+      {shortcut && (
+        <kbd className="text-xs px-1.5 py-0.5 bg-gray-700 rounded border border-gray-600 opacity-60 group-hover:opacity-100">
+          {shortcut}
+        </kbd>
+      )}
     </button>
   );
 };
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isConnected, notifications } = useSocketContext();
 
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl/Cmd + K for search
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        console.log('Search shortcut triggered');
+      }
+
+      // Number keys for navigation (only routes supported by the backend)
+      if (event.altKey && event.key >= '1' && event.key <= '8') {
+        event.preventDefault();
+        const routes = ['/dashboard', '/plants', '/sensors', '/scanner', '/automation', '/reports', '/chat', '/settings'];
+        const index = parseInt(event.key) - 1;
+        if (routes[index]) {
+          navigate(routes[index]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
   const sidebarItems = [
-    { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <Sprout className="w-5 h-5" />, label: 'Plants', path: '/plants' },
-    { icon: <Thermometer className="w-5 h-5" />, label: 'Sensors', path: '/sensors' },
-    { icon: <Scan className="w-5 h-5" />, label: 'Scanner', path: '/scanner' },
-    { icon: <FileText className="w-5 h-5" />, label: 'Reports', path: '/reports' },
-    { icon: <MessageCircle className="w-5 h-5" />, label: 'AI Assistant', path: '/chat' },
-    { icon: <Settings className="w-5 h-5" />, label: 'Settings', path: '/settings' },
+    { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', path: '/dashboard', shortcut: 'Alt+1' },
+    { icon: <Sprout className="w-5 h-5" />, label: 'Plants', path: '/plants', shortcut: 'Alt+2' },
+    { icon: <Thermometer className="w-5 h-5" />, label: 'Sensors', path: '/sensors', shortcut: 'Alt+3' },
+    { icon: <Scan className="w-5 h-5" />, label: 'Scanner', path: '/scanner', shortcut: 'Alt+4' },
+    { icon: <Bot className="w-5 h-5" />, label: 'Automation', path: '/automation', shortcut: 'Alt+5' },
+    { icon: <FileText className="w-5 h-5" />, label: 'Reports', path: '/reports', shortcut: 'Alt+6' },
+    { icon: <MessageCircle className="w-5 h-5" />, label: 'AI Assistant', path: '/chat', shortcut: 'Alt+7' },
+    { icon: <Settings className="w-5 h-5" />, label: 'Settings', path: '/settings', shortcut: 'Alt+8' },
   ];
 
   return (
@@ -81,6 +117,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               label={item.label}
               path={item.path}
               active={location.pathname === item.path}
+              shortcut={item.shortcut}
             />
           ))}
         </nav>
@@ -112,6 +149,27 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Breadcrumb Navigation */}
+        <div className="bg-gray-800/50 border-b border-gray-700/50 px-6 py-2">
+          <div className="flex items-center justify-between">
+            <nav className="flex items-center space-x-2 text-sm">
+              <span className="text-gray-500">CannaAI Pro</span>
+              <span className="text-gray-600">/</span>
+              <span className="text-gray-300 capitalize">
+                {location.pathname.split('/')[1] || 'Dashboard'}
+              </span>
+            </nav>
+
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2">
+              <kbd className="px-2 py-1 text-xs bg-gray-700 rounded border border-gray-600">
+                Ctrl+K
+              </kbd>
+              <span className="text-xs text-gray-500">Search</span>
+            </div>
+          </div>
+        </div>
+
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

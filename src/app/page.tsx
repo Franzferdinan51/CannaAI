@@ -9,7 +9,7 @@ export default function Home() {
 
   useEffect(() => {
     // Redirect to the modern dashboard interface
-    router.replace('/dashboard');
+    router.replace('/photo-analysis');
   }, [router]);
 
   return (

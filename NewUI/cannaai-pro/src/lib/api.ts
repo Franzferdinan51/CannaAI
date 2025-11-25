@@ -96,11 +96,72 @@ export const apiClient = new ApiClient();
 
 // Export individual API methods for specific endpoints
 export const api = {
-  // Plant Analysis
+  // Plant Analysis - Enhanced
   analyze: (data: any) => apiClient.post('/analyze', data),
   analyzeSimple: (data: any) => apiClient.post('/analyze-simple', data),
   autoAnalyze: (file: File) => apiClient.upload('/auto-analyze', file),
   trichomeAnalysis: (file: File) => apiClient.upload('/trichome-analysis', file),
+
+  // Scanner-specific endpoints
+  scanner: {
+    // Image processing
+    uploadImage: (file: File, metadata?: any) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      if (metadata) {
+        Object.entries(metadata).forEach(([key, value]) => {
+          formData.append(key, value as string);
+        });
+      }
+      return apiClient.post('/scanner/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+
+    // Analysis history
+    getHistory: (params?: { limit?: number; offset?: number; strain?: string }) =>
+      apiClient.get('/scanner/history', params),
+
+    deleteAnalysis: (id: string) => apiClient.delete(`/scanner/history/${id}`),
+
+    // Batch operations
+    batchAnalyze: (files: File[], formData: any) => {
+      const formDataObj = new FormData();
+      files.forEach((file, index) => {
+        formDataObj.append(`images[${index}]`, file);
+      });
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataObj.append(key, value as string);
+      });
+      return apiClient.post('/scanner/batch-analyze', formDataObj, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+
+    // Export and reports
+    exportAnalysis: (id: string, format: 'pdf' | 'json' | 'csv' = 'pdf') =>
+      apiClient.get(`/scanner/export/${id}`, { format }),
+
+    generateReport: (id: string) => apiClient.post(`/scanner/report/${id}`),
+
+    // Scanner settings
+    getSettings: () => apiClient.get('/scanner/settings'),
+    updateSettings: (settings: any) => apiClient.put('/scanner/settings', settings),
+
+    // Statistics and analytics
+    getStats: (timeRange?: 'week' | 'month' | 'year') =>
+      apiClient.get('/scanner/stats', { timeRange }),
+
+    getCommonIssues: () => apiClient.get('/scanner/common-issues'),
+
+    // Camera and capture
+    getCameraDevices: () => apiClient.get('/scanner/camera/devices'),
+
+    // Strain management
+    addCustomStrain: (strain: any) => apiClient.post('/scanner/strains', strain),
+    updateCustomStrain: (id: string, strain: any) => apiClient.put(`/scanner/strains/${id}`, strain),
+    deleteCustomStrain: (id: string) => apiClient.delete(`/scanner/strains/${id}`),
+  },
 
   // Chat & AI
   chat: (message: string) => apiClient.post('/chat', { message }),

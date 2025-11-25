@@ -2,6 +2,7 @@
 import { setupSocket } from '@/lib/socket';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { WebSocketServer } from 'ws';
 import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -199,6 +200,31 @@ async function createCustomServer() {
     setupSocket(io, {
       enableAuth: enableSocketAuth,
       securityConfig: securityConfig
+    });
+
+    // Native WebSocket endpoint for chat UI
+    const wss = new WebSocketServer({ noServer: true });
+    wss.on('connection', (ws) => {
+      ws.send(JSON.stringify({ type: 'connected', message: 'Chat websocket connected' }));
+      ws.on('message', (message) => {
+        const text = message.toString();
+        const response = {
+          type: 'message_received',
+          content: `Echo: ${text}`,
+          timestamp: new Date().toISOString()
+        };
+        ws.send(JSON.stringify(response));
+      });
+    });
+
+    // Route upgrades to the chat websocket path
+    server.on('upgrade', (request, socket, head) => {
+      const { url } = request;
+      if (url && url.startsWith('/api/chat/ws')) {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+          wss.emit('connection', ws, request);
+        });
+      }
     });
 
     // Attach Next.js request handler to the server

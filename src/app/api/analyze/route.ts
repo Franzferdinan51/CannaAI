@@ -3,6 +3,7 @@ import { processImageForVisionModel, base64ToBuffer, ImageProcessingError, AIPro
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig } from '@/lib/ai-provider-detection';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { prisma } from '@/lib/prisma';
 
 // Environment detection
 const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -14,6 +15,7 @@ const requestTracker = new Map<string, { count: number; resetTime: number }>();
 
 // Enhanced validation schema with Zod - more flexible for frontend compatibility
 const AnalysisRequestSchema = z.object({
+  plantId: z.string().optional(),
   strain: z.string().min(1).max(100).transform(val => val.trim()),
   leafSymptoms: z.string().max(1000).transform(val => {
     const trimmed = val.trim();
@@ -175,8 +177,9 @@ export async function POST(request: NextRequest) {
   try {
     // Enhanced validation with comprehensive schema
     let body;
+    let rawBody: any;
     try {
-      const rawBody = await request.json();
+      rawBody = await request.json();
 
       // Pre-sanitization for security
       if (rawBody.plantImage && !rawBody.plantImage.startsWith('data:image/')) {
@@ -758,6 +761,33 @@ Format your response as detailed JSON with this comprehensive structure:
         rateLimiting: 'active'
       }
     });
+
+    // Persist analysis result for history/plant linkage (best-effort)
+    try {
+      await prisma.plantAnalysis.create({
+        data: {
+          plantId: body.plantId,
+          request: {
+            strain,
+            leafSymptoms,
+            phLevel,
+            temperature,
+            humidity,
+            medium,
+            growthStage,
+            pestDiseaseFocus,
+            urgency,
+            additionalNotes,
+            temperatureUnit
+          },
+          result: analysisResult,
+          provider: usedProvider,
+          imageInfo: processedImageInfo
+        }
+      });
+    } catch (persistError) {
+      console.warn('Failed to persist plant analysis record:', persistError);
+    }
 
     // Add enhanced security headers to response
     addSecurityHeaders(response);
