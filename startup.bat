@@ -4,11 +4,6 @@ setlocal enabledelayedexpansion
 :: This script starts the CannaAI Pro cultivation management system
 :: with both Original Next.js UI and NewUI (React/Vite) support
 
-:: Default flags
-set BACKEND_PORT_CONFLICT=0
-set NEWUI_PORT_CONFLICT=0
-set USE_ALT_PORT=0
-
 echo ========================================
 echo    CannaAI Pro - Cannabis Cultivation AI
 echo    Hybrid Architecture: Next.js + React/Vite
@@ -53,7 +48,7 @@ if not exist "node_modules" (
 :: Check if database exists (SQLite)
 if not exist "db\cannaai.db" (
     echo [INFO] Database not found. Setting up database via Prisma...
-    call npx prisma db push
+    call npm run db:push
     if errorlevel 1 (
         echo [WARNING] Database setup had issues, but continuing...
     ) else (
@@ -285,10 +280,6 @@ goto :EOF
 :DEV_MODE
 echo.
 echo [INFO] Starting CannaAI in Development Mode...
-if "!BACKEND_PORT_CONFLICT!"=="1" (
-    echo [ERROR] Backend port 3000 is still in use. Resolve the conflict before starting.
-    goto END
-)
 if "!USE_ALT_PORT!"=="1" (
     echo [INFO] Server will be available at: http://127.0.0.1:3001
     set PORT=3001
@@ -309,10 +300,6 @@ goto END
 :PROD_MODE
 echo.
 echo [INFO] Building CannaAI for Production...
-if "!BACKEND_PORT_CONFLICT!"=="1" (
-    echo [ERROR] Backend port 3000 is still in use. Resolve the conflict before starting.
-    goto END
-)
 call npm run build
 if errorlevel 1 (
     echo [ERROR] Build failed
@@ -395,10 +382,6 @@ goto END
 echo.
 echo [INFO] Starting CannaAI in Remote Development Mode...
 echo [INFO] This mode enables network access for Tailscale and local network connections
-if "!BACKEND_PORT_CONFLICT!"=="1" (
-    echo [ERROR] Backend port 3000 is still in use. Resolve the conflict before starting.
-    goto END
-)
 if "!USE_ALT_PORT!"=="1" (
     echo [INFO] Server will be available at: http://0.0.0.0:3001
     echo [INFO] Local access: http://127.0.0.1:3001
@@ -423,10 +406,6 @@ goto END
 :DEV_MODE_AGENTEVOLVER
 echo.
 echo [INFO] Starting AgentEvolver and CannaAI in Development Mode...
-if "!BACKEND_PORT_CONFLICT!"=="1" (
-    echo [ERROR] Backend port 3000 is still in use. Resolve the conflict before starting.
-    goto END
-)
 
 :: Check if Python is available for AgentEvolver
 echo [INFO] Checking Python installation...
@@ -492,10 +471,6 @@ goto END
 :PROD_MODE_AGENTEVOLVER
 echo.
 echo [INFO] Starting AgentEvolver and CannaAI in Production Mode...
-if "!BACKEND_PORT_CONFLICT!"=="1" (
-    echo [ERROR] Backend port 3000 is still in use. Resolve the conflict before starting.
-    goto END
-)
 
 :: Check if Python is available for AgentEvolver
 echo [INFO] Checking Python installation...
@@ -627,15 +602,6 @@ echo.
 echo [INFO] Starting CannaAI Pro in Hybrid Development Mode...
 echo [INFO] This will start both Next.js backend and NewUI frontend
 echo.
-if "!BACKEND_PORT_CONFLICT!"=="1" (
-    echo [ERROR] Backend port 3000 is still in use. Resolve the conflict before starting hybrid mode.
-    goto END
-)
-if "!NEWUI_PORT_CONFLICT!"=="1" (
-    echo [ERROR] NewUI port 5174 is still in use. Resolve the conflict before starting hybrid mode.
-    goto END
-)
-
 :: Check if NewUI is available
 if !NEWUI_AVAILABLE! == 0 (
     echo [ERROR] NewUI not found! Please ensure NewUI\cannaai-pro directory exists.
@@ -668,15 +634,6 @@ echo.
 echo [INFO] Starting CannaAI Pro in Hybrid Production Mode...
 echo [INFO] This will build and start both backend and NewUI
 echo.
-if "!BACKEND_PORT_CONFLICT!"=="1" (
-    echo [ERROR] Backend port 3000 is still in use. Resolve the conflict before starting hybrid mode.
-    goto END
-)
-if "!NEWUI_PORT_CONFLICT!"=="1" (
-    echo [ERROR] NewUI port 5173/5174 is still in use. Resolve the conflict before starting hybrid mode.
-    goto END
-)
-
 :: Check if NewUI is available
 if !NEWUI_AVAILABLE! == 0 (
     echo [ERROR] NewUI not found! Please ensure NewUI\cannaai-pro directory exists.
@@ -721,10 +678,6 @@ echo.
 echo [INFO] Starting Backend Only Development Mode...
 echo [INFO] This will start only the Next.js server (port 3000)
 echo.
-if "!BACKEND_PORT_CONFLICT!"=="1" (
-    echo [ERROR] Backend port 3000 is still in use. Resolve the conflict before starting.
-    goto END
-)
 echo [INFO] Next.js Backend will be available at: http://127.0.0.1:3000
 echo [INFO] API endpoints will be available at: http://127.0.0.1:3000/api/
 echo [INFO] Press Ctrl+C to stop the server
