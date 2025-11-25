@@ -4,6 +4,11 @@ setlocal enabledelayedexpansion
 :: This script starts the CannaAI Pro cultivation management system
 :: with both Original Next.js UI and NewUI (React/Vite) support
 
+:: Default flags
+set BACKEND_PORT_CONFLICT=0
+set NEWUI_PORT_CONFLICT=0
+set USE_ALT_PORT=0
+
 echo ========================================
 echo    CannaAI Pro - Cannabis Cultivation AI
 echo    Hybrid Architecture: Next.js + React/Vite
@@ -45,10 +50,10 @@ if not exist "node_modules" (
     echo.
 )
 
-:: Check if database exists
-if not exist "db\custom.db" (
-    echo [INFO] Database not found. Setting up database...
-    call npm run db:push
+:: Check if database exists (SQLite)
+if not exist "db\cannaai.db" (
+    echo [INFO] Database not found. Setting up database via Prisma...
+    call npx prisma db push
     if errorlevel 1 (
         echo [WARNING] Database setup had issues, but continuing...
     ) else (
