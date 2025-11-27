@@ -14,8 +14,8 @@ datasource db {
 }
 
 model Room {
-  id        String   @id @default(cuid())
-  name      String
+  id  String   @id @default(cuid())
+  name      String   @db.VarChar(255)
   temp      Float?
   humidity  Float?
   co2       Float?
@@ -24,12 +24,15 @@ model Room {
   plants    Plant[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([active])
+  @@index([name])
 }
 
 model Sensor {
-  id          String           @id @default(cuid())
-  name        String
-  type        String
+  id  String           @id @default(cuid())
+  name  String           @db.VarChar(255)
+  type  String           @db.VarChar(100)
   locationId  String?
   room        Room?            @relation(fields: [locationId], references: [id])
   enabled     Boolean          @default(true)
@@ -38,40 +41,158 @@ model Sensor {
   lastUpdated DateTime?
   readings    SensorReading[]
   alerts      Alert[]
+  analytics   SensorAnalytics[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+
+  @@index([locationId])
+  @@index([type])
+  @@index([enabled])
+  @@index([name])
 }
 
 model SensorReading {
-  id        String   @id @default(cuid())
+  id  String   @id @default(cuid())
   sensorId  String
   sensor    Sensor   @relation(fields: [sensorId], references: [id])
   value     Float?
   data      Json?
   timestamp DateTime @default(now())
+
+  @@index([sensorId, timestamp])
+  @@index([timestamp])
 }
 
 model Alert {
   id           String   @id @default(cuid())
-  sensorId     String?
+  sensorId  String?
   sensor       Sensor?  @relation(fields: [sensorId], references: [id])
-  type         String
-  severity     String
-  message      String
+  type         String   @db.VarChar(100)
+  severity  String   @db.VarChar(50)
+  message      String   @db.Text
   acknowledged Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([sensorId])
+  @@index([acknowledged, createdAt])
+  @@index([severity, createdAt])
+  @@index([type, createdAt])
 }
 
 model Notification {
   id             String   @id @default(cuid())
-  type           String
-  title          String?
-  message        String
+  type           String   @db.VarChar(100)
+  title  String?  @db.VarChar(255)
+  message  String   @db.Text
   acknowledged   Boolean  @default(false)
   acknowledgedAt DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  deliveries     NotificationDelivery[]
+  webhookDeliveries WebhookDelivery[]
+  templateId  String?
+  template       NotificationTemplate? @relation(fields: [templateId], references: [id])
+  metadata       Json?
+
+  @@index([acknowledged, createdAt])
+  @@index([type, createdAt])
+  @@index([templateId])
+}
+
+model WebhookSubscription {
+  id  String   @id @default(cuid())
+  name  String   @db.VarChar(255)
+  url         String   @db.Text
+  secret      String?
+  events      String   @db.Text // JSON string of event types
+  enabled     Boolean  @default(true)
+  retryCount  Int      @default(3)
+  timeout     Int      @default(5000) // milliseconds
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deliveries  WebhookDelivery[]
+  lastUsed    DateTime?
+  isVerified  Boolean  @default(false)
+
+  @@index([enabled])
+  @@index([lastUsed])
+  @@index([name])
+}
+
+model WebhookDelivery {
+  id              String   @id @default(cuid())
+  webhookId  String
+  webhook         WebhookSubscription @relation(fields: [webhookId], references: [id])
+  notificationId  String?
+  notification    Notification? @relation(fields: [notificationId], references: [id])
+  eventType  String   @db.VarChar(100)
+  status  String   @db.VarChar(50) // 'pending', 'success', 'failed', 'retry'
+  responseCode    Int?
+  responseBody    String?  @db.Text
+  attempts        Int      @default(0)
+  nextRetryAt     DateTime?
+  errorMessage    String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, nextRetryAt])
+  @@index([webhookId])
+  @@index([eventType, createdAt])
+  @@index([notificationId])
+}
+
+model NotificationTemplate {
+  id  String   @id @default(cuid())
+  name  String   @unique
+  type  String
+  title  String
+  message  String
+  channels    String   // JSON string of enabled channels
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  notifications Notification[]
+}
+
+model NotificationDelivery {
+  id              String   @id @default(cuid())
+  notificationId  String
+  notification    Notification @relation(fields: [notificationId], references: [id])
+  channel         String
+  status  String   // 'pending', 'sent', 'delivered', 'failed'
+  provider  String?  // 'email', 'sms', 'push', 'webhook', 'discord', 'slack'
+  recipient  String?
+  messageId  String?
+  errorMessage    String?
+  attempts        Int      @default(0)
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([notificationId, channel])
+  @@index([status])
+}
+
+model NotificationPreference {
+  id                    String   @id @default(cuid())
+  userId                String?
+  type                  String
+  emailEnabled          Boolean  @default(true)
+  smsEnabled           Boolean  @default(false)
+  pushEnabled          Boolean  @default(true)
+  webhookEnabled       Boolean  @default(false)
+  discordEnabled       Boolean  @default(false)
+  slackEnabled         Boolean  @default(false)
+  inAppEnabled         Boolean  @default(true)
+  minSeverity  String   @default("info")
+  quietHoursStart      String?  // HH:MM format
+  quietHoursEnd  String?  // HH:MM format
+  throttleRate         Int      @default(0) // max notifications per hour (0 = unlimited)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId, type])
 }
 
 model AutomationSetting {
@@ -85,7 +206,7 @@ model Strain {
   name               String
   type               String
   lineage            String?
-  description        String?
+  description  String?
   isPurpleStrain     Boolean  @default(false)
   optimalConditions  Json?
   commonDeficiencies Json?
@@ -104,36 +225,43 @@ model Strain {
 }
 
 model Plant {
-  id          String   @id @default(cuid())
-  name        String
+  id  String   @id @default(cuid())
+  name  String   @db.VarChar(255)
   strainId    String?
   strain      Strain?  @relation(fields: [strainId], references: [id])
-  stage       String?
+  stage  String?  @db.VarChar(100)
   health      Json?
   age         Int?
   plantedDate DateTime?
   locationId  String?
   room        Room?    @relation(fields: [locationId], references: [id])
   images      Json?
-  notes       String?
+  notes  String?  @db.Text
   tags        Json?
   metadata    Json?
   isActive    Boolean  @default(true)
   tasks       Task[]
   actions     Action[]
   analyses    PlantAnalysis[]
+  healthAnalytics PlantHealthAnalytics[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([locationId])
+  @@index([strainId])
+  @@index([isActive])
+  @@index([stage])
+  @@index([name])
 }
 
 model Task {
   id              String   @id @default(cuid())
-  title           String
-  description     String?
-  type            String?
-  priority        String?
-  status          String   @default("pending")
-  notes           String?
+  title           String   @db.VarChar(255)
+  description  String?  @db.Text
+  type            String?  @db.VarChar(100)
+  priority  String?  @db.VarChar(50)
+  status  String   @default("pending") @db.VarChar(50)
+  notes           String?  @db.Text
   data            Json?
   plantId         String?
   plant           Plant?   @relation(fields: [plantId], references: [id])
@@ -141,18 +269,28 @@ model Task {
   completedAt     DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([plantId])
+  @@index([status, scheduledAt])
+  @@index([status, completedAt])
+  @@index([type, status])
+  @@index([priority, status])
 }
 
 model Action {
-  id          String   @id @default(cuid())
-  plantId     String?
+  id  String   @id @default(cuid())
+  plantId  String?
   plant       Plant?   @relation(fields: [plantId], references: [id])
-  type        String
-  description String
-  status      String   @default("pending")
+  type  String   @db.VarChar(100)
+  description String   @db.Text
+  status      String   @default("pending") @db.VarChar(50)
   data        Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([plantId])
+  @@index([status, createdAt])
+  @@index([type, status])
 }
 
 model PlantAnalysis {
@@ -161,8 +299,352 @@ model PlantAnalysis {
   plant      Plant?   @relation(fields: [plantId], references: [id])
   request    Json?
   result     Json?
-  provider   String?
+  provider   String?  @db.VarChar(100)
   imageInfo  Json?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([plantId])
+  @@index([provider])
+  @@index([createdAt])
+}
+
+// Analytics Models
+model Metric {
+  id  String   @id @default(cuid())
+  name  String   @unique
+  type  String   // 'counter', 'gauge', 'histogram'
+  value       Float
+  tags        Json?
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name, timestamp])
+  @@index([timestamp])
+}
+
+model AnalyticsRecord {
+  id            String   @id @default(cuid())
+  category      String   @db.VarChar(100) // 'api', 'sensor', 'plant_health', 'system'
+  eventType  String   @db.VarChar(100)
+  data          Json
+  metadata      Json?
+  success       Boolean  @default(true)
+  errorMessage  String?  @db.Text
+  responseTime  Float?   // in milliseconds
+  userId  String?
+  plantId  String?
+  sensorId      String?
+  timestamp     DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([category, timestamp])
+  @@index([eventType, timestamp])
+  @@index([timestamp])
+  @@index([success, timestamp])
+  @@index([category, eventType, timestamp])
+  @@index([plantId, timestamp])
+  @@index([sensorId, timestamp])
+}
+
+model SensorAnalytics {
+  id  String   @id @default(cuid())
+  sensorId    String
+  sensor      Sensor   @relation(fields: [sensorId], references: [id])
+  reading     Float
+  value       Json?
+  status      String   @db.VarChar(50) // 'normal', 'warning', 'critical'
+  threshold   Float?
+  anomalyScore Float?  // 0-1 score indicating how anomalous the reading is
+  temperature Float?
+  humidity    Float?
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([sensorId, timestamp])
+  @@index([status, timestamp])
+  @@index([timestamp])
+  @@index([sensorId, status, timestamp])
+}
+
+model PlantHealthAnalytics {
+  id              String   @id @default(cuid())
+  plantId         String
+  plant           Plant    @relation(fields: [plantId], references: [id])
+  analysisId      String?
+  healthScore     Float    // 0-100
+  healthStatus    String   @db.VarChar(50) // 'excellent', 'good', 'fair', 'poor', 'critical'
+  issues          Json?
+  recommendations Json?
+  confidence      Float?   // AI confidence score 0-1
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([plantId, timestamp])
+  @@index([healthStatus, timestamp])
+  @@index([timestamp])
+  @@index([plantId, healthStatus, timestamp])
+  @@index([confidence])
+}
+
+model APIPerformanceMetrics {
+  id            String   @id @default(cuid())
+  endpoint      String   @db.VarChar(255)
+  method  String   @db.VarChar(10)
+  statusCode    Int
+  responseTime  Float    // in milliseconds
+  success       Boolean
+  errorMessage  String?  @db.Text
+  requestSize   Float?   // in bytes
+  responseSize  Float?   // in bytes
+  userAgent  String?  @db.Text
+  ipAddress  String?  @db.VarChar(45)
+  timestamp     DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([endpoint, timestamp])
+  @@index([statusCode, timestamp])
+  @@index([timestamp])
+  @@index([success, timestamp])
+  @@index([method, statusCode])
+}
+
+model DailyReport {
+  id            String   @id @default(cuid())
+  date          DateTime @unique
+  summary       Json
+  metrics       Json
+  alertsCount   Int
+  actionsCount  Int
+  analysisCount Int
+  sensorReadings Int
+  generatedAt   DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([date])
+}
+
+model AlertThreshold {
+  id  String   @id @default(cuid())
+  name  String   @unique
+  metric      String   // e.g., 'temperature', 'humidity', 'health_score'
+  condition   String   // 'gt', 'lt', 'eq', 'ne'
+  value       Float
+  severity    String   // 'info', 'warning', 'critical'
+  enabled     Boolean  @default(true)
+  roomId      String?
+  sensorId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([metric, enabled])
+}
+
+model DataAggregation {
+  id  String   @id @default(cuid())
+  period      String   // 'hourly', 'daily', 'weekly', 'monthly'
+  category    String
+  metric      String
+  value       Float
+  count       Int
+  min         Float?
+  max         Float?
+  avg         Float?
+  stddev      Float?
+  timestamp   DateTime // The start of the aggregation period
+  createdAt   DateTime @default(now())
+
+  @@index([period, category, timestamp])
+  @@index([timestamp])
+}
+
+// Photo Analysis Automation Models
+model AutomationRule {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  type        String   @db.VarChar(100)
+  enabled     Boolean  @default(true)
+  conditions  Json
+  actions     Json
+  config      Json?
+  plantId     String?
+  plant       Plant?   @relation(fields: [plantId], references: [id])
+  scheduleId  String?
+  schedule    Schedule? @relation(fields: [scheduleId], references: [id])
+  triggerId   String?
+  trigger     Trigger? @relation(fields: [triggerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled])
+  @@index([plantId])
+  @@index([type])
+  @@index([scheduleId])
+}
+
+model Schedule {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  cronExpression String @db.VarChar(255)
+  timezone    String   @default('UTC')
+  type        String   @db.VarChar(100)
+  interval    String?  @db.VarChar(50)
+  enabled     Boolean  @default(true)
+  config      Json?
+  lastRun     DateTime?
+  nextRun     DateTime?
+  runCount    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  rules       AutomationRule[]
+
+  @@index([enabled])
+  @@index([nextRun])
+  @@index([type])
+}
+
+model Trigger {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  type        String   @db.VarChar(100)
+  conditions  Json
+  config      Json?
+  enabled     Boolean  @default(true)
+  cooldown    Int      @default(3600)
+  lastTriggered DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  rules       AutomationRule[]
+
+  @@index([enabled])
+  @@index([type])
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  type        String   @db.VarChar(100)
+  enabled     Boolean  @default(true)
+  steps       Json
+  config      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled])
+  @@index([type])
+}
+
+model AnalysisBatch {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  type        String   @db.VarChar(100)
+  status      String   @default('pending') @db.VarChar(50)
+  plantIds    String
+  totalCount  Int      @default(0)
+  completedCount Int   @default(0)
+  failedCount Int      @default(0)
+  config      Json?
+  results     Json?
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdBy   String?  @db.VarChar(255)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([type])
+}
+
+model AnalysisHistory {
+  id          String   @id @default(cuid())
+  plantId     String
+  plant       Plant    @relation(fields: [plantId], references: [id])
+  analysisType String  @db.VarChar(100)
+  analysisId  String?
+  data        Json
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([plantId, createdAt])
+  @@index([analysisType, createdAt])
+}
+
+model AnomalyDetection {
+  id          String   @id @default(cuid())
+  plantId     String?
+  plant       Plant?   @relation(fields: [plantId], references: [id])
+  type        String   @db.VarChar(100)
+  metric      String   @db.VarChar(255)
+  severity    String   @db.VarChar(50)
+  detected    Boolean  @default(true)
+  threshold   Float
+  currentValue Float
+  data        Json?
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([plantId, createdAt])
+  @@index([resolved, severity])
+  @@index([type, createdAt])
+}
+
+model AnalysisScheduler {
+  id          String   @id @default(cuid())
+  plantId     String?
+  plant       Plant?   @relation(fields: [plantId], references: [id])
+  analysisType String  @db.VarChar(100)
+  frequency   String   @db.VarChar(50)
+  timeOfDay   String?  @db.VarChar(10)
+  enabled     Boolean  @default(true)
+  config      Json?
+  lastRun     DateTime?
+  nextRun     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled])
+  @@index([nextRun])
+  @@index([plantId])
+}
+
+model AnalysisMilestone {
+  id          String   @id @default(cuid())
+  plantId     String
+  plant       Plant    @relation(fields: [plantId], references: [id])
+  type        String   @db.VarChar(100)
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  data        Json?
+  detectedAt  DateTime @default(now())
+  acknowledged Boolean @default(false)
+  acknowledgedAt DateTime?
+
+  @@index([plantId, detectedAt])
+  @@index([type])
+}
+
+model NotificationRule {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  type        String   @db.VarChar(100)
+  conditions  Json
+  channels    String
+  template    String?  @db.VarChar(255)
+  enabled     Boolean  @default(true)
+  cooldown    Int      @default(3600)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled])
+  @@index([type])
 }

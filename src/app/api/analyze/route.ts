@@ -57,6 +57,12 @@ function checkRateLimit(request: NextRequest): { allowed: boolean; resetTime?: n
   const clientIP = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
   const hashedIP = crypto.createHash('sha256').update(clientIP).digest('hex').substring(0, 16);
   const now = Date.now();
+n  // Cleanup expired entries to prevent memory leak
+  for (const [key, value] of requestTracker.entries()) {
+    if (now > value.resetTime) {
+      requestTracker.delete(key);
+    }
+  }
 
   const tracker = requestTracker.get(hashedIP);
 

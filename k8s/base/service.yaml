@@ -1,0 +1,83 @@
+# ========================================
+# Kubernetes Service
+# ========================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cannaai-service
+  namespace: cannaai-production
+  labels:
+    app: cannaai
+    component: backend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: cannaai
+    component: backend
+---
+# Headless Service for Socket.IO
+apiVersion: v1
+kind: Service
+metadata:
+  name: cannaai-headless
+  namespace: cannaai-production
+  labels:
+    app: cannaai
+    component: backend
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: cannaai
+    component: backend
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: cannaai-production
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+  selector:
+    app: redis
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: cannaai-production
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: postgres

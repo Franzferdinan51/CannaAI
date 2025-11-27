@@ -1,0 +1,19 @@
+# ========================================
+# Kubernetes Namespace
+# ========================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cannaai-production
+  labels:
+    name: cannaai-production
+    environment: production
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cannaai-monitoring
+  labels:
+    name: cannaai-monitoring
+    environment: production

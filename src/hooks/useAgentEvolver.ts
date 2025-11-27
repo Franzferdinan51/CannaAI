@@ -121,7 +121,7 @@ export function useAgentEvolver(): AgentEvolverHook {
     } catch (error) {
       console.error('Failed to trigger evolution:', error);
     }
-  }, []);
+  }, [getAgentEvolverClient]));
 
   const resetMetrics = useCallback(async () => {
     try {

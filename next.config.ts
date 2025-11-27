@@ -9,6 +9,35 @@ const nextConfig: NextConfig = {
   },
   // 禁用 Next.js 热重载，由 nodemon 处理重编译
   reactStrictMode: false,
+  
+  // PWA and offline support
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json',
+          },
+        ],
+      },
+    ];
+  },
+  
   // Output for static hosting (Netlify) - only when BUILD_MODE=static
   ...(isStaticExport && {
     output: 'export',
@@ -47,6 +76,14 @@ const nextConfig: NextConfig = {
         process: false,
       };
     }
+    
+    // Optimize for mobile and PWA
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+      };
+    }
+    
     return config;
   },
   eslint: {

@@ -202,6 +202,16 @@ async function createCustomServer() {
       securityConfig: securityConfig
     });
 
+    // Initialize notification system
+    try {
+      const { initializeNotificationSystem } = await import('@/lib/notification-init');
+      await initializeNotificationSystem(io);
+      console.log('✅ Notification system initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize notification system:', error);
+      // Don't fail startup, just log the error
+    }
+
     // Native WebSocket endpoint for chat UI
     const wss = new WebSocketServer({ noServer: true });
     wss.on('connection', (ws) => {
