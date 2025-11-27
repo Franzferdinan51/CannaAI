@@ -36,18 +36,55 @@ export async function GET(request: Request) {
       whereClause.plantId = plantId;
     }
 
-    // Get plant health analytics
+    // Get plant health analytics with minimal data
     const healthData = await prisma.plantHealthAnalytics.findMany({
       where: whereClause,
-      include: {
-        plant: {
-          include: {
-            strain: true,
-          },
-        },
+      select: {
+        id: true,
+        plantId: true,
+        healthScore: true,
+        healthStatus: true,
+        issues: true,
+        recommendations: true,
+        timestamp: true,
       },
       orderBy: { timestamp: 'desc' },
+      take: 200,
     });
+
+    // Get plant IDs for batch fetching
+    const plantIds = [...new Set(healthData.map(h => h.plantId))];
+
+    // Batch fetch plants and strains
+    const [plants, strains] = await Promise.all([
+      prisma.plant.findMany({
+        where: { id: { in: plantIds } },
+        select: {
+          id: true,
+          name: true,
+          stage: true,
+        },
+      }),
+      // Only fetch strains if we have plants with strain IDs
+      plantIds.length > 0 ? prisma.strain.findMany({
+        where: { plants: { some: { id: { in: plantIds } } } },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+        },
+      }) : Promise.resolve([]),
+    ]);
+
+    // Create lookup maps for O(1) access
+    const plantMap = new Map(plants.map(p => [p.id, p]));
+    const strainMap = new Map(strains.map(s => [s.id, s]));
+
+    // Enrich health data with plant and strain info
+    const enrichedHealthData = healthData.map(item => ({
+      ...item,
+      plant: item.plantId ? plantMap.get(item.plantId) : null,
+    }));
 
     // Get distribution of health statuses
     const statusDistribution = healthData.reduce((acc, item) => {
@@ -125,7 +162,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        healthData: healthData.slice(0, 200),
+        healthData: enrichedHealthData,
         summary: {
           avgHealthScore,
           totalAnalyses: healthData.length,

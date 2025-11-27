@@ -2,10 +2,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 
-export async function GET() {
+export async function GET(request: Request) {
   await ensureSeedData();
-  const plants = await prisma.plant.findMany();
-  return NextResponse.json({ success: true, data: { plants, total: plants.length } });
+
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '20', 10);
+  const skip = (page - 1) * limit;
+
+  const [plants, total] = await Promise.all([
+    prisma.plant.findMany({
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.plant.count(),
+  ]);
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      plants,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {

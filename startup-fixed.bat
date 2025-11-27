@@ -45,7 +45,20 @@ if not exist "node_modules" (
     )
     echo [SUCCESS] Dependencies installed
 ) else (
-    echo [SUCCESS] node_modules found
+    :: Check if concurrently is installed (required for npm run dev)
+    if not exist "node_modules\.bin\concurrently" (
+        echo [WARNING] concurrently package not found in node_modules\.bin
+        echo [INFO] Installing missing dependencies...
+        call npm install
+        if errorlevel 1 (
+            echo [ERROR] Failed to install dependencies
+            pause
+            exit /b 1
+        )
+        echo [SUCCESS] Dependencies installed
+    ) else (
+        echo [SUCCESS] node_modules found
+    )
 )
 echo.
 

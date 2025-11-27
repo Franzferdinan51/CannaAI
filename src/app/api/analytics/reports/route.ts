@@ -45,8 +45,8 @@ export async function GET(request: Request) {
       actionsCount,
       analysisCount,
       sensorReadings,
-      plantHealthData,
-      apiMetrics,
+      plantHealthStats,
+      apiStats,
     ] = await Promise.all([
       prisma.alert.count({
         where: {
@@ -68,76 +68,87 @@ export async function GET(request: Request) {
           timestamp: { gte: startDate, lte: endDate },
         },
       }),
-      prisma.plantHealthAnalytics.findMany({
+      // Use aggregate for plant health statistics
+      prisma.plantHealthAnalytics.aggregate({
         where: {
           timestamp: { gte: startDate, lte: endDate },
         },
-        include: {
-          plant: {
-            include: {
-              strain: true,
-            },
-          },
-        },
+        _count: true,
+        _avg: { healthScore: true },
       }),
-      prisma.aPIPerformanceMetrics.findMany({
+      // Use aggregate for API performance statistics
+      prisma.aPIPerformanceMetrics.aggregate({
         where: {
           timestamp: { gte: startDate, lte: endDate },
         },
+        _count: true,
+        _avg: { responseTime: true },
       }),
     ]);
 
-    // Calculate plant health statistics
-    const plantHealthSummary = plantHealthData.reduce(
-      (acc, item) => {
-        acc.total++;
-        acc.score += item.healthScore;
-        const status = item.healthStatus;
-        acc.statusCounts[status] = (acc.statusCounts[status] || 0) + 1;
-        return acc;
+    // Get plant health status distribution using groupBy
+    const plantHealthStatusDistribution = await prisma.plantHealthAnalytics.groupBy({
+      by: ['healthStatus'],
+      where: {
+        timestamp: { gte: startDate, lte: endDate },
       },
-      {
-        total: 0,
-        score: 0,
-        statusCounts: {} as Record<string, number>,
-        avgScore: 0,
-      }
-    );
+      _count: { healthStatus: true },
+    });
 
-    if (plantHealthSummary.total > 0) {
-      plantHealthSummary.avgScore =
-        plantHealthSummary.score / plantHealthSummary.total;
-    }
-
-    // Calculate API performance statistics
-    const apiSummary = apiMetrics.reduce(
-      (acc, item) => {
-        acc.total++;
-        acc.responseTime += item.responseTime;
-        if (item.success) {
-          acc.successCount++;
-        } else {
-          acc.errorCount++;
-        }
-        acc.statusCodes[item.statusCode] =
-          (acc.statusCodes[item.statusCode] || 0) + 1;
-        return acc;
+    // Get API status code distribution using groupBy
+    const apiStatusCodeDistribution = await prisma.aPIPerformanceMetrics.groupBy({
+      by: ['statusCode'],
+      where: {
+        timestamp: { gte: startDate, lte: endDate },
       },
-      {
-        total: 0,
-        responseTime: 0,
-        successCount: 0,
-        errorCount: 0,
-        avgResponseTime: 0,
-        successRate: 0,
-        statusCodes: {} as Record<number, number>,
-      }
-    );
+      _count: { statusCode: true },
+    });
 
-    if (apiSummary.total > 0) {
-      apiSummary.avgResponseTime = apiSummary.responseTime / apiSummary.total;
-      apiSummary.successRate = (apiSummary.successCount / apiSummary.total) * 100;
-    }
+    // Get top endpoints using groupBy
+    const topEndpointsData = await prisma.aPIPerformanceMetrics.groupBy({
+      by: ['endpoint'],
+      where: {
+        timestamp: { gte: startDate, lte: endDate },
+      },
+      _count: { endpoint: true },
+      orderBy: { _count: { endpoint: 'desc' } },
+      take: 5,
+    });
+
+    // Calculate success/error counts
+    const apiSuccessStats = await prisma.aPIPerformanceMetrics.groupBy({
+      by: ['success'],
+      where: {
+        timestamp: { gte: startDate, lte: endDate },
+      },
+      _count: { success: true },
+    });
+
+    // Calculate API summary from stats
+    const apiSummary = {
+      total: apiStats._count || 0,
+      avgResponseTime: apiStats._avg.responseTime || 0,
+      successCount: apiSuccessStats.find(s => s.success)?. _count.success || 0,
+      errorCount: apiSuccessStats.find(s => !s.success)?. _count.success || 0,
+      avgResponseTime: apiStats._avg.responseTime || 0,
+      successRate: apiStats._count > 0
+        ? ((apiSuccessStats.find(s => s.success)?. _count.success || 0) / apiStats._count) * 100
+        : 0,
+      statusCodes: apiStatusCodeDistribution.reduce((acc, item) => {
+        acc[item.statusCode] = item._count.statusCode;
+        return acc;
+      }, {} as Record<number, number>),
+    };
+
+    // Calculate plant health summary from stats
+    const plantHealthSummary = {
+      total: plantHealthStats._count || 0,
+      avgScore: plantHealthStats._avg.healthScore || 0,
+      statusCounts: plantHealthStatusDistribution.reduce((acc, item) => {
+        acc[item.healthStatus] = item._count.healthStatus;
+        return acc;
+      }, {} as Record<string, number>),
+    };
 
     // Create comprehensive summary
     const summary = {
@@ -179,15 +190,10 @@ export async function GET(request: Request) {
         totalRequests: apiSummary.total,
         successRate: Number(apiSummary.successRate.toFixed(2)),
         averageResponseTime: Number(apiSummary.avgResponseTime.toFixed(2)),
-        topEndpoints: Object.entries(
-          apiMetrics.reduce((acc, item) => {
-            acc[item.endpoint] = (acc[item.endpoint] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>)
-        )
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-          .map(([endpoint, count]) => ({ endpoint, count })),
+        topEndpoints: topEndpointsData.map(item => ({
+          endpoint: item.endpoint,
+          count: item._count.endpoint,
+        })),
       },
     };
 

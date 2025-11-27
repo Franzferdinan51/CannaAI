@@ -233,46 +233,48 @@ export async function aggregateData(
   endDate: Date
 ): Promise<void> {
   try {
-    // This is a simplified aggregation - in production, you'd want more sophisticated logic
-    const metrics = await prisma.metric.findMany({
+    // Use groupBy to aggregate metrics at database level
+    const metricsGrouped = await prisma.metric.groupBy({
+      by: ['name'],
       where: {
         timestamp: {
           gte: startDate,
           lte: endDate,
         },
       },
+      _count: { name: true },
+      _avg: { value: true },
+      _min: { value: true },
+      _max: { value: true },
     });
 
-    // Group by metric name
-    const grouped = metrics.reduce((acc, metric) => {
-      if (!acc[metric.name]) {
-        acc[metric.name] = [];
-      }
-      acc[metric.name].push(metric);
-      return acc;
-    }, {} as Record<string, typeof metrics>);
+    // Calculate aggregations using database results
+    for (const group of metricsGrouped) {
+      // For standard deviation, we need to fetch the actual values
+      // In production, you might want to store variance incrementally
+      const values = await prisma.metric.findMany({
+        where: {
+          timestamp: { gte: startDate, lte: endDate },
+          name: group.name,
+        },
+        select: { value: true },
+      });
 
-    // Calculate aggregations
-    for (const [name, values] of Object.entries(grouped)) {
-      const count = values.length;
-      const sum = values.reduce((acc, v) => acc + v.value, 0);
-      const avg = sum / count;
-      const min = Math.min(...values.map(v => v.value));
-      const max = Math.max(...values.map(v => v.value));
-
-      // Calculate standard deviation
-      const variance = values.reduce((acc, v) => acc + Math.pow(v.value - avg, 2), 0) / count;
+      const avg = group._avg.value || 0;
+      const variance = values.length > 0
+        ? values.reduce((acc, v) => acc + Math.pow((v.value || 0) - avg, 2), 0) / values.length
+        : 0;
       const stddev = Math.sqrt(variance);
 
       await prisma.dataAggregation.create({
         data: {
           period,
           category: 'metrics',
-          metric: name,
+          metric: group.name,
           value: avg,
-          count,
-          min,
-          max,
+          count: group._count.name,
+          min: group._min.value,
+          max: group._max.value,
           avg,
           stddev,
           timestamp: startDate,

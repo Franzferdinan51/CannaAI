@@ -60,6 +60,7 @@ model SensorReading {
   timestamp DateTime @default(now())
 
   @@index([sensorId, timestamp])
+  @@index([sensorId, timestamp, id])
   @@index([timestamp])
 }
 
@@ -252,6 +253,7 @@ model Plant {
   @@index([isActive])
   @@index([stage])
   @@index([name])
+  @@index([createdAt])
 }
 
 model Task {
@@ -275,6 +277,7 @@ model Task {
   @@index([status, completedAt])
   @@index([type, status])
   @@index([priority, status])
+  @@index([createdAt])
 }
 
 model Action {
@@ -291,6 +294,7 @@ model Action {
   @@index([plantId])
   @@index([status, createdAt])
   @@index([type, status])
+  @@index([createdAt])
 }
 
 model PlantAnalysis {
@@ -306,7 +310,7 @@ model PlantAnalysis {
 
   @@index([plantId])
   @@index([provider])
-  @@index([createdAt])
+  @@index([createdAt, id])
 }
 
 // Analytics Models
@@ -322,6 +326,7 @@ model Metric {
 
   @@index([name, timestamp])
   @@index([timestamp])
+  @@index([createdAt])
 }
 
 model AnalyticsRecord {
@@ -341,11 +346,12 @@ model AnalyticsRecord {
 
   @@index([category, timestamp])
   @@index([eventType, timestamp])
-  @@index([timestamp])
+  @@index([timestamp, success])
   @@index([success, timestamp])
   @@index([category, eventType, timestamp])
   @@index([plantId, timestamp])
   @@index([sensorId, timestamp])
+  @@index([createdAt])
 }
 
 model SensorAnalytics {
@@ -366,6 +372,7 @@ model SensorAnalytics {
   @@index([status, timestamp])
   @@index([timestamp])
   @@index([sensorId, status, timestamp])
+  @@index([sensorId, createdAt])
 }
 
 model PlantHealthAnalytics {
@@ -405,9 +412,10 @@ model APIPerformanceMetrics {
 
   @@index([endpoint, timestamp])
   @@index([statusCode, timestamp])
-  @@index([timestamp])
+  @@index([timestamp, success])
   @@index([success, timestamp])
   @@index([method, statusCode])
+  @@index([createdAt])
 }
 
 model DailyReport {
