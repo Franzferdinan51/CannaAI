@@ -1,0 +1,157 @@
+=================================================================
+     CANNAAI WINDOWS STARTUP SCRIPT - USER GUIDE
+=================================================================
+
+LOCATION:
+C:\Users\Ryan\Desktop\CannaAI-New\startup.bat
+
+HOW TO USE:
+1. Open Command Prompt or PowerShell
+2. Navigate to the directory: cd C:\Users\Ryan\Desktop\CannaAI-New
+3. Run: startup.bat
+
+=================================================================
+                    STARTUP OPTIONS
+=================================================================
+
+The script will guide you through 6 steps:
+1. Check Node.js installation
+2. Verify project files
+3. Install/verify dependencies
+4. Setup database
+5. Check port availability
+6. Select startup mode
+
+=================================================================
+                 STARTUP MODES AVAILABLE
+=================================================================
+
+IF AGENTEVOLVER IS INSTALLED:
+------------------------------
+1. Development Mode
+   - Standard dev server with hot reload
+   - Frontend + Backend
+   - Port: 3000 (or 3001 if occupied)
+
+2. Development Mode + AgentEvolver
+   - Everything from Mode 1 PLUS
+   - Starts AgentEvolver AI server on port 8001
+   - Enhanced with self-evolving AI capabilities
+
+3. Production Mode
+   - Builds optimized version
+   - Runs production server
+   - Best for deployment
+
+4. Production Mode + AgentEvolver
+   - Everything from Mode 3 PLUS
+   - AgentEvolver AI server
+
+5. AgentEvolver Server Only
+   - Starts only AgentEvolver
+   - No CannaAI frontend/backend
+   - For AI-only development
+
+6. Development Mode + DB Reset
+   - Resets database (deletes all data)
+   - Then starts in dev mode
+
+7. Install Dependencies Only
+   - Installs/updates all npm packages
+   - Also installs AgentEvolver if present
+   - Does not start servers
+
+8. Exit
+   - Quits without doing anything
+
+IF AGENTEVOLVER IS NOT INSTALLED:
+---------------------------------
+1. Development Mode
+2. Production Mode  
+3. Development Mode + DB Reset
+4. Install Dependencies Only
+5. Exit
+
+=================================================================
+                      FEATURES
+=================================================================
+
+✓ Automatic Node.js detection
+✓ Smart dependency installation
+✓ Database initialization with Prisma
+✓ Port conflict resolution (auto-switch to 3001)
+✓ AgentEvolver integration (if available)
+✓ Python detection for AgentEvolver
+✓ Clear 6-step progress indicators
+✓ Error handling with helpful messages
+✓ Live server output (see what's happening)
+
+=================================================================
+                    COMMON ISSUES
+=================================================================
+
+ISSUE: "Node.js not found"
+FIX: Install Node.js 18+ from https://nodejs.org/
+
+ISSUE: "Port 3000 in use"
+FIX: Script will offer to use port 3001 instead
+
+ISSUE: "Python not found" (AgentEvolver modes)
+FIX: Install Python from https://python.org/
+     Make sure to check "Add to PATH" during install
+
+ISSUE: "Package install failed"
+FIX: Check your internet connection
+     Try running as Administrator
+     Check that you have write permissions
+
+ISSUE: "Database errors"
+FIX: Try option 6 (DB Reset) to start fresh
+     Or manually run: npm run db:push
+
+=================================================================
+                    WHAT IT FIXES
+=================================================================
+
+This script fixes all the issues from the old version:
+
+✓ Database path mismatch (was checking wrong file)
+✓ Environment variables not passed to npm
+✓ Missing dependency verification
+✓ Script hiding server output
+✓ Poor port conflict handling
+✓ Complex, hard-to-maintain code
+
+Old script: 575 lines
+New script: 320 lines (but more features!)
+
+=================================================================
+                    GETTING STARTED
+=================================================================
+
+QUICK START:
+1. Run: startup.bat
+2. Choose: 1 (Development Mode)
+3. Wait for servers to start
+4. Open browser: http://localhost:3000
+
+WITH AGENTEVOLVER:
+1. Run: startup.bat
+2. Choose: 2 (Development Mode + AgentEvolver)
+3. Wait for both servers to start
+4. Open CannaAI: http://localhost:3000
+5. Open AgentEvolver: http://localhost:8001
+
+=================================================================
+                    STOPPING THE SERVER
+=================================================================
+
+Press Ctrl+C to stop the server
+The script will clean up and exit
+
+=================================================================
+
+Need help? Check the console output for error messages.
+The script provides detailed feedback at each step.
+
+=================================================================
