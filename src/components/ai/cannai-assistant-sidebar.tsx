@@ -355,8 +355,6 @@ export function CannaAIAssistantSidebar({
         return "🌡️ Environmental control! I can help optimize your growing conditions.";
       case 'strains':
         return "🌿 Strain management! Ask me about genetics and cultivation requirements.";
-      case 'settings':
-        return "⚙️ Configuration central! I can help optimize your system setup.";
       default:
         return "🌿 Hello! I'm your CannaAI assistant. How can I help with your cultivation today?";
     }
@@ -512,7 +510,7 @@ export function CannaAIAssistantSidebar({
                         variant="outline"
                         size="sm"
                         className="mt-3 border-emerald-600 text-emerald-400 hover:bg-emerald-900/20"
-                        onClick={() => window.location.href = '/dashboard?view=settings'}
+                        onClick={() => window.location.href = '/settings'}
                       >
                         <Settings className="h-4 w-4 mr-2" />
                         Configure AI
@@ -590,7 +588,7 @@ export function CannaAIAssistantSidebar({
             size="sm"
             className="text-slate-400 hover:text-slate-200"
             title="AI Settings"
-            onClick={() => window.location.href = '/dashboard?view=settings'}
+            onClick={() => window.location.href = '/settings'}
           >
             <Settings className="h-4 w-4" />
           </Button>

@@ -2,6 +2,7 @@
 import { setupSocket } from '@/lib/socket';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { WebSocketServer } from 'ws';
 import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -14,17 +15,36 @@ const allowedOrigins = process.env.SOCKET_IO_ORIGINS
   ? process.env.SOCKET_IO_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : dev
     ? [
+        // Backend (Next.js) origins
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'http://0.0.0.0:3000',
-        // Allow any Tailscale IP (100.x.x.x range)
+        // Frontend (New UI Vite) origins
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://0.0.0.0:5173',
+        'http://localhost:5174',
+        'http://127.0.0.1:5174',
+        'http://0.0.0.0:5174',
+        'http://localhost:5175',
+        'http://127.0.0.1:5175',
+        'http://0.0.0.0:5175',
+        'http://localhost:5176',
+        'http://127.0.0.1:5176',
+        'http://0.0.0.0:5176',
+        // Allow any Tailscale IP (100.x.x.x range) for both ports
         /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
-        // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+        /^http:\/\/100\.\d+\.\d+\.\d+:5173$/,
+        // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) for both ports
         /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+        /^http:\/\/192\.168\.\d+\.\d+:5173$/,
         /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+        /^http:\/\/10\.\d+\.\d+\.\d+:5173$/,
         /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
-        // Allow any hostname with port 3000 for flexibility
-        /^http:\/\/[\w\.-]+:3000$/
+        /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:5173$/,
+        // Allow any hostname with ports 3000 or 5173 for flexibility
+        /^http:\/\/[\w\.-]+:3000$/,
+        /^http:\/\/[\w\.-]+:5173$/
       ] // Development origins including remote access
     : []; // Production requires explicit configuration
 
@@ -180,6 +200,41 @@ async function createCustomServer() {
     setupSocket(io, {
       enableAuth: enableSocketAuth,
       securityConfig: securityConfig
+    });
+
+    // Initialize notification system
+    try {
+      const { initializeNotificationSystem } = await import('@/lib/notification-init');
+      await initializeNotificationSystem(io);
+      console.log('✅ Notification system initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize notification system:', error);
+      // Don't fail startup, just log the error
+    }
+
+    // Native WebSocket endpoint for chat UI
+    const wss = new WebSocketServer({ noServer: true });
+    wss.on('connection', (ws) => {
+      ws.send(JSON.stringify({ type: 'connected', message: 'Chat websocket connected' }));
+      ws.on('message', (message) => {
+        const text = message.toString();
+        const response = {
+          type: 'message_received',
+          content: `Echo: ${text}`,
+          timestamp: new Date().toISOString()
+        };
+        ws.send(JSON.stringify(response));
+      });
+    });
+
+    // Route upgrades to the chat websocket path
+    server.on('upgrade', (request, socket, head) => {
+      const { url } = request;
+      if (url && url.startsWith('/api/chat/ws')) {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+          wss.emit('connection', ws, request);
+        });
+      }
     });
 
     // Attach Next.js request handler to the server

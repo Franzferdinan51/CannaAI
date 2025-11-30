@@ -279,15 +279,22 @@ export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | '
   let userSettings = null;
 
   try {
-    // Fetch user settings from the settings API
-    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`);
+    // Fetch user settings from the settings API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout for settings
+
+    const settingsResponse = await fetch(`${SETTINGS_BASE}/api/settings`, {
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
 
     if (settingsResponse.ok) {
       const settingsData = await settingsResponse.json();
       userSettings = settingsData.success ? settingsData.settings : null;
     }
   } catch (error) {
-    console.warn('Failed to fetch user settings, using environment variables:', error);
+    console.warn('Failed to fetch user settings (timeout or error), using environment variables:', error);
   }
 
   switch (provider) {

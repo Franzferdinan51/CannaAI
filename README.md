@@ -67,14 +67,37 @@
 
 ## 🛠️ Technology Stack
 
-### Frontend
+### Hybrid Architecture (NEW)
+CannaAI now uses a modern hybrid architecture with separate backend and frontend services:
+
+**Backend (Next.js API Server)**
+- Serves RESTful APIs and real-time Socket.IO connections
+- Handles all business logic, AI processing, and data management
+- Runs on port 3000
+
+**Frontend (Vite + React)**
+- Modern SPA built with Vite for optimal development experience
+- Consumes backend APIs via a comprehensive integration layer
+- Runs on port 5173 for development
+
+### Backend API Server
 - **Framework**: Next.js 15 with App Router and Custom Server
 - **Language**: TypeScript 5 with flexible strictness
-- **Styling**: Tailwind CSS 4 with shadcn/ui components
-- **Animations**: Framer Motion for smooth transitions
-- **Charts**: Recharts for data visualization
+- **Database**: SQLite with Prisma ORM for type-safe operations
+- **Real-time**: Socket.IO WebSocket integration on `/api/socketio`
+- **Validation**: Zod schemas for runtime type checking
+- **AI Integration**: Z-AI Web Dev SDK with LM Studio + OpenRouter support
+- **File Processing**: HEIC image conversion, archive support
+
+### Frontend SPA (New UI)
+- **Framework**: React 19 with Vite for fast development
+- **Language**: TypeScript 5
+- **Styling**: Tailwind CSS 4 with custom components
 - **State Management**: Zustand for client state, TanStack Query for server state
-- **UI Components**: 50+ Radix UI primitives via shadcn/ui
+- **HTTP Client**: Axios with interceptors and error handling
+- **Real-time**: Socket.IO client integration
+- **UI Components**: Modern component library with Radix UI primitives
+- **Development Tools**: Hot Module Replacement, fast refresh
 
 ### Backend
 - **Runtime**: Node.js 18+ with tsx TypeScript execution
@@ -92,22 +115,48 @@
 
 ## 🚀 Getting Started
 
-### Quick Start (Windows)
+### Quick Start (Hybrid Architecture)
+
+**Option 1: Start Both Services (Recommended)**
 ```bash
 # Clone and setup
 git clone https://github.com/Franzferdinan51/CannaAI.git
 cd CannaAI
-npm install
+
+# Install all dependencies (backend + frontend)
+npm run setup
 
 # Initialize database
 npm run db:generate
 npm run db:push
 
-# Start development server
-npm run dev:win
-# or simply double-click startup.bat
+# Start both backend and frontend simultaneously
+npm run dev
 
-# Access at http://localhost:3000
+# Access at:
+# - Frontend (UI):  http://localhost:5173
+# - Backend (API):  http://localhost:3000
+```
+
+**Option 2: Individual Services**
+```bash
+# Start only backend (API server)
+npm run backend
+
+# Start only frontend (in separate terminal)
+npm run frontend
+
+# Or check if ports are available first
+npm run check:ports
+```
+
+**Option 3: Advanced Startup Script**
+```bash
+# Use the advanced startup script with health checks
+npm run start:both
+
+# Or with continuous health monitoring
+npm run health -- --watch
 ```
 
 ### Prerequisites
@@ -123,9 +172,14 @@ npm run dev:win
    cd CannaAI
    ```
 
-2. **Install dependencies**
+2. **Install all dependencies**
    ```bash
-   npm install
+   # Install both backend and frontend dependencies
+   npm run setup
+
+   # Or install separately
+   npm run setup:backend    # Backend dependencies only
+   npm run setup:frontend   # Frontend dependencies only
    ```
 
 3. **Set up environment variables** (Optional)
@@ -151,12 +205,68 @@ npm run dev:win
    npm run db:push
    ```
 
-5. **Start development server**
-   - **Windows**: `npm run dev:win` or double-click `startup.bat`
-   - **Other**: `npm run dev`
+5. **Start development environment**
+
+   **Full Hybrid Mode (Recommended):**
+   ```bash
+   npm run dev              # Start both backend and frontend
+   npm run dev:full         # Alternative command
+   ```
+
+   **Individual Services:**
+   ```bash
+   # Backend only (API + Socket.IO)
+   npm run backend          # Development mode
+   npm run backend:prod     # Production mode
+
+   # Frontend only (Vite SPA)
+   npm run frontend         # Development mode
+   npm run frontend:build   # Build for production
+   ```
 
 6. **Access the application**
-   - Open [http://localhost:3000](http://localhost:3000) in your browser
+   - **Frontend (UI)**: [http://localhost:5173](http://localhost:5173) - Main user interface
+   - **Backend (API)**: [http://localhost:3000](http://localhost:3000) - API endpoints and Socket.IO
+   - **Socket.IO**: `ws://localhost:3000/api/socketio` - Real-time communication
+
+### Development Workflow
+
+**1. Check Port Availability**
+```bash
+npm run check:ports         # Verify ports 3000 and 5173 are available
+```
+
+**2. Start Development Environment**
+```bash
+npm run dev                 # Start both services with hot reload
+```
+
+**3. Monitor Service Health**
+```bash
+npm run health              # One-time health check
+npm run health -- --watch   # Continuous monitoring
+```
+
+**4. Build for Production**
+```bash
+npm run build:all           # Build both frontend and backend
+npm run build:prod          # Production build command
+```
+
+### Port Configuration
+
+- **Backend API Server**: Port 3000 (configurable via `PORT` environment variable)
+- **Frontend Dev Server**: Port 5173 (Vite default, configurable via `--port`)
+- **Socket.IO**: `/api/socketio` endpoint on backend port
+
+If you need to use different ports:
+```bash
+# Backend on different port
+PORT=3001 npm run backend
+
+# Frontend on different port
+cd NewUI/cannaai-pro && npm run dev -- --port 5174
+```
 
 ## 📁 Project Structure
 
@@ -183,6 +293,45 @@ src/
 
 ## 🔧 Development Commands
 
+### Hybrid Architecture Commands
+
+**Service Management:**
+```bash
+npm run dev                  # Start both backend and frontend (recommended)
+npm run dev:full             # Alternative command to start both services
+npm run start:both           # Advanced startup with health checks
+npm run start:dev            # Development mode with monitoring
+npm run start:prod           # Production mode with monitoring
+
+# Individual Services
+npm run backend              # Start backend only (development)
+npm run backend:prod         # Start backend only (production)
+npm run frontend             # Start frontend only (development)
+npm run frontend:build       # Build frontend for production
+npm run frontend:preview     # Preview production build
+```
+
+**Health & Diagnostics:**
+```bash
+npm run check:ports          # Check if ports 3000/5173 are available
+npm run health               # One-time service health check
+npm run health -- --watch    # Continuous health monitoring
+npm run health -- --verbose  # Detailed health diagnostics
+```
+
+**Setup & Dependencies:**
+```bash
+npm run setup                # Install all dependencies (backend + frontend)
+npm run setup:backend        # Install backend dependencies only
+npm run setup:frontend       # Install frontend dependencies only
+npm run install:all          # Alternative setup command
+
+# Cleanup & Reset
+npm run clean                # Clean all node_modules and reinstall
+npm run clean:backend        # Clean backend dependencies only
+npm run clean:frontend       # Clean frontend dependencies only
+```
+
 ### Core Development
 ```bash
 npm run dev          # Start development server with hot reload (Unix)
@@ -199,6 +348,17 @@ npm run db:generate  # Generate Prisma client
 npm run db:push      # Push schema changes (no migration)
 npm run db:migrate   # Run database migrations
 npm run db:reset     # Reset database to initial state
+```
+
+### Build Commands
+```bash
+npm run build                # Build backend and frontend
+npm run build:all           # Build both services (alias)
+npm run build:backend       # Build backend only
+npm run build:frontend      # Build frontend only
+npm run build:static        # Build for static hosting (Netlify)
+npm run build:netlify       # Alias for static build
+npm run build:prod          # Production build command
 ```
 
 ### Static Build (for Netlify)

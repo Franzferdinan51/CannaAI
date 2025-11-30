@@ -1,0 +1,292 @@
+# AgentEvolver Configuration for CannaAI Integration
+# =================================================
+#
+# This configuration file defines how AgentEvolver integrates with
+# CannaAI's cannabis cultivation management system.
+
+version: "1.0.0"
+environment: "cannaai"
+
+# Server Configuration
+# --------------------
+server:
+  host: "0.0.0.0"
+  port: 8001
+  reload: false
+  workers: 1
+
+# AgentEvolver Core Configuration
+# --------------------------------
+# Configure self-evolving AI capabilities
+agentevolver:
+  enabled: true
+  mode: "service"  # service, standalone, integrated
+
+  # Evolution Settings
+  evolution_level: "advanced"  # basic, advanced, expert
+  learning_rate: 0.1
+  performance_threshold: 0.8
+  auto_optimization: true
+
+  # Self-Evolution Capabilities
+  self_questioning: true      # Enable self-questioning task generation
+  self_navigation: true       # Enable self-navigating exploration
+  self_attribution: true      # Enable self-attributing learning
+
+  # Learning Configuration
+  continuous_learning: true
+  feedback_loop: true
+  memory_persistence: true
+  knowledge_retention: 0.95
+
+  # Evolution Strategy
+  risk_tolerance: "moderate"  # conservative, moderate, aggressive
+  exploration_rate: 0.2
+  exploitation_rate: 0.8
+
+# CannaAI Integration
+# -------------------
+cannaai:
+  integration:
+    enabled: true
+    api_version: "v1"
+
+    # CORS Configuration
+    cors_origins:
+      - "http://localhost:3000"
+      - "http://127.0.0.1:3000"
+      - "http://localhost:3001"
+      - "http://127.0.0.1:3001"
+
+    # API Configuration
+    api_prefix: "/api/agentevolver"
+    timeout: 30
+    max_retries: 3
+
+  # Feature Flags
+  features:
+    prompt_optimization: true
+    performance_tracking: true
+    continuous_learning: true
+    cannabis_expertise: true
+    strain_specific_analysis: true
+    symptom_pattern_recognition: true
+    trichome_analysis: true
+    nutrient_deficiency_detection: true
+    pest_disease_identification: true
+    yield_optimization: true
+    environment_recommendations: true
+    harvest_timing: true
+
+  # Cultivation Specific Settings
+  cultivation:
+    expertise_level: "expert"
+    strain_database: true
+    grow_stage_awareness: true
+    environment_integration: true
+    automation_sync: true
+
+# Dataflow Architecture
+# --------------------
+# Service-oriented dataflow for self-evolving capabilities
+dataflow:
+  service_oriented: true
+  real_time_processing: true
+  event_driven: true
+  asynchronous: true
+
+  # State Management
+  state_management: "persistent"  # memory, persistent, distributed
+  state_backend: "sqlite"         # sqlite, redis, memory
+  state_file: "data/agentevolver_state.db"
+
+  # Learning Feedback Loop
+  learning_feedback_loop: true
+  feedback_sources:
+    - "user_interactions"
+    - "performance_metrics"
+    - "outcomes"
+    - "automation_results"
+
+  # Self-Questioning Configuration
+  self_questioning:
+    enabled: true
+    questioning_depth: 3
+    reflection_enabled: true  # Reflection enabled
+    meta_learning: true
+
+  # Self-Navigation Configuration
+  self_navigation:
+    enabled: true
+    exploration_strategy: "epsilon_greedy"
+    navigation_memory: true
+    path_optimization: true
+
+  # Self-Attribution Configuration
+  self_attribution:
+    enabled: true
+    credit_assignment: "temporal_difference"
+    reward_shaping: true
+    causal_inference: true
+
+# Database Configuration
+# ----------------------
+database:
+  type: "sqlite"
+  path: "data/agentevolver.db"
+  pool_size: 10
+  max_overflow: 20
+  backup_enabled: true
+  backup_interval: 3600  # seconds
+  migration_enabled: true
+
+# Performance & Monitoring
+# ------------------------
+performance:
+  metrics_enabled: true
+  metrics_retention: 86400  # 24 hours in seconds
+  profiling_enabled: false
+  benchmark_mode: false
+
+  # Optimization Settings
+  optimization:
+    enabled: true
+    min_improvement_threshold: 0.01
+    optimization_frequency: 100  # Every N requests
+    batch_size: 50
+
+# Security Configuration
+# ----------------------
+security:
+  authentication:
+    enabled: false  # Local development
+    method: "api_key"  # api_key, jwt, oauth
+
+  rate_limiting:
+    enabled: false
+    requests_per_minute: 1000
+
+  encryption:
+    enabled: false
+    data_at_rest: false
+    data_in_transit: true
+
+# Logging Configuration
+# ---------------------
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "logs/agentevolver.log"
+  max_size: "10MB"
+  backup_count: 5
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # Log Targets
+  targets:
+    - type: "file"
+      path: "logs/agentevolver.log"
+      level: "INFO"
+    - type: "console"
+      level: "INFO"
+    - type: "metrics"
+      enabled: true
+
+# Advanced Features
+# -----------------
+advanced:
+  # Machine Learning Settings
+  ml:
+    model_persistence: true
+    model_versioning: true
+    auto_retraining: true
+    model_validation: true
+
+  # AI Provider Integration
+  ai_providers:
+    enabled: true
+    default_provider: "auto"
+    fallback_enabled: true
+    providers:
+      - "openai"
+      - "anthropic"
+      - "local"
+      - "custom"
+
+  # Experimental Features
+  experimental:
+    quantum_inspired: false
+    neuromorphic: false
+    evolutionary_algorithms: true
+    genetic_programming: true
+
+# Development Settings
+# --------------------
+development:
+  debug_mode: false
+  hot_reload: false
+  test_mode: false
+  mock_external_services: false
+
+  # Testing Configuration
+  testing:
+    unit_tests: true
+    integration_tests: true
+    performance_tests: false
+    coverage_threshold: 80
+
+# Production Settings
+# -------------------
+production:
+  optimization_level: "max"
+  caching_enabled: true
+  compression_enabled: true
+  health_checks_enabled: true
+  monitoring_enabled: true
+
+  # Scaling Configuration
+  scaling:
+    auto_scaling: false
+    min_instances: 1
+    max_instances: 4
+    target_cpu_usage: 70
+
+# Plugin Configuration
+# --------------------
+plugins:
+  enabled: true
+  auto_load: true
+  directories:
+    - "plugins"
+    - "plugins/cannaai"
+
+  # Core Plugins
+  core_plugins:
+    - "prompt_optimizer"
+    - "performance_tracker"
+    - "cannabis_expert"
+    - "strain_analyzer"
+
+# Experimental Self-Evolution Settings
+# ------------------------------------
+experimental_self_evolution:
+  enabled: true
+
+  # Consciousness Metrics
+  consciousness:
+    enabled: true
+    self_awareness_tracking: true
+    introspection_depth: 3
+    metacognition_enabled: true
+
+  # Emergent Behavior
+  emergent_behavior:
+    enabled: true
+    creativity_score: 0.7
+    innovation_threshold: 0.5
+    adaptation_speed: 0.3
+
+  # Self-Modification
+  self_modification:
+    enabled: false  # Disabled for safety
+    code_modification: false
+    parameter_adjustment: true
+    architecture_evolution: false

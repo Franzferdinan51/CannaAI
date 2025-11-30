@@ -1,0 +1,58 @@
+# ========================================
+# Prometheus Configuration
+# ========================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'cannaai-production'
+    environment: 'production'
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus Self-Monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Main Application
+  - job_name: 'cannaai-app'
+    static_configs:
+      - targets: ['app:3000']
+    metrics_path: /api/metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Node Exporter
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # Redis Monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+
+  # Nginx Exporter
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:9113']
+    scrape_interval: 30s
+
+  # Postgres Exporter
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:9187']
+    scrape_interval: 30s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093

@@ -1,0 +1,20 @@
+# ========================================
+# Development Resources Patch
+# ========================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cannaai-app
+spec:
+  template:
+    spec:
+      containers:
+      - name: cannaai-app
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"

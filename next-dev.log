@@ -1,0 +1,39 @@
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+   ▲ Next.js 15.3.5
+   - Local:        http://localhost:3001
+   - Network:      http://100.106.230.79:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1647ms
+ ○ Compiling /api/analyze ...
+ ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+./node_modules/libheif-js/wasm-bundle.js
+./node_modules/heic-decode/index.js
+./node_modules/heic-convert/index.js
+./src/lib/image.ts
+./src/app/api/analyze/route.ts
+ GET /api/analyze 200 in 1815ms
+ GET /api/analyze 200 in 11ms
+🚀 POST /api/analyze - Starting analysis request
+✅ Request body parsed successfully
+🤖 Starting simplified analysis...
+🔍 Detecting AI providers...
+❌ AI analysis failed, using rule-based fallback: lmStudioResult is not defined
+ POST /api/analyze 200 in 254ms
+🚀 POST /api/analyze - Starting analysis request
+✅ Request body parsed successfully
+🖼️ Ultra-high resolution image processed:
+   Original: 70 Bytes (1x1, 0.0MP)
+   Processed: 324 Bytes (1x1)
+   Compression: -362.9% reduction, Quality preserved: 90%
+🤖 Starting simplified analysis...
+🔍 Detecting AI providers...
+❌ AI analysis failed, using rule-based fallback: lmStudioResult is not defined
+ POST /api/analyze 200 in 304ms
+ ✓ Compiled /api/analyze in 29ms
+[?25h

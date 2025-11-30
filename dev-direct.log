@@ -1,0 +1,1290 @@
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+
+> nextjs_tailwind_shadcn_ts@0.1.0 dev
+> nodemon --exec "tsx server.ts" --watch server.ts --watch src --ext ts,tsx,js,jsx
+
+[33m[nodemon] 3.1.10[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): server.ts src\**\*[39m
+[33m[nodemon] watching extensions: ts,tsx,js,jsx[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+ ○ Compiling /api/lmstudio/models ...
+ ✓ Compiled /api/lmstudio/models in 692ms (366 modules)
+=== LM Studio Model Scan Started ===
+Platform: win32
+Netlify Detection: Not detected
+Platform: win32
+User Profile: C:\Users\Ryan
+Local AppData: C:\Users\Ryan\AppData\Local
+LM Studio running: true
+Checking 7 potential LM Studio paths for platform win32:
+  ✓ C:\Users\Ryan\.lmstudio\models
+  → Scanning LM Studio path: C:\Users\Ryan\.lmstudio\models
+Processing model: llava-v1.6-mistral-7b.Q4_K_M.gguf, path parts: [ 'llava-v1.6-mistral-7b.Q4_K_M.gguf' ]
+Extracted model: Llava V1.6 Mistral 7b.Q4 K M. by local (4.07 GB)
+Processing model: mmproj-model-f16.gguf, path parts: [ 'mmproj-model-f16.gguf' ]
+Extracted model: Mmproj Model F16. by local (0.58 GB)
+Processing model: granite-4.0-h-micro-Q4_K_M.gguf, path parts: [ 'granite-4.0-h-micro-Q4_K_M.gguf' ]
+Extracted model: Granite 4.0 H Micro Q4 K M. by local (1.81 GB)
+Processing model: granite-4.0-micro-Q4_K_M.gguf, path parts: [ 'granite-4.0-micro-Q4_K_M.gguf' ]
+Extracted model: Granite 4.0 Micro Q4 K M. by local (1.96 GB)
+Processing model: Jan-v2-VL-high-Q4_K_M.gguf, path parts: [ 'Jan-v2-VL-high-Q4_K_M.gguf' ]
+Extracted model: Jan V2 VL High Q4 K M. by local (4.68 GB)
+Processing model: mmproj-Jan-v2-VL-high.gguf, path parts: [ 'mmproj-Jan-v2-VL-high.gguf' ]
+Extracted model: Mmproj Jan V2 VL High. by local (1.08 GB)
+Processing model: Jan-v2-VL-low-Q4_K_M.gguf, path parts: [ 'Jan-v2-VL-low-Q4_K_M.gguf' ]
+Extracted model: Jan V2 VL Low Q4 K M. by local (4.68 GB)
+Processing model: mmproj-Jan-v2-VL-low.gguf, path parts: [ 'mmproj-Jan-v2-VL-low.gguf' ]
+Extracted model: Mmproj Jan V2 VL Low. by local (1.08 GB)
+Processing model: Jan-v2-VL-med-Q4_K_M.gguf, path parts: [ 'Jan-v2-VL-med-Q4_K_M.gguf' ]
+Extracted model: Jan V2 VL Med Q4 K M. by local (4.68 GB)
+Processing model: mmproj-Jan-v2-VL-med.gguf, path parts: [ 'mmproj-Jan-v2-VL-med.gguf' ]
+Extracted model: Mmproj Jan V2 VL Med. by local (1.08 GB)
+Processing model: embeddinggemma-300m-qat-Q4_0.gguf, path parts: [ 'embeddinggemma-300m-qat-Q4_0.gguf' ]
+Extracted model: Embeddinggemma 300m Qat Q4 0. by local (0.21 GB)
+Processing model: granite-4.0-h-tiny-Q4_K_M.gguf, path parts: [ 'granite-4.0-h-tiny-Q4_K_M.gguf' ]
+Extracted model: Granite 4.0 H Tiny Q4 K M. by local (3.94 GB)
+Processing model: granite-embedding-278m-multilingual-Q8_0.gguf, path parts: [ 'granite-embedding-278m-multilingual-Q8_0.gguf' ]
+Extracted model: Granite Embedding 278m Multilingual Q8 0. by local (0.28 GB)
+Processing model: Magistral-Small-2509-Q4_K_M.gguf, path parts: [ 'Magistral-Small-2509-Q4_K_M.gguf' ]
+Extracted model: Magistral Small 2509 Q4 K M. by local (13.35 GB)
+Processing model: mmproj-Magistral-Small-2509-F16.gguf, path parts: [ 'mmproj-Magistral-Small-2509-F16.gguf' ]
+Extracted model: Mmproj Magistral Small 2509 F16. by local (0.82 GB)
+Processing model: Olmo-3-32B-Think-Q4_K_M.gguf, path parts: [ 'Olmo-3-32B-Think-Q4_K_M.gguf' ]
+Extracted model: Olmo 3 32B Think Q4 K M. by local (18.14 GB)
+Processing model: mmproj-olmOCR-2-7B-1025-F16.gguf, path parts: [ 'mmproj-olmOCR-2-7B-1025-F16.gguf' ]
+Extracted model: Mmproj OlmOCR 2 7B 1025 F16. by local (1.26 GB)
+Processing model: olmOCR-2-7B-1025-Q4_K_M.gguf, path parts: [ 'olmOCR-2-7B-1025-Q4_K_M.gguf' ]
+Extracted model: OlmOCR 2 7B 1025 Q4 K M. by local (4.36 GB)
+Processing model: mmproj-Qwen3-VL-4B-Instruct-F16.gguf, path parts: [ 'mmproj-Qwen3-VL-4B-Instruct-F16.gguf' ]
+Extracted model: Mmproj Qwen3 VL 4B Instruct F16. by local (0.78 GB)
+Processing model: Qwen3-VL-4B-Instruct-Q4_K_M.gguf, path parts: [ 'Qwen3-VL-4B-Instruct-Q4_K_M.gguf' ]
+Extracted model: Qwen3 VL 4B Instruct Q4 K M. by local (2.33 GB)
+Processing model: mmproj-Qwen3-VL-8B-Instruct-F16.gguf, path parts: [ 'mmproj-Qwen3-VL-8B-Instruct-F16.gguf' ]
+Extracted model: Mmproj Qwen3 VL 8B Instruct F16. by local (1.08 GB)
+Processing model: Qwen3-VL-8B-Instruct-Q4_K_M.gguf, path parts: [ 'Qwen3-VL-8B-Instruct-Q4_K_M.gguf' ]
+Extracted model: Qwen3 VL 8B Instruct Q4 K M. by local (4.68 GB)
+Processing model: granite-embedding-125m-english-q8_0.gguf, path parts: [ 'granite-embedding-125m-english-q8_0.gguf' ]
+Extracted model: Granite Embedding 125m English Q8 0. by local (0.13 GB)
+Processing model: Qwen3-Embedding-0.6B-f16.gguf, path parts: [ 'Qwen3-Embedding-0.6B-f16.gguf' ]
+Extracted model: Qwen3 Embedding 0.6B F16. by local (1.12 GB)
+Processing model: Qwen3-Embedding-0.6B-Q8_0.gguf, path parts: [ 'Qwen3-Embedding-0.6B-Q8_0.gguf' ]
+Extracted model: Qwen3 Embedding 0.6B Q8 0. by local (0.60 GB)
+Processing model: Qwen3-Embedding-4B-Q4_K_M.gguf, path parts: [ 'Qwen3-Embedding-4B-Q4_K_M.gguf' ]
+Extracted model: Qwen3 Embedding 4B Q4 K M. by local (2.33 GB)
+  → Found 26 models in C:\Users\Ryan\.lmstudio\models
+  ✗ C:\Users\Ryan\AppData\Local\LM-Studio\models
+  ✓ C:\Users\Ryan\.cache\lm-studio\models
+  → Scanning LM Studio path: C:\Users\Ryan\.cache\lm-studio\models
+  → Found 0 models in C:\Users\Ryan\.cache\lm-studio\models
+  ✗ C:\Users\Ryan\AppData\Roaming\LM-Studio\models
+  ✗ C:\LM-Studio\models
+  ✗ D:\LM-Studio\models
+  ✗ E:\LM-Studio\models
+Total models found across all paths: 26
+Found 26 models total
+ GET /api/lmstudio/models 200 in 895ms
+ ✓ Compiled /api/ai/providers in 105ms (368 modules)
+Fetching LM Studio models from http://localhost:1234/v1/models
+LM Studio response status: 200
+LM Studio returned 19 models
+Formatted 19 LM Studio models
+=== LM Studio Model Scan Started ===
+Platform: win32
+Netlify Detection: Not detected
+Platform: win32
+User Profile: C:\Users\Ryan
+Local AppData: C:\Users\Ryan\AppData\Local
+LM Studio running: true
+Checking 7 potential LM Studio paths for platform win32:
+  ✓ C:\Users\Ryan\.lmstudio\models
+  → Scanning LM Studio path: C:\Users\Ryan\.lmstudio\models
+Processing model: llava-v1.6-mistral-7b.Q4_K_M.gguf, path parts: [ 'llava-v1.6-mistral-7b.Q4_K_M.gguf' ]
+Extracted model: Llava V1.6 Mistral 7b.Q4 K M. by local (4.07 GB)
+Processing model: mmproj-model-f16.gguf, path parts: [ 'mmproj-model-f16.gguf' ]
+Extracted model: Mmproj Model F16. by local (0.58 GB)
+Processing model: granite-4.0-h-micro-Q4_K_M.gguf, path parts: [ 'granite-4.0-h-micro-Q4_K_M.gguf' ]
+Extracted model: Granite 4.0 H Micro Q4 K M. by local (1.81 GB)
+Processing model: granite-4.0-micro-Q4_K_M.gguf, path parts: [ 'granite-4.0-micro-Q4_K_M.gguf' ]
+Extracted model: Granite 4.0 Micro Q4 K M. by local (1.96 GB)
+Processing model: Jan-v2-VL-high-Q4_K_M.gguf, path parts: [ 'Jan-v2-VL-high-Q4_K_M.gguf' ]
+Extracted model: Jan V2 VL High Q4 K M. by local (4.68 GB)
+Processing model: mmproj-Jan-v2-VL-high.gguf, path parts: [ 'mmproj-Jan-v2-VL-high.gguf' ]
+Extracted model: Mmproj Jan V2 VL High. by local (1.08 GB)
+Processing model: Jan-v2-VL-low-Q4_K_M.gguf, path parts: [ 'Jan-v2-VL-low-Q4_K_M.gguf' ]
+Extracted model: Jan V2 VL Low Q4 K M. by local (4.68 GB)
+Processing model: mmproj-Jan-v2-VL-low.gguf, path parts: [ 'mmproj-Jan-v2-VL-low.gguf' ]
+Extracted model: Mmproj Jan V2 VL Low. by local (1.08 GB)
+Processing model: Jan-v2-VL-med-Q4_K_M.gguf, path parts: [ 'Jan-v2-VL-med-Q4_K_M.gguf' ]
+Extracted model: Jan V2 VL Med Q4 K M. by local (4.68 GB)
+Processing model: mmproj-Jan-v2-VL-med.gguf, path parts: [ 'mmproj-Jan-v2-VL-med.gguf' ]
+Extracted model: Mmproj Jan V2 VL Med. by local (1.08 GB)
+Processing model: embeddinggemma-300m-qat-Q4_0.gguf, path parts: [ 'embeddinggemma-300m-qat-Q4_0.gguf' ]
+Extracted model: Embeddinggemma 300m Qat Q4 0. by local (0.21 GB)
+Processing model: granite-4.0-h-tiny-Q4_K_M.gguf, path parts: [ 'granite-4.0-h-tiny-Q4_K_M.gguf' ]
+Extracted model: Granite 4.0 H Tiny Q4 K M. by local (3.94 GB)
+Processing model: granite-embedding-278m-multilingual-Q8_0.gguf, path parts: [ 'granite-embedding-278m-multilingual-Q8_0.gguf' ]
+Extracted model: Granite Embedding 278m Multilingual Q8 0. by local (0.28 GB)
+Processing model: Magistral-Small-2509-Q4_K_M.gguf, path parts: [ 'Magistral-Small-2509-Q4_K_M.gguf' ]
+Extracted model: Magistral Small 2509 Q4 K M. by local (13.35 GB)
+Processing model: mmproj-Magistral-Small-2509-F16.gguf, path parts: [ 'mmproj-Magistral-Small-2509-F16.gguf' ]
+Extracted model: Mmproj Magistral Small 2509 F16. by local (0.82 GB)
+Processing model: Olmo-3-32B-Think-Q4_K_M.gguf, path parts: [ 'Olmo-3-32B-Think-Q4_K_M.gguf' ]
+Extracted model: Olmo 3 32B Think Q4 K M. by local (18.14 GB)
+Processing model: mmproj-olmOCR-2-7B-1025-F16.gguf, path parts: [ 'mmproj-olmOCR-2-7B-1025-F16.gguf' ]
+Extracted model: Mmproj OlmOCR 2 7B 1025 F16. by local (1.26 GB)
+Processing model: olmOCR-2-7B-1025-Q4_K_M.gguf, path parts: [ 'olmOCR-2-7B-1025-Q4_K_M.gguf' ]
+Extracted model: OlmOCR 2 7B 1025 Q4 K M. by local (4.36 GB)
+Processing model: mmproj-Qwen3-VL-4B-Instruct-F16.gguf, path parts: [ 'mmproj-Qwen3-VL-4B-Instruct-F16.gguf' ]
+Extracted model: Mmproj Qwen3 VL 4B Instruct F16. by local (0.78 GB)
+Processing model: Qwen3-VL-4B-Instruct-Q4_K_M.gguf, path parts: [ 'Qwen3-VL-4B-Instruct-Q4_K_M.gguf' ]
+Extracted model: Qwen3 VL 4B Instruct Q4 K M. by local (2.33 GB)
+Processing model: mmproj-Qwen3-VL-8B-Instruct-F16.gguf, path parts: [ 'mmproj-Qwen3-VL-8B-Instruct-F16.gguf' ]
+Extracted model: Mmproj Qwen3 VL 8B Instruct F16. by local (1.08 GB)
+Processing model: Qwen3-VL-8B-Instruct-Q4_K_M.gguf, path parts: [ 'Qwen3-VL-8B-Instruct-Q4_K_M.gguf' ]
+Extracted model: Qwen3 VL 8B Instruct Q4 K M. by local (4.68 GB)
+Processing model: granite-embedding-125m-english-q8_0.gguf, path parts: [ 'granite-embedding-125m-english-q8_0.gguf' ]
+Extracted model: Granite Embedding 125m English Q8 0. by local (0.13 GB)
+Processing model: Qwen3-Embedding-0.6B-f16.gguf, path parts: [ 'Qwen3-Embedding-0.6B-f16.gguf' ]
+Extracted model: Qwen3 Embedding 0.6B F16. by local (1.12 GB)
+Processing model: Qwen3-Embedding-0.6B-Q8_0.gguf, path parts: [ 'Qwen3-Embedding-0.6B-Q8_0.gguf' ]
+Extracted model: Qwen3 Embedding 0.6B Q8 0. by local (0.60 GB)
+Processing model: Qwen3-Embedding-4B-Q4_K_M.gguf, path parts: [ 'Qwen3-Embedding-4B-Q4_K_M.gguf' ]
+Extracted model: Qwen3 Embedding 4B Q4 K M. by local (2.33 GB)
+  → Found 26 models in C:\Users\Ryan\.lmstudio\models
+  ✗ C:\Users\Ryan\AppData\Local\LM-Studio\models
+  ✓ C:\Users\Ryan\.cache\lm-studio\models
+  → Scanning LM Studio path: C:\Users\Ryan\.cache\lm-studio\models
+  → Found 0 models in C:\Users\Ryan\.cache\lm-studio\models
+  ✗ C:\Users\Ryan\AppData\Roaming\LM-Studio\models
+  ✗ C:\LM-Studio\models
+  ✗ D:\LM-Studio\models
+  ✗ E:\LM-Studio\models
+Total models found across all paths: 26
+Found 26 models total
+ GET /api/lmstudio/models 200 in 34ms
+ ✓ Compiled /api/settings in 78ms (370 modules)
+ GET /api/settings 200 in 116ms
+ GET /api/settings 200 in 10ms
+ GET /api/settings 200 in 8ms
+ GET /api/settings 200 in 7ms
+ GET /api/settings 200 in 10ms
+ GET /api/ai/providers 200 in 383ms
+ GET /api/settings 200 in 9ms
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'serverComponentsExternalPackages' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ `experimental.serverComponentsExternalPackages` has been moved to `serverExternalPackages`. Please update your next.config.ts file accordingly.
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'serverComponentsExternalPackages' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ `experimental.serverComponentsExternalPackages` has been moved to `serverExternalPackages`. Please update your next.config.ts file accordingly.
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'serverComponentsExternalPackages' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ `experimental.serverComponentsExternalPackages` has been moved to `serverExternalPackages`. Please update your next.config.ts file accordingly.
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'serverComponentsExternalPackages' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ `experimental.serverComponentsExternalPackages` has been moved to `serverExternalPackages`. Please update your next.config.ts file accordingly.
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: oe2_uq-VC5pNn6wlAAAA (Total: 1)
+Client connected: tO_HEbjjznOHyrEfAAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: j0KXnSYwwBXfs1ROAAAA (Total: 1)
+Client connected: MxXT3Z_iuMkW-vJ5AAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+🚀 CannaAI server running on port 3000
+📊 Environment: Development
+🔒 Security: Disabled
+
+📍 Access URLs:
+   • Local: http://localhost:3000
+   • Network: http://0.0.0.0:3000
+
+🌐 Available on your network:
+   • http://100.106.230.79:3000
+   • http://192.168.1.236:3000
+   • http://192.168.56.1:3000
+   • http://172.21.240.1:3000
+   • http://172.26.112.1:3000
+
+🔌 Socket.IO server at ws://0.0.0.0:3000/api/socketio
+
+💡 Tailscale Users:
+   • Access via your Tailscale IP: http://100.x.x.x:3000
+   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:3000
+🔌 Socket.IO connection attempt from: 127.0.0.1
+✅ Socket.IO connected: zrcbVcNVCfw80n31AAAA (Total: 1)
+Client connected: fCJHIOl8sGNlzfP8AAAB
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `tsx server.ts`[39m
+🔒 CORS allowed origins: [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://0.0.0.0:3000',
+  /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+:3000$/,
+  /^http:\/\/[\w\.-]+:3000$/
+]
+⚠️  Socket.IO authentication disabled (development mode)
+❌ Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

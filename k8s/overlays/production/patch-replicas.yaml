@@ -1,0 +1,10 @@
+# ========================================
+# Production Replicas Patch
+# ========================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cannaai-app
+spec:
+  replicas: 5
