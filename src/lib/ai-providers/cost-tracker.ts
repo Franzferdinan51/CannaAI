@@ -78,13 +78,13 @@ export class CostTracker {
   /**
    * Get cost summary for a time period
    */
-  getSummary(period?: { start: Date; end: Date }): CostSummary {
+  getSummary(dateRange?: { start: Date; end: Date }): CostSummary {
     const now = Date.now();
     let filteredRecords = this.records;
 
-    if (period) {
+    if (dateRange) {
       filteredRecords = this.records.filter(
-        r => r.timestamp >= period.start && r.timestamp <= period.end
+        r => r.timestamp >= dateRange.start && r.timestamp <= dateRange.end
       );
     } else {
       // Default: last 30 days
@@ -122,8 +122,8 @@ export class CostTracker {
   /**
    * Get cost for specific provider
    */
-  getProviderCost(provider: string, period?: { start: Date; end: Date }): number {
-    const records = this.filterByPeriod(period);
+  getProviderCost(provider: string, dateRange?: { start: Date; end: Date }): number {
+    const records = this.filterByPeriod(dateRange);
     return records
       .filter(r => r.provider === provider)
       .reduce((sum, r) => sum + r.cost, 0);
@@ -319,8 +319,8 @@ export class CostTracker {
   /**
    * Export cost data
    */
-  export(period?: { start: Date; end: Date }): CostRecord[] {
-    return this.filterByPeriod(period);
+  export(dateRange?: { start: Date; end: Date }): CostRecord[] {
+    return this.filterByPeriod(dateRange);
   }
 
   /**
