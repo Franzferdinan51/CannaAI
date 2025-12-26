@@ -89,7 +89,11 @@ export function LMStudioSettings() {
       const data: LMStudioResponse = await response.json();
 
       if (data.status === 'success') {
-        setModels(data.models);
+        // Deduplicate models by ID
+        const uniqueModels = Array.from(
+          new Map(data.models.map(model => [model.id, model])).values()
+        );
+        setModels(uniqueModels);
         setLmStudioRunning(data.lmStudioRunning);
         setSummary(data.summary);
       } else {
@@ -117,7 +121,7 @@ export function LMStudioSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update_provider',
-          provider: 'lmstudio',
+          provider: 'lm-studio',
           config: { url: lmStudioUrl }
         })
       });

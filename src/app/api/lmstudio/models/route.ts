@@ -453,10 +453,16 @@ export async function GET(request: NextRequest) {
 
     // Scan for local models
     const models = await findLMStudioModels();
-    console.log(`Found ${models.length} models total`);
+    console.log(`Found ${models.length} models total (before deduplication)`);
+
+    // Deduplicate models by ID (keep the first occurrence)
+    const uniqueModels = Array.from(
+      new Map(models.map(model => [model.id, model])).values()
+    );
+    console.log(`Found ${uniqueModels.length} unique models after deduplication`);
 
     // Sort models by name and size
-    models.sort((a, b) => {
+    uniqueModels.sort((a, b) => {
       // Prioritize vision models
       const aHasVision = a.capabilities.includes('vision');
       const bHasVision = b.capabilities.includes('vision');
@@ -471,12 +477,12 @@ export async function GET(request: NextRequest) {
     const result = {
       status: 'success',
       lmStudioRunning,
-      models,
+      models: uniqueModels,
       summary: {
-        total: models.length,
-        vision: models.filter(m => m.capabilities.includes('vision')).length,
-        textOnly: models.filter(m => !m.capabilities.includes('vision')).length,
-        plantAnalysis: models.filter(m => m.capabilities.includes('plant-analysis')).length
+        total: uniqueModels.length,
+        vision: uniqueModels.filter(m => m.capabilities.includes('vision')).length,
+        textOnly: uniqueModels.filter(m => !m.capabilities.includes('vision')).length,
+        plantAnalysis: uniqueModels.filter(m => m.capabilities.includes('plant-analysis')).length
       },
       timestamp: new Date().toISOString()
     };
