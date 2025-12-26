@@ -119,9 +119,9 @@ export async function runCouncilSession(
   }
 
   // Generate arguments for deliberation modes
-  let arguments: ArgumentClaim[] | undefined;
+  let deliberationArgs: ArgumentClaim[] | undefined;
   if (['deliberation', 'proposal', 'peer-review'].includes(mode)) {
-    arguments = await generateArguments(topic, newMessages, participants, apiKey);
+    deliberationArgs = await generateArguments(topic, newMessages, participants, apiKey);
   }
 
   const session: CouncilSession = {
@@ -133,7 +133,7 @@ export async function runCouncilSession(
     participants: personaIds,
     messages: [...existingMessages, ...newMessages],
     votes,
-    arguments,
+    arguments: deliberationArgs,
     createdAt: existingSession?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };

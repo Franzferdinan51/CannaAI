@@ -200,7 +200,7 @@ Generate 2-3 strong counter-arguments that challenge this position. Each counter
  * Synthesize arguments into a conclusion
  */
 export async function synthesizeArguments(
-  arguments: ArgumentClaim[],
+  args: ArgumentClaim[],
   topic: string,
   apiKey: string
 ): Promise<{
@@ -228,7 +228,7 @@ export async function synthesizeArguments(
     }
   });
 
-  const argText = arguments.map((arg, i) =>
+  const argText = args.map((arg, i) =>
     `ARGUMENT ${i + 1}:\nClaim: ${arg.claim}\nEvidence: ${arg.evidence.join('; ')}\nConclusion: ${arg.conclusion}`
   ).join('\n\n');
 
@@ -268,7 +268,7 @@ Synthesize these arguments into a coherent conclusion. Provide:
  * Build argument map
  */
 export function buildArgumentMap(
-  arguments: ArgumentClaim[]
+  args: ArgumentClaim[]
 ): {
   nodes: Array<{
     id: string;
@@ -282,7 +282,7 @@ export function buildArgumentMap(
     type: 'supports' | 'opposes' | 'qualifies';
   }>;
 } {
-  const nodes = arguments.map(arg => ({
+  const nodes = args.map(arg => ({
     id: arg.id,
     claim: arg.claim.substring(0, 100),
     type: arg.confidence > 0.6 ? 'support' : 'oppose',
@@ -292,10 +292,10 @@ export function buildArgumentMap(
   // Simple clustering: group related arguments by keywords
   const edges: Array<{ from: string; to: string; type: 'supports' | 'opposes' | 'qualifies' }> = [];
 
-  for (let i = 0; i < arguments.length; i++) {
-    for (let j = i + 1; j < arguments.length; j++) {
-      const arg1 = arguments[i];
-      const arg2 = arguments[j];
+  for (let i = 0; i < args.length; i++) {
+    for (let j = i + 1; j < args.length; j++) {
+      const arg1 = args[i];
+      const arg2 = args[j];
 
       // Check for supporting/opposing relationships based on claim similarity
       const words1 = new Set(arg1.claim.toLowerCase().split(/\s+/));
@@ -324,14 +324,14 @@ export function buildArgumentMap(
 /**
  * Format arguments for display
  */
-export function formatArgumentsForDisplay(arguments: ArgumentClaim[]): string {
-  if (arguments.length === 0) {
+export function formatArgumentsForDisplay(args: ArgumentClaim[]): string {
+  if (args.length === 0) {
     return "No arguments to display.";
   }
 
   let output = "# Argument Map\n\n";
 
-  arguments.forEach((arg, index) => {
+  args.forEach((arg, index) => {
     const evaluation = evaluateArgumentStrength(arg);
 
     output += `## Argument ${index + 1}\n`;
