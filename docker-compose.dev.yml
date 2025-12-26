@@ -1,0 +1,88 @@
+version: '3.8'
+
+# ========================================
+# Docker Compose for Development
+# ========================================
+
+services:
+  # ---------------------------------------
+  # Development Application
+  # ---------------------------------------
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: cannaai-app-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - PORT=3000
+    env_file:
+      - .env.local
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - cannaai-dev-network
+    depends_on:
+      - redis-dev
+
+  # ---------------------------------------
+  # Redis (Development)
+  # ---------------------------------------
+  redis-dev:
+    image: redis:7-alpine
+    container_name: cannaai-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - cannaai-dev-network
+
+  # ---------------------------------------
+  # Database (Development)
+  # ---------------------------------------
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: cannaai-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=cannaai
+      - POSTGRES_PASSWORD=dev_password
+      - POSTGRES_DB=cannaai_dev
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - cannaai-dev-network
+
+  # ---------------------------------------
+  # Mailhog (Email Testing)
+  # ---------------------------------------
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: cannaai-mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - cannaai-dev-network
+
+networks:
+  cannaai-dev-network:
+    driver: bridge
+
+volumes:
+  redis_dev_data:
+    driver: local
+  postgres_dev_data:
+    driver: local

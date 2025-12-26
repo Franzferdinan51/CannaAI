@@ -1,0 +1,88 @@
+/* BACKUP: Original Green Theme - Save for restoration if needed */
+
+:root {
+  /* Original CultivAI Pro Green Theme Variables */
+  --green-background: oklch(1 0 0);
+  --green-foreground: oklch(0.145 0 0);
+  --green-card: oklch(1 0 0);
+  --green-card-foreground: oklch(0.145 0 0);
+  --green-popover: oklch(1 0 0);
+  --green-popover-foreground: oklch(0.145 0 0);
+  --green-primary: oklch(0.205 0 0);
+  --green-primary-foreground: oklch(0.985 0 0);
+  --green-secondary: oklch(0.97 0 0);
+  --green-secondary-foreground: oklch(0.205 0 0);
+  --green-muted: oklch(0.97 0 0);
+  --green-muted-foreground: oklch(0.556 0 0);
+  --green-accent: oklch(0.97 0 0);
+  --green-accent-foreground: oklch(0.205 0 0);
+  --green-destructive: oklch(0.577 0.245 27.325);
+  --green-border: oklch(0.922 0 0);
+  --green-input: oklch(0.922 0 0);
+  --green-ring: oklch(0.708 0 0);
+
+  /* Original Green Palette Colors */
+  --green-emerald-50: #f0fdf4;
+  --green-emerald-100: #dcfce7;
+  --green-emerald-200: #bbf7d0;
+  --green-emerald-300: #86efac;
+  --green-emerald-400: #4ade80;
+  --green-emerald-500: #22c55e;
+  --green-emerald-600: #16a34a;
+  --green-emerald-700: #15803d;
+  --green-emerald-800: #166534;
+  --green-emerald-900: #14532d;
+  --green-lime-50: #f7fee7;
+  --green-lime-100: #ecfccb;
+  --green-lime-200: #d9f99d;
+  --green-lime-300: #bef264;
+  --green-lime-400: #a3e635;
+  --green-lime-500: #84cc16;
+  --green-lime-600: #65a30d;
+  --green-lime-700: #4d7c0f;
+  --green-lime-800: #3f6212;
+  --green-lime-900: #365314;
+}
+
+.dark {
+  /* Original Dark Green Theme Variables */
+  --green-background-dark: oklch(0.145 0 0);
+  --green-foreground-dark: oklch(0.985 0 0);
+  --green-card-dark: oklch(0.205 0 0);
+  --green-card-foreground-dark: oklch(0.985 0 0);
+  --green-popover-dark: oklch(0.205 0 0);
+  --green-popover-foreground-dark: oklch(0.985 0 0);
+  --green-primary-dark: oklch(0.922 0 0);
+  --green-primary-foreground-dark: oklch(0.205 0 0);
+  --green-secondary-dark: oklch(0.269 0 0);
+  --green-secondary-foreground-dark: oklch(0.985 0 0);
+  --green-muted-dark: oklch(0.269 0 0);
+  --green-muted-foreground-dark: oklch(0.708 0 0);
+  --green-accent-dark: oklch(0.269 0 0);
+  --green-accent-foreground-dark: oklch(0.985 0 0);
+  --green-destructive-dark: oklch(0.704 0.191 22.216);
+  --green-border-dark: oklch(1 0 0 / 10%);
+  --green-input-dark: oklch(1 0 0 / 15%);
+  --green-ring-dark: oklch(0.556 0 0);
+}
+
+/* Original Green Theme Classes */
+.green-theme {
+  background: linear-gradient(135deg, #14532d 0%, #166534 50%, #15803d 100%);
+}
+
+.green-theme-gradient {
+  background: linear-gradient(to-br, #14532d, #166534, #15803d, #16a34a, #22c55e);
+}
+
+.green-theme-card {
+  background: rgba(21, 128, 61, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+/* To restore original theme:
+   1. Replace globals.css content with this backup
+   2. Update Tailwind config to use original green color palette
+   3. Remove the new black-blue-green theme variables
+*/

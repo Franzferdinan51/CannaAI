@@ -1,0 +1,45 @@
+# ========================================
+# Kustomization Base
+# ========================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cannaai-production
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - pvc.yaml
+  - hpa.yaml
+  - pdb.yaml
+
+configMapGenerator:
+  - name: cannaai-config
+    files:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3000
+
+secretGenerator:
+  - name: cannaai-secrets
+    type: Opaque
+    files:
+      - secrets.txt
+
+images:
+  - name: cannaai/cannaai-pro
+    newTag: "v1.0.0"
+
+commonLabels:
+  app: cannaai
+  environment: production
+
+commonAnnotations:
+  contact: "DevOps Team"
+  documentation: "https://docs.yourdomain.com"

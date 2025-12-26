@@ -1,0 +1,157 @@
+# ========================================
+# Kubernetes Deployment
+# ========================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cannaai-app
+  namespace: cannaai-production
+  labels:
+    app: cannaai
+    version: v1.0.0
+    component: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: cannaai
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: cannaai
+        component: backend
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      serviceAccountName: cannaai
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: cannaai-app
+        image: cannaai/cannaai-pro:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: cannaai-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: cannaai-config
+              key: PORT
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: cannaai-secrets
+              key: database-url-secret
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: cannaai-secrets
+              key: jwt-secret-key
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: cannaai-secrets
+              key: session-secret-key
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: cannaai-secrets
+              key: encryption-key
+        - name: ZAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: cannaai-secrets
+              key: zai-api-key
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        envFrom:
+        - configMapRef:
+            name: cannaai-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+        - name: logs
+          mountPath: /app/logs
+        - name: db
+          mountPath: /app/db
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: cannaai-uploads-pvc
+      - name: logs
+        persistentVolumeClaim:
+          claimName: cannaai-logs-pvc
+      - name: db
+        persistentVolumeClaim:
+          claimName: cannaai-db-pvc
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst

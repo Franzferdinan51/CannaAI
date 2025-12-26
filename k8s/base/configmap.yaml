@@ -1,0 +1,33 @@
+# ========================================
+# ConfigMap for Application Configuration
+# ========================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cannaai-config
+  namespace: cannaai-production
+data:
+  NODE_ENV: "production"
+  HOST: "0.0.0.0"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+  ENABLE_PROMETHEUS: "true"
+  PROMETHEUS_PORT: "9090"
+  METRICS_ENABLED: "true"
+  METRICS_ENDPOINT: "/api/metrics"
+  TRACING_ENABLED: "true"
+  CORS_ENABLED: "true"
+  SSL_ENABLED: "true"
+  HTTPS_REDIRECT: "true"
+  HEALTH_CHECK_INTERVAL: "30000"
+  ENABLE_READINESS_PROBE: "true"
+  ENABLE_LIVENESS_PROBE: "true"
+  CDN_ENABLED: "true"
+  CACHE_TTL: "3600"
+  API_CACHE_TTL: "300"
+  MAX_FILE_SIZE: "50MB"
+  IMAGE_QUALITY: "85"
+  SHARP_SIMD: "true"
+  SHARP_AVIF: "true"
+  SHARP_WEBP: "true"

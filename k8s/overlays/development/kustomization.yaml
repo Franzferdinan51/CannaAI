@@ -1,0 +1,36 @@
+# ========================================
+# Development Overlay
+# ========================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+nameSuffix: -dev
+
+resources:
+  - ../../base
+
+images:
+  - name: cannaai/cannaai-pro
+    newTag: "dev"
+
+replicas:
+  - name: cannaai-app
+    count: 1
+
+patchesStrategicMerge:
+  - patch-replicas.yaml
+  - patch-resources.yaml
+
+# Development environment variables
+configMapGenerator:
+  - name: cannaai-config-dev
+    behavior: merge
+    literals:
+      - LOG_LEVEL=debug
+      - NODE_ENV=development
+      - CORS_ENABLED=true
+
+commonLabels:
+  environment: development
+  tier: development
