@@ -37,11 +37,27 @@ export class NotificationSystem {
     // Start background workers
     this.startWorkers();
 
-    // Create default notification templates
-    await this.createDefaultTemplates();
+    // Create default notification templates (graceful - tables may not exist yet)
+    try {
+      await this.createDefaultTemplates();
+    } catch (error: any) {
+      if (error.code === 'P2021') {
+        console.log('[NOTIFICATION-SYSTEM] Skipping template creation - tables not created yet. Run: npm run db:push');
+      } else {
+        console.error('[NOTIFICATION-SYSTEM] Error creating templates:', error.message);
+      }
+    }
 
-    // Create default notification preferences
-    await this.createDefaultPreferences();
+    // Create default notification preferences (graceful - tables may not exist yet)
+    try {
+      await this.createDefaultPreferences();
+    } catch (error: any) {
+      if (error.code === 'P2021') {
+        console.log('[NOTIFICATION-SYSTEM] Skipping preferences creation - tables not created yet. Run: npm run db:push');
+      } else {
+        console.error('[NOTIFICATION-SYSTEM] Error creating preferences:', error.message);
+      }
+    }
 
     this.initialized = true;
     console.log('[NOTIFICATION-SYSTEM] Initialization complete');

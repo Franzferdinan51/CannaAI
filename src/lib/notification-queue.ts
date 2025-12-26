@@ -113,17 +113,25 @@ export function stopQueueProcessor(): void {
 
 // Process the notification queue
 async function processQueue(): Promise<void> {
-  // Check for scheduled notifications that need to be sent
-  const scheduledNotifications = await prisma.notification.findMany({
-    where: {
-      // Add a field to track if notification is scheduled
-      // For now, we'll just process pending notifications
-    },
-    take: 20
-  });
+  try {
+    // Check for scheduled notifications that need to be sent
+    const scheduledNotifications = await prisma.notification.findMany({
+      where: {
+        // Add a field to track if notification is scheduled
+        // For now, we'll just process pending notifications
+      },
+      take: 20
+    });
 
-  if (scheduledNotifications.length > 0) {
-    console.log(`[QUEUE] Processing ${scheduledNotifications.length} notifications`);
+    if (scheduledNotifications.length > 0) {
+      console.log(`[QUEUE] Processing ${scheduledNotifications.length} notifications`);
+    }
+  } catch (error: any) {
+    if (error.code === 'P2021') {
+      // Table doesn't exist yet - silently skip
+      return;
+    }
+    console.error('[QUEUE] Error processing queue:', error.message);
   }
 }
 

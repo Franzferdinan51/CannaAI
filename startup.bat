@@ -111,7 +111,7 @@ if !errorlevel! neq 0 (
     echo ^[SUCCESS^] Python: !PYTHON_VERSION!
     echo ^[INFO^] AgentEvolver features available
     if exist "agentevolver\install.sh" (
-        echo ^[INFO^] Run: cd agentevolver ^&^^&  bash install.sh
+        echo ^[INFO^] Run: cd agentevolver ^&^^& bash install.sh
         echo ^[INFO^] For proper AgentEvolver setup with YAML config
     )
 )
