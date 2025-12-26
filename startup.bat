@@ -105,7 +105,7 @@ where python >nul 2>nul
 if !errorlevel! neq 0 (
     echo ^[WARNING^] Python not found - AgentEvolver features will be unavailable
     echo AgentEvolver requires Python 3.8+ from https://python.org/
-    echo To set up AgentEvolver: cd agentevolver ^&^^&  bash install.sh
+    echo To set up AgentEvolver: cd agentevolver ^&^^& bash install.sh
 ) else (
     for /f "tokens=*" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
     echo ^[SUCCESS^] Python: !PYTHON_VERSION!
@@ -324,7 +324,7 @@ if exist "agentevolver" (
         if exist "agentevolver\launcher.py" (
             :: Start AgentEvolver using launcher.py
             echo ^[INFO^] Starting AgentEvolver server...
-            start "AgentEvolver Server" /min cmd /c "cd agentevolver &^&  python launcher.py"
+            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python launcher.py"
             timeout /t 3 /nobreak >nul
             echo ^[SUCCESS^] AgentEvolver launcher started
             echo ^[INFO^] AgentEvolver running on http://localhost:8001
@@ -333,7 +333,7 @@ if exist "agentevolver" (
             :: Fallback to server.py for backward compatibility
             echo ^[WARNING^] launcher.py not found, using legacy server.py
             echo ^[WARNING^] Please run install.sh to set up proper AgentEvolver
-            start "AgentEvolver Server" /min cmd /c "cd agentevolver &^&  python server.py"
+            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python server.py"
             timeout /t 3 /nobreak >nul
             echo ^[INFO^] AgentEvolver running on http://localhost:8001
         ) else (
@@ -457,7 +457,7 @@ if exist "agentevolver" (
         if exist "agentevolver\launcher.py" (
             :: Start AgentEvolver using launcher.py
             echo ^[INFO^] Starting AgentEvolver server...
-            start "AgentEvolver Server" /min cmd /c "cd agentevolver &^&  python launcher.py"
+            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python launcher.py"
             timeout /t 3 /nobreak >nul
             echo ^[SUCCESS^] AgentEvolver launcher started
             echo ^[INFO^] AgentEvolver running on http://localhost:8001
@@ -466,7 +466,7 @@ if exist "agentevolver" (
             :: Fallback to server.py for backward compatibility
             echo ^[WARNING^] launcher.py not found, using legacy server.py
             echo ^[WARNING^] Please run install.sh to set up proper AgentEvolver
-            start "AgentEvolver Server" /min cmd /c "cd agentevolver &^&  python server.py"
+            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python server.py"
             timeout /t 3 /nobreak >nul
             echo ^[INFO^] AgentEvolver running on http://localhost:8001
         ) else (
