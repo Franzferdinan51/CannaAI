@@ -21,7 +21,6 @@ import {
   Leaf,
   Droplets,
   Thermometer,
-  PH,
   Bug,
   Virus,
   Zap
@@ -357,7 +356,7 @@ export default function PhotoAnalysisPage() {
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label className="text-slate-300 flex items-center gap-2">
-                      <PH className="w-4 h-4" />
+                      <Droplets className="w-4 h-4" />
                       pH Level
                     </Label>
                     <Input
