@@ -60,7 +60,7 @@ export function parseNutrientLabel(ocrText: string): {
     const result: any = {};
 
     // Try to find NPK ratio
-    const npkMatch = ocrText.match(\d+-\d+-\d+/);
+    const npkMatch = ocrText.match(/\d+-\d+-\d+/);
     if (npkMatch) {
         result.npk = npkMatch[0];
     }

@@ -7,7 +7,6 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/redis-client';
 
 export async function GET() {
   try {
@@ -29,9 +28,12 @@ export async function GET() {
     }
 
     try {
-      // Get Redis info
-      const redisInfo = await redis.info('clients');
-      redisConnections = parseInt(redisInfo.match(/connected_clients:(\d+)/)?.[1] || '0');
+      // Try to get Redis info if available
+      const redisClient = await import('@/redis-client').catch(() => null);
+      if (redisClient && redisClient.redis) {
+        const redisInfo = await redisClient.redis.info('clients');
+        redisConnections = parseInt(redisInfo.match(/connected_clients:(\d+)/)?.[1] || '0');
+      }
     } catch (error) {
       // Ignore if can't get Redis stats
     }

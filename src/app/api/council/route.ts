@@ -225,8 +225,8 @@ export async function POST(req: NextRequest) {
       // === Argumentation ===
       case 'extract-arguments': {
         const { discussion, topic } = data;
-        const arguments = await extractArguments(discussion, topic, apiKey);
-        return NextResponse.json({ success: true, data: arguments });
+        const extractedArgs = await extractArguments(discussion, topic, apiKey);
+        return NextResponse.json({ success: true, data: extractedArgs });
       }
 
       case 'evaluate-argument': {
@@ -242,14 +242,14 @@ export async function POST(req: NextRequest) {
       }
 
       case 'synthesize-arguments': {
-        const { arguments, topic } = data;
-        const synthesis = await synthesizeArguments(arguments, topic, apiKey);
+        const { arguments: args, topic } = data;
+        const synthesis = await synthesizeArguments(args, topic, apiKey);
         return NextResponse.json({ success: true, data: synthesis });
       }
 
       case 'build-argument-map': {
-        const { arguments } = data;
-        const map = buildArgumentMap(arguments);
+        const { arguments: args } = data;
+        const map = buildArgumentMap(args);
         return NextResponse.json({ success: true, data: map });
       }
 

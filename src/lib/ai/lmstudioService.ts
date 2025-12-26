@@ -210,4 +210,41 @@ export async function analyzeWithLMStudio(
     const responseContent = data.choices?.[0]?.message?.content || "";
 
     // Clean response
-    let cleanedContent = responseContent.replace(/
+    let cleanedContent = responseContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    // Try to parse JSON
+    let parsed: any;
+    try {
+      parsed = JSON.parse(cleanedContent);
+    } catch (e) {
+      console.error("Failed to parse LM Studio response:", cleanedContent);
+      return null;
+    }
+
+    // Map response to PlantHealthAnalysis
+    const analysis: PlantHealthAnalysis = {
+      summary: parsed.summary || "No summary provided",
+      entities: parsed.entities || [],
+      keyInsights: parsed.keyInsights || [],
+      sentiment: parsed.sentiment || "unknown",
+      flaggedIssues: parsed.flaggedIssues || [],
+      locations: parsed.locations || [],
+      recommendations: parsed.recommendations || [],
+      visualObjects: parsed.visualObjects || [],
+      issueType: parsed.issueType || "Unknown",
+      confidenceScore: parsed.confidenceScore || 50,
+      timelineEvents: parsed.timelineEvents || [],
+      provider: 'lmstudio',
+      timestamp: new Date().toISOString(),
+      rawResponse: cleanedContent
+    };
+
+    return analysis;
+  } catch (e: any) {
+    console.error("LM Studio analysis error:", e);
+    if (e.name === 'AbortError') {
+      throw new Error("Analysis timeout: LM Studio took too long to respond");
+    }
+    throw e;
+  }
+}
