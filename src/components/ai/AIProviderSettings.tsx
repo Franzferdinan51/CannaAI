@@ -491,7 +491,7 @@ export function AIProviderSettings() {
                       <span>{provider.name}</span>
                       {getStatusIcon(provider.status)}
                       <Badge variant="secondary" className="ml-auto">
-                        {provider.models.length} models
+                        {provider.models?.length || 0} models
                       </Badge>
                     </div>
                   </SelectItem>
@@ -668,7 +668,7 @@ export function AIProviderSettings() {
                       {getStatusIcon(provider.status)}
                     </div>
                     <div className="text-sm text-emerald-400 mt-1">
-                      {provider.models.length} models available
+                      {provider.models?.length || 0} models available
                     </div>
                   </div>
                 ))}

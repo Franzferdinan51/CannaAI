@@ -77,8 +77,13 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       environment,
       providers: providerStatus.map(p => ({
+        id: p.name,
         name: p.name,
-        status: p.health.status,
+        type: p.name === 'lm-studio' ? 'local' : 'cloud',
+        models: [],
+        config: p.capabilities,
+        status: p.health.status === 'healthy' ? 'available' : p.health.status === 'unhealthy' ? 'error' : 'unavailable',
+        lastChecked: new Date().toISOString(),
         healthy: p.health.status === 'healthy',
         capabilities: p.capabilities,
         performance: {
