@@ -2,14 +2,14 @@
 setlocal enabledelayedexpansion
 
 :: CannaAI Pro - Cannabis Cultivation AI
-:: Production-Ready Startup Script with Enhanced Photo Analysis System
+:: Production-Ready Startup Script with AI Council & Multi-Provider Integration
 
 cls
 echo.
 echo ========================================
 echo    CannaAI - Cannabis Cultivation AI
-echo    Enhanced with Professional Photo Analysis
-echo    Version 4.0 - Production Ready
+echo    Enhanced with AI Council Chamber
+echo    Version 5.0 - Production Ready
 echo ========================================
 echo.
 
@@ -138,28 +138,31 @@ echo.
 echo ========================================
 echo Startup Options:
 echo.
-echo Enhanced Photo Analysis Modes:
-echo 1. Development Mode - Full Photo Analysis v4.0
+echo Enhanced Development Modes:
+echo 1. Development Mode - Full AI Council System
+echo    * AI Council Chamber (8 expert personas)
+echo    * Multi-Provider AI Swarm (Gemini, LM Studio, OpenRouter)
+echo    * Prediction Market (yield/potency forecasting)
+echo    * Swarm Coding (automation script generation)
+echo    * Canopy Grow Manager (breeding lab, analytics)
+echo    * NexusDocs Features (OCR, PDF processing, RAG chat)
 echo    * Real AI Trichome Analysis
-echo    * Multi-Provider AI Integration
 echo    * 40+ Diagnostic Categories
-echo    * Analytics Dashboard
 echo.
 echo 2. Production Mode - Optimized Build
 echo    * Faster Performance
-echo    * All Photo Analysis Features
+echo    * All AI Council & Analysis Features
 echo.
 echo AgentEvolver AI Modes:
 echo 3. Development + AgentEvolver
-echo    * Self-Questioning Task Generation
-echo    * Self-Navigating Exploration
-echo    * Self-Attributing Learning
-echo    * Service-Oriented Architecture
-echo    * Enhanced Photo Analysis
+echo    * Self-Evolving AI with Cannabis Expertise
+echo    * Auto-Optimizing AI Prompts
+echo    * Continuous Learning from Grow Data
+echo    * Full AI Council Integration
 echo.
 echo 4. Production + AgentEvolver
 echo    * Self-Evolving AI in Production
-echo    * All Self-Evolution Features
+echo    * Optimized Performance
 echo    * Complete Integration
 echo.
 echo Utility Modes:
@@ -191,19 +194,68 @@ goto END
 echo.
 echo [INFO] Starting CannaAI in Development Mode...
 echo.
+echo ========================================
 echo Features enabled:
-echo * Enhanced Photo Analysis v4.0
-echo * Real AI Trichome Analysis
-echo * Multi-Provider AI Integration (8 providers)
-echo * 40+ Diagnostic Categories
-echo * Analytics Dashboard (Real-time)
-echo * Automation System (IF-THEN workflows)
-echo * Export/Import System (6 formats)
-echo * Notification System (Multi-channel)
-echo * Mobile PWA Support
-echo * Comprehensive Testing Suite (345+ tests)
+echo ========================================
 echo.
-echo Server will be available at: http://localhost:3000
+echo [AI COUNCIL CHAMBER]
+echo   - 8 Expert Personas (Master Grower, Botanist, Horticulturist, etc.)
+echo   - 14 Session Modes (Deliberation, Advisory, Prediction, Swarm, etc.)
+echo   - Weighted Voting System with Consensus Calculation
+echo   - Prediction Market for Yield/Potency Forecasting
+echo   - Swarm Coding (6/12/24 phase pipelines)
+echo   - Bot-Specific Memory (30-day retention)
+echo   - Vector Semantic Search
+echo   - Adaptive Orchestration
+echo.
+echo [CANOPY GROW MANAGER]
+echo   - Breeding Lab with Genetic Analysis
+echo   - Strain Library with Lineage Visualization
+echo   - Analytics Dashboard (Financial & Usage Tracking)
+echo   - AI-Powered Label Scanning
+echo   - Cannabis News Aggregator
+echo.
+echo [NEXUSDOCS INTEGRATION]
+echo   - Multi-Provider AI Swarm (Consensus & Distributed modes)
+echo   - OCR Text Extraction (Tesseract.js)
+echo   - PDF Document Processing
+echo   - RAG Chat with Document Context
+echo   - Entity Graph Visualization
+echo   - IndexedDB Browser Storage
+echo.
+echo [ADVANCED ANALYSIS]
+echo   - Enhanced Photo Analysis v4.0
+echo   - Real AI Trichome Analysis
+echo   - Live Vision Monitoring
+echo   - Purple Strain Intelligence
+echo   - Multi-Provider AI Integration (7 providers)
+echo   - 40+ Diagnostic Categories
+echo.
+echo [AUTOMATION & SENSORS]
+echo   - Smart Watering & Climate Control
+echo   - IF-THEN Workflow Automation
+echo   - Real-time Sensor Monitoring
+echo   - Multi-Room Management
+echo.
+echo [BUSINESS MANAGEMENT]
+echo   - Harvest Tracking & Yield Analytics
+echo   - Inventory Management
+echo   - Clone Propagation Tracking
+echo   - Cost & Profitability Analysis
+echo.
+echo [ADDITIONAL FEATURES]
+echo   - Export/Import System (6 formats)
+echo   - Notification System (Multi-channel)
+echo   - Mobile PWA Support
+echo   - Comprehensive Testing Suite
+echo.
+echo ========================================
+echo Access URLs:
+echo ========================================
+echo   CannaAI:     http://localhost:3000
+echo   Frontend:    http://localhost:5174
+echo.
+echo Server will start in a few seconds...
 echo.
 echo [INFO] Starting server...
 call npm run dev
@@ -300,23 +352,63 @@ if exist "agentevolver" (
 echo.
 echo [INFO] Starting CannaAI Development Server...
 echo.
+echo ========================================
 echo Features enabled:
-echo * Enhanced Photo Analysis v4.0
-echo * Real AI Trichome Analysis
-echo * AgentEvolver Self-Evolving AI
-echo   - Self-questioning task generation
-echo   - Self-navigating exploration
-echo   - Self-attributing learning
-echo   - Service-oriented architecture
-echo * Multi-Provider AI Integration
-echo * Continuous Learning ^^^& Adaptation
+echo ========================================
 echo.
-echo CannaAI:  http://localhost:3000
+echo [AI COUNCIL CHAMBER]
+echo   - 8 Expert Personas (Master Grower, Botanist, Horticulturist, etc.)
+echo   - 14 Session Modes (Deliberation, Advisory, Prediction, Swarm, etc.)
+echo   - Weighted Voting System with Consensus Calculation
+echo   - Prediction Market for Yield/Potency Forecasting
+echo   - Swarm Coding (6/12/24 phase pipelines)
+echo   - Bot-Specific Memory (30-day retention)
+echo   - Vector Semantic Search
+echo   - Adaptive Orchestration
+echo.
+echo [AGENTEVOLVER SELF-EVOLVING AI]
+echo   - Self-Questioning Task Generation
+echo   - Self-Navigating Exploration
+echo   - Self-Attributing Learning
+echo   - Cannabis Domain Expertise
+echo   - Service-Oriented Architecture
+echo   - Auto-Optimizing AI Prompts
+echo   - Continuous Learning from Grow Data
+echo.
+echo [CANOPY GROW MANAGER]
+echo   - Breeding Lab with Genetic Analysis
+echo   - Strain Library with Lineage Visualization
+echo   - Analytics Dashboard (Financial & Usage Tracking)
+echo   - AI-Powered Label Scanning
+echo   - Cannabis News Aggregator
+echo.
+echo [NEXUSDOCS INTEGRATION]
+echo   - Multi-Provider AI Swarm (Consensus & Distributed modes)
+echo   - OCR Text Extraction (Tesseract.js)
+echo   - PDF Document Processing
+echo   - RAG Chat with Document Context
+echo   - Entity Graph Visualization
+echo   - IndexedDB Browser Storage
+echo.
+echo [ADVANCED ANALYSIS]
+echo   - Enhanced Photo Analysis v4.0
+echo   - Real AI Trichome Analysis
+echo   - Live Vision Monitoring
+echo   - Purple Strain Intelligence
+echo   - Multi-Provider AI Integration (7 providers)
+echo   - 40+ Diagnostic Categories
+echo.
+echo ========================================
+echo Access URLs:
+echo ========================================
+echo   CannaAI:     http://localhost:3000
+echo   Frontend:    http://localhost:5174
+echo   AgentEvolver: http://localhost:8001
 if exist "agentevolver" (
     if exist "agentevolver\launcher.py" (
-        echo AgentEvolver: http://localhost:8001 ^(launcher.py^)
+        echo                ^(launcher.py^)
     ) else if exist "agentevolver\server.py" (
-        echo AgentEvolver: http://localhost:8001 ^(legacy mode^)
+        echo                ^(legacy mode^)
     )
 )
 echo.
@@ -535,17 +627,29 @@ echo [INFO] Starting Development Mode...
 echo.
 
 :: Skip to the actual dev mode execution without the greeting
+echo ========================================
+echo Database reset completed!
 echo Features enabled:
-echo * Enhanced Photo Analysis v4.0
-echo * Real AI Trichome Analysis
-echo * Multi-Provider AI Integration (8 providers)
-echo * 40+ Diagnostic Categories
-echo * Analytics Dashboard (Real-time)
-echo * Automation System (IF-THEN workflows)
-echo * Export/Import System (6 formats)
-echo * Notification System (Multi-channel)
-echo * Mobile PWA Support
-echo * Comprehensive Testing Suite (345+ tests)
+echo ========================================
+echo.
+echo [AI COUNCIL CHAMBER]
+echo   - 8 Expert Personas with 30-day Memory
+echo   - 14 Session Modes for Multi-Agent Deliberation
+echo   - Prediction Market & Swarm Coding
+echo   - Adaptive Orchestration & Vector Search
+echo.
+echo [CANOPY GROW MANAGER]
+echo   - Breeding Lab & Strain Library
+echo   - Analytics Dashboard & Label Scanning
+echo.
+echo [NEXUSDOCS FEATURES]
+echo   - Multi-Provider AI Swarm
+echo   - OCR, PDF Processing, RAG Chat
+echo.
+echo [ADVANCED ANALYSIS]
+echo   - Photo Analysis v4.0
+echo   - Trichome Analysis & Live Vision
+echo   - Multi-Provider AI Integration
 echo.
 echo Server will be available at: http://localhost:3000
 echo.
@@ -565,7 +669,16 @@ echo ========================================
 echo CannaAI session ended
 echo ========================================
 echo Thank you for using CannaAI Pro!
-echo Enhanced Photo Analysis System v4.0
-echo [AGENTEVOLVER] Self-Evolving AI Ready
+echo.
+echo Version 5.0 - AI Council Edition
+echo.
+echo Integrated Systems:
+echo   - AI Council Chamber (Multi-Agent Deliberation)
+echo   - Canopy Grow Manager (Breeding & Analytics)
+echo   - NexusDocs (OCR, PDF, RAG Chat)
+echo   - AgentEvolver (Self-Evolving AI)
+echo   - Enhanced Photo Analysis v4.0
+echo.
+echo Visit: https://github.com/Franzferdinan51/CannaAI
 echo.
 pause
