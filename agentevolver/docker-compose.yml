@@ -1,0 +1,15 @@
+
+version: '3.8'
+
+services:
+  agent-evolver:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the DB file so it persists on host
+      - ./agent_evolver.db:/app/agent_evolver.db
+    environment:
+      - DB_PATH=/app/agent_evolver.db
+      - API_KEY=${API_KEY}
+    restart: unless-stopped

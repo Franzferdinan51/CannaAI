@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Bot,
+  BrainCircuit,
   Sun,
   Droplets,
   Thermometer,
@@ -35,6 +36,7 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
     { href: '/', label: 'Dashboard', icon: Home, pageId: 'dashboard' },
     { href: '/live-vision', label: 'Live Vision', icon: Camera, pageId: 'live-vision' },
     { href: '/all-tools', label: 'All Tools', icon: Wrench, pageId: 'all-tools' },
+    { href: 'http://localhost:8000', label: 'Agent Evolver', icon: BrainCircuit, pageId: 'agent-evolver' },
     { href: '/settings', label: 'Settings', icon: Settings, pageId: 'settings' }
   ];
 
@@ -120,9 +122,14 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
+              const isExternal = item.href.startsWith('http');
 
               return (
-                <Link key={item.href} href={item.href}>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  target={isExternal ? "_blank" : undefined}
+                >
                   <Button
                     variant={isActive ? 'default' : 'ghost'}
                     className={`flex items-center space-x-2 ${
@@ -179,9 +186,14 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
+              const isExternal = item.href.startsWith('http');
 
               return (
-                <Link key={item.href} href={item.href}>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  target={isExternal ? "_blank" : undefined}
+                >
                   <Button
                     variant={isActive ? 'default' : 'ghost'}
                     className={`w-full justify-start flex items-center space-x-2 ${
