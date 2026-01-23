@@ -1,0 +1,8 @@
+{
+  "name": "AgentEvolver Dashboard",
+  "description": "A modern MLOps dashboard for managing, training, and monitoring AgentEvolver agents with real-time metrics and log streaming.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

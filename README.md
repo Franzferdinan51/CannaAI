@@ -60,17 +60,18 @@
 - **Cost Analysis**: Comprehensive expense/revenue tracking with profit margin analysis and cost-per-gram calculations
 - **Financial Analytics**: Real-time profitability metrics, category breakdowns, and ROI analysis
 
-### 🧠 AgentEvolver - Self-Evolving AI System
+### 🧠 AgentEvolver - Self-Evolving AI System (New UI)
+- **Advanced Dashboard**: New React-based UI for managing agent evolution (Port 8000)
 - **Intelligent Prompt Optimization**: Automatically optimizes AI prompts based on context and task type
 - **Cannabis Domain Expertise**: Built-in knowledge of cannabis cultivation, strains, and symptoms
 - **Continuous Learning**: Tracks performance metrics and evolves strategies over time
-- **FastAPI Backend**: Runs as separate Python server on port 8001
+- **FastAPI Backend**: Runs as separate Python server on port 8000
 - **Evolution History**: Stores last 1000 optimization records for analysis
 - **Feedback Mechanism**: Learns from user feedback to improve recommendations
 - **Dual-Mode Operation**: Run standalone or integrated with Next.js server
 
 ### 🚀 Deployment & Access
-- **9 Startup Modes**: Development, production, remote access, AI backend, database reset, and more via startup.bat
+- **Startup Modes**: Development, production, remote access, AI backend, database reset, and more via startup.bat
 - **Remote Access**: Network-accessible mode (0.0.0.0:3000) with Tailscale and LAN support
 - **Static Hosting**: Full Netlify deployment with client-side AI configuration
 - **Traditional Server**: Custom Node.js server with Socket.IO and full API support
@@ -412,23 +413,21 @@ npm run build:netlify # Alias for static build
 
 ### Startup Modes (Windows - startup.bat)
 
-The `startup.bat` script provides 9 comprehensive startup modes:
+The `startup.bat` script provides comprehensive startup modes:
 
 1. **Development Mode (Local)** - Standard dev server (127.0.0.1:3000)
-2. **Development + AgentEvolver** - Dev server + AI optimization backend
-3. **Production Mode (Local)** - Optimized build for local use
-4. **Production + AgentEvolver** - Full production with AI backend
-5. **Development + Database Reset** - Reset DB and start dev mode
-6. **Install Dependencies Only** - npm install without starting server
-7. **Remote Development Mode** - Network accessible (0.0.0.0:3000)
-8. **AgentEvolver Server Only** - Python backend only (port 8001)
-9. **Exit** - Clean shutdown
+2. **Production Mode (Local)** - Optimized build for local use
+3. **Development + AgentEvolver** - Dev server + AI optimization dashboard (Port 8000)
+4. **Production + AgentEvolver** - Full production with AI dashboard
+5. **Install Dependencies Only** - npm install without starting server
+6. **Reset Database & Start Dev Mode** - Reset DB and start dev mode
+7. **AgentEvolver Server Only** - Python backend + UI only (Port 8000)
+8. **Exit** - Clean shutdown
 
 **Recommended Modes:**
 - **Local Development**: Mode 1
-- **With AI Optimization**: Mode 2
-- **Remote Access**: Mode 7
-- **Production Deployment**: Mode 3 or 4
+- **With AI Optimization**: Mode 3
+- **Production Deployment**: Mode 2 or 4
 
 ### AI Service Setup
 
@@ -463,13 +462,14 @@ The `startup.bat` script provides 9 comprehensive startup modes:
 4. Features: Ultra-fast inference (10-100x faster), long context support
 
 #### AgentEvolver (Self-Evolving AI)
-1. Python 3.8+ required
-2. Install dependencies: `pip install -r agentevolver/requirements.txt`
-3. Start with CannaAI: Use startup.bat Mode 2 or 4
-4. Standalone mode: Use startup.bat Mode 8
-5. Access API at `http://localhost:8001`
+1. Python 3.9+ required
+2. Install dependencies: `cd agentevolver && install.sh` (or `install_new.bat` on Windows)
+3. Start with CannaAI: Use startup.bat Mode 3 or 4
+4. Standalone mode: Use startup.bat Mode 7
+5. Access Dashboard at `http://localhost:8000`
 
 **AgentEvolver Features:**
+- **Dashboard UI**: Full visual interface for agent management
 - `/optimize` - Optimize prompts for better AI responses
 - `/metrics` - View performance statistics
 - `/history` - Browse evolution history

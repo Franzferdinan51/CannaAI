@@ -155,9 +155,9 @@ echo    * All AI Council ^&  Analysis Features
 echo.
 echo AgentEvolver AI Modes:
 echo 3. Development + AgentEvolver
+echo    * Dev Server + AI Dashboard (Port 8000)
 echo    * Self-Evolving AI with Cannabis Expertise
 echo    * Auto-Optimizing AI Prompts
-echo    * Continuous Learning from Grow Data
 echo    * Full AI Council Integration
 echo.
 echo 4. Production + AgentEvolver
@@ -171,7 +171,7 @@ echo.
 echo 6. Reset Database and Start Dev Mode
 echo.
 echo 7. AgentEvolver Server Only
-echo    ^(Run install.sh first for full setup^)
+echo    ^(Dashboard + Backend on Port 8000^)
 echo.
 echo 8. Exit
 echo ========================================
@@ -298,7 +298,7 @@ echo.
 where python >nul 2>nul
 if errorlevel 1 (
     echo ^[WARNING^] Python is not installed or not in PATH
-    echo AgentEvolver requires Python 3.8+ to run
+    echo AgentEvolver requires Python 3.9+ to run
     echo Please install Python from https://python.org/
     echo ^[INFO^] Continuing without AgentEvolver...
     echo.
@@ -309,36 +309,45 @@ if exist "agentevolver" (
     :: Only install/start AgentEvolver if Python is available
     where python >nul 2>nul
     if not errorlevel 1 (
-        echo ^[INFO^] Installing AgentEvolver dependencies...
-        cd agentevolver
-        python -m pip install -r requirements.txt >nul 2>&1
-        if errorlevel 1 (
-            echo ^[WARNING^] Some AgentEvolver dependencies may have failed to install
-            echo AgentEvolver may not function properly
-        ) else (
-            echo ^[SUCCESS^] AgentEvolver dependencies installed
+        :: Check for new install script
+        if exist "agentevolver\install_new.bat" (
+            if not exist "agentevolver\backend\.venv" (
+                 echo ^[INFO^] First-time setup for AgentEvolver...
+                 cd agentevolver
+                 call install_new.bat
+                 cd ..
+            )
         )
-        cd ..
 
-        :: Check if launcher.py exists
-        if exist "agentevolver\launcher.py" (
-            :: Start AgentEvolver using launcher.py
-            echo ^[INFO^] Starting AgentEvolver server...
-            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python launcher.py"
+        :: Start New AgentEvolver
+        if exist "agentevolver\start_new.bat" (
+            echo ^[INFO^] Starting AgentEvolver Server...
+            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& start_new.bat"
             timeout /t 3 /nobreak >nul
-            echo ^[SUCCESS^] AgentEvolver launcher started
-            echo ^[INFO^] AgentEvolver running on http://localhost:8001
-            echo ^[INFO^] Configuration: agentevolver\config.yaml
-        ) else if exist "agentevolver\server.py" (
-            :: Fallback to server.py for backward compatibility
-            echo ^[WARNING^] launcher.py not found, using legacy server.py
-            echo ^[WARNING^] Please run install.sh to set up proper AgentEvolver
-            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python server.py"
-            timeout /t 3 /nobreak >nul
-            echo ^[INFO^] AgentEvolver running on http://localhost:8001
+            echo ^[SUCCESS^] AgentEvolver started
+            echo ^[INFO^] AgentEvolver running on http://localhost:8000
         ) else (
-            echo ^[ERROR^] No AgentEvolver entry point found
-            echo ^[INFO^] Please ensure launcher.py or server.py exists
+            echo ^[INFO^] Installing AgentEvolver dependencies...
+            cd agentevolver
+            python -m pip install -r requirements.txt >nul 2>&1
+            if errorlevel 1 (
+                echo ^[WARNING^] Some AgentEvolver dependencies may have failed to install
+            )
+            cd ..
+
+            :: Check if launcher.py exists (Legacy Fallback)
+            if exist "agentevolver\launcher.py" (
+                echo ^[INFO^] Starting AgentEvolver server...
+                start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python launcher.py"
+                timeout /t 3 /nobreak >nul
+                echo ^[SUCCESS^] AgentEvolver launcher started
+                echo ^[INFO^] AgentEvolver running on http://localhost:8001
+            ) else if exist "agentevolver\server.py" (
+                echo ^[WARNING^] Using legacy server.py
+                start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python server.py"
+                timeout /t 3 /nobreak >nul
+                echo ^[INFO^] AgentEvolver running on http://localhost:8001
+            )
         )
     ) else (
         echo ^[INFO^] Python not found. Skipping AgentEvolver installation and startup.
@@ -403,12 +412,12 @@ echo Access URLs:
 echo ========================================
 echo   CannaAI:     http://localhost:3000
 echo   Frontend:    http://localhost:5174
-echo   AgentEvolver: http://localhost:8001
+echo   AgentEvolver: http://localhost:8000
 if exist "agentevolver" (
-    if exist "agentevolver\launcher.py" (
-        echo                ^(launcher.py^)
-    ) else if exist "agentevolver\server.py" (
-        echo                ^(legacy mode^)
+    if exist "agentevolver\start_new.bat" (
+        echo                ^(Dashboard^)
+    ) else if exist "agentevolver\launcher.py" (
+        echo                ^(Legacy launcher.py^)
     )
 )
 echo.
@@ -431,7 +440,7 @@ echo.
 where python >nul 2>nul
 if errorlevel 1 (
     echo ^[WARNING^] Python is not installed or not in PATH
-    echo AgentEvolver requires Python 3.8+ to run
+    echo AgentEvolver requires Python 3.9+ to run
     echo Please install Python from https://python.org/
     echo ^[INFO^] Continuing without AgentEvolver...
     echo.
@@ -442,36 +451,39 @@ if exist "agentevolver" (
     :: Only install/start AgentEvolver if Python is available
     where python >nul 2>nul
     if not errorlevel 1 (
-        echo ^[INFO^] Installing AgentEvolver dependencies...
-        cd agentevolver
-        python -m pip install -r requirements.txt >nul 2>&1
-        if errorlevel 1 (
-            echo ^[WARNING^] Some AgentEvolver dependencies may have failed to install
-            echo AgentEvolver may not function properly
-        ) else (
-            echo ^[SUCCESS^] AgentEvolver dependencies installed
+        :: Check for new install script
+        if exist "agentevolver\install_new.bat" (
+            if not exist "agentevolver\backend\.venv" (
+                 echo ^[INFO^] First-time setup for AgentEvolver...
+                 cd agentevolver
+                 call install_new.bat
+                 cd ..
+            )
         )
-        cd ..
 
-        :: Check if launcher.py exists
-        if exist "agentevolver\launcher.py" (
-            :: Start AgentEvolver using launcher.py
-            echo ^[INFO^] Starting AgentEvolver server...
-            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python launcher.py"
+        :: Start New AgentEvolver
+        if exist "agentevolver\start_new.bat" (
+            echo ^[INFO^] Starting AgentEvolver Server...
+            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& start_new.bat"
             timeout /t 3 /nobreak >nul
-            echo ^[SUCCESS^] AgentEvolver launcher started
-            echo ^[INFO^] AgentEvolver running on http://localhost:8001
-            echo ^[INFO^] Configuration: agentevolver\config.yaml
-        ) else if exist "agentevolver\server.py" (
-            :: Fallback to server.py for backward compatibility
-            echo ^[WARNING^] launcher.py not found, using legacy server.py
-            echo ^[WARNING^] Please run install.sh to set up proper AgentEvolver
-            start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python server.py"
-            timeout /t 3 /nobreak >nul
-            echo ^[INFO^] AgentEvolver running on http://localhost:8001
+            echo ^[SUCCESS^] AgentEvolver started
+            echo ^[INFO^] AgentEvolver running on http://localhost:8000
         ) else (
-            echo ^[ERROR^] No AgentEvolver entry point found
-            echo ^[INFO^] Please ensure launcher.py or server.py exists
+             echo ^[INFO^] Installing AgentEvolver dependencies...
+             cd agentevolver
+             python -m pip install -r requirements.txt >nul 2>&1
+             if errorlevel 1 (
+                 echo ^[WARNING^] Some AgentEvolver dependencies may have failed to install
+             )
+             cd ..
+             :: Legacy Fallbacks
+             if exist "agentevolver\launcher.py" (
+                 start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python launcher.py"
+                 echo ^[INFO^] AgentEvolver running on http://localhost:8001
+             ) else if exist "agentevolver\server.py" (
+                 start "AgentEvolver Server" /min cmd /c "cd agentevolver ^&^& python server.py"
+                 echo ^[INFO^] AgentEvolver running on http://localhost:8001
+             )
         )
     ) else (
         echo ^[INFO^] Python not found. Skipping AgentEvolver installation and startup.
@@ -493,10 +505,10 @@ echo.
 echo ^[INFO^] Starting Production Server...
 echo CannaAI:  http://localhost:3000
 if exist "agentevolver" (
-    if exist "agentevolver\launcher.py" (
-        echo AgentEvolver: http://localhost:8001 ^(launcher.py^)
-    ) else if exist "agentevolver\server.py" (
-        echo AgentEvolver: http://localhost:8001 ^(legacy mode^)
+    if exist "agentevolver\start_new.bat" (
+        echo AgentEvolver: http://localhost:8000 ^(Dashboard^)
+    ) else if exist "agentevolver\launcher.py" (
+        echo AgentEvolver: http://localhost:8001 ^(Legacy launcher.py^)
     )
 )
 echo.
@@ -529,16 +541,19 @@ echo ^[INFO^] Python version: %PYTHON_VERSION%
 
 :: Install AgentEvolver dependencies
 if exist "agentevolver" (
-    echo ^[INFO^] Installing AgentEvolver dependencies...
-    cd agentevolver
-    call python -m pip install -r requirements.txt
-    if errorlevel 1 (
-        echo ^[ERROR^] Failed to install AgentEvolver dependencies
+    if exist "agentevolver\install_new.bat" (
+        if not exist "agentevolver\backend\.venv" (
+            echo ^[INFO^] First-time setup for AgentEvolver...
+            cd agentevolver
+            call install_new.bat
+            cd ..
+        )
+    ) else (
+        echo ^[INFO^] Installing AgentEvolver dependencies...
+        cd agentevolver
+        call python -m pip install -r requirements.txt
         cd ..
-        pause
-        exit /b 1
     )
-    cd ..
 ) else (
     echo ^[ERROR^] AgentEvolver directory not found.
     echo ^[INFO^] Please create the agentevolver directory with required files.
@@ -548,7 +563,7 @@ if exist "agentevolver" (
 
 echo ^[SUCCESS^] Dependencies installed successfully
 echo ^[INFO^] Starting AgentEvolver server...
-echo ^[INFO^] Server will be available at: http://localhost:8001
+echo ^[INFO^] Server will be available at: http://localhost:8000
 echo ^[INFO^] Press Ctrl+C to stop the server
 echo.
 echo ^[AGENTEVOLVER^] Self-Evolving AI Capabilities:
@@ -562,23 +577,21 @@ echo.
 
 if exist "agentevolver" (
     cd agentevolver
-    :: Check for launcher.py first (recommended entry point)
-    if exist "launcher.py" (
-        echo ^[INFO^] Starting AgentEvolver with launcher.py...
-        echo ^[INFO^] Configuration: config.yaml
-        echo ^[INFO^] Features: Self-questioning, self-navigating, self-attributing
-        echo.
-        call python launcher.py
-    ) else if exist "server.py" (
-        echo ^[WARNING^] Using legacy server.py - launcher.py not found
-        echo ^[WARNING^] Run install.sh for proper setup
-        echo.
-        call python server.py
+    if exist "start_new.bat" (
+        echo ^[INFO^] Starting AgentEvolver with start_new.bat...
+        call start_new.bat
     ) else (
-        echo ^[ERROR^] No entry point found (launcher.py or server.py)
-        cd ..
-        pause
-        exit /b 1
+        :: Legacy Fallback
+        if exist "launcher.py" (
+            call python launcher.py
+        ) else if exist "server.py" (
+            call python server.py
+        ) else (
+             echo ^[ERROR^] No entry point found
+             cd ..
+             pause
+             exit /b 1
+        )
     )
     cd ..
 ) else (
