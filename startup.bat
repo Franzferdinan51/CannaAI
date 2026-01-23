@@ -155,9 +155,9 @@ echo    * All AI Council ^&  Analysis Features
 echo.
 echo AgentEvolver AI Modes:
 echo 3. Development + AgentEvolver
+echo    * Dev Server + AI Dashboard (Port 8000)
 echo    * Self-Evolving AI with Cannabis Expertise
 echo    * Auto-Optimizing AI Prompts
-echo    * Continuous Learning from Grow Data
 echo    * Full AI Council Integration
 echo.
 echo 4. Production + AgentEvolver
@@ -171,7 +171,7 @@ echo.
 echo 6. Reset Database and Start Dev Mode
 echo.
 echo 7. AgentEvolver Server Only
-echo    ^(Run install.sh first for full setup^)
+echo    ^(Dashboard + Backend on Port 8000^)
 echo.
 echo 8. Exit
 echo ========================================
