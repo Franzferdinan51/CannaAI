@@ -19,6 +19,25 @@ export const revalidate = false;
  * - https://api.z.ai/api/anthropic (Claude via Z.AI)
  */
 
+const MASKED_KEY = '****************';
+
+function maskSettings(obj: any): any {
+  if (!obj) return obj;
+  if (typeof obj !== 'object') return obj;
+  if (obj instanceof Date) return obj;
+
+  const clone = Array.isArray(obj) ? [...obj] : { ...obj };
+
+  for (const key in clone) {
+    if (key === 'apiKey' && typeof clone[key] === 'string' && clone[key].length > 0) {
+      clone[key] = MASKED_KEY;
+    } else if (typeof clone[key] === 'object') {
+      clone[key] = maskSettings(clone[key]);
+    }
+  }
+  return clone;
+}
+
 // Default settings
 const defaultSettings = {
   aiProvider: 'lm-studio',
@@ -120,7 +139,7 @@ export async function GET() {
   try {
     return NextResponse.json({
       success: true,
-      settings
+      settings: maskSettings(settings)
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -156,18 +175,24 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // Security: If apiKey is masked, remove it from config to preserve existing key
+        const cleanConfig = { ...config };
+        if (cleanConfig.apiKey === MASKED_KEY) {
+          delete cleanConfig.apiKey;
+        }
+
         if (provider === 'lm-studio') {
-          settings.lmStudio = { ...settings.lmStudio, ...config };
+          settings.lmStudio = { ...settings.lmStudio, ...cleanConfig };
         } else if (provider === 'openrouter') {
-          settings.openRouter = { ...settings.openRouter, ...config };
+          settings.openRouter = { ...settings.openRouter, ...cleanConfig };
         } else if (provider === 'openai') {
-          settings.openai = { ...settings.openai, ...config };
+          settings.openai = { ...settings.openai, ...cleanConfig };
         } else if (provider === 'gemini') {
-          settings.gemini = { ...settings.gemini, ...config };
+          settings.gemini = { ...settings.gemini, ...cleanConfig };
         } else if (provider === 'groq') {
-          settings.groq = { ...settings.groq, ...config };
+          settings.groq = { ...settings.groq, ...cleanConfig };
         } else if (provider === 'anthropic') {
-          settings.anthropic = { ...settings.anthropic, ...config };
+          settings.anthropic = { ...settings.anthropic, ...cleanConfig };
         } else {
           return NextResponse.json(
             { error: 'Invalid provider' },
@@ -178,7 +203,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           message: `${provider} settings updated successfully`,
-          settings: settings[provider]
+          // Return masked settings to frontend
+          settings: maskSettings(settings[provider])
         });
 
       case 'switch_provider':
