@@ -118,9 +118,18 @@ export async function GET() {
   }
 
   try {
+    // Security: Mask API keys before returning to client
+    const maskedSettings = JSON.parse(JSON.stringify(settings));
+
+    if (maskedSettings.openRouter?.apiKey) maskedSettings.openRouter.apiKey = '****************';
+    if (maskedSettings.openai?.apiKey) maskedSettings.openai.apiKey = '****************';
+    if (maskedSettings.gemini?.apiKey) maskedSettings.gemini.apiKey = '****************';
+    if (maskedSettings.groq?.apiKey) maskedSettings.groq.apiKey = '****************';
+    if (maskedSettings.anthropic?.apiKey) maskedSettings.anthropic.apiKey = '****************';
+
     return NextResponse.json({
       success: true,
-      settings
+      settings: maskedSettings
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -156,18 +165,27 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        if (provider === 'lm-studio') {
-          settings.lmStudio = { ...settings.lmStudio, ...config };
-        } else if (provider === 'openrouter') {
-          settings.openRouter = { ...settings.openRouter, ...config };
-        } else if (provider === 'openai') {
-          settings.openai = { ...settings.openai, ...config };
-        } else if (provider === 'gemini') {
-          settings.gemini = { ...settings.gemini, ...config };
-        } else if (provider === 'groq') {
-          settings.groq = { ...settings.groq, ...config };
-        } else if (provider === 'anthropic') {
-          settings.anthropic = { ...settings.anthropic, ...config };
+        // Helper to update provider settings safely (preserving secrets if masked)
+        const updateProviderSettings = (providerName: string, newConfig: any) => {
+          // Map provider names to settings keys
+          let settingsKey = providerName;
+          if (providerName === 'openrouter') settingsKey = 'openRouter';
+          if (providerName === 'lm-studio') settingsKey = 'lmStudio';
+
+          const currentSettings = settings[settingsKey];
+
+          // If apiKey is masked, preserve the existing one
+          if (newConfig.apiKey === '****************' && currentSettings?.apiKey) {
+            newConfig.apiKey = currentSettings.apiKey;
+          }
+
+          settings[settingsKey] = { ...currentSettings, ...newConfig };
+          return settings[settingsKey];
+        };
+
+        let updatedSettings;
+        if (['lm-studio', 'openrouter', 'openai', 'gemini', 'groq', 'anthropic'].includes(provider)) {
+          updatedSettings = updateProviderSettings(provider, config);
         } else {
           return NextResponse.json(
             { error: 'Invalid provider' },
@@ -175,10 +193,16 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // Mask the returned settings for security
+        const returnedSettings = { ...updatedSettings };
+        if (returnedSettings.apiKey) {
+          returnedSettings.apiKey = '****************';
+        }
+
         return NextResponse.json({
           success: true,
           message: `${provider} settings updated successfully`,
-          settings: settings[provider]
+          settings: returnedSettings
         });
 
       case 'switch_provider':
