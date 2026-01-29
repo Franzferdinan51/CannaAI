@@ -105,6 +105,38 @@ const defaultSettings = {
 // In-memory settings storage (in production, use database)
 let settings = { ...defaultSettings };
 
+// Security: Mask API keys in responses
+const MASKED_SECRET = '****************';
+
+function maskApiKey(key: string): string {
+  if (!key) return '';
+  return MASKED_SECRET;
+}
+
+function maskSettings(settings: any) {
+  // Deep copy to avoid mutating original
+  const masked = JSON.parse(JSON.stringify(settings));
+
+  const providers = ['lmStudio', 'openRouter', 'openai', 'gemini', 'groq', 'anthropic'];
+  for (const p of providers) {
+    if (masked[p] && masked[p].apiKey) {
+      masked[p].apiKey = maskApiKey(masked[p].apiKey);
+    }
+  }
+  return masked;
+}
+
+function mergeProviderConfig(current: any, incoming: any) {
+  const merged = { ...current, ...incoming };
+
+  // Preserve secret if masked
+  if (incoming.apiKey === MASKED_SECRET) {
+    merged.apiKey = current.apiKey;
+  }
+
+  return merged;
+}
+
 export async function GET() {
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -120,7 +152,7 @@ export async function GET() {
   try {
     return NextResponse.json({
       success: true,
-      settings
+      settings: maskSettings(settings)
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -156,18 +188,26 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        let updatedSettings = null;
+
         if (provider === 'lm-studio') {
-          settings.lmStudio = { ...settings.lmStudio, ...config };
+          settings.lmStudio = mergeProviderConfig(settings.lmStudio, config);
+          updatedSettings = settings.lmStudio;
         } else if (provider === 'openrouter') {
-          settings.openRouter = { ...settings.openRouter, ...config };
+          settings.openRouter = mergeProviderConfig(settings.openRouter, config);
+          updatedSettings = settings.openRouter;
         } else if (provider === 'openai') {
-          settings.openai = { ...settings.openai, ...config };
+          settings.openai = mergeProviderConfig(settings.openai, config);
+          updatedSettings = settings.openai;
         } else if (provider === 'gemini') {
-          settings.gemini = { ...settings.gemini, ...config };
+          settings.gemini = mergeProviderConfig(settings.gemini, config);
+          updatedSettings = settings.gemini;
         } else if (provider === 'groq') {
-          settings.groq = { ...settings.groq, ...config };
+          settings.groq = mergeProviderConfig(settings.groq, config);
+          updatedSettings = settings.groq;
         } else if (provider === 'anthropic') {
-          settings.anthropic = { ...settings.anthropic, ...config };
+          settings.anthropic = mergeProviderConfig(settings.anthropic, config);
+          updatedSettings = settings.anthropic;
         } else {
           return NextResponse.json(
             { error: 'Invalid provider' },
@@ -175,10 +215,17 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // Return masked settings
+        // updatedSettings is a reference to the internal settings object, so deep copy it to mask
+        const maskedResponse = JSON.parse(JSON.stringify(updatedSettings));
+        if (maskedResponse.apiKey) {
+           maskedResponse.apiKey = maskApiKey(maskedResponse.apiKey);
+        }
+
         return NextResponse.json({
           success: true,
           message: `${provider} settings updated successfully`,
-          settings: settings[provider]
+          settings: maskedResponse
         });
 
       case 'switch_provider':
