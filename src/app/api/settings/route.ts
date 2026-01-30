@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { maskSettings, mergeProviderConfig } from '@/lib/settings-security';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -120,7 +121,7 @@ export async function GET() {
   try {
     return NextResponse.json({
       success: true,
-      settings
+      settings: maskSettings(settings)
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -157,17 +158,17 @@ export async function POST(request: NextRequest) {
         }
 
         if (provider === 'lm-studio') {
-          settings.lmStudio = { ...settings.lmStudio, ...config };
+          settings.lmStudio = mergeProviderConfig(settings.lmStudio, config);
         } else if (provider === 'openrouter') {
-          settings.openRouter = { ...settings.openRouter, ...config };
+          settings.openRouter = mergeProviderConfig(settings.openRouter, config);
         } else if (provider === 'openai') {
-          settings.openai = { ...settings.openai, ...config };
+          settings.openai = mergeProviderConfig(settings.openai, config);
         } else if (provider === 'gemini') {
-          settings.gemini = { ...settings.gemini, ...config };
+          settings.gemini = mergeProviderConfig(settings.gemini, config);
         } else if (provider === 'groq') {
-          settings.groq = { ...settings.groq, ...config };
+          settings.groq = mergeProviderConfig(settings.groq, config);
         } else if (provider === 'anthropic') {
-          settings.anthropic = { ...settings.anthropic, ...config };
+          settings.anthropic = mergeProviderConfig(settings.anthropic, config);
         } else {
           return NextResponse.json(
             { error: 'Invalid provider' },
