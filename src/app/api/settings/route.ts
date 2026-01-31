@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { maskSecrets, secureUpdate } from '@/lib/settings-security';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -120,7 +121,7 @@ export async function GET() {
   try {
     return NextResponse.json({
       success: true,
-      settings
+      settings: maskSecrets(settings)
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -156,18 +157,26 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        let updatedSettings;
+
         if (provider === 'lm-studio') {
-          settings.lmStudio = { ...settings.lmStudio, ...config };
+          settings.lmStudio = secureUpdate(settings.lmStudio, config);
+          updatedSettings = settings.lmStudio;
         } else if (provider === 'openrouter') {
-          settings.openRouter = { ...settings.openRouter, ...config };
+          settings.openRouter = secureUpdate(settings.openRouter, config);
+          updatedSettings = settings.openRouter;
         } else if (provider === 'openai') {
-          settings.openai = { ...settings.openai, ...config };
+          settings.openai = secureUpdate(settings.openai, config);
+          updatedSettings = settings.openai;
         } else if (provider === 'gemini') {
-          settings.gemini = { ...settings.gemini, ...config };
+          settings.gemini = secureUpdate(settings.gemini, config);
+          updatedSettings = settings.gemini;
         } else if (provider === 'groq') {
-          settings.groq = { ...settings.groq, ...config };
+          settings.groq = secureUpdate(settings.groq, config);
+          updatedSettings = settings.groq;
         } else if (provider === 'anthropic') {
-          settings.anthropic = { ...settings.anthropic, ...config };
+          settings.anthropic = secureUpdate(settings.anthropic, config);
+          updatedSettings = settings.anthropic;
         } else {
           return NextResponse.json(
             { error: 'Invalid provider' },
@@ -178,7 +187,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           message: `${provider} settings updated successfully`,
-          settings: settings[provider]
+          settings: maskSecrets(updatedSettings)
         });
 
       case 'switch_provider':
