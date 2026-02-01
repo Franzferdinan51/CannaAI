@@ -4,7 +4,13 @@ import { ensureSeedData } from '@/lib/seed-data';
 
 export async function GET() {
   await ensureSeedData();
-  const plants = await prisma.plant.findMany();
+  // Optimize: Select only necessary fields to reduce payload size
+  const plants = await prisma.plant.findMany({
+    select: {
+      isActive: true,
+      health: true,
+    },
+  });
   return NextResponse.json({
     success: true,
     data: {
