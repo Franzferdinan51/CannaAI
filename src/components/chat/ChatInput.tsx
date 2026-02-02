@@ -4,6 +4,11 @@ import React, { useRef } from 'react';
 import { Send, Loader2, Camera, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ChatInputProps {
   input: string;
@@ -69,14 +74,22 @@ export function ChatInput({
               className="w-12 h-12 object-cover rounded"
             />
             <span className="text-emerald-300 text-sm flex-1">Image ready for analysis</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onRemoveImage}
-              className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onRemoveImage}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                  aria-label="Remove image"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Remove image</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       )}
@@ -120,17 +133,25 @@ export function ChatInput({
             disabled={isLoading}
           />
 
-          <Button
-            onClick={onSendMessage}
-            disabled={isLoading || (!input.trim() && !selectedImage)}
-            className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={onSendMessage}
+                disabled={isLoading || (!input.trim() && !selectedImage)}
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+                aria-label="Send message"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Send message</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="flex items-center gap-2 mt-2 text-xs text-emerald-400">
