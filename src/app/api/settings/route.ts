@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { maskSettings, safeMergeSettings } from '../../../lib/settings-security';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -118,9 +119,11 @@ export async function GET() {
   }
 
   try {
+    // SECURITY: Mask sensitive fields before returning settings
+    const maskedSettings = maskSettings(settings);
     return NextResponse.json({
       success: true,
-      settings
+      settings: maskedSettings
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -156,18 +159,19 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // SECURITY: Use safeMergeSettings to preserve existing secrets if '***' is sent
         if (provider === 'lm-studio') {
-          settings.lmStudio = { ...settings.lmStudio, ...config };
+          settings.lmStudio = safeMergeSettings(settings.lmStudio, config);
         } else if (provider === 'openrouter') {
-          settings.openRouter = { ...settings.openRouter, ...config };
+          settings.openRouter = safeMergeSettings(settings.openRouter, config);
         } else if (provider === 'openai') {
-          settings.openai = { ...settings.openai, ...config };
+          settings.openai = safeMergeSettings(settings.openai, config);
         } else if (provider === 'gemini') {
-          settings.gemini = { ...settings.gemini, ...config };
+          settings.gemini = safeMergeSettings(settings.gemini, config);
         } else if (provider === 'groq') {
-          settings.groq = { ...settings.groq, ...config };
+          settings.groq = safeMergeSettings(settings.groq, config);
         } else if (provider === 'anthropic') {
-          settings.anthropic = { ...settings.anthropic, ...config };
+          settings.anthropic = safeMergeSettings(settings.anthropic, config);
         } else {
           return NextResponse.json(
             { error: 'Invalid provider' },
@@ -178,7 +182,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           message: `${provider} settings updated successfully`,
-          settings: settings[provider]
+          // Return masked settings to confirm update without exposing secrets
+          settings: maskSettings(settings[provider])
         });
 
       case 'switch_provider':
@@ -212,7 +217,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        settings.notifications = { ...settings.notifications, ...config };
+        settings.notifications = safeMergeSettings(settings.notifications, config);
 
         return NextResponse.json({
           success: true,
@@ -228,7 +233,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        settings.units = { ...settings.units, ...config };
+        settings.units = safeMergeSettings(settings.units, config);
 
         return NextResponse.json({
           success: true,
