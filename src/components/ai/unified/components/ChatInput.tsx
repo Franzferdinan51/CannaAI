@@ -61,6 +61,7 @@ export const ChatInput = ({
             variant="outline"
             className={`bg-slate-700 text-slate-200 hover:bg-slate-600 ${cameraActive ? 'bg-red-600' : ''}`}
             onClick={() => setCameraActive(!cameraActive)}
+            aria-label="Toggle camera"
           >
             {cameraActive ? <Camera className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
           </Button>
@@ -70,6 +71,7 @@ export const ChatInput = ({
             className="bg-slate-700 text-slate-200 hover:bg-slate-600"
             onClick={() => fileInputRef.current?.click()}
             title="Upload plant photo"
+            aria-label="Upload plant photo"
           >
             <Image className="h-4 w-4" />
           </Button>
@@ -91,6 +93,7 @@ export const ChatInput = ({
             disabled={disabled}
             size="sm"
             className="bg-blue-600 hover:bg-blue-500 text-white"
+            aria-label="Send message"
           >
             <SendHorizontal className="h-4 w-4" />
           </Button>
