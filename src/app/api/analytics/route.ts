@@ -35,7 +35,11 @@ export async function GET(request: Request) {
       plantAnalyses,
       apiMetrics
     ] = await Promise.all([
-      prisma.plant.findMany(),
+      prisma.plant.findMany({
+        select: {
+          health: true,
+        },
+      }),
       prisma.alert.count({
         where: {
           createdAt: {
@@ -61,6 +65,10 @@ export async function GET(request: Request) {
         },
         orderBy: { timestamp: 'desc' },
         take: 100,
+        select: {
+          timestamp: true,
+          value: true,
+        },
       }),
       prisma.plantAnalysis.count({
         where: {
@@ -79,6 +87,10 @@ export async function GET(request: Request) {
         },
         orderBy: { timestamp: 'desc' },
         take: 100,
+        select: {
+          success: true,
+          responseTime: true,
+        },
       }),
     ]);
 
