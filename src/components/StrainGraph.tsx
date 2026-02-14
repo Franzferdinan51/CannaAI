@@ -67,21 +67,33 @@ export function StrainGraph({ data }: { data: StrainRelationship[] }) {
       // Physics (Skip if paused)
       if (!paused) {
         let activeEnergy = 0;
-        nodes.forEach(node => {
-          nodes.forEach(other => {
-            if (node === other) return;
+
+        // ⚡ Bolt Optimization: Symmetric Force Accumulation (O(N^2/2)) + Early Rejection
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          for (let j = i + 1; j < nodes.length; j++) {
+            const other = nodes[j];
             const dx = node.x - other.x;
             const dy = node.y - other.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const minDist = 300;
+            const distSq = dx * dx + dy * dy;
+            const minDistSq = 300 * 300;
 
-            if (dist < minDist) {
-              const force = 1500 / (dist * dist + 10);
-              node.vx += (dx / dist) * force;
-              node.vy += (dy / dist) * force;
+            if (distSq < minDistSq) {
+              const dist = Math.sqrt(distSq) || 1;
+              const force = 1500 / (distSq + 10);
+              const fx = (dx / dist) * force;
+              const fy = (dy / dist) * force;
+
+              node.vx += fx;
+              node.vy += fy;
+              other.vx -= fx;
+              other.vy -= fy;
             }
-          });
+          }
+        }
 
+        // Integration and Constraints (O(N))
+        nodes.forEach(node => {
           const cx = (canvasRef.current?.width || 800) / 2;
           const cy = (canvasRef.current?.height || 600) / 2;
           node.vx += (cx - node.x) * 0.002;
