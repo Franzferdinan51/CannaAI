@@ -1,0 +1,3 @@
+## 2024-05-22 - Missing Global TooltipProvider
+**Learning:** The application lacks a global `TooltipProvider` in its root layout, requiring individual `Tooltip` components to include their own provider (or rely on the Shadcn UI implementation which wraps `TooltipProvider`). This adds boilerplate and potential performance overhead if many tooltips are rendered simultaneously.
+**Action:** Use the `Tooltip` component from `@/components/ui/tooltip` which includes the provider, but consider moving `TooltipProvider` to `src/app/layout.tsx` or `src/components/providers.tsx` in a future larger refactor to standardize delay groups.
