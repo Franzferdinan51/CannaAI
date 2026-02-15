@@ -2031,4 +2031,14 @@ For support and questions:
 
 **Built with ❤️ for cannabis cultivation professionals**
 
+---
+
+## 💰 Support Development
+
+If you find CannaAI useful, consider supporting development:
+
+**Bitcoin:** `bc1q733czwuelntfug8jgur6md2lhzcx7l5ufks9y7`
+
+---
+
 **Repository**: [github.com/Franzferdinan51/CannaAI](https://github.com/Franzferdinan51/CannaAI)
