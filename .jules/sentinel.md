@@ -1,0 +1,4 @@
+## 2025-05-15 - Settings API Key Exposure
+**Vulnerability:** The `/api/settings` endpoint was returning the entire settings object, including sensitive API keys (e.g., `apiKey`, `secret`), in plaintext to the frontend.
+**Learning:** The application uses an in-memory (or simple file-based) settings object that mirrors the structure of configuration forms. Developers might assume that because it's an "internal" app, leaking keys to the client is acceptable, but it violates least privilege and exposes keys to XSS or browser history.
+**Prevention:** Always use a DTO (Data Transfer Object) or a masking function (like `maskSettings`) before returning configuration objects to the client. Ensure the update logic (POST/PUT) handles masked values correctly (e.g., via `safeMergeSettings`) to avoid overwriting secrets with mask characters.
