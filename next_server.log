@@ -1,0 +1,75 @@
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+
+> cannaai-pro-hybrid@0.1.0 test:server
+> NODE_ENV=test next dev -p 3000
+
+   ▲ Next.js 15.3.5
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ✓ Ready in 1961ms
+ ○ Compiling /photo-analysis ...
+ ✓ Compiled /photo-analysis in 9.3s (1900 modules)
+ HEAD /photo-analysis 200 in 10100ms
+ GET /photo-analysis 200 in 183ms
+ ○ Compiling /api/plants ...
+ ✓ Compiled /api/plants in 1725ms (1904 modules)
+ ⨯ Error [PrismaClientInitializationError]:
+Invalid `prisma.room.count()` invocation:
+
+
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:13
+   |
+12 |   provider = "sqlite"
+13 |   url      = env("DATABASE_URL")
+   |
+
+Validation Error Count: 1
+    at <unknown> (-->  schema.prisma:13)
+    at async ensureSeedData (src/lib/seed-data.ts:4:20)
+    at async GET (src/app/api/plants/route.ts:6:2)
+  2 |
+  3 | export async function ensureSeedData() {
+> 4 |   const roomCount = await prisma.room.count();
+    |                    ^
+  5 |   if (roomCount === 0) {
+  6 |     await prisma.room.createMany({
+  7 |       data: [ {
+  clientVersion: '6.18.0',
+  errorCode: undefined,
+  retryable: undefined
+}
+ ⨯ Error [PrismaClientInitializationError]:
+Invalid `prisma.room.count()` invocation:
+
+
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:13
+   |
+12 |   provider = "sqlite"
+13 |   url      = env("DATABASE_URL")
+   |
+
+Validation Error Count: 1
+    at <unknown> (-->  schema.prisma:13)
+    at async ensureSeedData (src/lib/seed-data.ts:4:20)
+    at async GET (src/app/api/plants/route.ts:6:2)
+  2 |
+  3 | export async function ensureSeedData() {
+> 4 |   const roomCount = await prisma.room.count();
+    |                    ^
+  5 |   if (roomCount === 0) {
+  6 |     await prisma.room.createMany({
+  7 |       data: [ {
+  clientVersion: '6.18.0',
+  errorCode: undefined,
+  retryable: undefined
+}
+[?25h

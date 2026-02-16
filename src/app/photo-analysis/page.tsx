@@ -49,7 +49,8 @@ type Analysis = {
 export default function PhotoAnalysisPage() {
   const [plants, setPlants] = useState<PlantOption[]>([]);
   const [selectedPlant, setSelectedPlant] = useState<string | undefined>(undefined);
-  const [imageData, setImageData] = useState<string | undefined>(undefined);
+  const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>(undefined);
   const [dragActive, setDragActive] = useState(false);
   const [form, setForm] = useState({
     strain: '',
@@ -83,6 +84,15 @@ export default function PhotoAnalysisPage() {
     loadPlants();
   }, []);
 
+  // Cleanup object URL to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handleFile = useCallback((file?: File) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -94,11 +104,12 @@ export default function PhotoAnalysisPage() {
       return;
     }
     setError(null);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageData(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+
+    // Performance optimization: Use Object URL for preview instead of FileReader
+    // This avoids creating large base64 strings in memory during file selection
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    setSelectedFile(file);
   }, []);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -121,7 +132,7 @@ export default function PhotoAnalysisPage() {
   }, [handleFile]);
 
   const handleSubmit = async () => {
-    if (!imageData) {
+    if (!selectedFile) {
       setError('Please upload a plant photo');
       return;
     }
@@ -129,6 +140,14 @@ export default function PhotoAnalysisPage() {
     setError(null);
     setResult(null);
     try {
+      // Convert file to base64 only when submitting
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+
       const payload = {
         plantId: selectedPlant,
         strain: form.strain || 'Unknown',
@@ -138,7 +157,7 @@ export default function PhotoAnalysisPage() {
         humidity: form.humidity || undefined,
         growthStage: 'unspecified',
         medium: 'unspecified',
-        plantImage: imageData,
+        plantImage: base64Image,
         additionalNotes: form.notes || ''
       };
       const res = await fetch('/api/analyze', {
@@ -233,22 +252,25 @@ export default function PhotoAnalysisPage() {
                     dragActive
                       ? "border-emerald-500 bg-emerald-500/5"
                       : "border-slate-700 hover:border-slate-600",
-                    imageData && "p-6"
+                    previewUrl && "p-6"
                   )}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
                 >
-                  {imageData ? (
+                  {previewUrl ? (
                     <div className="space-y-4">
                       <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-950">
-                        <img src={imageData} alt="Preview" className="w-full h-full object-contain" />
+                        <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
                         <Button
                           variant="destructive"
                           size="icon"
                           className="absolute top-2 right-2"
-                          onClick={() => setImageData(undefined)}
+                          onClick={() => {
+                            setPreviewUrl(undefined);
+                            setSelectedFile(undefined);
+                          }}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -405,7 +427,7 @@ export default function PhotoAnalysisPage() {
                 <Button
                   className="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-semibold py-6 text-lg shadow-lg shadow-emerald-500/20"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !imageData}
+                  disabled={isSubmitting || !selectedFile}
                 >
                   {isSubmitting ? (
                     <>
