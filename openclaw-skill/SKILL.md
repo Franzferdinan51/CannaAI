@@ -146,8 +146,8 @@ const rooms = await response.json();
 ## Network Access
 
 - Local: http://localhost:3000
-- Network: http://192.168.1.101:3000
-- Tailscale: http://100.106.80.61:3000
+- Network: http://YOUR_LOCAL_IP:3000
+- Tailscale: http://YOUR_TAILSCALE_IP:3000
 
 ## Skill Author
 DuckBot 🦆

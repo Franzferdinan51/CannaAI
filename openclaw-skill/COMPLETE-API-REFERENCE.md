@@ -403,8 +403,8 @@ const automation = await fetch('http://localhost:3000/api/automation', {
 | Access Type | URL |
 |-------------|-----|
 | **Local** | http://localhost:3000 |
-| **LAN** | http://192.168.1.101:3000 |
-| **Tailscale** | http://100.106.80.61:3000 |
+| **LAN** | http://YOUR_LOCAL_IP:3000 |
+| **Tailscale** | http://YOUR_TAILSCALE_IP:3000 |
 
 ---
 
