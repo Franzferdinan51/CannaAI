@@ -21,9 +21,14 @@ export const revalidate = false;
 
 // Default settings
 const defaultSettings = {
-  aiProvider: 'lm-studio',
+  aiProvider: 'openclaw',
+  openclaw: {
+    url: 'http://localhost:18789',
+    apiKey: '',
+    model: 'minimax-portal/MiniMax-M2.5'
+  },
   lmStudio: {
-    url: 'http://localhost:1234',
+    url: 'http://100.74.88.40:1234',
     apiKey: '',
     model: 'llama-3-8b-instruct'
   },
