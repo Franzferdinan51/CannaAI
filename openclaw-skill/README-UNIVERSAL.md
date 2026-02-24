@@ -33,7 +33,7 @@ export OPENCLAW_URL="http://localhost:18789"
 
 # Your preferred AI models (update as better models release)
 export OPENCLAW_VISUAL_MODEL="bailian/qwen3.5-plus"  # Best for plant vision
-export OPENCLAW_ADVANCED_MODEL="zai/glm-5"  # Best for reasoning
+export OPENCLAW_ADVANCED_MODEL="zai/gpt-5.2"  # Best for reasoning
 ```
 
 **2. Start CannaAI:**

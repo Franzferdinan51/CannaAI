@@ -11,7 +11,7 @@ This system is designed to be **FUTURE-PROOF** - automatically using the best av
 | Task | Current Best Model | Provider | Why |
 |------|-------------------|----------|-----|
 | **Visual Plant Analysis** | **Qwen 3.5 Plus** | Alibaba (FREE quota) | Best plant disease/nutrient/pest recognition |
-| **Complex Diagnosis** | **GLM-5** | Z.ai (API credits) | Better than GPT-5.2 for reasoning |
+| **Complex Diagnosis** | **GPT-5.2** | Z.ai (API credits) | Better than GPT-5.2 for reasoning |
 | **General Text** | **MiniMax M2.5** | MiniMax (FREE) | Fast, unlimited, no ban risk |
 | **Vision (Backup)** | **Kimi K2.5** | NVIDIA (FREE) | Good alternative when quota low |
 
@@ -80,7 +80,7 @@ Update this guide with:
 
 | Quarter | Best Model | Improvement |
 |---------|------------|-------------|
-| **2026-Q1** | **GLM-5** | Current best (better than GPT-5.2!) |
+| **2026-Q1** | **GPT-5.2** | Current best (better than GPT-5.2!) |
 | 2025-Q4 | GPT-5.2 | Previous gen |
 | 2025-Q3 | Claude 3.5 | Older gen |
 
@@ -97,7 +97,7 @@ Set these in `.env` or environment to override defaults:
 export OPENCLAW_VISUAL_MODEL='bailian/qwen3.5-plus'  # Update when better releases
 
 # Advanced reasoning (complex diagnosis)
-export OPENCLAW_ADVANCED_MODEL='zai/glm-5'  # Update when better releases
+export OPENCLAW_ADVANCED_MODEL='zai/gpt-5.2'  # Update when better releases
 
 # General text tasks
 export OPENCLAW_MODEL='minimax-portal/MiniMax-M2.5'
@@ -209,7 +209,7 @@ curl -X POST http://localhost:3000/api/analyze \
 ```typescript
 {
   visualAnalysisModel: 'bailian/qwen3.5-plus',  // Best vision (Q1 2026)
-  advancedAnalysisModel: 'zai/glm-5',  // Best reasoning (Q1 2026)
+  advancedAnalysisModel: 'zai/gpt-5.2',  // Best reasoning (Q1 2026)
   defaultModel: 'minimax-portal/MiniMax-M2.5',  // FREE text
   modelVersions: {
     visual: '2026-Q1',
@@ -241,5 +241,5 @@ When new models release:
 **Remember:** The goal is to ALWAYS use the best available models for plant analysis. Update this configuration regularly as better models release! 🌿✨
 
 **Last Updated:** 2026-02-24  
-**Current Best:** Qwen 3.5 Plus (visual), GLM-5 (advanced)  
+**Current Best:** Qwen 3.5 Plus (visual), GPT-5.2 (advanced)  
 **Next Review:** 2026-05-01 (Q2 2026 models)

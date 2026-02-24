@@ -32,7 +32,7 @@ const analysis = await sendToOpenClaw(messages, {
 ---
 
 ### **Complex Diagnosis** 🧠
-**Use: GLM-5 (`zai/glm-5`)**
+**Use: GPT-5.2 (`zai/gpt-5.2`)**
 
 **Why:**
 - ✅ **Better than GPT-5.2** for reasoning
@@ -53,7 +53,7 @@ const analysis = await sendToOpenClaw(messages, {
 ```typescript
 const diagnosis = await sendToOpenClaw(messages, {
   taskType: 'complex',
-  model: 'zai/glm-5',  // BEST reasoning (2026-Q1)
+  model: 'zai/gpt-5.2',  // BEST reasoning (2026-Q1)
 });
 ```
 
