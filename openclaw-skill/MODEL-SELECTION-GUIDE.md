@@ -1,6 +1,6 @@
 # CannaAI Model Selection Guide for OpenClaw Agents
 
-## 🎯 Best Models for Each Task
+## 🎯 **Best CURRENT Models (Updated 2026-02-24)**
 
 ### **Visual Plant Analysis** 🌿
 **Use: Qwen 3.5 Plus (`bailian/qwen3.5-plus`)**
@@ -23,17 +23,20 @@
 ```typescript
 const analysis = await sendToOpenClaw(messages, {
   taskType: 'visual',
-  model: 'bailian/qwen3.5-plus',  // BEST for plant vision
+  model: 'bailian/qwen3.5-plus',  // BEST for plant vision (2026-Q1)
 });
 ```
+
+**⚠️ FUTURE-PROOF:** When Qwen 4.0+ releases, update `OPENCLAW_VISUAL_MODEL` env var!
 
 ---
 
 ### **Complex Diagnosis** 🧠
-**Use: GPT-4 / ChatGPT (`openai-codex:default`)**
+**Use: GLM-5 (`zai/glm-5`)**
 
 **Why:**
-- ✅ Most advanced reasoning
+- ✅ **Better than GPT-4** for reasoning
+- ✅ Most advanced reasoning available (2026-Q1)
 - ✅ Best for complex multi-factor analysis
 - ✅ Excellent at connecting symptoms to root causes
 - ✅ Comprehensive treatment recommendations
@@ -44,15 +47,17 @@ const analysis = await sendToOpenClaw(messages, {
 - Advanced cultivation planning
 - Research and analysis
 
-**Note:** Limited daily quota (~100-200 messages/day on $20 plan)
+**Note:** API credits required (use sparingly for complex cases only)
 
 **Example:**
 ```typescript
 const diagnosis = await sendToOpenClaw(messages, {
   taskType: 'complex',
-  model: 'openai-codex:default',
+  model: 'zai/glm-5',  // BEST reasoning (2026-Q1)
 });
 ```
+
+**⚠️ FUTURE-PROOF:** When GLM-6+ releases, update `OPENCLAW_ADVANCED_MODEL` env var!
 
 ---
 

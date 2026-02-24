@@ -18,10 +18,24 @@ const OPENCLAW_CONFIG = {
   apiKey: process.env.OPENCLAW_API_KEY || '',
   // Default model for general tasks (FREE)
   defaultModel: process.env.OPENCLAW_MODEL || 'minimax-portal/MiniMax-M2.5',
-  // BEST models for visual plant analysis
-  visualAnalysisModel: process.env.OPENCLAW_VISUAL_MODEL || 'bailian/qwen3.5-plus',
-  // Alternative: GPT-4 for complex diagnosis
-  advancedAnalysisModel: process.env.OPENCLAW_ADVANCED_MODEL || 'openai-codex:default',
+  
+  // BEST available models for visual plant analysis
+  // Configure to use CURRENT BEST models (update as better models release)
+  visualAnalysisModel: process.env.OPENCLAW_VISUAL_MODEL || 'bailian/qwen3.5-plus',  // Currently: Qwen 3.5 Plus
+  advancedAnalysisModel: process.env.OPENCLAW_ADVANCED_MODEL || 'zai/glm-5',  // Currently: GLM-5 (better than GPT-4!)
+  
+  // Model version tracking - update these as better models release
+  modelVersions: {
+    visual: '2026-Q1',  // Q1 2026 best: Qwen 3.5 Plus
+    advanced: '2026-Q1',  // Q1 2026 best: GLM-5
+    lastUpdated: '2026-02-24',
+  },
+  
+  // Future model upgrade path (document here)
+  // When new models release, update above:
+  // - Qwen 4.0+ (visual)
+  // - GLM-6+ (advanced)
+  // - Any new SOTA vision models
 };
 
 interface OpenClawMessage {
@@ -38,10 +52,19 @@ interface OpenClawResponse {
 /**
  * Send request to OpenClaw Gateway
  * 
- * Model Selection:
- * - Visual analysis (plant photos): Qwen 3.5 Plus or GPT-4 (BEST for vision)
- * - Text analysis: MiniMax M2.5 (FREE, fast)
- * - Complex diagnosis: GPT-4 (when available)
+ * Model Selection Strategy (FUTURE-PROOF):
+ * - Visual analysis: Uses CURRENT BEST vision model (configurable)
+ * - Complex diagnosis: Uses CURRENT BEST reasoning model (configurable)
+ * - Text analysis: Uses FREE model (MiniMax)
+ * 
+ * UPDATE MODELS AS BETTER ONES RELEASE:
+ * - Update OPENCLAW_CONFIG.visualAnalysisModel when better vision models release
+ * - Update OPENCLAW_CONFIG.advancedAnalysisModel when better reasoning models release
+ * - Update modelVersions tracking
+ * 
+ * Current Best (2026-Q1):
+ * - Visual: Qwen 3.5 Plus (bailian/qwen3.5-plus)
+ * - Advanced: GLM-5 (zai/glm-5) - Better than GPT-4!
  */
 export async function sendToOpenClaw(
   messages: OpenClawMessage[],
@@ -50,19 +73,20 @@ export async function sendToOpenClaw(
     temperature?: number;
     maxTokens?: number;
     taskType?: 'visual' | 'text' | 'complex';
+    useLatest?: boolean;  // If true, uses latest configured best model
   } = {}
 ): Promise<OpenClawResponse> {
-  // Auto-select best model for task type
+  // Auto-select best CURRENT model for task type
   let selectedModel = options.model;
   if (!selectedModel) {
-    if (options.taskType === 'visual') {
-      // Use Qwen 3.5 Plus for visual plant analysis (BEST for plant diseases, nutrients, pests)
+    if (options.taskType === 'visual' || options.useLatest) {
+      // Use CURRENT BEST vision model (update config as better models release)
       selectedModel = OPENCLAW_CONFIG.visualAnalysisModel;
     } else if (options.taskType === 'complex') {
-      // Use GPT-4 for complex diagnosis
+      // Use CURRENT BEST reasoning model (update config as better models release)
       selectedModel = OPENCLAW_CONFIG.advancedAnalysisModel;
     } else {
-      // Use MiniMax for general text tasks (FREE)
+      // Use MiniMax for general text tasks (FREE, unlimited)
       selectedModel = OPENCLAW_CONFIG.defaultModel;
     }
   }
