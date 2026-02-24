@@ -16,7 +16,12 @@
 const OPENCLAW_CONFIG = {
   baseUrl: process.env.OPENCLAW_URL || 'http://localhost:18789',
   apiKey: process.env.OPENCLAW_API_KEY || '',
+  // Default model for general tasks (FREE)
   defaultModel: process.env.OPENCLAW_MODEL || 'minimax-portal/MiniMax-M2.5',
+  // BEST models for visual plant analysis
+  visualAnalysisModel: process.env.OPENCLAW_VISUAL_MODEL || 'bailian/qwen3.5-plus',
+  // Alternative: GPT-4 for complex diagnosis
+  advancedAnalysisModel: process.env.OPENCLAW_ADVANCED_MODEL || 'openai-codex:default',
 };
 
 interface OpenClawMessage {
@@ -32,6 +37,11 @@ interface OpenClawResponse {
 
 /**
  * Send request to OpenClaw Gateway
+ * 
+ * Model Selection:
+ * - Visual analysis (plant photos): Qwen 3.5 Plus or GPT-4 (BEST for vision)
+ * - Text analysis: MiniMax M2.5 (FREE, fast)
+ * - Complex diagnosis: GPT-4 (when available)
  */
 export async function sendToOpenClaw(
   messages: OpenClawMessage[],
@@ -39,8 +49,24 @@ export async function sendToOpenClaw(
     model?: string;
     temperature?: number;
     maxTokens?: number;
+    taskType?: 'visual' | 'text' | 'complex';
   } = {}
 ): Promise<OpenClawResponse> {
+  // Auto-select best model for task type
+  let selectedModel = options.model;
+  if (!selectedModel) {
+    if (options.taskType === 'visual') {
+      // Use Qwen 3.5 Plus for visual plant analysis (BEST for plant diseases, nutrients, pests)
+      selectedModel = OPENCLAW_CONFIG.visualAnalysisModel;
+    } else if (options.taskType === 'complex') {
+      // Use GPT-4 for complex diagnosis
+      selectedModel = OPENCLAW_CONFIG.advancedAnalysisModel;
+    } else {
+      // Use MiniMax for general text tasks (FREE)
+      selectedModel = OPENCLAW_CONFIG.defaultModel;
+    }
+  }
+  
   try {
     const response = await fetch(`${OPENCLAW_CONFIG.baseUrl}/v1/chat/completions`, {
       method: 'POST',
@@ -51,7 +77,7 @@ export async function sendToOpenClaw(
         })
       },
       body: JSON.stringify({
-        model: options.model || OPENCLAW_CONFIG.defaultModel,
+        model: selectedModel,
         messages: messages,
         temperature: options.temperature || 0.7,
         max_tokens: options.maxTokens || 2000,
@@ -69,6 +95,7 @@ export async function sendToOpenClaw(
     return {
       success: true,
       content: data.choices?.[0]?.message?.content || '',
+      model: selectedModel,
     };
   } catch (error) {
     console.error('OpenClaw provider error:', error);
