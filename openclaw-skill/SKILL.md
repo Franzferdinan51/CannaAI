@@ -1,13 +1,42 @@
 # CannaAI Skill for OpenClaw
 
-Use this skill to interact with the CannaAI Cannabis Cultivation Management System.
+**Complete Cannabis Cultivation Management System for OpenClaw Agents**
 
-## Setup
+Use this skill to interact with CannaAI - an enterprise-grade cultivation management system with 119+ API endpoints, AI-powered analysis, and full business management.
 
-**CannaAI Server URL:** `http://localhost:3000` (or your network IP)
+## 🚀 Quick Setup for OpenClaw Agents
 
-**Required Environment Variables:**
-- `CANNAI_URL` - CannaAI server URL (default: http://localhost:3000)
+### Automated Setup (Recommended)
+```bash
+cd /home/duckets/CannaAI
+./openclaw-skill/setup-for-openclaw.sh
+```
+
+This will:
+1. ✅ Install dependencies
+2. ✅ Initialize database
+3. ✅ Configure OpenClaw as AI provider
+4. ✅ Start CannaAI server
+5. ✅ Test all endpoints
+
+### Manual Setup
+```bash
+# Clone and setup
+cd /home/duckets/CannaAI
+npm install
+npm run db:generate
+npm run db:push
+npm run dev
+
+# Server runs on http://localhost:3000
+```
+
+## 📊 System Status
+
+**CannaAI Server URL:** `http://localhost:3000`  
+**OpenClaw Integration:** ✅ Enabled (default AI provider)  
+**Total API Endpoints:** 119+  
+**AI Providers:** OpenClaw (MiniMax, Kimi, Qwen, etc.)
 
 ## Capabilities
 
