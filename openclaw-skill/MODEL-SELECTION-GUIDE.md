@@ -35,7 +35,7 @@ const analysis = await sendToOpenClaw(messages, {
 **Use: GLM-5 (`zai/glm-5`)**
 
 **Why:**
-- ✅ **Better than GPT-4** for reasoning
+- ✅ **Better than GPT-5.2** for reasoning
 - ✅ Most advanced reasoning available (2026-Q1)
 - ✅ Best for complex multi-factor analysis
 - ✅ Excellent at connecting symptoms to root causes
@@ -114,9 +114,9 @@ const vision = await sendToOpenClaw(messages, {
 | Task | Best Model | Alternative | Cost |
 |------|------------|-------------|------|
 | **Plant Health (Photos)** | Qwen 3.5 Plus | Kimi K2.5 | FREE (quota) |
-| **Nutrient Deficiency** | Qwen 3.5 Plus | GPT-4 | FREE (quota) |
-| **Pest/Disease ID** | Qwen 3.5 Plus | GPT-4 | FREE (quota) |
-| **Complex Diagnosis** | GPT-4 | Qwen 3.5 Plus | Limited |
+| **Nutrient Deficiency** | Qwen 3.5 Plus | GPT-5.2 | FREE (quota) |
+| **Pest/Disease ID** | Qwen 3.5 Plus | GPT-5.2 | FREE (quota) |
+| **Complex Diagnosis** | GPT-5.2 | Qwen 3.5 Plus | Limited |
 | **General Q&A** | MiniMax M2.5 | Qwen 3.5 Plus | FREE |
 | **Text Analysis** | MiniMax M2.5 | Qwen 3.5 Plus | FREE |
 | **Image Analysis** | Qwen 3.5 Plus | Kimi K2.5 | FREE (quota) |
@@ -131,7 +131,7 @@ The OpenClaw provider automatically selects the best model:
 // Visual analysis → Qwen 3.5 Plus (BEST)
 sendToOpenClaw(messages, { taskType: 'visual' });
 
-// Complex diagnosis → GPT-4
+// Complex diagnosis → GPT-5.2
 sendToOpenClaw(messages, { taskType: 'complex' });
 
 // General text → MiniMax M2.5 (FREE)
@@ -149,7 +149,7 @@ sendToOpenClaw(messages, { taskType: 'text' });
 4. Ask for specific diagnosis + treatment
 
 ### **For Complex Issues:**
-1. Use GPT-4 for multi-symptom cases
+1. Use GPT-5.2 for multi-symptom cases
 2. Provide full history
 3. Include all environmental factors
 4. Ask for root cause analysis
@@ -168,7 +168,7 @@ sendToOpenClaw(messages, { taskType: 'text' });
 - **Usage:** Visual plant analysis ONLY
 - **Priority:** High (save for photos)
 
-### **GPT-4 (OpenAI):**
+### **GPT-5.2 (OpenAI):**
 - **Limit:** ~100-200 messages/day ($20 plan)
 - **Usage:** Complex diagnosis ONLY
 - **Priority:** Critical (save for complex cases)

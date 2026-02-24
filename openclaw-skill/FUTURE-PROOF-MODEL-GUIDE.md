@@ -11,7 +11,7 @@ This system is designed to be **FUTURE-PROOF** - automatically using the best av
 | Task | Current Best Model | Provider | Why |
 |------|-------------------|----------|-----|
 | **Visual Plant Analysis** | **Qwen 3.5 Plus** | Alibaba (FREE quota) | Best plant disease/nutrient/pest recognition |
-| **Complex Diagnosis** | **GLM-5** | Z.ai (API credits) | Better than GPT-4 for reasoning |
+| **Complex Diagnosis** | **GLM-5** | Z.ai (API credits) | Better than GPT-5.2 for reasoning |
 | **General Text** | **MiniMax M2.5** | MiniMax (FREE) | Fast, unlimited, no ban risk |
 | **Vision (Backup)** | **Kimi K2.5** | NVIDIA (FREE) | Good alternative when quota low |
 
@@ -72,7 +72,7 @@ Update this guide with:
 |---------|------------|-------------|
 | **2026-Q1** | Qwen 3.5 Plus | Current best |
 | 2025-Q4 | Qwen 3.0 | Previous gen |
-| 2025-Q3 | GPT-4 Vision | Older gen |
+| 2025-Q3 | GPT-5.2 Vision | Older gen |
 
 **Next Expected:** Qwen 4.0 (2026-Q2?)
 
@@ -80,8 +80,8 @@ Update this guide with:
 
 | Quarter | Best Model | Improvement |
 |---------|------------|-------------|
-| **2026-Q1** | **GLM-5** | Current best (better than GPT-4!) |
-| 2025-Q4 | GPT-4 | Previous gen |
+| **2026-Q1** | **GLM-5** | Current best (better than GPT-5.2!) |
+| 2025-Q4 | GPT-5.2 | Previous gen |
 | 2025-Q3 | Claude 3.5 | Older gen |
 
 **Next Expected:** GLM-6 (2026-Q2?)

@@ -22,7 +22,7 @@ const OPENCLAW_CONFIG = {
   // BEST available models for visual plant analysis
   // Configure to use CURRENT BEST models (update as better models release)
   visualAnalysisModel: process.env.OPENCLAW_VISUAL_MODEL || 'bailian/qwen3.5-plus',  // Currently: Qwen 3.5 Plus
-  advancedAnalysisModel: process.env.OPENCLAW_ADVANCED_MODEL || 'zai/glm-5',  // Currently: GLM-5 (better than GPT-4!)
+  advancedAnalysisModel: process.env.OPENCLAW_ADVANCED_MODEL || 'openai-codex:default',  // Currently: GPT-5.2 (BEST reasoning!)
   
   // Model version tracking - update these as better models release
   modelVersions: {
@@ -64,7 +64,7 @@ interface OpenClawResponse {
  * 
  * Current Best (2026-Q1):
  * - Visual: Qwen 3.5 Plus (bailian/qwen3.5-plus)
- * - Advanced: GLM-5 (zai/glm-5) - Better than GPT-4!
+ * - Advanced: GPT-5.2 (openai-codex:default) - BEST reasoning available!
  */
 export async function sendToOpenClaw(
   messages: OpenClawMessage[],
