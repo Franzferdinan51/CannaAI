@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,36 +8,36 @@ datasource db {
 }
 
 model Room {
-  id  String   @id @default(cuid())
-  name      String   
+  id        String   @id @default(cuid())
+  name      String
   temp      Float?
   humidity  Float?
   co2       Float?
   active    Boolean  @default(true)
-  sensors   Sensor[]
-  plants    Plant[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  plants    Plant[]
+  sensors   Sensor[]
 
   @@index([active])
   @@index([name])
 }
 
 model Sensor {
-  id  String           @id @default(cuid())
-  name  String           
-  type  String           
+  id          String            @id @default(cuid())
+  name        String
+  type        String
   locationId  String?
-  room        Room?            @relation(fields: [locationId], references: [id])
-  enabled     Boolean          @default(true)
+  enabled     Boolean           @default(true)
   calibration Json?
   lastValue   Float?
   lastUpdated DateTime?
-  readings    SensorReading[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   alerts      Alert[]
+  room        Room?             @relation(fields: [locationId], references: [id])
   analytics   SensorAnalytics[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  readings    SensorReading[]
 
   @@index([locationId])
   @@index([type])
@@ -52,12 +46,12 @@ model Sensor {
 }
 
 model SensorReading {
-  id  String   @id @default(cuid())
+  id        String   @id @default(cuid())
   sensorId  String
-  sensor    Sensor   @relation(fields: [sensorId], references: [id])
   value     Float?
   data      Json?
   timestamp DateTime @default(now())
+  sensor    Sensor   @relation(fields: [sensorId], references: [id])
 
   @@index([sensorId, timestamp])
   @@index([sensorId, timestamp, id])
@@ -66,14 +60,14 @@ model SensorReading {
 
 model Alert {
   id           String   @id @default(cuid())
-  sensorId  String?
-  sensor       Sensor?  @relation(fields: [sensorId], references: [id])
-  type         String   
-  severity  String   
-  message      String   
+  sensorId     String?
+  type         String
+  severity     String
+  message      String
   acknowledged Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  sensor       Sensor?  @relation(fields: [sensorId], references: [id])
 
   @@index([sensorId])
   @@index([acknowledged, createdAt])
@@ -82,19 +76,19 @@ model Alert {
 }
 
 model Notification {
-  id             String   @id @default(cuid())
-  type           String   
-  title  String?  
-  message  String   
-  acknowledged   Boolean  @default(false)
-  acknowledgedAt DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  deliveries     NotificationDelivery[]
+  id                String                 @id @default(cuid())
+  type              String
+  title             String?
+  message           String
+  acknowledged      Boolean                @default(false)
+  acknowledgedAt    DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  templateId        String?
+  metadata          Json?
+  template          NotificationTemplate?  @relation(fields: [templateId], references: [id])
+  deliveries        NotificationDelivery[]
   webhookDeliveries WebhookDelivery[]
-  templateId  String?
-  template       NotificationTemplate? @relation(fields: [templateId], references: [id])
-  metadata       Json?
 
   @@index([acknowledged, createdAt])
   @@index([type, createdAt])
@@ -102,19 +96,19 @@ model Notification {
 }
 
 model WebhookSubscription {
-  id  String   @id @default(cuid())
-  name  String   
-  url         String   
-  secret      String?
-  events      String    // JSON string of event types
-  enabled     Boolean  @default(true)
-  retryCount  Int      @default(3)
-  timeout     Int      @default(5000) // milliseconds
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deliveries  WebhookDelivery[]
-  lastUsed    DateTime?
-  isVerified  Boolean  @default(false)
+  id         String            @id @default(cuid())
+  name       String
+  url        String
+  secret     String?
+  events     String
+  enabled    Boolean           @default(true)
+  retryCount Int               @default(3)
+  timeout    Int               @default(5000)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  lastUsed   DateTime?
+  isVerified Boolean           @default(false)
+  deliveries WebhookDelivery[]
 
   @@index([enabled])
   @@index([lastUsed])
@@ -122,20 +116,20 @@ model WebhookSubscription {
 }
 
 model WebhookDelivery {
-  id              String   @id @default(cuid())
-  webhookId  String
-  webhook         WebhookSubscription @relation(fields: [webhookId], references: [id])
-  notificationId  String?
-  notification    Notification? @relation(fields: [notificationId], references: [id])
-  eventType  String   
-  status  String    // 'pending', 'success', 'failed', 'retry'
-  responseCode    Int?
-  responseBody    String?  
-  attempts        Int      @default(0)
-  nextRetryAt     DateTime?
-  errorMessage    String?  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String              @id @default(cuid())
+  webhookId      String
+  notificationId String?
+  eventType      String
+  status         String
+  responseCode   Int?
+  responseBody   String?
+  attempts       Int                 @default(0)
+  nextRetryAt    DateTime?
+  errorMessage   String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  notification   Notification?       @relation(fields: [notificationId], references: [id])
+  webhook        WebhookSubscription @relation(fields: [webhookId], references: [id])
 
   @@index([status, nextRetryAt])
   @@index([webhookId])
@@ -144,60 +138,60 @@ model WebhookDelivery {
 }
 
 model NotificationTemplate {
-  id  String   @id @default(cuid())
-  name  String   @unique
-  type  String
-  title  String
-  message  String
-  channels    String   // JSON string of enabled channels
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String         @id @default(cuid())
+  name          String         @unique
+  type          String
+  title         String
+  message       String
+  channels      String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   notifications Notification[]
 }
 
 model NotificationDelivery {
-  id              String   @id @default(cuid())
-  notificationId  String
-  notification    Notification @relation(fields: [notificationId], references: [id])
-  channel         String
-  status  String   // 'pending', 'sent', 'delivered', 'failed'
-  provider  String?  // 'email', 'sms', 'push', 'webhook', 'discord', 'slack'
-  recipient  String?
-  messageId  String?
-  errorMessage    String?
-  attempts        Int      @default(0)
-  sentAt          DateTime?
-  deliveredAt     DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String       @id @default(cuid())
+  notificationId String
+  channel        String
+  status         String
+  provider       String?
+  recipient      String?
+  messageId      String?
+  errorMessage   String?
+  attempts       Int          @default(0)
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  notification   Notification @relation(fields: [notificationId], references: [id])
 
   @@index([notificationId, channel])
   @@index([status])
 }
 
 model NotificationPreference {
-  id                    String   @id @default(cuid())
-  userId                String?
-  type                  String
-  emailEnabled          Boolean  @default(true)
-  smsEnabled           Boolean  @default(false)
-  pushEnabled          Boolean  @default(true)
-  webhookEnabled       Boolean  @default(false)
-  discordEnabled       Boolean  @default(false)
-  slackEnabled         Boolean  @default(false)
-  inAppEnabled         Boolean  @default(true)
-  minSeverity  String   @default("info")
-  quietHoursStart      String?  // HH:MM format
-  quietHoursEnd  String?  // HH:MM format
-  throttleRate         Int      @default(0) // max notifications per hour (0 = unlimited)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String?
+  type            String
+  emailEnabled    Boolean  @default(true)
+  smsEnabled      Boolean  @default(false)
+  pushEnabled     Boolean  @default(true)
+  webhookEnabled  Boolean  @default(false)
+  discordEnabled  Boolean  @default(false)
+  slackEnabled    Boolean  @default(false)
+  inAppEnabled    Boolean  @default(true)
+  minSeverity     String   @default("info")
+  quietHoursStart String?
+  quietHoursEnd   String?
+  throttleRate    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([userId, type])
 }
 
 model AutomationSetting {
-  id        Int      @id @default(1)
+  id        Int      @id @default(autoincrement())
   config    Json
   updatedAt DateTime @updatedAt
 }
@@ -207,7 +201,7 @@ model Strain {
   name               String
   type               String
   lineage            String?
-  description  String?
+  description        String?
   isPurpleStrain     Boolean  @default(false)
   optimalConditions  Json?
   commonDeficiencies Json?
@@ -220,38 +214,38 @@ model Strain {
   medicalUses        Json?
   flavors            Json?
   aroma              Json?
-  plants             Plant[]
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  plants             Plant[]
 }
 
 model Plant {
-  id  String   @id @default(cuid())
-  name  String   
-  strainId    String?
-  strain      Strain?  @relation(fields: [strainId], references: [id])
-  stage  String?  
-  health      Json?
-  age         Int?
-  plantedDate DateTime?
-  locationId  String?
-  room        Room?    @relation(fields: [locationId], references: [id])
-  images      Json?
-  notes  String?  
-  tags        Json?
-  metadata    Json?
-  isActive    Boolean  @default(true)
-  tasks       Task[]
-  actions     Action[]
-  analyses    PlantAnalysis[]
-  healthAnalytics PlantHealthAnalytics[]
-  automationRules AutomationRule[]
-  analysisHistory AnalysisHistory[]
-  anomalies AnomalyDetection[]
+  id                 String                 @id @default(cuid())
+  name               String
+  strainId           String?
+  stage              String?
+  health             Json?
+  age                Int?
+  plantedDate        DateTime?
+  locationId         String?
+  images             Json?
+  notes              String?
+  tags               Json?
+  metadata           Json?
+  isActive           Boolean                @default(true)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  actions            Action[]
+  analysisHistory    AnalysisHistory[]
+  milestones         AnalysisMilestone[]
   analysisSchedulers AnalysisScheduler[]
-  milestones AnalysisMilestone[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  anomalies          AnomalyDetection[]
+  automationRules    AutomationRule[]
+  room               Room?                  @relation(fields: [locationId], references: [id])
+  strain             Strain?                @relation(fields: [strainId], references: [id])
+  analyses           PlantAnalysis[]
+  healthAnalytics    PlantHealthAnalytics[]
+  tasks              Task[]
 
   @@index([locationId])
   @@index([strainId])
@@ -262,20 +256,20 @@ model Plant {
 }
 
 model Task {
-  id              String   @id @default(cuid())
-  title           String   
-  description  String?  
-  type            String?  
-  priority  String?  
-  status  String   @default("pending") 
-  notes           String?  
-  data            Json?
-  plantId         String?
-  plant           Plant?   @relation(fields: [plantId], references: [id])
-  scheduledAt     DateTime?
-  completedAt     DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  type        String?
+  priority    String?
+  status      String    @default("pending")
+  notes       String?
+  data        Json?
+  plantId     String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  plant       Plant?    @relation(fields: [plantId], references: [id])
 
   @@index([plantId])
   @@index([status, scheduledAt])
@@ -286,15 +280,15 @@ model Task {
 }
 
 model Action {
-  id  String   @id @default(cuid())
-  plantId  String?
-  plant       Plant?   @relation(fields: [plantId], references: [id])
-  type  String   
-  description String   
-  status      String   @default("pending") 
+  id          String   @id @default(cuid())
+  plantId     String?
+  type        String
+  description String
+  status      String   @default("pending")
   data        Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  plant       Plant?   @relation(fields: [plantId], references: [id])
 
   @@index([plantId])
   @@index([status, createdAt])
@@ -303,31 +297,30 @@ model Action {
 }
 
 model PlantAnalysis {
-  id         String   @id @default(cuid())
-  plantId    String?
-  plant      Plant?   @relation(fields: [plantId], references: [id])
-  request    Json?
-  result     Json?
-  provider   String?  
-  imageInfo  Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  plantId   String?
+  request   Json?
+  result    Json?
+  provider  String?
+  imageInfo Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  plant     Plant?   @relation(fields: [plantId], references: [id])
 
   @@index([plantId])
   @@index([provider])
   @@index([createdAt, id])
 }
 
-// Analytics Models
 model Metric {
-  id  String   @id @default(cuid())
-  name  String   @unique
-  type  String   // 'counter', 'gauge', 'histogram'
-  value       Float
-  tags        Json?
-  timestamp   DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @unique
+  type      String
+  value     Float
+  tags      Json?
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([name, timestamp])
   @@index([timestamp])
@@ -335,19 +328,19 @@ model Metric {
 }
 
 model AnalyticsRecord {
-  id            String   @id @default(cuid())
-  category      String    // 'api', 'sensor', 'plant_health', 'system'
-  eventType  String   
-  data          Json
-  metadata      Json?
-  success       Boolean  @default(true)
-  errorMessage  String?  
-  responseTime  Float?   // in milliseconds
-  userId  String?
-  plantId  String?
-  sensorId      String?
-  timestamp     DateTime @default(now())
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  category     String
+  eventType    String
+  data         Json
+  metadata     Json?
+  success      Boolean  @default(true)
+  errorMessage String?
+  responseTime Float?
+  userId       String?
+  plantId      String?
+  sensorId     String?
+  timestamp    DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   @@index([category, timestamp])
   @@index([eventType, timestamp])
@@ -360,18 +353,18 @@ model AnalyticsRecord {
 }
 
 model SensorAnalytics {
-  id  String   @id @default(cuid())
-  sensorId    String
-  sensor      Sensor   @relation(fields: [sensorId], references: [id])
-  reading     Float
-  value       Json?
-  status      String    // 'normal', 'warning', 'critical'
-  threshold   Float?
-  anomalyScore Float?  // 0-1 score indicating how anomalous the reading is
-  temperature Float?
-  humidity    Float?
-  timestamp   DateTime @default(now())
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  sensorId     String
+  reading      Float
+  value        Json?
+  status       String
+  threshold    Float?
+  anomalyScore Float?
+  temperature  Float?
+  humidity     Float?
+  timestamp    DateTime @default(now())
+  createdAt    DateTime @default(now())
+  sensor       Sensor   @relation(fields: [sensorId], references: [id])
 
   @@index([sensorId, timestamp])
   @@index([status, timestamp])
@@ -383,15 +376,15 @@ model SensorAnalytics {
 model PlantHealthAnalytics {
   id              String   @id @default(cuid())
   plantId         String
-  plant           Plant    @relation(fields: [plantId], references: [id])
   analysisId      String?
-  healthScore     Float    // 0-100
-  healthStatus    String    // 'excellent', 'good', 'fair', 'poor', 'critical'
+  healthScore     Float
+  healthStatus    String
   issues          Json?
   recommendations Json?
-  confidence      Float?   // AI confidence score 0-1
+  confidence      Float?
   timestamp       DateTime @default(now())
   createdAt       DateTime @default(now())
+  plant           Plant    @relation(fields: [plantId], references: [id])
 
   @@index([plantId, timestamp])
   @@index([healthStatus, timestamp])
@@ -401,19 +394,19 @@ model PlantHealthAnalytics {
 }
 
 model APIPerformanceMetrics {
-  id            String   @id @default(cuid())
-  endpoint      String   
-  method  String   
-  statusCode    Int
-  responseTime  Float    // in milliseconds
-  success       Boolean
-  errorMessage  String?  
-  requestSize   Float?   // in bytes
-  responseSize  Float?   // in bytes
-  userAgent  String?  
-  ipAddress  String?  
-  timestamp     DateTime @default(now())
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  endpoint     String
+  method       String
+  statusCode   Int
+  responseTime Float
+  success      Boolean
+  errorMessage String?
+  requestSize  Float?
+  responseSize Float?
+  userAgent    String?
+  ipAddress    String?
+  timestamp    DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   @@index([endpoint, timestamp])
   @@index([statusCode, timestamp])
@@ -424,73 +417,72 @@ model APIPerformanceMetrics {
 }
 
 model DailyReport {
-  id            String   @id @default(cuid())
-  date          DateTime @unique
-  summary       Json
-  metrics       Json
-  alertsCount   Int
-  actionsCount  Int
-  analysisCount Int
+  id             String   @id @default(cuid())
+  date           DateTime @unique
+  summary        Json
+  metrics        Json
+  alertsCount    Int
+  actionsCount   Int
+  analysisCount  Int
   sensorReadings Int
-  generatedAt   DateTime @default(now())
-  createdAt     DateTime @default(now())
+  generatedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   @@index([date])
 }
 
 model AlertThreshold {
-  id  String   @id @default(cuid())
-  name  String   @unique
-  metric      String   // e.g., 'temperature', 'humidity', 'health_score'
-  condition   String   // 'gt', 'lt', 'eq', 'ne'
-  value       Float
-  severity    String   // 'info', 'warning', 'critical'
-  enabled     Boolean  @default(true)
-  roomId      String?
-  sensorId    String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @unique
+  metric    String
+  condition String
+  value     Float
+  severity  String
+  enabled   Boolean  @default(true)
+  roomId    String?
+  sensorId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([metric, enabled])
 }
 
 model DataAggregation {
-  id  String   @id @default(cuid())
-  period      String   // 'hourly', 'daily', 'weekly', 'monthly'
-  category    String
-  metric      String
-  value       Float
-  count       Int
-  min         Float?
-  max         Float?
-  avg         Float?
-  stddev      Float?
-  timestamp   DateTime // The start of the aggregation period
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  period    String
+  category  String
+  metric    String
+  value     Float
+  count     Int
+  min       Float?
+  max       Float?
+  avg       Float?
+  stddev    Float?
+  timestamp DateTime
+  createdAt DateTime @default(now())
 
   @@index([period, category, timestamp])
   @@index([timestamp])
 }
 
-// Photo Analysis Automation Models
 model AutomationRule {
-  id          String   @id @default(cuid())
-  name        String   
-  description String?  
-  type        String   
-  enabled     Boolean  @default(true)
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String
+  enabled     Boolean   @default(true)
   conditions  Json
   actions     Json
   config      Json?
   plantId     String?
-  plant       Plant?   @relation(fields: [plantId], references: [id])
   scheduleId  String?
-  schedule    Schedule? @relation(fields: [scheduleId], references: [id])
   triggerId   String?
-  trigger     Trigger? @relation(fields: [triggerId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  trigger     Trigger?  @relation(fields: [triggerId], references: [id])
+  schedule    Schedule? @relation(fields: [scheduleId], references: [id])
+  plant       Plant?    @relation(fields: [plantId], references: [id])
 
   @@index([enabled])
   @@index([plantId])
@@ -499,21 +491,21 @@ model AutomationRule {
 }
 
 model Schedule {
-  id          String   @id @default(cuid())
-  name        String   
-  description String?  
-  cronExpression String 
-  timezone    String
-  type        String   
-  interval    String?  
-  enabled     Boolean  @default(true)
-  config      Json?
-  lastRun     DateTime?
-  nextRun     DateTime?
-  runCount    Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  rules       AutomationRule[]
+  id             String           @id @default(cuid())
+  name           String
+  description    String?
+  cronExpression String
+  timezone       String
+  type           String
+  interval       String?
+  enabled        Boolean          @default(true)
+  config         Json?
+  lastRun        DateTime?
+  nextRun        DateTime?
+  runCount       Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  rules          AutomationRule[]
 
   @@index([enabled])
   @@index([nextRun])
@@ -521,18 +513,18 @@ model Schedule {
 }
 
 model Trigger {
-  id          String   @id @default(cuid())
-  name        String   
-  description String?  
-  type        String   
-  conditions  Json
-  config      Json?
-  enabled     Boolean  @default(true)
-  cooldown    Int      @default(3600)
+  id            String           @id @default(cuid())
+  name          String
+  description   String?
+  type          String
+  conditions    Json
+  config        Json?
+  enabled       Boolean          @default(true)
+  cooldown      Int              @default(3600)
   lastTriggered DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  rules       AutomationRule[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  rules         AutomationRule[]
 
   @@index([enabled])
   @@index([type])
@@ -540,9 +532,9 @@ model Trigger {
 
 model Workflow {
   id          String   @id @default(cuid())
-  name        String   
-  description String?  
-  type        String   
+  name        String
+  description String?
+  type        String
   enabled     Boolean  @default(true)
   steps       Json
   config      Json?
@@ -554,23 +546,23 @@ model Workflow {
 }
 
 model AnalysisBatch {
-  id          String   @id @default(cuid())
-  name        String   
-  description String?  
-  type        String   
-  status      String   
-  plantIds    String
-  totalCount  Int      @default(0)
-  completedCount Int   @default(0)
-  failedCount Int      @default(0)
-  config      Json?
-  results     Json?
-  scheduledAt DateTime?
-  startedAt   DateTime?
-  completedAt DateTime?
-  createdBy   String?  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String    @id @default(cuid())
+  name           String
+  description    String?
+  type           String
+  status         String
+  plantIds       String
+  totalCount     Int       @default(0)
+  completedCount Int       @default(0)
+  failedCount    Int       @default(0)
+  config         Json?
+  results        Json?
+  scheduledAt    DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([status])
   @@index([scheduledAt])
@@ -578,33 +570,33 @@ model AnalysisBatch {
 }
 
 model AnalysisHistory {
-  id          String   @id @default(cuid())
-  plantId     String
-  plant       Plant    @relation(fields: [plantId], references: [id])
-  analysisType String  
-  analysisId  String?
-  data        Json
-  metadata    Json?
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  plantId      String
+  analysisType String
+  analysisId   String?
+  data         Json
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  plant        Plant    @relation(fields: [plantId], references: [id])
 
   @@index([plantId, createdAt])
   @@index([analysisType, createdAt])
 }
 
 model AnomalyDetection {
-  id          String   @id @default(cuid())
-  plantId     String?
-  plant       Plant?   @relation(fields: [plantId], references: [id])
-  type        String   
-  metric      String   
-  severity    String   
-  detected    Boolean  @default(true)
-  threshold   Float
+  id           String    @id @default(cuid())
+  plantId      String?
+  type         String
+  metric       String
+  severity     String
+  detected     Boolean   @default(true)
+  threshold    Float
   currentValue Float
-  data        Json?
-  resolved    Boolean  @default(false)
-  resolvedAt  DateTime?
-  createdAt   DateTime @default(now())
+  data         Json?
+  resolved     Boolean   @default(false)
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  plant        Plant?    @relation(fields: [plantId], references: [id])
 
   @@index([plantId, createdAt])
   @@index([resolved, severity])
@@ -612,18 +604,18 @@ model AnomalyDetection {
 }
 
 model AnalysisScheduler {
-  id          String   @id @default(cuid())
-  plantId     String?
-  plant       Plant?   @relation(fields: [plantId], references: [id])
-  analysisType String  
-  frequency   String   
-  timeOfDay   String?  
-  enabled     Boolean  @default(true)
-  config      Json?
-  lastRun     DateTime?
-  nextRun     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String    @id @default(cuid())
+  plantId      String?
+  analysisType String
+  frequency    String
+  timeOfDay    String?
+  enabled      Boolean   @default(true)
+  config       Json?
+  lastRun      DateTime?
+  nextRun      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  plant        Plant?    @relation(fields: [plantId], references: [id])
 
   @@index([enabled])
   @@index([nextRun])
@@ -631,32 +623,32 @@ model AnalysisScheduler {
 }
 
 model AnalysisMilestone {
-  id          String   @id @default(cuid())
-  plantId     String
-  plant       Plant    @relation(fields: [plantId], references: [id])
-  type        String   
-  title       String   
-  description String?  
-  data        Json?
-  detectedAt  DateTime @default(now())
-  acknowledged Boolean @default(false)
+  id             String    @id @default(cuid())
+  plantId        String
+  type           String
+  title          String
+  description    String?
+  data           Json?
+  detectedAt     DateTime  @default(now())
+  acknowledged   Boolean   @default(false)
   acknowledgedAt DateTime?
+  plant          Plant     @relation(fields: [plantId], references: [id])
 
   @@index([plantId, detectedAt])
   @@index([type])
 }
 
 model NotificationRule {
-  id          String   @id @default(cuid())
-  name        String   
-  type        String   
-  conditions  Json
-  channels    String
-  template    String?  
-  enabled     Boolean  @default(true)
-  cooldown    Int      @default(3600)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  type       String
+  conditions Json
+  channels   String
+  template   String?
+  enabled    Boolean  @default(true)
+  cooldown   Int      @default(3600)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([enabled])
   @@index([type])

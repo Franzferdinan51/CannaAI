@@ -596,3 +596,98 @@ function parseAIResponse(aiResponse: string): any {
     };
   }
 }
+/**
+ * Check OpenClaw Gateway availability
+ */
+async function checkOpenClaw(): Promise<ProviderDetectionResult> {
+  const openClawUrl = process.env.OPENCLAW_URL || 'http://localhost:18789';
+  
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const response = await fetch(`${openClawUrl}/api/status`, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      return {
+        isAvailable: true,
+        provider: 'openclaw',
+        reason: 'OpenClaw Gateway is running and accessible',
+        config: {
+          url: openClawUrl,
+          model: 'minimax-portal/MiniMax-M2.5',
+        },
+        recommendations: [],
+      };
+    }
+  } catch {
+    // OpenClaw not available
+  }
+  
+  return {
+    isAvailable: false,
+    provider: 'openclaw',
+    reason: 'OpenClaw Gateway is not running or not accessible',
+    config: {
+      url: openClawUrl,
+    },
+    recommendations: [
+      'Start OpenClaw Gateway: openclaw gateway start',
+      'Check OpenClaw is running on port 18789',
+      'Verify OPENCLAW_URL environment variable',
+    ],
+  };
+}
+
+/**
+ * Execute AI request via OpenClaw Gateway
+ */
+export async function executeViaOpenClaw(
+  messages: Array<{ role: string; content: string }>,
+  options: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+  } = {}
+): Promise<{ success: boolean; content?: string; error?: string }> {
+  const openClawUrl = process.env.OPENCLAW_URL || 'http://localhost:18789';
+  
+  try {
+    const response = await fetch(`${openClawUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: options.model || 'minimax-portal/MiniMax-M2.5',
+        messages: messages,
+        temperature: options.temperature || 0.7,
+        max_tokens: options.maxTokens || 2000,
+      }),
+      timeout: 30000,
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenClaw API error: ${response.status} - ${error}`);
+    }
+    
+    const data = await response.json();
+    
+    return {
+      success: true,
+      content: data.choices?.[0]?.message?.content || '',
+    };
+  } catch (error) {
+    console.error('OpenClaw provider error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}

@@ -77,6 +77,37 @@
 - **Traditional Server**: Custom Node.js server with Socket.IO and full API support
 - **Cross-Platform**: Windows batch scripts and Unix shell scripts for all platforms
 
+## 🤖 OpenClaw Integration
+
+CannaAI can be controlled by OpenClaw bots and AI agents via the OpenClaw gateway.
+
+### Quick Start
+```bash
+# Check CannaAI status (from any machine on network)
+curl http://localhost:3000/api/openclaw/status
+```
+
+### OpenClaw Skill
+Copy `openclaw-skill/` to your OpenClaw skills directory to enable full CannaAI control:
+- Full API documentation
+- CLI tool for bot commands
+- Agent-friendly endpoints
+
+### API Endpoints
+```
+GET /api/openclaw/status  - Bot status check
+GET /api/rooms           - List grow rooms
+GET /api/plants          - List plants
+GET /api/strains         - List strains
+GET /api/sensors         - Get sensor readings
+POST /api/analyze        - AI plant analysis
+```
+
+### Network Access
+- Local: http://localhost:3000
+- LAN: http://192.168.1.101:3000
+- Tailscale: http://100.106.80.61:3000
+
 ## 🛠️ Technology Stack
 
 ### Hybrid Architecture (NEW)
@@ -1999,5 +2030,15 @@ For support and questions:
 ---
 
 **Built with ❤️ for cannabis cultivation professionals**
+
+---
+
+## 💰 Support Development
+
+If you find CannaAI useful, consider supporting development:
+
+**Bitcoin:** `bc1q733czwuelntfug8jgur6md2lhzcx7l5ufks9y7`
+
+---
 
 **Repository**: [github.com/Franzferdinan51/CannaAI](https://github.com/Franzferdinan51/CannaAI)
