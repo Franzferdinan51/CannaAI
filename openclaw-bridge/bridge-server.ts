@@ -153,7 +153,19 @@ app.post('/v1/chat/completions', async (req, res) => {
       result = { response: stdout };
     }
     
-    const responseText = result.response || result.message || result.content || 'No response generated';
+    // Extract response text from OpenClaw result structure
+    let responseText = 'No response generated';
+    if (result.result?.payloads?.[0]?.text) {
+      responseText = result.result.payloads[0].text;
+    } else if (result.response) {
+      responseText = result.response;
+    } else if (result.message) {
+      responseText = result.message;
+    } else if (result.content) {
+      responseText = result.content;
+    } else if (result.summary) {
+      responseText = result.summary;
+    }
     const processingTime = Date.now() - startTime;
     
     console.log(`✅ Response in ${processingTime}ms`);
