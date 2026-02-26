@@ -363,11 +363,45 @@ curl -X GET "https://dashscope-intl.aliyuncs.com/api/v1/models" \
 
 ---
 
-## 🔗 LM Studio Integration (Updated 2026-02-25)
+## 🔗 LM Studio Integration (Updated 2026-02-26)
 
-**Windows Machine IP Changed:** `<YOUR_WINDOWS_IP>` (was 100.74.88.40)
+**Windows Machine IP:** `http://100.116.54.125:1234` (Server rebuilt)
 
-### Available Models:
+### Available Models (11 Verified Live):
+```bash
+curl http://100.116.54.125:1234/v1/models
+```
+
+**Current Models:**
+- `qwen3.5-122b-a10b` - 122B MoE (Best overall reasoning)
+- `qwen3.5-27b` - 27B dense (Fast responses)
+- `qwen/qwen3-vl-8b` - 8B Vision-language
+- `qwen/qwen3-vl-4b` - 4B Vision-language (Fast)
+- `zai-org/glm-4.7-flash` - GLM Flash (Fast reasoning)
+- `zai-org/glm-4.6v-flash` - GLM Vision Flash
+- `nvidia/nemotron-3-nano` - NVIDIA (Compact)
+- `unsloth/qwen3.5-35b-a3b` - 35B MoE (Balanced)
+- `liquid/lfm2-24b-a2b` - 24B MoE (Liquid AI)
+- `qwen/qwen3.5-35b-a3b` - 35B MoE (Official)
+- `text-embedding-nomic-embed-text-v1.5` - Embeddings
+
+### Usage via HTTP Bridge:
+```bash
+# Use LM Studio model via OpenClaw Bridge
+curl -X POST http://localhost:18790/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen3.5-122b-a10b","messages":[{"role":"user","content":"Hello!"}]}'
+```
+
+### Direct LM Studio Access:
+```bash
+# Direct to LM Studio (no OpenClaw routing)
+curl -X POST http://100.116.54.125:1234/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen3.5-27b","messages":[{"role":"user","content":"Hello!"}]}'
+```
+
+## Available Models:
 ```bash
 curl http://<YOUR_WINDOWS_IP>:1234/v1/models
 ```
