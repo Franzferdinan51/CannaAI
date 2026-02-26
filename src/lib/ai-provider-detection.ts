@@ -1,6 +1,12 @@
 /**
  * AI Provider Detection and Management for Serverless Environments
  * Handles detection of different AI providers - NO FALLBACK to rule-based analysis
+ * 
+ * Provider Priority:
+ * 1. OpenClaw Gateway (PRIMARY - centralized model management)
+ * 2. Alibaba Bailian (Qwen) - Singapore endpoint
+ * 3. LM Studio - Local models
+ * 4. OpenRouter - FREE cloud models
  */
 
 import { checkOpenClaw } from './ai-provider-openclaw';
@@ -72,19 +78,19 @@ export async function detectAvailableProviders(): Promise<{
   const results: ProviderDetectionResult[] = [];
   const recommendations: string[] = [];
 
-  // Check Alibaba Qwen FIRST (Singapore endpoint)
-  const bailianResult = await checkBailian();
-  results.push(bailianResult);
-
-  // Check OpenClaw Gateway
+  // Check OpenClaw Gateway FIRST (PRIMARY provider)
   const openClawResult = await checkOpenClaw();
   results.push(openClawResult);
 
-  // Check LM Studio
+  // Check Alibaba Qwen (Singapore endpoint) - FALLBACK
+  const bailianResult = await checkBailian();
+  results.push(bailianResult);
+
+  // Check LM Studio - FALLBACK
   const lmStudioResult = await checkLMStudio();
   results.push(lmStudioResult);
 
-  // Check OpenRouter (works everywhere)
+  // Check OpenRouter (works everywhere) - FALLBACK
   const openRouterResult = await checkOpenRouter();
   results.push(openRouterResult);
 

@@ -1,0 +1,22 @@
+{
+  "name": "@cannaai/openclaw-skill",
+  "version": "1.0.0",
+  "description": "CannaAI skill for OpenClaw - Plant health analysis and cannabis cultivation expertise",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "openclaw",
+    "skill",
+    "cannabis",
+    "plant-health",
+    "grow-monitoring"
+  ],
+  "author": "Duckets",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
+}

@@ -1,28 +1,34 @@
 /**
  * OpenClaw Gateway AI Provider Integration
- * Uses OpenClaw Gateway (port 18789) to route AI requests to configured models
- * Supports: Qwen 3.5 Plus, Kimi K2.5, MiniMax, and all OpenClaw-configured models
+ * Routes AI requests through OpenClaw Gateway for centralized model management
+ * 
+ * Benefits:
+ * - Single auth (OpenClaw OAuth/device auth)
+ * - Access to all configured models (Qwen, Kimi, MiniMax, etc.)
+ * - Centralized quota management
+ * - Automatic model fallback
+ * 
+ * Endpoint: http://localhost:18789/api/chat (or /v1/chat/completions if available)
  */
 
 import { ProviderDetectionResult } from './ai-provider-detection';
 
-const OPENCLAW_GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789/v1';
+const OPENCLAW_GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789';
 const OPENCLAW_MODEL = process.env.OPENCLAW_MODEL || 'qwen3.5-plus';
+const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'openclaw-local';
 
 /**
  * Check if OpenClaw Gateway is available
  */
 export async function checkOpenClaw(): Promise<ProviderDetectionResult> {
   try {
-    // Check gateway health - OpenClaw serves web UI at root
-    const healthCheck = await fetch(`${OPENCLAW_GATEWAY_URL.replace('/v1', '')}`, {
+    // Check gateway health
+    const healthCheck = await fetch(`${OPENCLAW_GATEWAY_URL}/api/status`, {
       method: 'GET',
       signal: AbortSignal.timeout(5000)
     });
 
     if (healthCheck.ok || healthCheck.status === 200) {
-      // Gateway is running (serving web UI = gateway is up)
-      // Trust that OpenClaw is configured correctly
       return {
         isAvailable: true,
         provider: 'openclaw',
@@ -31,7 +37,8 @@ export async function checkOpenClaw(): Promise<ProviderDetectionResult> {
           type: 'openclaw',
           baseUrl: OPENCLAW_GATEWAY_URL,
           model: OPENCLAW_MODEL,
-          models: ['qwen3.5-plus', 'kimi-k2.5', 'minimax-m2.5']
+          apiKey: OPENCLAW_API_KEY,
+          models: ['qwen3.5-plus', 'kimi-k2.5', 'minimax-m2.5', 'glm-4.5']
         },
         recommendations: []
       };
@@ -62,6 +69,10 @@ export async function checkOpenClaw(): Promise<ProviderDetectionResult> {
 
 /**
  * Execute analysis using OpenClaw Gateway
+ * 
+ * Two modes supported:
+ * 1. Direct /api/chat endpoint (current OpenClaw format)
+ * 2. OpenAI-compatible /v1/chat/completions (if available)
  */
 export async function executeWithOpenClaw(params: {
   image?: string;
@@ -72,49 +83,81 @@ export async function executeWithOpenClaw(params: {
   result?: any;
   error?: string;
   provider: string;
+  usage?: any;
 }> {
   try {
     const { image, prompt, model = OPENCLAW_MODEL } = params;
 
-    // Build messages for OpenAI-compatible API
-    const messages: any[] = [{
-      role: 'user',
-      content: image 
-        ? [
-            { type: 'image_url', image_url: { url: image } },
-            { type: 'text', text: prompt }
-          ]
-        : prompt
-    }];
+    // Try OpenAI-compatible endpoint first (if Gateway supports it)
+    try {
+      const messages: any[] = [{
+        role: 'user',
+        content: image 
+          ? [
+              { type: 'image_url', image_url: { url: image } },
+              { type: 'text', text: prompt }
+            ]
+          : prompt
+      }];
 
-    const response = await fetch(`${OPENCLAW_GATEWAY_URL}/chat/completions`, {
+      const response = await fetch(`${OPENCLAW_GATEWAY_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENCLAW_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: messages,
+          max_tokens: 2048,
+          temperature: 0.7
+        }),
+        signal: AbortSignal.timeout(60000)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        return {
+          success: true,
+          result: result.choices[0].message.content,
+          provider: 'openclaw',
+          usage: result.usage
+        };
+      }
+    } catch (openaiError) {
+      // OpenAI endpoint not available, try direct API
+      console.log('OpenAI endpoint not available, trying direct API...');
+    }
+
+    // Fallback: Direct OpenClaw API
+    const directResponse = await fetch(`${OPENCLAW_GATEWAY_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENCLAW_API_KEY || 'openclaw-local'}`
+        'Authorization': `Bearer ${OPENCLAW_API_KEY}`
       },
       body: JSON.stringify({
+        message: prompt,
         model: model,
-        messages: messages,
-        max_tokens: 2048,
-        temperature: 0.7
+        image: image,
+        stream: false
       }),
       signal: AbortSignal.timeout(60000)
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenClaw API error: ${response.status} - ${errorText}`);
+    if (!directResponse.ok) {
+      throw new Error(`OpenClaw API error: ${directResponse.status} ${directResponse.statusText}`);
     }
 
-    const result = await response.json();
+    const result = await directResponse.json();
     
     return {
       success: true,
-      result: result.choices[0].message.content,
+      result: result.response || result.message || result.content,
       provider: 'openclaw',
       usage: result.usage
     };
+
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return {
@@ -133,19 +176,28 @@ export function getOpenClawConfig() {
     type: 'openclaw',
     baseUrl: OPENCLAW_GATEWAY_URL,
     model: OPENCLAW_MODEL,
-    apiKey: process.env.OPENCLAW_API_KEY || 'openclaw-local',
+    apiKey: OPENCLAW_API_KEY,
     features: [
       'vision',
       'chat',
       'code_analysis',
-      'multi_model_routing'
+      'multi_model_routing',
+      'automatic_fallback'
     ],
     advantages: [
       'Uses your existing OpenClaw model configuration',
       'Access to Qwen 3.5 Plus, Kimi K2.5, MiniMax, etc.',
       'No additional API keys needed',
       'Centralized model management',
-      'Free quota models (Alibaba, NVIDIA, MiniMax)'
+      'FREE quota models (Alibaba, NVIDIA, MiniMax)',
+      'Automatic model fallback if primary fails'
+    ],
+    availableModels: [
+      { id: 'qwen3.5-plus', name: 'Qwen 3.5 Plus', vision: true, cost: 'FREE quota' },
+      { id: 'kimi-k2.5', name: 'Kimi K2.5 (NVIDIA)', vision: true, cost: 'FREE' },
+      { id: 'minimax-m2.5', name: 'MiniMax M2.5', vision: false, cost: 'FREE' },
+      { id: 'glm-4.5', name: 'GLM-4.5', vision: false, cost: 'FREE quota' },
+      { id: 'qwen-vl-max', name: 'Qwen-VL-Max', vision: true, cost: 'FREE quota' }
     ]
   };
 }

@@ -21,7 +21,7 @@ export const revalidate = false;
 
 // Default settings
 const defaultSettings = {
-  aiProvider: 'bailian',  // Alibaba Qwen (Singapore endpoint)
+  aiProvider: 'openclaw',  // OpenClaw Gateway (PRIMARY - centralized model management)
   lmStudio: {
     url: 'http://localhost:1234',
     apiKey: '',

@@ -3,6 +3,14 @@ import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
+
+/**
+ * Provider Priority Chain:
+ * 1. OpenClaw Gateway (PRIMARY) - Centralized model management
+ * 2. Alibaba Bailian - Singapore endpoint (FREE quota)
+ * 3. LM Studio - Local models
+ * 4. OpenRouter - FREE cloud models
+ */
 import { z } from 'zod';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
@@ -878,27 +886,12 @@ Format your response as detailed JSON with this comprehensive structure:
         );
       }
 
-      // Execute AI analysis - Try Bailian first, then fallback
+      // Execute AI analysis - OpenClaw FIRST, then fallback chain
       let aiResult;
       
-      if (providerDetection.primary.provider === 'bailian') {
-        // Use Alibaba Qwen directly
-        aiResult = await executeWithBailian({
-          prompt: prompt,
-          image: imageBase64ForAI,
-          model: process.env.QWEN_MODEL || 'qwen-vl-max-latest'
-        });
-        
-        if (!aiResult.success) {
-          // Bailian failed, try fallback
-          aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-            primaryProvider: 'openrouter',
-            timeout: 90000,
-            maxRetries: 2
-          });
-        }
-      } else if (providerDetection.primary.provider === 'openclaw') {
-        // Use OpenClaw Gateway
+      if (providerDetection.primary.provider === 'openclaw') {
+        // PRIMARY: Use OpenClaw Gateway (routes to best available model)
+        console.log('🚀 Using OpenClaw Gateway as primary provider...');
         aiResult = await executeWithOpenClaw({
           prompt: prompt,
           image: imageBase64ForAI,
@@ -906,6 +899,25 @@ Format your response as detailed JSON with this comprehensive structure:
         });
         
         if (!aiResult.success) {
+          console.log('⚠️ OpenClaw failed, trying fallback...');
+          // OpenClaw failed, try fallback chain
+          aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
+            primaryProvider: 'bailian',
+            timeout: 90000,
+            maxRetries: 2
+          });
+        }
+      } else if (providerDetection.primary.provider === 'bailian') {
+        // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint)
+        console.log('🔷 Using Alibaba Qwen (Singapore endpoint)...');
+        aiResult = await executeWithBailian({
+          prompt: prompt,
+          image: imageBase64ForAI,
+          model: process.env.QWEN_MODEL || 'qwen-vl-max-latest'
+        });
+        
+        if (!aiResult.success) {
+          console.log('⚠️ Bailian failed, trying fallback...');
           aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
             primaryProvider: 'openrouter',
             timeout: 90000,
@@ -913,9 +925,10 @@ Format your response as detailed JSON with this comprehensive structure:
           });
         }
       } else {
-        // Use standard fallback chain
+        // FALLBACK 2: Use standard fallback chain
+        console.log(`🔄 Using fallback provider: ${providerDetection.primary.provider}`);
         aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-          primaryProvider: providerDetection.primary.provider as 'lm-studio' | 'openrouter' | 'openclaw',
+          primaryProvider: providerDetection.primary.provider as 'lm-studio' | 'openrouter' | 'bailian',
           timeout: 90000,
           maxRetries: 2
         });

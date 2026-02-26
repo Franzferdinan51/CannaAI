@@ -1,0 +1,21 @@
+{
+  "name": "openclaw-http-bridge",
+  "version": "1.0.0",
+  "description": "HTTP bridge for OpenClaw Gateway - provides OpenAI-compatible API",
+  "main": "bridge-server.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx bridge-server.ts",
+    "dev": "tsx --watch bridge-server.ts"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0"
+  }
+}

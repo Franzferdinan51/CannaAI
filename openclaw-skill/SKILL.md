@@ -1,153 +1,204 @@
 # CannaAI Skill for OpenClaw
 
-**Complete Cannabis Cultivation Management System for OpenClaw Agents**
+**Purpose:** Plant health analysis, grow monitoring, and cannabis cultivation expertise for OpenClaw agents
 
-Use this skill to interact with CannaAI - an enterprise-grade cultivation management system with 119+ API endpoints, AI-powered analysis, and full business management.
+**Status:** 🚧 In Development
 
-## 🚀 Quick Setup for OpenClaw Agents
+---
 
-### Automated Setup (Recommended)
+## 🎯 What This Skill Does
+
+Allows any OpenClaw agent to:
+- ✅ Analyze plant photos for health issues
+- ✅ Get strain-specific growing advice
+- ✅ Monitor environmental data (temp, humidity, VPD)
+- ✅ Track grow progress over time
+- ✅ Get harvest predictions
+- ✅ Diagnose pests, diseases, nutrient issues
+
+---
+
+## 🛠️ Installation
+
 ```bash
-cd /home/duckets/CannaAI
-./openclaw-skill/setup-for-openclaw.sh
-```
+# Clone CannaAI repo
+cd ~/Desktop
+git clone https://github.com/Franzferdinan51/CannaAI.git
+cd CannaAI
 
-This will:
-1. ✅ Install dependencies
-2. ✅ Initialize database
-3. ✅ Configure OpenClaw as AI provider
-4. ✅ Start CannaAI server
-5. ✅ Test all endpoints
-
-### Manual Setup
-```bash
-# Clone and setup
-cd /home/duckets/CannaAI
+# Install dependencies
 npm install
-npm run db:generate
-npm run db:push
-npm run dev
 
-# Server runs on http://localhost:3000
+# Link as OpenClaw skill
+ln -s ~/Desktop/CannaAI/openclaw-skill ~/.openclaw/skills/cannaai
 ```
 
-## 📊 System Status
+---
 
-**CannaAI Server URL:** `http://localhost:3000`  
-**OpenClaw Integration:** ✅ Enabled (default AI provider)  
-**Total API Endpoints:** 119+  
-**AI Providers:** OpenClaw (MiniMax, Kimi, Qwen, etc.)
+## 📖 Usage
 
-## Capabilities
-
-### 1. Room Management
-- List all grow rooms
-- Get room details (temperature, humidity, CO2)
-- Create/update rooms
-
-### 2. Plant Management
-- List all plants
-- Add new plants
-- Update plant status
-- Track plant growth stages
-
-### 3. Strain Management
-- List cannabis strains
-- Add new strains
-- Track strain genetics
-
-### 4. Sensor Data
-- Get real-time sensor readings
-- Historical data
-- Environmental alerts
-
-### 5. AI Analysis
-- Plant health analysis
-- Nutrient deficiency detection
-- Pest identification
-- Trichome maturity assessment
-
-## API Endpoints
-
-### Rooms
-```
-GET    /api/rooms              - List all rooms
-POST   /api/rooms              - Create room
-GET    /api/rooms/:id          - Get room details
-PUT    /api/rooms/:id          - Update room
-DELETE /api/rooms/:id          - Delete room
-```
-
-### Plants
-```
-GET    /api/plants             - List all plants
-POST   /api/plants             - Add new plant
-GET    /api/plants/:id         - Get plant details
-PUT    /api/plants/:id         - Update plant
-DELETE /api/plants/:id         - Delete plant
-```
-
-### Strains
-```
-GET    /api/strains            - List all strains
-POST   /api/strains            - Add new strain
-GET    /api/strains/:id        - Get strain details
-```
-
-### Sensors
-```
-GET    /api/sensors            - Get sensor readings
-GET    /api/sensors/:roomId   - Get sensors for room
-```
-
-### AI Analysis
-```
-POST   /api/analyze            - Analyze plant image
-POST   /api/trichome-analysis  - Analyze trichome maturity
-```
-
-### Automation
-```
-GET    /api/automation         - List automation rules
-POST   /api/automation         - Create automation rule
-```
-
-## Usage Examples
-
-### Check Room Status
+### Basic Plant Analysis
 ```bash
-curl http://localhost:3000/api/rooms
+openclaw agent --message "Analyze this plant photo" --file plant.jpg
 ```
 
-### Add a Plant
+### Environmental Check
 ```bash
-curl -X POST http://localhost:3000/api/plants \
-  -H "Content-Type: application/json" \
-  -d '{"name":"My Plant","strain":"Blue Dream","roomId":"room_1"}'
+openclaw agent --message "Check my grow room conditions"
 ```
 
-### Get AI Analysis
+### Strain Advice
 ```bash
-curl -X POST http://localhost:3000/api/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"image":"base64..."}'
+openclaw agent --message "What's the optimal humidity for Grand Daddy Purple in flower stage?"
 ```
 
-## Integration with OpenClaw
-
-OpenClaw agents can call CannaAI via HTTP requests:
-
-```javascript
-// In an OpenClaw tool or skill
-const response = await fetch('http://localhost:3000/api/rooms');
-const rooms = await response.json();
+### Harvest Prediction
+```bash
+openclaw agent --message "When should I harvest based on trichome photos?"
 ```
 
-## Network Access
+---
 
-- Local: http://localhost:3000
-- Network: http://YOUR_LOCAL_IP:3000
-- Tailscale: http://YOUR_TAILSCALE_IP:3000
+## 🔧 API Endpoints
 
-## Skill Author
-DuckBot 🦆
+The skill exposes these methods to OpenClaw agents:
+
+### `cannaai.analyze`
+Analyze plant health from photo
+
+**Input:**
+```json
+{
+  "image": "base64...",
+  "strain": "Grand Daddy Purple",
+  "stage": "flowering",
+  "symptoms": ["yellowing leaves", "brown spots"]
+}
+```
+
+**Output:**
+```json
+{
+  "healthScore": 82,
+  "diagnosis": "Nutrient deficiency suspected",
+  "recommendations": ["Check pH", "Add magnesium"],
+  "confidence": 0.95
+}
+```
+
+### `cannaai.environment`
+Check environmental conditions
+
+**Input:**
+```json
+{
+  "roomId": "grow-tent-1"
+}
+```
+
+**Output:**
+```json
+{
+  "temperature": 74.7,
+  "humidity": 39.0,
+  "vpd": 1.78,
+  "status": "optimal"
+}
+```
+
+### `cannaai.strain-info`
+Get strain-specific growing info
+
+**Input:**
+```json
+{
+  "strain": "Grand Daddy Purple"
+}
+```
+
+**Output:**
+```json
+{
+  "type": "Indica",
+  "flowerTime": "8-9 weeks",
+  "optimalTemp": "65-80°F",
+  "optimalHumidity": "40-50%",
+  "notes": "Purples in cold temperatures"
+}
+```
+
+---
+
+## 📁 Files
+
+```
+openclaw-skill/
+├── SKILL.md              # Skill documentation
+├── index.ts              # Main skill entry point
+├── tools/
+│   ├── analyze-plant.ts  # Plant analysis tool
+│   ├── environment.ts    # Environmental monitoring
+│   └── strain-info.ts    # Strain database
+└── package.json
+```
+
+---
+
+## 🔑 Configuration
+
+Add to `~/.openclaw/workspace/AGENTS.md`:
+
+```markdown
+## Skills
+
+### cannaai
+- **Purpose:** Plant health analysis and grow monitoring
+- **Models:** Uses OpenClaw routing (Qwen-VL for vision)
+- **Triggers:** 
+  - "analyze plant"
+  - "check grow"
+  - "plant health"
+  - "harvest prediction"
+  - "strain advice"
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Test skill directly
+openclaw skill test cannaai --method analyze --input test-plant.jpg
+
+# Test via agent
+openclaw agent --message "What's wrong with this plant?" --file sick-plant.jpg
+```
+
+---
+
+## 📊 Integration Points
+
+### With AC Infinity
+- Pull environmental data automatically
+- Alert on threshold breaches
+- Log trends over time
+
+### With CannaAI Database
+- Access strain database
+- Track plant history
+- Generate reports
+
+### With OpenClaw Channels
+- Send alerts to Telegram/WhatsApp/Discord
+- Receive plant photos via chat
+- Post daily grow reports
+
+---
+
+**Status:** Ready for implementation  
+**Priority:** HIGH  
+**Estimated Effort:** 2-3 hours
+
+---
+
+**Last Updated:** 2026-02-25 21:20 EST
