@@ -114,7 +114,7 @@ CannaAI/
 - **Backend:** Node.js, Express, Socket.IO
 - **Database:** PostgreSQL, Prisma ORM
 - **AI:** OpenClaw, Qwen, Kimi, MiniMax, LM Studio
-- **Monitoring:** AC Infinity integration
+- **Monitoring:** Screen scraping for any controller app
 
 ---
 
