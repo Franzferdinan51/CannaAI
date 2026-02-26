@@ -360,3 +360,38 @@ curl -X GET "https://dashscope-intl.aliyuncs.com/api/v1/models" \
 
 **Status:** ✅ Production Ready  
 **Last Updated:** 2026-02-25
+
+---
+
+## 🔗 LM Studio Integration (Updated 2026-02-25)
+
+**Windows Machine IP Changed:** `100.116.54.125` (was 100.74.88.40)
+
+### Available Models:
+```bash
+curl http://100.116.54.125:1234/v1/models
+```
+
+**Current Models:**
+- `qwen3.5-122b-a10b` - 122B MoE (Best overall)
+- `qwen3.5-27b` - 27B dense (Fast)
+- `qwen3.5-35b-a3b` - 35B MoE (Balanced)
+- `liquid/lfm2-24b-a2b` - 24B MoE (Liquid AI)
+- `text-embedding-nomic-embed-text-v1.5` - Embeddings
+
+### Usage via HTTP Bridge:
+```bash
+# Use LM Studio model via OpenClaw Bridge
+curl -X POST http://localhost:18790/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen3.5-122b-a10b","messages":[{"role":"user","content":"Hello!"}]}'
+```
+
+### Direct LM Studio Access:
+```bash
+# Direct to LM Studio (no OpenClaw routing)
+curl -X POST http://100.116.54.125:1234/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen3.5-27b","messages":[{"role":"user","content":"Hello!"}]}'
+```
+
