@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
+import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
+import { executeWithBailian } from '@/lib/ai-provider-bailian';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
@@ -57,7 +59,7 @@ function checkRateLimit(request: NextRequest): { allowed: boolean; resetTime?: n
   const clientIP = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
   const hashedIP = crypto.createHash('sha256').update(clientIP).digest('hex').substring(0, 16);
   const now = Date.now();
-n  // Cleanup expired entries to prevent memory leak
+  // Cleanup expired entries to prevent memory leak
   for (const [key, value] of requestTracker.entries()) {
     if (now > value.resetTime) {
       requestTracker.delete(key);
@@ -876,12 +878,48 @@ Format your response as detailed JSON with this comprehensive structure:
         );
       }
 
-      // Execute AI analysis - NO FALLBACK to rule-based analysis
-      const aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-        primaryProvider: providerDetection.primary.provider as 'lm-studio' | 'openrouter',
-        timeout: 90000, // Increased timeout for comprehensive analysis
-        maxRetries: 2   // Enhanced retry logic
-      });
+      // Execute AI analysis - Try Bailian first, then fallback
+      let aiResult;
+      
+      if (providerDetection.primary.provider === 'bailian') {
+        // Use Alibaba Qwen directly
+        aiResult = await executeWithBailian({
+          prompt: prompt,
+          image: imageBase64ForAI,
+          model: process.env.QWEN_MODEL || 'qwen-vl-max-latest'
+        });
+        
+        if (!aiResult.success) {
+          // Bailian failed, try fallback
+          aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
+            primaryProvider: 'openrouter',
+            timeout: 90000,
+            maxRetries: 2
+          });
+        }
+      } else if (providerDetection.primary.provider === 'openclaw') {
+        // Use OpenClaw Gateway
+        aiResult = await executeWithOpenClaw({
+          prompt: prompt,
+          image: imageBase64ForAI,
+          model: process.env.OPENCLAW_MODEL || 'qwen3.5-plus'
+        });
+        
+        if (!aiResult.success) {
+          aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
+            primaryProvider: 'openrouter',
+            timeout: 90000,
+            maxRetries: 2
+          });
+        }
+      } else {
+        // Use standard fallback chain
+        aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
+          primaryProvider: providerDetection.primary.provider as 'lm-studio' | 'openrouter' | 'openclaw',
+          timeout: 90000,
+          maxRetries: 2
+        });
+      }
 
       analysisResult = aiResult.result;
       usedProvider = aiResult.provider;

@@ -3,6 +3,9 @@
  * Handles detection of different AI providers - NO FALLBACK to rule-based analysis
  */
 
+import { checkOpenClaw } from './ai-provider-openclaw';
+import { checkBailian } from './ai-provider-bailian';
+
 // Environment detection
 export const isServerless = process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 export const isDevelopment = process.env.NODE_ENV === 'development';
@@ -68,6 +71,14 @@ export async function detectAvailableProviders(): Promise<{
 }> {
   const results: ProviderDetectionResult[] = [];
   const recommendations: string[] = [];
+
+  // Check Alibaba Qwen FIRST (Singapore endpoint)
+  const bailianResult = await checkBailian();
+  results.push(bailianResult);
+
+  // Check OpenClaw Gateway
+  const openClawResult = await checkOpenClaw();
+  results.push(openClawResult);
 
   // Check LM Studio
   const lmStudioResult = await checkLMStudio();
@@ -329,6 +340,16 @@ export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | '
         title: 'CannaAI Pro'
       };
 
+    case 'openclaw':
+      return {
+        baseUrl: userSettings?.openclaw?.baseUrl || process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789/v1',
+        model: userSettings?.openclaw?.model || process.env.OPENCLAW_MODEL || 'qwen3.5-plus',
+        apiKey: userSettings?.openclaw?.apiKey || process.env.OPENCLAW_API_KEY || 'openclaw-local',
+        timeout: parseInt(userSettings?.openclaw?.timeout || process.env.OPENCLAW_TIMEOUT || '120000'),
+        maxTokens: parseInt(userSettings?.openclaw?.maxTokens || process.env.OPENCLAW_MAX_TOKENS || '2048'),
+        temperature: parseFloat(userSettings?.openclaw?.temperature || process.env.OPENCLAW_TEMPERATURE || '0.7')
+      };
+
     case 'fallback':
       return {
         type: 'setup-required',
@@ -349,13 +370,13 @@ export async function executeAIWithFallback(
   prompt: string,
   imageBase64?: string,
   options: {
-    primaryProvider?: 'lm-studio' | 'openrouter';
+    primaryProvider?: 'lm-studio' | 'openrouter' | 'openclaw';
     maxRetries?: number;
     timeout?: number;
   } = {}
 ): Promise<{
   result: any;
-  provider: 'lm-studio' | 'openrouter';
+  provider: 'lm-studio' | 'openrouter' | 'openclaw';
   processingTime: number;
 }> {
   const startTime = Date.now();
@@ -386,12 +407,12 @@ export async function executeAIWithFallback(
   }
 
   // Determine provider order (NO fallback to rule-based)
-  const providerOrder: ('lm-studio' | 'openrouter')[] = [];
+  const providerOrder: ('lm-studio' | 'openrouter' | 'openclaw')[] = [];
 
   if (primaryProvider && primary.provider === primaryProvider && primary.isAvailable && primary.provider !== 'fallback') {
     providerOrder.push(primaryProvider);
   } else if (primary.isAvailable && primary.provider !== 'fallback') {
-    providerOrder.push(primary.provider as 'lm-studio' | 'openrouter');
+    providerOrder.push(primary.provider as 'lm-studio' | 'openrouter' | 'openclaw');
   }
 
   // Add other available providers
@@ -446,7 +467,7 @@ export async function executeAIWithFallback(
  * Call specific AI provider
  */
 async function callAIProvider(
-  provider: 'lm-studio' | 'openrouter',
+  provider: 'lm-studio' | 'openrouter' | 'openclaw',
   prompt: string,
   imageBase64: string | undefined,
   config: any,

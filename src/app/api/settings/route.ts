@@ -21,15 +21,15 @@ export const revalidate = false;
 
 // Default settings
 const defaultSettings = {
-  aiProvider: 'lm-studio',
+  aiProvider: 'bailian',  // Alibaba Qwen (Singapore endpoint)
   lmStudio: {
     url: 'http://localhost:1234',
     apiKey: '',
     model: 'llama-3-8b-instruct'
   },
   openRouter: {
-    apiKey: '',
-    model: 'meta-llama/llama-3.1-8b-instruct:free',
+    apiKey: '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',
+    model: 'nvidia/nemotron-nano-12b-v2-vl:free',  // FREE backup model
     baseUrl: 'https://openrouter.ai/api/v1'
   },
   openai: {
@@ -51,6 +51,16 @@ const defaultSettings = {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
     baseUrl: process.env.ANTHROPIC_BASE_URL || 'https://ai.gigamind.dev/claude-code'
+  },
+  bailian: {
+    apiKey: process.env.ALIBABA_API_KEY || 'sk-0a5ffe492bfe4222b8964b685554aa00',
+    model: process.env.QWEN_MODEL || 'qwen-vl-max-latest',
+    baseUrl: process.env.QWEN_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
+  },
+  openclaw: {
+    apiKey: process.env.OPENCLAW_API_KEY || 'openclaw-local',
+    model: process.env.OPENCLAW_MODEL || 'qwen3.5-plus',
+    baseUrl: process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789/v1'
   },
   agentEvolver: {
     enabled: false,
