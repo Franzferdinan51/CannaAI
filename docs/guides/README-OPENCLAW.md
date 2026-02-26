@@ -367,7 +367,7 @@ curl -X GET "https://dashscope-intl.aliyuncs.com/api/v1/models" \
 
 **Windows Machine IP:** `http://100.116.54.125:1234` (Server rebuilt)
 
-### Available Models (13 Verified Live):
+### Available Models (16 Verified Live):
 ```bash
 curl http://100.116.54.125:1234/v1/models
 ```
@@ -377,6 +377,10 @@ curl http://100.116.54.125:1234/v1/models
 ```
 
 **Current Models:**
+- `jan-v2-vl-high` - Janus VL (High quality vision)
+- `jan-v2-vl-med` - Janus VL (Medium quality vision)
+- `jan-v2-vl-low` - Janus VL (Fast vision)
+
 - `jan-v3-4b-base-instruct` - 4B (Ultra fast)
 
 - `qwen3.5-27b` - 27B dense (Fast responses)
@@ -414,6 +418,10 @@ curl http://<YOUR_WINDOWS_IP>:1234/v1/models
 ```
 
 **Current Models:**
+- `jan-v2-vl-high` - Janus VL (High quality vision)
+- `jan-v2-vl-med` - Janus VL (Medium quality vision)
+- `jan-v2-vl-low` - Janus VL (Fast vision)
+
 - `jan-v3-4b-base-instruct` - 4B (Ultra fast)
 
 - `qwen3.5-27b` - 27B dense (Fast)
