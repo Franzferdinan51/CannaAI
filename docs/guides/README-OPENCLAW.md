@@ -367,13 +367,18 @@ curl -X GET "https://dashscope-intl.aliyuncs.com/api/v1/models" \
 
 **Windows Machine IP:** `http://100.116.54.125:1234` (Server rebuilt)
 
-### Available Models (12 Verified Live):
+### Available Models (13 Verified Live):
+```bash
+curl http://100.116.54.125:1234/v1/models
+```
+
 ```bash
 curl http://100.116.54.125:1234/v1/models
 ```
 
 **Current Models:**
-- `qwen3.5-122b-a10b` - 122B MoE (Best overall reasoning)
+- `jan-v3-4b-base-instruct` - 4B (Ultra fast)
+
 - `qwen3.5-27b` - 27B dense (Fast responses)
 - `qwen/qwen3-vl-8b` - 8B Vision-language
 - `qwen3-vl-8b-thinking` - 8B Vision (Enhanced reasoning)
@@ -409,7 +414,8 @@ curl http://<YOUR_WINDOWS_IP>:1234/v1/models
 ```
 
 **Current Models:**
-- `qwen3.5-122b-a10b` - 122B MoE (Best overall)
+- `jan-v3-4b-base-instruct` - 4B (Ultra fast)
+
 - `qwen3.5-27b` - 27B dense (Fast)
 - `qwen3.5-35b-a3b` - 35B MoE (Balanced)
 - `liquid/lfm2-24b-a2b` - 24B MoE (Liquid AI)
