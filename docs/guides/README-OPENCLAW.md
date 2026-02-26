@@ -367,7 +367,7 @@ curl -X GET "https://dashscope-intl.aliyuncs.com/api/v1/models" \
 
 **Windows Machine IP:** `http://100.116.54.125:1234` (Server rebuilt)
 
-### Available Models (11 Verified Live):
+### Available Models (12 Verified Live):
 ```bash
 curl http://100.116.54.125:1234/v1/models
 ```
@@ -376,6 +376,8 @@ curl http://100.116.54.125:1234/v1/models
 - `qwen3.5-122b-a10b` - 122B MoE (Best overall reasoning)
 - `qwen3.5-27b` - 27B dense (Fast responses)
 - `qwen/qwen3-vl-8b` - 8B Vision-language
+- `qwen3-vl-8b-thinking` - 8B Vision (Enhanced reasoning)
+- `qwen3-vl-4b-thinking` - 4B Vision (Fast reasoning)
 - `qwen/qwen3-vl-4b` - 4B Vision-language (Fast)
 - `zai-org/glm-4.7-flash` - GLM Flash (Fast reasoning)
 - `zai-org/glm-4.6v-flash` - GLM Vision Flash
