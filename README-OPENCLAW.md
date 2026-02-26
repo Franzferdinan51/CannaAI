@@ -365,11 +365,11 @@ curl -X GET "https://dashscope-intl.aliyuncs.com/api/v1/models" \
 
 ## 🔗 LM Studio Integration (Updated 2026-02-25)
 
-**Windows Machine IP Changed:** `100.116.54.125` (was 100.74.88.40)
+**Windows Machine IP Changed:** `<YOUR_WINDOWS_IP>` (was 100.74.88.40)
 
 ### Available Models:
 ```bash
-curl http://100.116.54.125:1234/v1/models
+curl http://<YOUR_WINDOWS_IP>:1234/v1/models
 ```
 
 **Current Models:**
@@ -390,7 +390,7 @@ curl -X POST http://localhost:18790/v1/chat/completions \
 ### Direct LM Studio Access:
 ```bash
 # Direct to LM Studio (no OpenClaw routing)
-curl -X POST http://100.116.54.125:1234/v1/chat/completions \
+curl -X POST http://<YOUR_WINDOWS_IP>:1234/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"qwen3.5-27b","messages":[{"role":"user","content":"Hello!"}]}'
 ```
