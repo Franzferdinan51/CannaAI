@@ -58,6 +58,17 @@ npm run dev:backend
 cd NewUI/cannaai-pro && npm run dev
 ```
 
+Explainability smoke check against the local backend:
+
+```bash
+npm run check:report-quality
+```
+
+Notes:
+- The script posts a committed fixture image payload plus sample symptoms to `http://127.0.0.1:3000/api/analyze` by default.
+- It exits `0` and prints a skip message when the local analyze service or AI backend is unavailable.
+- Override the endpoint or fixture with `CANNAAI_REPORT_CHECK_URL` and `CANNAAI_REPORT_CHECK_IMAGE` when needed.
+
 ## Build
 
 Run the full production build:

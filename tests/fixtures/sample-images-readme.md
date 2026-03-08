@@ -21,6 +21,7 @@ This directory contains sample images and test fixtures for the CultivAI Pro tes
 
 - **sample-image.heic** - HEIC format for conversion testing
 - **sample-image.webp** - WebP format for modern format testing
+- **report-quality-sample.png.base64** - Committed PNG fixture payload used by `npm run check:report-quality`
 
 ### Invalid Files
 

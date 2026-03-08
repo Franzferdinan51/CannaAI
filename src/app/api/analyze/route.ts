@@ -3,7 +3,9 @@ import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
-import { parseAnalysisResponse, extractJSONFromResponse, validateAnalysisResult, postProcessAnalysisResult } from '@/lib/analysis-json';
+import { normalizePlantAnalysisResult } from '@/lib/plant-analysis-report-v2';
+import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
+import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
 
 /**
  * Provider Priority Chain:
@@ -367,538 +369,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Enhanced comprehensive diagnostic prompt with US Hemp Research integration
-    const prompt = `🌿 **EXPERT CANNABIS/HEMP DIAGNOSTIC SYSTEM v4.0 - ADVANCED MULTI-MODAL ANALYSIS** 🌿
+    // Generate V2 enhanced analysis prompt with structured JSON schema
+    const prompt = generateAnalysisPromptV2({
+      strain,
+      leafSymptoms,
+      phLevel,
+      temperature,
+      temperatureCelsius,
+      humidity,
+      medium,
+      growthStage,
+      pestDiseaseFocus,
+      urgency,
+      additionalNotes,
+      hasImage: !!imageBase64ForAI
+    });
 
-📊 **COMPLETE ANALYSIS PARAMETERS**:
-🔬 Strain: ${sanitizeInput(strain)}
-⚠️ Primary Symptoms: ${sanitizeInput(leafSymptoms)}
-🧪 pH Level: ${phLevel || 'Not measured'} ${phLevel ? '(Optimal: 6.0-7.0)' : ''}
-🌡️ Temperature: ${temperatureCelsius || 'Not measured'}°C (${temperature || 'Not measured'}°F) ${temperatureCelsius ? '(Optimal: 20-26°C)' : ''}
-💧 Humidity: ${humidity || 'Not measured'}% ${humidity ? '(Optimal: 40-60%)' : ''}
-🪴 Growing Medium: ${medium || 'Not specified'}
-🌱 Growth Stage: ${growthStage || 'Not specified'}
-🎯 Diagnostic Focus: ${pestDiseaseFocus || 'General health assessment'}
-⚡ Urgency Level: ${urgency}
-📝 Additional Notes: ${additionalNotes || 'None'}
-${imageBase64ForAI ? '📸 HIGH-RESOLUTION IMAGE ANALYSIS: Visual examination of plant provided' : '📸 TEXT-BASED ANALYSIS ONLY'}
-
-🇺🇸 **US HEMP RESEARCH & CANNABIS SCIENCE INTEGRATION**:
-Based on latest research from USDA, Colorado State University, Oregon State University Hemp Program, Cornell Hemp Research, and peer-reviewed cannabis horticulture studies. Incorporating findings from the 2024 Cannabis Research Conference.
-
-🎯 **CRITICAL REQUIREMENTS FOR HIGH-QUALITY ANALYSIS**:
-
-1. **NEVER provide generic responses like "monitor closely"**
-2. **ALWAYS provide specific, actionable advice with EXACT dosages**
-3. **INCLUDE precise application methods and timing with measurements**
-4. **PROVIDE step-by-step treatment protocols**
-5. **GIVE confidence scores (0-100) and evidence-based reasoning**
-6. **REFERENCE specific research findings when applicable**
-7. **PROVIDE strain-specific recommendations based on genetics**
-8. **PROVIDE visual change detection and historical comparison if applicable**
-9. **INCLUDE micro and macro nutrient analysis with ppm values**
-10. **PROVIDE pest/disease lifecycle information and prevention strategies**
-
-🔍 **ENHANCED COMPREHENSIVE DIAGNOSTIC MATRIX**:
-
-**A. ADVANCED NUTRIENT ANALYSIS WITH EXACT DOSAGES**:
-   - **Nitrogen (N)**:
-     * Symptoms: Bottom-up yellowing, stunted growth, pale leaves
-     * Treatment: Add 1-2ml/L of high-N liquid fertilizer (20-5-5) for 2-3 waterings
-     * Prevention: Maintain 150-200ppm N during veg, reduce to 50-100ppm in flower
-
-   - **Phosphorus (P)**:
-     * Symptoms: Purple stems/leaves, dark green/blueish leaves, copper blotches
-     * Treatment: Apply 1-2ml/L bloom booster (10-30-20) + cal-mag supplement
-     * Prevention: Maintain 50-75ppm P, especially during flowering
-
-   - **Potassium (K)**:
-     * Symptoms: Rusty-brown margins on NEW leaves, weak stems, yellowing tips
-     * Treatment: Add 0.5-1ml/L potassium sulfate or kelp extract
-     * Prevention: Maintain 150-250ppm K throughout growth
-
-   - **Calcium (Ca)**:
-     * Symptoms: Contorted new growth, yellowish-brown spots, slowed development
-     * Treatment: Apply cal-mag at 1-2ml/L + adjust pH to 6.2-6.5
-     * Prevention: Maintain 150-200ppm Ca, avoid over-fertilization
-
-   - **Magnesium (Mg)**:
-     * Symptoms: Interveinal chlorosis on OLDER leaves, rusty spots
-     * Treatment: Epsom salts 1 teaspoon/gallon or Mg supplement 1-2ml/L
-     * Prevention: Maintain 50-75ppm Mg
-
-   - **Boron (B)**:
-     * Symptoms: Stunted twisted growth, necrotic spots, thick brittle leaves
-     * Treatment: Borax solution 1/4 teaspoon/gallon (apply ONCE)
-     * Prevention: Maintain 0.5ppm B, avoid over-application
-
-   - **Iron (Fe)**:
-     * Symptoms: Interveinal chlorosis on NEW growth, yellowing
-     * Treatment: Iron chelate 1-2ml/L, lower pH to 6.0-6.3
-     * Prevention: Maintain pH 6.0-6.8 for optimal Fe uptake
-
-   - **Manganese (Mn)**:
-     * Symptoms: Interveinal chlorosis with DARK green margins
-     * Treatment: Mn supplement 0.5ml/L, check pH levels
-     * Prevention: Maintain 0.5-1ppm Mn
-
-**B. ADVANCED PEST DETECTION & ORGANIC TREATMENTS**:
-   - **Spider Mites** (Tetranychus urticae):
-     * Signs: Yellow/white specks, fine webbing, bronze stippling
-     * Treatment: Neem oil 2ml/L + insecticidal soap spray every 3 days for 2 weeks
-     * Prevention: 40-50% humidity, beneficial predatory mites (Neoseiulus californicus)
-
-   - **Thrips** (Frankliniella occidentalis):
-     * Signs: Silver patches, black frass, fast-moving insects
-     * Treatment: Spinosad 2ml/L spray + blue sticky traps
-     * Prevention: 60-70% humidity, regular leaf inspections
-
-   - **Aphids** (Myzus persicae):
-     * Signs: Sticky honeydew, clustered insects, sooty mold
-     * Treatment: Insecticidal soap 15ml/L + ladybug release
-     * Prevention: Companion planting with marigolds, regular monitoring
-
-   - **Fungus Gnats** (Bradysia):
-     * Signs: Small black flies, wilting, root damage
-     * Treatment: BTI drench 1 tablespoon/gallon + yellow sticky traps
-     * Prevention: Proper drainage, topsoil drying
-
-**C. CRITICAL DISEASE MANAGEMENT WITH PRECISE TREATMENTS**:
-   - **Powdery Mildew** (Podosphaera macularis):
-     * Signs: White flour-like coating, circular lesions
-     * Treatment: Potassium bicarbonate 5g/L + horticultural oil spray immediately
-     * Prevention: 40-50% humidity, excellent air circulation, resistant strains
-
-   - **Botrytis (Bud Rot/Gray Mold)** (Botrytis cinerea):
-     * Signs: Gray-brown mold, watery lesions, flower decay
-     * Treatment: Remove affected buds immediately, increase airflow, reduce humidity <45%
-     * Prevention: Critical during flowering, avoid wet buds, proper spacing
-
-   - **Root Rot** (Pythium, Fusarium):
-     * Signs: Wilting despite wet soil, brown mushy roots, slow growth
-     * Treatment: Hydrogen peroxide 3% diluted 1:4 as root drench, transplant to fresh medium
-     * Prevention: Proper drainage, avoid overwatering, beneficial microbes
-
-**D. ADVANCED ENVIRONMENTAL STRESS DIAGNOSIS**:
-   - **Heat Stress**: >85°F (29°C)
-     * Signs: Leaf curling upward ("taco-ing"), yellowing, wilting
-     * Treatment: Increase ventilation, add oscillating fans, use shade cloth 30%
-     * Prevention: Maintain 68-78°F (20-26°C), proper exhaust systems
-
-   - **Light Burn**:
-     * Signs: Bleached upper leaves, crispy tips, yellowing at canopy
-     * Treatment: Raise lights 6-12 inches, reduce intensity by 25%
-     * Prevention: Proper light distance, PAR meter readings 600-1000 μmol/m²/s
-
-   - **pH Nutrient Lockout**:
-     * Signs: Multiple nutrient deficiencies simultaneously
-     * Treatment: Flush with pH 6.0 water, gradually reintroduce nutrients
-     * Prevention: Monitor pH weekly, maintain 6.0-7.0 range
-
-🟣 **ENHANCED PURPLE STRAIN DETECTION ALGORITHM**:
-
-**GENETIC PURPLE STRAINS** (Healthy):
-- Purple on stems, petioles, leaf undersides only
-- UNIFORM, CONSISTENT purple coloration
-- NO yellowing, curling, wilting present
-- Examples: Granddaddy Purple, Purple Haze, Purple Kush, GDP crosses
-- Anthocyanin expression triggered by cool nights (<65°F)
-
-**DEFICIENCY-RELATED PURPLE** (Sick):
-- Purple in actual leaf tissue (not just stems)
-- PATCHY or SPOTTY purple patterns
-- ALWAYS accompanied by other symptoms (yellowing, curling, wilting)
-- Poor overall plant vigor
-- Nutrient deficiency related (usually phosphorus)
-
-🔬 **ADVANCED TRICHOME ANALYSIS** (If visible in image):
-- **Clear Trichomes** (0-10% amber): Transparent, THC precursor stage
-- **Cloudy Trichomes** (10-70% amber): Peak THC production
-- **Amber Trichomes** (70-100% amber): CBN production, sedative effects
-- **Harvest Readiness**: Calculate optimal harvest window based on trichome maturity
-- **Density Assessment**: Evaluate trichome coverage and production
-- **Health Indicators**: Identify degraded or damaged trichomes
-
-📊 **VISUAL CHANGE DETECTION & TRACKING**:
-- Compare current symptoms to previous analyses if available
-- Identify progression patterns (improving, stable, worsening)
-- Calculate rate of symptom development
-- Predict future symptom evolution based on current trends
-- Alert if rapid deterioration detected
-
-🌱 **MICRO-NUTRIENT ANALYSIS** (Critical for Cannabis):
-- **Zinc (Zn)**: Interveinal chlorosis, leaf malformation
-  * Treatment: Zinc sulfate 0.5-1ml/L, maintain 0.3-0.5ppm
-
-- **Copper (Cu)**: New growth necrosis, leaf tip dieback
-  * Treatment: Copper chelate 0.5ml/L, avoid over-application (toxic)
-
-- **Molybdenum (Mo)**: Interveinal chlorosis, leaf margin necrosis
-  * Treatment: Sodium molybdate 0.1-0.2ml/L, rare deficiency
-
-- **Chlorine (Cl)**: Leaf wilting, bronze coloration
-  * Usually excessive - flush with clean water
-
-- **Nickel (Ni)**: Urea accumulation, leaf tip burn
-  * Critical for nitrogen metabolism
-
-${imageBase64ForAI ? `
-🔍 **ADVANCED VISION ANALYSIS PROTOCOL v4.0**:
-
-Analyze the provided plant image for:
-
-**A. DISEASE DETECTION**:
-- **POWDERY MILDEW**: White flour-like coating, circular lesions, leaf distortion
-- **DOWNY MILDEW**: Yellow patches, gray-purple fuzz on undersides
-- **BOTRYTIS (Bud Rot)**: Gray-brown mold, watery lesions, flower decay
-- **LEAF SPOT (Alternaria, Cercospora)**: Brown/white spots with dark margins
-- **RUST (Puccinia)**: Orange/brown pustules, typically on leaf undersides
-- **FUSARIUM WILT**: Yellowing, wilting, vascular browning in stems
-- **ROOT ROT (Pythium, Phytophthora)**: Brown mushy roots, wilting despite watering
-
-**B. PEST DETECTION & DAMAGE PATTERNS**:
-- **SPIDER MITES**: Fine webbing, stippling, tiny moving specks, bronze coloration
-- **THRIPS**: Silver patches, black frass, distorted new growth
-- **APHIDS**: Clustered insects, sticky honeydew, sooty mold
-- **WHITEFLIES**: White flying insects, honeydew, leaf yellowing
-- **FUNGUS GNATS**: Small black flies, root damage, wilting
-- **CATERPILLARS**: Chewed leaves, dark green droppings
-- **LEAF MINERS**: Serpentine tunnels, winding trails in leaves
-- **SCALE INSECTS**: Brown bumps on stems/leaves, honeydew
-
-**C. NUTRIENT DEFICIENCY VISUAL INDICATORS**:
-- **NITROGEN (N)**: Bottom-up yellowing, overall pale color
-- **PHOSPHORUS (P)**: Purple stems, dark green/blue leaves, copper blotches
-- **POTASSIUM (K)**: Rusty-brown margins on NEW leaves, weak stems
-- **CALCIUM (Ca)**: Contorted new growth, tip burn, blossom end rot
-- **MAGNESIUM (Mg)**: Interveinal chlorosis on OLDER leaves
-- **IRON (Fe)**: Interveinal chlorosis on NEW growth (veins green)
-- **SULFUR (S)**: Uniform yellowing of new leaves, similar to N but starts at top
-
-**D. ENVIRONMENTAL STRESS INDICATORS**:
-- **HEAT STRESS**: Leaf curling upward, yellowing, wilting
-- **LIGHT BURN**: Bleached upper leaves, crispy tips, yellow canopy
-- **LIGHT STRESS**: Stretching, weak stems, pale coloration
-- **HUMIDITY STRESS**: Wilting, leaf curl, mold susceptibility
-- **WIND STRESS**: Tattered leaves, stem damage
-- **NUTRIENT LOCKOUT**: Multiple simultaneous deficiencies
-
-**E. MORPHOLOGICAL ANALYSIS**:
-- **Leaf Structure**: Size, shape, color, spots, lesions
-- **Stem Health**: Color, strength, signs of pests/diseases
-- **Growth Pattern**: Node spacing, overall vigor, symmetry
-- **Flower Health (if flowering)**: Density, color, signs of rot
-- **Root Health**: Color, root mass (if visible)
-
-**F. TRICHOME ANALYSIS** (If magnification allows):
-- **Density**: Light, medium, heavy coverage
-- **Maturity**: Clear, cloudy, amber percentages
-- **Health**: Intact heads, degraded trichomes
-- **Pistil Color**: White/brown, indicates maturity
-
-**G. CHANGE DETECTION**:
-- Compare to previous analyses if available
-- Identify progression patterns
-- Calculate deterioration/improvement rate
-- Predict likely future changes
-
-**H. CONFIDENCE ASSESSMENT**:
-- Rate overall visual analysis confidence (0-100%)
-- Rate specific detection confidence for each finding
-- Note image quality factors: resolution, lighting, focus
-- Identify ambiguous or uncertain observations
-- Suggest follow-up actions for low-confidence detections` : ''}
-
-🧬 **STRAIN-SPECIFIC ANALYSIS PROTOCOL**:
-- Indica-dominant strains: Often more nutrient-sensitive, prone to mold
-- Sativa-dominant strains: Typically longer flowering, different nutrient needs
-- Hybrid strains: Blend of characteristics, monitor carefully
-- CBD/Industrial hemp: Different nutrient ratios, lower fertilizer needs
-
-📈 **HEALTH SCORING ALGORITHM**:
-Consider:
-- Overall plant vigor and growth rate (25%)
-- Leaf color and condition (20%)
-- Absence of pests/diseases (20%)
-- Environmental factor optimization (15%)
-- Growth stage appropriateness (10%)
-- Root system health (10%)
-
-🔒 **STRICT JSON OUTPUT REQUIREMENTS - CRITICAL**:
-You MUST output ONLY valid JSON with no markdown wrapping, no code blocks, no explanatory text before or after.
-Your response must start with { and end with }. DO NOT use \`\`\`json or \`\`\` wrappers.
-
-**REQUIRED KEYS** (all must be present, never omit):
-1. diagnosis - string: Primary diagnosis
-2. urgency - string: Must be "low", "medium", "high", or "critical"
-3. urgencyReasons - array of strings: MUST have 2+ specific reasons when urgency is "medium", "high", or "critical"
-4. healthScore - number (0-100): Overall plant health score
-5. healthScoreBreakdown - object with numeric scores (0-100) for: vigor, leafCondition, pestFree, environmentOptimal, growthStageAppropriate, rootHealth
-6. likelyCauses - array of objects with: cause (string), confidence (0-100), evidence (string)
-7. evidenceObservations - array of strings: Specific observations supporting the diagnosis
-8. uncertainties - array of strings: What couldn't be determined, limitations
-9. recommendations - object with arrays: immediate (within 24h), shortTerm (1-7 days), longTerm (ongoing)
-
-**URGENCY DETERMINATION RULES**:
-- "critical": Rapid spread, irreversible damage imminent, harvest at risk → MUST provide 3+ urgencyReasons
-- "high": Active pest/disease, spreading, needs action within 24-48h → MUST provide 2+ urgencyReasons
-- "medium": Nutrient issue, mild stress, action needed within week → MUST provide 2+ urgencyReasons
-- "low": Healthy plant, minor optimization, no immediate action → urgencyReasons optional
-
-**CONFIDENCE DRIVERS** - When providing confidence scores, consider:
-- Image quality and clarity (resolution, focus, lighting)
-- Symptom specificity and clarity (distinct patterns vs ambiguous)
-- Multiple confirming observations (cross-validation of symptoms)
-- Environmental data completeness (pH, temp, humidity provided)
-- Strain-specific pattern matching (genetic predisposition)
-
-Format your response as detailed JSON with this comprehensive structure:
-{
-  "diagnosis": "Primary diagnosis with scientific name where applicable",
-  "scientificName": "Scientific/pathogen name if applicable",
-  "confidence": number (0-100),
-  "severity": "mild|moderate|severe|critical",
-  "symptomsMatched": ["Detailed list of observed symptoms"],
-  "causes": ["Primary root causes with scientific explanation"],
-  "treatment": [
-    "Immediate action with EXACT dosage and application method",
-    "Secondary treatments if needed",
-    "Application timing and frequency"
-  ],
-  "healthScore": number (0-100),
-  "strainSpecificAdvice": "Tailored advice for this specific strain type",
-  "reasoning": [{
-    "step": "Analysis step or diagnostic method",
-    "explanation": "Detailed scientific explanation",
-    "weight": number,
-    "evidence": "Supporting research or observation"
-  }],
-  "isPurpleStrain": boolean,
-  "purpleAnalysis": {
-    "isGenetic": boolean,
-    "isDeficiency": boolean,
-    "analysis": "Detailed explanation of purple coloration",
-    "anthocyaninLevel": "low|medium|high",
-    "recommendedActions": ["Specific actions based on purple analysis"]
-  },
-  "pestsDetected": [
-    {
-      "name": "Common name",
-      "scientificName": "Scientific name",
-      "lifeStage": "egg|larva|adult",
-      "severity": "mild|moderate|severe",
-      "confidence": number (0-100),
-      "estimatedPopulation": "low|medium|high|infestation",
-      "damageType": "Description of damage pattern",
-      "treatment": {
-        "immediate": "Immediate treatment protocol",
-        "followUp": "Follow-up treatments",
-        "prevention": "Prevention strategies",
-        "dosage": "Exact dosage and application method"
-      },
-      "lifecycleInfo": {
-        "reproductionRate": "Info about reproduction",
-        "vulnerableStages": "Stages where treatment is most effective",
-        "environmentalTriggers": "Conditions that favor this pest"
-      }
-    }
-  ],
-  "diseasesDetected": [
-    {
-      "name": "Disease name",
-      "pathogen": "Causal organism (bacteria, fungus, virus)",
-      "classification": "bacterial|fungal|viral|nutritional|environmental",
-      "severity": "mild|moderate|severe|critical",
-      "confidence": number (0-100),
-      "spreadRisk": "low|medium|high",
-      "symptoms": ["List of observed symptoms"],
-      "treatment": {
-        "immediate": "Immediate treatment steps",
-        "ongoing": "Ongoing treatment protocol",
-        "isolation": "Whether plant should be isolated",
-        "affectedParts": "Parts of plant that need treatment"
-      },
-      "prevention": {
-        "environmental": "Environmental controls",
-        "cultural": "Cultural practices",
-        "chemical": "Preventive treatments"
-      },
-      "prognosis": "Expected outcome with treatment",
-      "timeframe": "How quickly treatment should show results"
-    }
-  ],
-  "nutrientDeficiencies": [
-    {
-      "nutrient": "Element symbol and name",
-      "classification": "macro|secondary|micro",
-      "severity": "mild|moderate|severe|critical",
-      "confidence": number (0-100),
-      "currentLevel": "Estimated current ppm if measurable",
-      "optimalLevel": "Optimal range in ppm",
-      "deficiencyPattern": "Description of visual pattern",
-      "affectedPlantParts": ["Which parts show symptoms"],
-      "treatment": {
-        "supplement": "Specific supplement recommended",
-        "dosage": "Exact dosage with units",
-        "applicationMethod": "How to apply (foliar, soil, etc.)",
-        "frequency": "How often to apply",
-        "duration": "How long to treat",
-        "precautions": "Important safety notes"
-      },
-      "relatedDeficiencies": ["Other nutrients commonly deficient together"],
-      "lockoutRisk": "Whether this causes other nutrient lockouts"
-    }
-  ],
-  "nutrientToxicities": [
-    {
-      "nutrient": "Element symbol and name",
-      "severity": "mild|moderate|severe|critical",
-      "confidence": number (0-100),
-      "excessLevel": "Estimated current ppm",
-      "symptoms": ["List of toxicity symptoms"],
-      "treatment": {
-        "action": "Flush|Treat|Adjust",
-        "method": "How to correct",
-        "duration": "How long treatment takes",
-        "monitoring": "How to monitor progress"
-      }
-    }
-  ],
-  "environmentalFactors": [
-    {
-      "factor": "Environmental stressor",
-      "currentValue": "Current measurement",
-      "optimalRange": "Optimal range",
-      "severity": "mild|moderate|severe|critical",
-      "correction": "Specific corrective action",
-      "timeframe": "How quickly to implement",
-      "monitoringFrequency": "How often to check"
-    }
-  ],
-  "trichomeAnalysis": {
-    "isVisible": boolean,
-    "density": "light|medium|heavy",
-    "maturity": {
-      "clear": number (0-100 percentage),
-      "cloudy": number (0-100 percentage),
-      "amber": number (0-100 percentage)
-    },
-    "overallStage": "early|mid|late|mixed",
-    "health": {
-      "intact": number (0-100 percentage),
-      "degraded": number (0-100 percentage),
-      "collapsed": number (0-100 percentage)
-    },
-    "harvestReadiness": {
-      "ready": boolean,
-      "daysUntilOptimal": number,
-      "recommendation": "Harvest timing advice",
-      "effects": "Expected effects based on trichome maturity"
-    },
-    "confidence": number (0-100)
-  },
-  "morphologicalAnalysis": {
-    "overallVigor": number (0-100),
-    "growthPattern": "normal|stretched|stunted|irregular",
-    "symmetry": "symmetrical|slightly asymmetrical|asymmetrical",
-    "leafDevelopment": {
-      "size": "small|normal|large",
-      "color": "pale|normal|dark|abnormal",
-      "shape": "normal|distorted|curled",
-      "spots": boolean,
-      "lesions": boolean
-    },
-    "stemHealth": {
-      "color": "normal|purpling|browning",
-      "strength": "strong|weak|fragile",
-      "signsOfStress": boolean,
-      "pestDamage": boolean
-    }
-  },
-  "visualChanges": {
-    "hasPreviousData": boolean,
-    "changeDetected": boolean,
-    "changeType": "improving|stable|worsening|new_issue",
-    "progressionRate": "slow|moderate|fast|rapid",
-    "changes": [
-      {
-        "parameter": "What changed",
-        "previousState": "Previous state",
-        "currentState": "Current state",
-        "changeDescription": "Description of change"
-      }
-    ],
-    "predictions": [
-      "What is likely to happen next if no action taken"
-    ],
-    "urgencyAdjustment": "Does change detection increase/decrease urgency"
-  },
-  "urgency": "low|medium|high|critical",
-  "urgencyReasons": ["REQUIRED: 2+ specific reasons explaining urgency level when medium/high/critical"],
-  "healthScore": number (0-100),
-  "healthScoreBreakdown": {
-    "vigor": number (0-100),
-    "leafCondition": number (0-100),
-    "pestFree": number (0-100),
-    "environmentOptimal": number (0-100),
-    "growthStageAppropriate": number (0-100),
-    "rootHealth": number (0-100)
-  },
-  "likelyCauses": [
-    {
-      "cause": "Primary cause or hypothesis",
-      "confidence": number (0-100),
-      "evidence": "Specific evidence supporting this cause"
-    }
-  ],
-  "evidenceObservations": ["Specific observations that support the diagnosis"],
-  "uncertainties": ["Limitations, ambiguous findings, what couldn't be determined"],
-  "priorityActions": [
-    "Top 3 most critical actions to take immediately"
-  ],
-  "preventativeMeasures": [
-    "Specific prevention strategy with implementation details",
-    "Monitoring recommendations",
-    "Environmental adjustments"
-  ],
-  "imageAnalysis": {
-    "hasImage": boolean,
-    "visualFindings": ["Detailed visual observations"],
-    "overallConfidence": number (0-100),
-    "imageQuality": {
-      "resolution": "excellent|good|fair|poor",
-      "focus": "sharp|adequate|blurry",
-      "lighting": "optimal|adequate|poor|overexposed|underexposed",
-      "magnification": "appropriate|low|high"
-    },
-    "factorsAffectingAnalysis": ["Any image limitations"],
-    "recommendationsForFuture": ["How to improve image quality for better analysis"]
-  },
-  "recommendations": {
-    "immediate": ["Actions within 24 hours with exact protocols"],
-    "shortTerm": ["Actions within 1-2 weeks with schedule"],
-    "longTerm": ["Ongoing maintenance with frequency"]
-  },
-  "followUpSchedule": {
-    "checkAfterDays": number,
-    "whatToMonitor": ["What to look for in follow-up"],
-    "successIndicators": ["Signs that treatment is working"],
-    "escalationTriggers": ["When to seek additional help"]
-  },
-  "researchReferences": ["Key research studies or authoritative sources"],
-  "prognosis": {
-    "expectedOutcome": "Description of expected outcome",
-    "timeframe": "How long until recovery",
-    "factorsAffectingOutcome": ["What could improve or worsen prognosis"],
-    "fullRecoveryExpected": boolean
-  },
-  "costEstimates": {
-    "treatmentCost": "Estimated cost range for treatments",
-    "preventiveSavings": "Estimated savings from prevention"
-  }
-}`;
-
-    console.log('🚀 Starting enhanced cannabis plant analysis...');
+    console.log('🚀 Starting enhanced cannabis plant analysis (V2 Explainable Prompt)...');
     console.log(`📊 Analysis parameters: ${strain}, Stage: ${growthStage}, Urgency: ${urgency}`);
 
     // Enhanced AI provider detection with detailed logging
@@ -992,39 +479,51 @@ Format your response as detailed JSON with this comprehensive structure:
       console.log(`   Processing time: ${processingTime}ms`);
       console.log(`   Image analysis: ${!!imageBase64ForAI}`);
 
-      // Parse and validate the AI response with robust extraction
-      if (typeof analysisResult === 'string') {
-        console.log('🔍 Parsing AI response with robust JSON extraction...');
-
-        const parseResult = parseAnalysisResponse(analysisResult, {
-          imageAnalysis: !!imageBase64ForAI,
-          phLevel,
-          temperature
-        });
-
-        if (parseResult.success) {
-          console.log(`✅ JSON extraction successful using method: ${parseResult.method}`);
-          if (parseResult.validationWarnings.length > 0) {
-            console.log('⚠️ Validation warnings:', parseResult.validationWarnings);
-          }
-          if (parseResult.postProcessed) {
-            console.log('✅ Post-processing applied to ensure required fields');
-          }
-          analysisResult = parseResult.data;
-        } else {
-          console.warn('⚠️ JSON extraction failed:', parseResult.error);
-          console.warn('📝 Falling back to structured response from text...');
-          analysisResult = createStructuredResponse(analysisResult, usedProvider);
-        }
-      }
-
-      // Enhance the analysis result with additional metadata
-      analysisResult = enhanceAnalysisResult(analysisResult, {
+      console.log('🔍 Normalizing provider response into explainable report-v2 contract...');
+      analysisResult = normalizePlantAnalysisResult(analysisResult, {
         inputParameters: { strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage },
         imageAnalysis: !!imageBase64ForAI,
         processingTime,
         provider: usedProvider
       });
+      console.log('✅ Explainable report ready:', {
+        parsedFromStructuredJson: Boolean(analysisResult.analysisMetadata?.parsedFromStructuredJson),
+        urgency: analysisResult.urgency,
+        detectedIssues: Array.isArray(analysisResult.detectedIssues)
+          ? analysisResult.detectedIssues.length
+          : 0
+      });
+
+      // 🔬 ENRICHMENT PASS: Add production-quality explanations for medium/high urgency
+      console.log('🔬 Running report enrichment pass for detailed explanations...');
+      const enrichmentContext = {
+        analysis: analysisResult,
+        inputParameters: { strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage },
+        imageAnalysis: !!imageBase64ForAI,
+        processingTime,
+        provider: usedProvider
+      };
+      const enriched = enrichReport(enrichmentContext);
+      const validation = validateEnrichedReport(enriched);
+
+      if (validation.valid) {
+        analysisResult = mergeEnrichmentWithAnalysis(analysisResult, enriched);
+        console.log('✅ Enrichment complete:', {
+          urgencyLevel: enriched.urgencyDeepDive.urgencyLevel,
+          primaryDrivers: enriched.urgencyDeepDive.primaryDrivers.length,
+          healthCategories: enriched.healthScoreAnalysis.categoryAnalysis.length,
+          confidenceScore: enriched.confidenceAssessment.overall,
+          recommendationDetails: {
+            immediate: enriched.recommendationRationale.immediate.length,
+            shortTerm: enriched.recommendationRationale.shortTerm.length,
+            longTerm: enriched.recommendationRationale.longTerm.length
+          }
+        });
+      } else {
+        console.warn('⚠️ Enrichment validation issues:', validation.issues);
+        // Still merge partial enrichment even if validation has issues
+        analysisResult = mergeEnrichmentWithAnalysis(analysisResult, enriched);
+      }
 
     } catch (error) {
       // Handle AI provider unavailability specifically
@@ -1225,7 +724,7 @@ Format your response as detailed JSON with this comprehensive structure:
         requestId: crypto.randomUUID().substring(0, 8)
       },
       alternatives: {
-        textOnlyAnalysis: !!(body?.leafSymptoms && body?.strain),
+        textOnlyAnalysis: !!(rawBody?.leafSymptoms && rawBody?.strain),
         retryRecommendations: [
           'Check your internet connection',
           'Verify AI provider is configured in Settings',
@@ -1244,220 +743,4 @@ Format your response as detailed JSON with this comprehensive structure:
     // Add security headers to error response as well
     return addSecurityHeaders(errorResponse);
   }
-}
-
-// Helper function to create structured response from AI text output
-function createStructuredResponse(textResponse: string, provider: string): any {
-  return {
-    diagnosis: 'AI Analysis Complete',
-    confidence: 85,
-    severity: 'moderate',
-    symptomsMatched: ['AI-powered analysis completed'],
-    causes: ['Analysis based on AI model evaluation'],
-    treatment: ['Follow the detailed recommendations provided by the AI'],
-    healthScore: 75,
-    strainSpecificAdvice: 'Refer to the AI analysis above for specific guidance',
-    reasoning: [{
-      step: 'AI Analysis',
-      explanation: `Analysis provided by ${provider} AI model`,
-      weight: 100,
-      evidence: 'AI model evaluation'
-    }],
-    isPurpleStrain: false,
-    purpleAnalysis: {
-      isGenetic: false,
-      isDeficiency: false,
-      analysis: 'AI analysis required for detailed purple coloration assessment'
-    },
-    pestsDetected: [],
-    diseasesDetected: [],
-    nutrientDeficiencies: [],
-    environmentalFactors: [],
-    urgency: 'medium',
-    preventativeMeasures: ['Follow AI recommendations', 'Monitor plant health'],
-    imageAnalysis: {
-      hasImage: false,
-      visualFindings: ['AI analysis completed'],
-      confidence: 80,
-      imageQuality: 'AI evaluation',
-      additionalNotes: textResponse.substring(0, 200) + '...'
-    },
-    recommendations: {
-      immediate: ['Review complete AI analysis'],
-      shortTerm: ['Implement AI recommendations'],
-      longTerm: ['Continue monitoring as advised by AI']
-    },
-    followUpSchedule: 'Follow AI monitoring recommendations',
-    researchReferences: ['AI-powered analysis'],
-    prognosis: 'Dependent on following AI recommendations',
-    aiResponse: textResponse, // Include full AI response for reference
-    provider: provider
-  };
-}
-
-function enhanceAnalysisResult(analysisResult: any, metadata: any): any {
-  // Enhance the AI analysis with additional metadata and validation
-  const enhanced = { ...analysisResult };
-
-  // Ensure required fields exist
-  if (!enhanced.diagnosis) enhanced.diagnosis = 'Plant Health Analysis';
-  if (!enhanced.confidence) enhanced.confidence = 75;
-  if (!enhanced.severity) enhanced.severity = 'moderate';
-  if (!enhanced.healthScore) enhanced.healthScore = Math.round(enhanced.confidence);
-  if (!enhanced.urgency) enhanced.urgency = 'medium';
-
-  // Add processing metadata
-  enhanced.analysisMetadata = {
-    ...metadata,
-    enhancedAt: new Date().toISOString(),
-    version: '4.0.0-Enhanced-Comprehensive'
-  };
-
-  // Validate and enhance arrays
-  if (!Array.isArray(enhanced.symptomsMatched)) enhanced.symptomsMatched = ['AI analysis completed'];
-  if (!Array.isArray(enhanced.causes)) enhanced.causes = ['AI evaluation'];
-  if (!Array.isArray(enhanced.treatment)) enhanced.treatment = ['Follow AI recommendations'];
-  if (!Array.isArray(enhanced.preventativeMeasures)) enhanced.preventativeMeasures = ['Continue monitoring'];
-
-  // Ensure purple analysis exists
-  if (!enhanced.purpleAnalysis) {
-    enhanced.purpleAnalysis = {
-      isGenetic: enhanced.isPurpleStrain || false,
-      isDeficiency: false,
-      analysis: enhanced.isPurpleStrain ? 'Genetic purple strain characteristics detected' : 'AI analysis required for detailed assessment',
-      anthocyaninLevel: 'medium',
-      recommendedActions: ['Continue monitoring purple coloration patterns']
-    };
-  }
-
-  // Ensure comprehensive analysis sections exist
-  if (!enhanced.pestsDetected) enhanced.pestsDetected = [];
-  if (!enhanced.diseasesDetected) enhanced.diseasesDetected = [];
-  if (!enhanced.nutrientDeficiencies) enhanced.nutrientDeficiencies = [];
-  if (!enhanced.nutrientToxicities) enhanced.nutrientToxicities = [];
-  if (!enhanced.environmentalFactors) enhanced.environmentalFactors = [];
-
-  // Ensure trichome analysis exists
-  if (!enhanced.trichomeAnalysis) {
-    enhanced.trichomeAnalysis = {
-      isVisible: metadata.imageAnalysis || false,
-      density: 'medium',
-      maturity: {
-        clear: 0,
-        cloudy: 0,
-        amber: 0
-      },
-      overallStage: 'mixed',
-      health: {
-        intact: 100,
-        degraded: 0,
-        collapsed: 0
-      },
-      harvestReadiness: {
-        ready: false,
-        daysUntilOptimal: 14,
-        recommendation: 'Monitor trichome development',
-        effects: 'Effects will depend on trichome maturity'
-      },
-      confidence: 0
-    };
-  }
-
-  // Ensure morphological analysis exists
-  if (!enhanced.morphologicalAnalysis) {
-    enhanced.morphologicalAnalysis = {
-      overallVigor: enhanced.healthScore || 75,
-      growthPattern: 'normal',
-      symmetry: 'symmetrical',
-      leafDevelopment: {
-        size: 'normal',
-        color: 'normal',
-        shape: 'normal',
-        spots: false,
-        lesions: false
-      },
-      stemHealth: {
-        color: 'normal',
-        strength: 'strong',
-        signsOfStress: false,
-        pestDamage: false
-      }
-    };
-  }
-
-  // Ensure visual changes exists
-  if (!enhanced.visualChanges) {
-    enhanced.visualChanges = {
-      hasPreviousData: false,
-      changeDetected: false,
-      changeType: 'stable',
-      progressionRate: 'slow',
-      changes: [],
-      predictions: [],
-      urgencyAdjustment: 'none'
-    };
-  }
-
-  // Ensure priority actions exists
-  if (!enhanced.priorityActions) {
-    enhanced.priorityActions = [
-      'Continue monitoring plant health',
-      'Follow AI recommendations above',
-      'Maintain optimal growing conditions'
-    ];
-  }
-
-  // Enhance image analysis
-  if (!enhanced.imageAnalysis) {
-    enhanced.imageAnalysis = {
-      hasImage: metadata.imageAnalysis || false,
-      visualFindings: ['AI analysis completed'],
-      overallConfidence: 80,
-      imageQuality: {
-        resolution: 'good',
-        focus: 'adequate',
-        lighting: 'adequate',
-        magnification: 'appropriate'
-      },
-      factorsAffectingAnalysis: [],
-      recommendationsForFuture: []
-    };
-  }
-
-  // Enhance follow-up schedule
-  if (!enhanced.followUpSchedule) {
-    enhanced.followUpSchedule = {
-      checkAfterDays: 7,
-      whatToMonitor: ['Overall plant health', 'Symptom progression'],
-      successIndicators: ['Improved leaf color', 'New healthy growth'],
-      escalationTriggers: ['Symptoms worsen rapidly', 'No improvement after treatment']
-    };
-  }
-
-  // Enhance prognosis
-  if (!enhanced.prognosis) {
-    enhanced.prognosis = {
-      expectedOutcome: 'Positive outcome with proper care',
-      timeframe: '1-2 weeks',
-      factorsAffectingOutcome: ['Environmental conditions', 'Treatment compliance'],
-      fullRecoveryExpected: true
-    };
-  }
-
-  // Ensure cost estimates exists
-  if (!enhanced.costEstimates) {
-    enhanced.costEstimates = {
-      treatmentCost: 'Varies by treatment type',
-      preventiveSavings: 'Prevention is more cost-effective than treatment'
-    };
-  }
-
-  // Add version information
-  enhanced.contractId = 'cannaai.analysis.agent.v1';
-  enhanced.contractVersion = '1.0.0';
-  enhanced.enhancedMultiModalAnalysis = true;
-  enhanced.requiresAIProvider = true;
-  enhanced.comprehensiveAnalysis = true;
-
-  return enhanced;
 }

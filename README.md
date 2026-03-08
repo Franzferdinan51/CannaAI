@@ -146,6 +146,9 @@ LM_STUDIO_URL="http://<YOUR_WINDOWS_IP>:1234"
 # Run tests
 npm test
 
+# Explainability regression smoke check
+npm run check:report-quality
+
 # Visual regression tests
 npm run test:visual
 

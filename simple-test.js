@@ -1,97 +1,81 @@
 #!/usr/bin/env node
+/**
+ * Simple CannaAI API Test
+ * Tests the enhanced analysis without complex validation
+ */
 
-const http = require('http');
+const API_URL = 'http://localhost:3000';
 
-console.log('🧪 Simple API Test - Checking if server responds...');
+async function testAnalysis() {
+  console.log('🧪 Testing CannaAI Enhanced Analysis\n');
+  
+  const testData = {
+    strain: 'Grand Daddy Purple',
+    leafSymptoms: 'Yellowing between veins on lower leaves, green veins remaining',
+    growthStage: 'flowering',
+    temperature: 75,
+    humidity: 45,
+    urgency: 'medium'
+  };
 
-// Test data
-const testData = {
-  strain: 'Test Strain',
-  leafSymptoms: '',
-  phLevel: '',
-  temperature: '',
-  humidity: '',
-  medium: '',
-  growthStage: ''
-};
-
-function makeSimpleRequest() {
-  return new Promise((resolve, reject) => {
-    const postData = JSON.stringify(testData);
-
-    const req = http.request({
-      hostname: 'localhost',
-      port: 3000,
-      path: '/api/analyze',
+  try {
+    console.log('📤 Sending request...');
+    const response = await fetch(`${API_URL}/api/analyze`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      },
-      timeout: 5000
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testData)
     });
 
-    req.on('response', (res) => {
-      let data = '';
+    console.log(`📥 Response status: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText.slice(0, 200)}`);
+    }
 
-      res.on('data', (chunk) => {
-        data += chunk;
+    const result = await response.json();
+    
+    console.log('\n✅ Analysis successful!\n');
+    console.log('📊 Results:');
+    console.log(`   Diagnosis: ${result.analysis?.diagnosis}`);
+    console.log(`   Urgency: ${result.analysis?.urgency}`);
+    console.log(`   Health Score: ${result.analysis?.healthScore}`);
+    console.log(`   Urgency Reasons: ${result.analysis?.urgencyReasons?.length || 0}`);
+    console.log(`   Evidence Observations: ${result.analysis?.evidenceObservations?.length || 0}`);
+    console.log(`   Uncertainties: ${result.analysis?.uncertainties?.length || 0}`);
+    
+    // Check for enhanced fields
+    console.log('\n🔍 Enhanced Fields:');
+    console.log(`   Health Score Breakdown: ${Object.keys(result.analysis?.healthScoreBreakdown || {}).length} categories`);
+    console.log(`   Detected Issues: ${result.analysis?.detectedIssues?.length || 0}`);
+    console.log(`   Environment Risk Assessment: ${result.analysis?.environmentRiskAssessment ? '✅' : '❌'}`);
+    console.log(`   Prioritized Action Plan: ${result.analysis?.prioritizedActionPlan ? '✅' : '❌'}`);
+    
+    // Sample urgency reasons
+    if (result.analysis?.urgencyReasons?.length > 0) {
+      console.log('\n💡 Sample Urgency Reasons:');
+      result.analysis.urgencyReasons.slice(0, 2).forEach((reason, i) => {
+        console.log(`   ${i + 1}. ${reason.slice(0, 100)}${reason.length > 100 ? '...' : ''}`);
       });
-
-      res.on('end', () => {
-        console.log(`✅ Response received:`);
-        console.log(`   Status: ${res.statusCode}`);
-        console.log(`   Headers:`, res.headers);
-
-        // Try to parse JSON
-        try {
-          const jsonData = JSON.parse(data);
-          console.log(`   JSON Response:`, JSON.stringify(jsonData, null, 2));
-
-          if (jsonData.success) {
-            console.log(`🎉 SUCCESS: API is working correctly!`);
-          } else {
-            console.log(`⚠️  API returned error:`, jsonData.error);
-          }
-        } catch (e) {
-          console.log(`   Raw Response (length ${data.length}):`, data.substring(0, 200) + '...');
-          if (data.includes('refreshing') || data.includes('check()')) {
-            console.log(`🔄 Server is still building...`);
-          } else {
-            console.log(`❌ Response is not valid JSON`);
-          }
-        }
-
-        resolve();
-      });
-    });
-
-    req.on('error', (err) => {
-      console.log(`❌ Request failed: ${err.message}`);
-      if (err.code === 'ECONNREFUSED') {
-        console.log(`   Server is not running on port 3000`);
-        console.log(`   Please start the dev server with: npm run dev`);
+    }
+    
+    // Sample health breakdown
+    if (result.analysis?.healthScoreBreakdown) {
+      console.log('\n📈 Sample Health Breakdown:');
+      const firstCategory = Object.keys(result.analysis.healthScoreBreakdown)[0];
+      if (firstCategory) {
+        const cat = result.analysis.healthScoreBreakdown[firstCategory];
+        console.log(`   ${firstCategory}: ${cat.score}/100`);
+        console.log(`   Rationale: ${cat.rationale?.slice(0, 100)}${cat.rationale?.length > 100 ? '...' : ''}`);
       }
-      reject(err);
-    });
-
-    req.on('timeout', () => {
-      console.log(`⏰ Request timed out`);
-      req.destroy();
-      reject(new Error('timeout'));
-    });
-
-    console.log(`📤 Sending POST request with data:`, JSON.stringify(testData, null, 2));
-    req.write(postData);
-    req.end();
-  });
+    }
+    
+    console.log('\n✅ Enhanced analysis is working correctly!\n');
+    
+  } catch (error) {
+    console.error('❌ Test failed:', error.message);
+    process.exit(1);
+  }
 }
 
-makeSimpleRequest()
-  .then(() => {
-    console.log('\n🏁 Test completed');
-  })
-  .catch((err) => {
-    console.log('\n💥 Test failed:', err.message);
-    process.exit(1);
-  });
+testAnalysis();

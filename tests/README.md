@@ -110,6 +110,16 @@ npm run test:integration
 npm run test:integration -- --setup-db
 ```
 
+### Explainability Lane
+
+```bash
+# Run synthetic explainability payload coverage and print the pass/fail matrix
+npm run test:explainability
+
+# Add a live real-image API check against a running local server
+EXPLAINABILITY_REAL_IMAGE_PATH=/absolute/path/to/plant-photo.jpg npm run test:explainability
+```
+
 ### E2E Tests
 
 ```bash

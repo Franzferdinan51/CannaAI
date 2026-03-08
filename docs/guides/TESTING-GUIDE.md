@@ -71,6 +71,23 @@ python3 integrations/openclaw-grow-bridge.py --manual --verbose
 # Expected: ✅ Sensor data sent to CannaAI
 ```
 
+#### 5. Explainability Regression Smoke Check
+```bash
+npm run check:report-quality
+```
+
+Expected behavior:
+- Passes when `/api/analyze` returns a successful report with valid `urgencyReasons`, `healthScoreBreakdown`, `detectedIssues`, and `prioritizedActionPlan`.
+- Skips with exit code `0` if the local service is unavailable or `/api/analyze` returns `502`, `503`, or `504`.
+- Fails when the endpoint returns success but the explainability fields are missing, empty, placeholder-filled, or structurally invalid.
+
+Optional overrides:
+```bash
+CANNAAI_REPORT_CHECK_URL=http://127.0.0.1:3100/api/analyze \
+CANNAAI_REPORT_CHECK_IMAGE=tests/fixtures/report-quality-sample.png.base64 \
+npm run check:report-quality
+```
+
 ---
 
 ## 🧪 Automated Test Suite:
@@ -211,6 +228,9 @@ npx tsc --noEmit --skipLibCheck src/app/api/grow-monitor/data/route.ts
 
 # Lint (if eslint configured)
 npm run lint
+
+# Explainability regression smoke check
+npm run check:report-quality
 ```
 
 ---

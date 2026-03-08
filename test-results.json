@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-03-08T03:59:30.038Z",
+  "summary": {
+    "passed": 0,
+    "total": 3,
+    "passRate": 0
+  },
+  "results": [
+    {
+      "name": "Nutrient Deficiency (Text Only)",
+      "success": false,
+      "structureErrors": 0,
+      "structureWarnings": 0,
+      "expectationFailures": 0,
+      "rationaleQuality": 0,
+      "error": "API returned 500: Internal Server Error"
+    },
+    {
+      "name": "Pest Infestation (High Urgency)",
+      "success": false,
+      "structureErrors": 0,
+      "structureWarnings": 0,
+      "expectationFailures": 0,
+      "rationaleQuality": 0,
+      "error": "API returned 500: Internal Server Error"
+    },
+    {
+      "name": "Healthy Plant Check (Low Urgency)",
+      "success": false,
+      "structureErrors": 0,
+      "structureWarnings": 0,
+      "expectationFailures": 0,
+      "rationaleQuality": 0,
+      "error": "API returned 500: Internal Server Error"
+    }
+  ]
+}
