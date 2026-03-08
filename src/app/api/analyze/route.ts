@@ -6,17 +6,17 @@ import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
+import { executeWithOpenRouter } from '@/lib/ai-provider-openrouter';
 import { normalizePlantAnalysisResult } from '@/lib/plant-analysis-report-v2';
 import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
 import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
 
 /**
- * Provider Priority Chain (FREE MODELS ONLY):
+ * Provider Priority Chain:
  * 1. OpenClaw Gateway (PRIMARY) - Centralized model management
- * 2. Alibaba Bailian (Qwen) - VISION: qwen3.5-plus (FREE: 18K/month)
- * 3. LM Studio - Local models (FREE)
- * 
- * NO PAID PROVIDERS
+ * 2. Alibaba Bailian (Qwen) - PRIMARY: qwen3.5-plus (use quota)
+ * 3. OpenRouter - FALLBACK: FREE tier only (qwen-vl-max, etc.)
+ * 4. LM Studio - Local models (FREE)
  */
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -415,7 +415,7 @@ export async function POST(request: NextRequest) {
           'No AI providers are configured. Please connect an AI provider to use plant analysis.',
           {
             recommendations: [
-              'Configure Alibaba Bailian API key (FREE: 18K tokens/month)',
+              'Configure Alibaba Bailian API key (PRIMARY - qwen3.5-plus)',
               'Set up LM Studio for local development (non-serverless only)',
               'Visit Settings to configure your AI provider'
             ],
@@ -457,13 +457,22 @@ export async function POST(request: NextRequest) {
         });
 
         if (!aiResult.success) {
-          console.log('⚠️ Bailian failed, trying LM Studio fallback...');
-          aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-            primaryProvider: 'lm-studio',
-            timeout: 90000,
-            maxRetries: 2,
+          console.log('⚠️ Bailian failed, trying OpenRouter FREE fallback...');
+          aiResult = await executeWithOpenRouter({
+            prompt: prompt,
+            image: imageBase64ForAI,
             requireVision: !!imageBase64ForAI
           });
+
+          if (!aiResult.success) {
+            console.log('⚠️ OpenRouter failed, trying LM Studio...');
+            aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
+              primaryProvider: 'lm-studio',
+              timeout: 90000,
+              maxRetries: 2,
+              requireVision: !!imageBase64ForAI
+            });
+          }
         }
       } else {
         // FALLBACK 2: Use standard fallback chain (vision-aware)

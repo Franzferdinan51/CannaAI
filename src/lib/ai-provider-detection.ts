@@ -2,16 +2,16 @@
  * AI Provider Detection and Management for Serverless Environments
  * Handles detection of different AI providers - NO FALLBACK to rule-based analysis
  *
- * Provider Priority (Vision-aware) - FREE MODELS ONLY:
+ * Provider Priority (Vision-aware):
  * 1. OpenClaw Gateway (PRIMARY - centralized model management)
- * 2. Alibaba Bailian (Qwen) - Singapore endpoint (VISION: qwen3.5-plus - FREE)
- * 3. LM Studio - Local models (FREE)
- * 
- * NO PAID PROVIDERS - Only free Bailian models
+ * 2. Alibaba Bailian (Qwen) - Singapore endpoint (PRIMARY: qwen3.5-plus, use quota)
+ * 3. OpenRouter - FREE tier models only (FALLBACK: qwen-vl-max, etc.)
+ * 4. LM Studio - Local models (FREE, local fallback)
  */
 
 import { checkOpenClaw, executeWithOpenClaw } from './ai-provider-openclaw';
 import { checkBailian, executeWithBailian } from './ai-provider-bailian';
+import { checkOpenRouter } from './ai-provider-openrouter';
 
 // Environment detection
 export const isServerless = process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
@@ -130,20 +130,26 @@ export async function detectAvailableProviders(): Promise<{
   const bailianResult = await checkBailian();
   results.push(bailianResult);
 
+  // Check OpenRouter - FALLBACK (FREE tier only)
+  const openRouterResult = await checkOpenRouter();
+  results.push(openRouterResult);
+
   // Check LM Studio - FALLBACK
   const lmStudioResult = await checkLMStudio();
   results.push(lmStudioResult);
 
-  // Sort by availability and preference (FREE MODELS ONLY)
+  // Sort by availability and preference
   const availableProviders = results.filter(r => r.isAvailable);
   const unavailableProviders = results.filter(r => !r.isAvailable);
 
-  // Primary provider selection - prefer Bailian (FREE)
+  // Primary provider selection - BAILIAN FIRST, then OpenRouter FREE, then LM Studio
   let primary: ProviderDetectionResult;
 
   if (availableProviders.length > 0) {
-    // Prefer Bailian for FREE quota
-    primary = availableProviders.find(p => p.provider === 'bailian') || availableProviders[0];
+    // Priority: 1) Bailian (PRIMARY), 2) OpenRouter FREE (FALLBACK), 3) LM Studio
+    primary = availableProviders.find(p => p.provider === 'bailian') || 
+              availableProviders.find(p => p.provider === 'openrouter') || 
+              availableProviders[0];
   } else {
     // No AI providers available - indicate setup required
     primary = {
@@ -152,16 +158,16 @@ export async function detectAvailableProviders(): Promise<{
       reason: 'No AI providers configured - setup required',
       config: { type: 'setup-required' },
       recommendations: [
-        'Configure Alibaba Bailian API key (FREE quota: 18K/month)',
-        'Set up LM Studio for local development (FREE)',
-        'Visit Settings to configure your AI provider'
+        'Configure Alibaba Bailian API key (PRIMARY - qwen3.5-plus)',
+        'Configure OpenRouter API key (FALLBACK - FREE tier models only)',
+        'Set up LM Studio for local development'
       ]
     };
   }
 
-  // Generate recommendations (FREE MODELS ONLY)
+  // Generate recommendations
   if (isServerless && lmStudioResult.isAvailable) {
-    recommendations.push('LM Studio works locally but Bailian recommended for serverless (FREE quota)');
+    recommendations.push('LM Studio works locally but Bailian recommended for serverless');
   }
 
   if (isDevelopment && !lmStudioResult.isAvailable) {
@@ -359,6 +365,19 @@ export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | '
         timeout: parseInt(userSettings?.lmStudio?.timeout || process.env.LM_STUDIO_TIMEOUT || '120000'), // 2 minutes
         maxTokens: parseInt(userSettings?.lmStudio?.maxTokens || process.env.LM_STUDIO_MAX_TOKENS || '2000'),
         temperature: parseFloat(userSettings?.lmStudio?.temperature || process.env.LM_STUDIO_TEMPERATURE || '0.3')
+      };
+
+    case 'openrouter':
+      // FALLBACK: FREE tier models only (no paid models)
+      return {
+        apiKey: userSettings?.openRouter?.apiKey || process.env.OPENROUTER_API_KEY,
+        model: userSettings?.openRouter?.model || process.env.OPENROUTER_MODEL || 'qwen-vl-max', // FREE tier
+        baseUrl: 'https://openrouter.ai/api/v1',
+        timeout: parseInt(userSettings?.openRouter?.timeout || process.env.OPENROUTER_TIMEOUT || '60000'),
+        maxTokens: parseInt(userSettings?.openRouter?.maxTokens || process.env.OPENROUTER_MAX_TOKENS || '2000'),
+        temperature: parseFloat(userSettings?.openRouter?.temperature || process.env.OPENROUTER_TEMPERATURE || '0.3'),
+        referer: process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000',
+        title: 'CannaAI Pro'
       };
 
     case 'bailian':
@@ -596,6 +615,11 @@ async function callAIProvider(
     switch (provider) {
       case 'lm-studio':
         endpoint = `${config.url}/v1/chat/completions`;
+        break;
+      case 'openrouter':
+        endpoint = `${config.baseUrl}/chat/completions`;
+        headers['HTTP-Referer'] = config.referer || 'http://localhost:3000';
+        headers['X-Title'] = config.title || 'CannaAI Pro';
         break;
       case 'bailian':
         endpoint = `${config.baseUrl}/chat/completions`;
