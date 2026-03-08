@@ -446,11 +446,11 @@ export async function POST(request: NextRequest) {
           });
         }
       } else if (providerDetection.primary.provider === 'bailian') {
-        // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint) - TEXT ONLY
-        console.log('🔷 Using Alibaba Qwen (Singapore endpoint) - text analysis...');
+        // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint) - VISION CAPABLE
+        console.log('🔷 Using Alibaba Qwen (Singapore endpoint) - vision analysis...');
         aiResult = await executeWithBailian({
           prompt: prompt,
-          image: undefined, // qwen3.5-plus is text-only
+          image: imageBase64ForAI,
           model: process.env.QWEN_MODEL || 'qwen3.5-plus'
         });
         

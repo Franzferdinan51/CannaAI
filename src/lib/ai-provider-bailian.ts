@@ -50,7 +50,7 @@ export async function checkBailian(): Promise<ProviderDetectionResult> {
 
 /**
  * Execute analysis using Alibaba Bailian (Qwen)
- * Note: qwen3.5-plus is text-only. For vision, use OpenRouter or LM Studio.
+ * qwen3.5-plus supports vision (images + text)
  */
 export async function executeWithBailian(params: {
   image?: string;
@@ -66,10 +66,15 @@ export async function executeWithBailian(params: {
   try {
     const { image, prompt, model = BAILIAN_MODEL } = params;
 
-    // qwen3.5-plus is text-only - ignore image if provided
+    // qwen3.5-plus supports vision - include image if provided
     const messages: any[] = [{
       role: 'user',
-      content: prompt
+      content: image 
+        ? [
+            { type: 'image_url', image_url: { url: image } },
+            { type: 'text', text: prompt }
+          ]
+        : prompt
     }];
 
     const response = await fetch(`${BAILIAN_BASE_URL}/chat/completions`, {
