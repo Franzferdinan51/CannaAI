@@ -6,6 +6,8 @@ This document provides the complete OpenAPI 3.0 specification for the CultivAI P
 
 ## API Information
 
+> Agent consumers: see the contract profile in [agent-analysis-contract.md](./agent-analysis-contract.md) and JSON schema at `./schemas/analysis-agent-contract.schema.json`.
+
 ```yaml
 openapi: 3.0.3
 info:

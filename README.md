@@ -103,6 +103,7 @@ CannaAI/
 | Testing Guide | [docs/guides/TESTING-GUIDE.md](docs/guides/TESTING-GUIDE.md) |
 | Deployment | [docs/guides/DEPLOYMENT_CHECKLIST.md](docs/guides/DEPLOYMENT_CHECKLIST.md) |
 | API Reference | [docs/developer/api/openapi-specification.md](docs/developer/api/openapi-specification.md) |
+| Agent Analysis Contract | [docs/developer/api/agent-analysis-contract.md](docs/developer/api/agent-analysis-contract.md) |
 
 **All Docs:** [docs/](docs/)
 

@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cannaai.local/schemas/analysis-agent-contract.schema.json",
+  "title": "CannaAI Agent Analysis Contract",
+  "description": "Agent-consumable contract for /api/analyze responses with deterministic severity, confidence, score, and alert semantics.",
+  "type": "object",
+  "required": ["success", "analysis", "metadata"],
+  "properties": {
+    "success": { "type": "boolean", "const": true },
+    "analysis": {
+      "type": "object",
+      "required": [
+        "contractId",
+        "contractVersion",
+        "diagnosis",
+        "confidence",
+        "severity",
+        "healthScore",
+        "urgency",
+        "priorityActions"
+      ],
+      "properties": {
+        "contractId": { "type": "string", "const": "cannaai.analysis.agent.v1" },
+        "contractVersion": { "type": "string", "pattern": "^1\\.0\\.0$" },
+        "diagnosis": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 100 },
+        "severity": {
+          "type": "string",
+          "enum": ["mild", "moderate", "severe", "critical"]
+        },
+        "healthScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "urgency": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "priorityActions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "maxItems": 5
+        },
+        "agentSignals": {
+          "type": "object",
+          "required": ["severityPolicy", "scoringRubric", "confidenceBand", "alert"],
+          "properties": {
+            "severityPolicy": {
+              "type": "object",
+              "required": ["level", "numeric", "decisionBasis"],
+              "properties": {
+                "level": { "type": "string", "enum": ["mild", "moderate", "severe", "critical"] },
+                "numeric": { "type": "integer", "minimum": 1, "maximum": 4 },
+                "decisionBasis": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "disease_spread_risk",
+                      "pest_population",
+                      "deficiency_progression",
+                      "toxicity_risk",
+                      "environmental_stress",
+                      "rapid_deterioration",
+                      "harvest_window"
+                    ]
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "scoringRubric": {
+              "type": "object",
+              "required": ["score", "band", "components"],
+              "properties": {
+                "score": { "type": "number", "minimum": 0, "maximum": 100 },
+                "band": {
+                  "type": "string",
+                  "enum": ["excellent", "good", "fair", "poor", "critical"]
+                },
+                "components": {
+                  "type": "object",
+                  "required": ["vigor", "leafCondition", "pestDiseaseLoad", "environmentFit", "stageFit", "rootHealth"],
+                  "properties": {
+                    "vigor": { "type": "number", "minimum": 0, "maximum": 100 },
+                    "leafCondition": { "type": "number", "minimum": 0, "maximum": 100 },
+                    "pestDiseaseLoad": { "type": "number", "minimum": 0, "maximum": 100 },
+                    "environmentFit": { "type": "number", "minimum": 0, "maximum": 100 },
+                    "stageFit": { "type": "number", "minimum": 0, "maximum": 100 },
+                    "rootHealth": { "type": "number", "minimum": 0, "maximum": 100 }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            "confidenceBand": {
+              "type": "object",
+              "required": ["value", "band", "meetsAutomationThreshold"],
+              "properties": {
+                "value": { "type": "number", "minimum": 0, "maximum": 100 },
+                "band": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high", "very_high"]
+                },
+                "meetsAutomationThreshold": { "type": "boolean" },
+                "requiresHumanReview": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "alert": {
+              "type": "object",
+              "required": ["shouldTrigger", "priority", "reasons"],
+              "properties": {
+                "shouldTrigger": { "type": "boolean" },
+                "priority": { "type": "string", "enum": ["none", "info", "warning", "critical"] },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "severity_critical",
+                      "severity_severe",
+                      "health_score_below_40",
+                      "confidence_below_60",
+                      "rapid_worsening",
+                      "high_spread_risk",
+                      "harvest_window_open",
+                      "manual_urgency_critical"
+                    ]
+                  }
+                },
+                "recommendedSlaMinutes": { "type": "integer", "minimum": 0 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["analysisId", "timestamp", "contract"],
+      "properties": {
+        "analysisId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "contract": {
+          "type": "object",
+          "required": ["id", "version", "schemaPath"],
+          "properties": {
+            "id": { "type": "string", "const": "cannaai.analysis.agent.v1" },
+            "version": { "type": "string", "pattern": "^1\\.0\\.0$" },
+            "schemaPath": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

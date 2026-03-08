@@ -3,6 +3,7 @@ import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
+import { parseAnalysisResponse, extractJSONFromResponse, validateAnalysisResult, postProcessAnalysisResult } from '@/lib/analysis-json';
 
 /**
  * Provider Priority Chain:
@@ -623,6 +624,34 @@ Consider:
 - Growth stage appropriateness (10%)
 - Root system health (10%)
 
+🔒 **STRICT JSON OUTPUT REQUIREMENTS - CRITICAL**:
+You MUST output ONLY valid JSON with no markdown wrapping, no code blocks, no explanatory text before or after.
+Your response must start with { and end with }. DO NOT use \`\`\`json or \`\`\` wrappers.
+
+**REQUIRED KEYS** (all must be present, never omit):
+1. diagnosis - string: Primary diagnosis
+2. urgency - string: Must be "low", "medium", "high", or "critical"
+3. urgencyReasons - array of strings: MUST have 2+ specific reasons when urgency is "medium", "high", or "critical"
+4. healthScore - number (0-100): Overall plant health score
+5. healthScoreBreakdown - object with numeric scores (0-100) for: vigor, leafCondition, pestFree, environmentOptimal, growthStageAppropriate, rootHealth
+6. likelyCauses - array of objects with: cause (string), confidence (0-100), evidence (string)
+7. evidenceObservations - array of strings: Specific observations supporting the diagnosis
+8. uncertainties - array of strings: What couldn't be determined, limitations
+9. recommendations - object with arrays: immediate (within 24h), shortTerm (1-7 days), longTerm (ongoing)
+
+**URGENCY DETERMINATION RULES**:
+- "critical": Rapid spread, irreversible damage imminent, harvest at risk → MUST provide 3+ urgencyReasons
+- "high": Active pest/disease, spreading, needs action within 24-48h → MUST provide 2+ urgencyReasons
+- "medium": Nutrient issue, mild stress, action needed within week → MUST provide 2+ urgencyReasons
+- "low": Healthy plant, minor optimization, no immediate action → urgencyReasons optional
+
+**CONFIDENCE DRIVERS** - When providing confidence scores, consider:
+- Image quality and clarity (resolution, focus, lighting)
+- Symptom specificity and clarity (distinct patterns vs ambiguous)
+- Multiple confirming observations (cross-validation of symptoms)
+- Environmental data completeness (pH, temp, humidity provided)
+- Strain-specific pattern matching (genetic predisposition)
+
 Format your response as detailed JSON with this comprehensive structure:
 {
   "diagnosis": "Primary diagnosis with scientific name where applicable",
@@ -805,6 +834,25 @@ Format your response as detailed JSON with this comprehensive structure:
     "urgencyAdjustment": "Does change detection increase/decrease urgency"
   },
   "urgency": "low|medium|high|critical",
+  "urgencyReasons": ["REQUIRED: 2+ specific reasons explaining urgency level when medium/high/critical"],
+  "healthScore": number (0-100),
+  "healthScoreBreakdown": {
+    "vigor": number (0-100),
+    "leafCondition": number (0-100),
+    "pestFree": number (0-100),
+    "environmentOptimal": number (0-100),
+    "growthStageAppropriate": number (0-100),
+    "rootHealth": number (0-100)
+  },
+  "likelyCauses": [
+    {
+      "cause": "Primary cause or hypothesis",
+      "confidence": number (0-100),
+      "evidence": "Specific evidence supporting this cause"
+    }
+  ],
+  "evidenceObservations": ["Specific observations that support the diagnosis"],
+  "uncertainties": ["Limitations, ambiguous findings, what couldn't be determined"],
   "priorityActions": [
     "Top 3 most critical actions to take immediately"
   ],
@@ -944,13 +992,28 @@ Format your response as detailed JSON with this comprehensive structure:
       console.log(`   Processing time: ${processingTime}ms`);
       console.log(`   Image analysis: ${!!imageBase64ForAI}`);
 
-      // Parse and validate the AI response structure
+      // Parse and validate the AI response with robust extraction
       if (typeof analysisResult === 'string') {
-        try {
-          analysisResult = JSON.parse(analysisResult);
-        } catch (parseError) {
-          console.warn('⚠️ AI response was not valid JSON, creating structured response...');
-          // Create structured response from text - NO fake analysis
+        console.log('🔍 Parsing AI response with robust JSON extraction...');
+
+        const parseResult = parseAnalysisResponse(analysisResult, {
+          imageAnalysis: !!imageBase64ForAI,
+          phLevel,
+          temperature
+        });
+
+        if (parseResult.success) {
+          console.log(`✅ JSON extraction successful using method: ${parseResult.method}`);
+          if (parseResult.validationWarnings.length > 0) {
+            console.log('⚠️ Validation warnings:', parseResult.validationWarnings);
+          }
+          if (parseResult.postProcessed) {
+            console.log('✅ Post-processing applied to ensure required fields');
+          }
+          analysisResult = parseResult.data;
+        } else {
+          console.warn('⚠️ JSON extraction failed:', parseResult.error);
+          console.warn('📝 Falling back to structured response from text...');
           analysisResult = createStructuredResponse(analysisResult, usedProvider);
         }
       }
@@ -1015,6 +1078,11 @@ Format your response as detailed JSON with this comprehensive structure:
         processingTime,
         timestamp: new Date().toISOString(),
         version: '4.0.0-Enhanced-Comprehensive',
+        contract: {
+          id: 'cannaai.analysis.agent.v1',
+          version: '1.0.0',
+          schemaPath: '/docs/developer/api/schemas/analysis-agent-contract.schema.json'
+        },
         features: {
           trichomeAnalysis: !!imageBase64ForAI,
           visualChangeDetection: true,
@@ -1385,6 +1453,8 @@ function enhanceAnalysisResult(analysisResult: any, metadata: any): any {
   }
 
   // Add version information
+  enhanced.contractId = 'cannaai.analysis.agent.v1';
+  enhanced.contractVersion = '1.0.0';
   enhanced.enhancedMultiModalAnalysis = true;
   enhanced.requiresAIProvider = true;
   enhanced.comprehensiveAnalysis = true;
