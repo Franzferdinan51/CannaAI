@@ -248,3 +248,118 @@ export async function analyzeWithLMStudio(
     throw e;
   }
 }
+
+/**
+ * LM Studio RAG chat for cultivation assistance
+ */
+export async function localRagChat(
+  query: string,
+  contextDocs: any[],
+  history: any[],
+  endpoint: string,
+  requestedModelId?: string
+): Promise<string> {
+  if (!endpoint) {
+    throw new Error("LM Studio endpoint is not configured");
+  }
+
+  const baseUrl = endpoint.startsWith('http') ? endpoint : `http://${endpoint}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+  try {
+    let modelId = requestedModelId;
+    if (!modelId) {
+      modelId = await getAvailableModel(baseUrl) || undefined;
+    }
+
+    if (!modelId) {
+      throw new Error("No model loaded in LM Studio");
+    }
+
+    const contextText = contextDocs.length > 0
+      ? contextDocs.map(d => `
+=== DOCUMENT START ===
+ID: ${d.id}
+FILENAME: ${d.name}
+DATE: ${d.analysis?.analysisDate || 'Unknown'}
+SUMMARY: ${d.analysis?.summary}
+ENTITIES: ${d.analysis?.entities?.map((e: any) => `${e.name} (${e.type})`).join(', ') || 'None'}
+FULL CONTENT:
+${d.content ? d.content.substring(0, 50000) : "[Content Missing or Image Only]"}
+=== DOCUMENT END ===
+`).join('\n\n')
+      : "No specific documents matched. Answer based on general cultivation knowledge.";
+
+    const historyText = history
+      .slice(-20)
+      .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+      .join('\n');
+
+    const systemPrompt = `You are CANNABIS CULTIVATION EXPERT AI (Version 2.0).
+You have DIRECT ACCESS to the user's cultivation archive.
+1. DEEP ANALYSIS: Read "FULL CONTENT" of documents.
+2. SYNTHESIS: Connect information across documents.
+3. CITATIONS: Cite sources by appending [Filename].
+4. ACCURACY: If information is not in the documents, say so.`;
+
+    const userPrompt = `
+ARCHIVE CONTEXT:
+${contextText}
+
+CONVERSATION HISTORY:
+${historyText || 'No prior conversation.'}
+
+QUERY: ${query}`;
+
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 4000
+      })
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(`LM Studio Error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (typeof content === 'string' && content.trim()) {
+      return content.trim();
+    }
+
+    if (Array.isArray(content)) {
+      const text = content
+        .map((part: any) => typeof part === 'string' ? part : part?.text || '')
+        .join('\n')
+        .trim();
+      if (text) {
+        return text;
+      }
+    }
+
+    throw new Error("LM Studio returned an empty chat response");
+  } catch (e: any) {
+    clearTimeout(timeoutId);
+    console.error("LM Studio RAG chat error:", e);
+    if (e.name === 'AbortError') {
+      throw new Error("Chat timeout: LM Studio took too long to respond");
+    }
+    throw e;
+  }
+}

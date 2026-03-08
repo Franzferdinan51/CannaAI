@@ -76,14 +76,24 @@ const nextConfig: NextConfig = {
         process: false,
       };
     }
-    
+
     // Optimize for mobile and PWA
     if (!isServer) {
       config.resolve.alias = {
         ...config.resolve.alias,
       };
     }
-    
+
+    // Add DOMMatrix polyfill for server-side PDF processing (pdfjs-dist)
+    if (isServer) {
+      const webpack = require('webpack');
+      config.plugins.push(
+        new webpack.ProvidePlugin({
+          DOMMatrix: [require.resolve('./src/lib/dommatrix-polyfill.ts'), 'DOMMatrix'],
+        })
+      );
+    }
+
     return config;
   },
   eslint: {

@@ -307,6 +307,10 @@ class DatabaseMonitor {
 // Export singleton instance
 export const dbMonitor = new DatabaseMonitor();
 
+export async function getHealthMetrics(): Promise<DatabaseHealthMetrics> {
+  return dbMonitor.getHealthMetrics();
+}
+
 /**
  * Helper function to track any Prisma query with performance monitoring
  */

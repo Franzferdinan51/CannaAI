@@ -1,9 +1,29 @@
-import * as pdfjsLib from 'pdfjs-dist';
 import { recognizeText } from './ocrService';
 
-// Configure PDF.js worker
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// pdfjs-dist is loaded lazily so the API route does not evaluate browser-only
+// PDF internals during the Next.js production build.
+
+let pdfjsLibPromise: Promise<any> | null = null;
+
+async function getPdfjsLib() {
+  if (!pdfjsLibPromise) {
+    const isNode = typeof window === 'undefined' && typeof process !== 'undefined' && process.versions?.node;
+
+    pdfjsLibPromise = (isNode
+      ? import('pdfjs-dist/legacy/build/pdf.mjs')
+      : import('pdfjs-dist/build/pdf.mjs')
+    ).then((pdfjsLib) => {
+      if (isNode) {
+        return pdfjsLib;
+      }
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+      return pdfjsLib;
+    });
+  }
+
+  return pdfjsLibPromise;
 }
 
 /**
@@ -16,6 +36,9 @@ if (typeof window !== 'undefined') {
  * - Calibration certificates
  */
 export async function processPdf(file: File | Blob): Promise<{ text: string; images: string[] }> {
+  const isNode = typeof window === 'undefined' && typeof process !== 'undefined' && process.versions?.node;
+  const pdfjsLib = await getPdfjsLib();
+
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
@@ -28,25 +51,31 @@ export async function processPdf(file: File | Blob): Promise<{ text: string; ima
   for (let i = 1; i <= maxPages; i++) {
     const page = await pdf.getPage(i);
 
-    // Render page for visuals and OCR
-    const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-    await page.render({ canvasContext: context!, viewport: viewport }).promise;
-
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    images.push(dataUrl.split(',')[1]);
-
     // Attempt text extraction
     const textContent = await page.getTextContent();
     let pageText = textContent.items.map((item: any) => item.str).join(' ');
 
-    // Fallback to OCR if text is empty or very short (scanned PDF)
-    if (pageText.trim().length < 50) {
+    if (!isNode) {
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+
+      if (context) {
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport }).promise;
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        images.push(dataUrl.split(',')[1] || '');
+
+        if (pageText.trim().length < 50) {
+          console.log(`[Page ${i}] No text layer found. Attempting OCR...`);
+          pageText = await recognizeText(dataUrl);
+        }
+      }
+    } else if (pageText.trim().length < 50) {
       console.log(`[Page ${i}] No text layer found. Attempting OCR...`);
-      pageText = await recognizeText(dataUrl);
+      console.log(`[Page ${i}] Skipping OCR because the Node runtime has no canvas renderer configured.`);
     }
 
     fullText += `[Page ${i}]\n${pageText}\n\n`;

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processPdf, extractCultivationData, classifyDocument } from '@/lib/pdfProcessor';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -14,6 +13,7 @@ export const maxDuration = 120;
  */
 export async function POST(req: NextRequest) {
   try {
+    const { processPdf, extractCultivationData, classifyDocument } = await import('@/lib/pdfProcessor');
     const body = await req.json();
     const { file, analyze = true } = body;
 
@@ -27,11 +27,8 @@ export async function POST(req: NextRequest) {
     console.log('[PDF API] Processing PDF...');
 
     // Convert base64 to Blob
-    const binaryString = atob(file.split(',')[1] || file);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
+    const base64Payload = file.split(',')[1] || file;
+    const bytes = Uint8Array.from(Buffer.from(base64Payload, 'base64'));
     const blob = new Blob([bytes], { type: 'application/pdf' });
 
     // Process PDF
