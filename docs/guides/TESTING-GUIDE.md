@@ -1,5 +1,19 @@
 # CannaAI Testing Guide
 
+## /api/analyze Integration Suite
+
+Run the dedicated route-level suite for the main plant analysis endpoint:
+
+```bash
+npm run test:integration:analyze
+```
+
+This suite covers:
+- Text-only analysis requests that include AC Infinity environment data
+- Combined image + text analysis requests
+- Explainability field coverage for `urgencyReasons`, `healthScoreBreakdown`, `detectedIssues`, and `prioritizedActionPlan`
+- `503` setup guidance when no AI provider is available
+
 ## ✅ Tests That Pass Now:
 
 ### 1. Python Bridge Script

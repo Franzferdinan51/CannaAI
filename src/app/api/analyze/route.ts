@@ -6,16 +6,17 @@ import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
+import { executeWithOpenRouter } from '@/lib/ai-provider-openrouter';
 import { normalizePlantAnalysisResult } from '@/lib/plant-analysis-report-v2';
 import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
 import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
 
 /**
- * Provider Priority Chain:
+ * Provider Priority Chain (Vision-aware):
  * 1. OpenClaw Gateway (PRIMARY) - Centralized model management
- * 2. Alibaba Bailian - Singapore endpoint (FREE quota)
- * 3. LM Studio - Local models
- * 4. OpenRouter - FREE cloud models
+ * 2. Alibaba Bailian (Qwen) - VISION: qwen-vl-max-latest
+ * 3. OpenRouter - VISION: qwen-vl-max (FREE tier)
+ * 4. LM Studio - Local models (limited vision)
  */
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -424,9 +425,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Execute AI analysis - OpenClaw FIRST, then fallback chain
+      // Execute AI analysis with vision-aware fallback
       let aiResult;
-      
+
       if (providerDetection.primary.provider === 'openclaw') {
         // PRIMARY: Use OpenClaw Gateway (routes to best available model)
         console.log('🚀 Using OpenClaw Gateway as primary provider...');
@@ -435,14 +436,34 @@ export async function POST(request: NextRequest) {
           image: imageBase64ForAI,
           model: process.env.OPENCLAW_MODEL || 'qwen3.5-plus'
         });
-        
+
         if (!aiResult.success) {
           console.log('⚠️ OpenClaw failed, trying fallback...');
-          // OpenClaw failed, try fallback chain
+          // OpenClaw failed, try fallback chain (vision-aware)
           aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
             primaryProvider: 'bailian',
             timeout: 90000,
-            maxRetries: 2
+            maxRetries: 2,
+            requireVision: !!imageBase64ForAI
+          });
+        }
+      } else if (providerDetection.primary.provider === 'openrouter') {
+        // PRIMARY: Use OpenRouter with vision-capable models
+        console.log('🌐 Using OpenRouter as primary provider...');
+        aiResult = await executeWithOpenRouter({
+          prompt: prompt,
+          image: imageBase64ForAI,
+          requireVision: !!imageBase64ForAI
+        });
+
+        if (!aiResult.success) {
+          console.log('⚠️ OpenRouter failed, trying fallback...');
+          // OpenRouter failed, try fallback chain
+          aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
+            primaryProvider: 'bailian',
+            timeout: 90000,
+            maxRetries: 2,
+            requireVision: !!imageBase64ForAI
           });
         }
       } else if (providerDetection.primary.provider === 'bailian') {
@@ -451,24 +472,26 @@ export async function POST(request: NextRequest) {
         aiResult = await executeWithBailian({
           prompt: prompt,
           image: imageBase64ForAI,
-          model: process.env.QWEN_MODEL || 'qwen3.5-plus'
+          model: process.env.QWEN_MODEL
         });
-        
+
         if (!aiResult.success) {
           console.log('⚠️ Bailian failed, trying fallback...');
           aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
             primaryProvider: 'openrouter',
             timeout: 90000,
-            maxRetries: 2
+            maxRetries: 2,
+            requireVision: !!imageBase64ForAI
           });
         }
       } else {
-        // FALLBACK 2: Use standard fallback chain
+        // FALLBACK 2: Use standard fallback chain (vision-aware)
         console.log(`🔄 Using fallback provider: ${providerDetection.primary.provider}`);
         aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
           primaryProvider: providerDetection.primary.provider as 'lm-studio' | 'openrouter' | 'bailian',
           timeout: 90000,
-          maxRetries: 2
+          maxRetries: 2,
+          requireVision: !!imageBase64ForAI
         });
       }
 
@@ -479,6 +502,8 @@ export async function POST(request: NextRequest) {
 
       console.log(`✅ Analysis completed successfully:`);
       console.log(`   Provider: ${aiResult.provider}`);
+      console.log(`   Model: ${aiResult.model || 'default'}`);
+      console.log(`   Vision Used: ${aiResult.visionUsed || false}`);
       console.log(`   Processing time: ${processingTime}ms`);
       console.log(`   Image analysis: ${!!imageBase64ForAI}`);
 

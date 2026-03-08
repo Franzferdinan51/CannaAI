@@ -16,6 +16,13 @@ import { ProviderDetectionResult } from './ai-provider-detection';
 const OPENCLAW_GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789';
 const OPENCLAW_MODEL = process.env.OPENCLAW_MODEL || 'qwen3.5-plus';
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'openclaw-local';
+const OPENCLAW_HEALTHCHECK_TIMEOUT_MS = parseInt(process.env.OPENCLAW_HEALTHCHECK_TIMEOUT_MS || '2000', 10);
+const OPENCLAW_REQUEST_TIMEOUT_MS = parseInt(process.env.OPENCLAW_TIMEOUT_MS || '24000', 10);
+
+type OpenClawEndpoint = 'direct' | 'openai';
+
+let preferredOpenClawEndpoint: OpenClawEndpoint =
+  process.env.OPENCLAW_PREFERRED_ENDPOINT === 'openai' ? 'openai' : 'direct';
 
 /**
  * Check if OpenClaw Gateway is available
@@ -25,7 +32,7 @@ export async function checkOpenClaw(): Promise<ProviderDetectionResult> {
     // Check gateway health
     const healthCheck = await fetch(`${OPENCLAW_GATEWAY_URL}/api/status`, {
       method: 'GET',
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(OPENCLAW_HEALTHCHECK_TIMEOUT_MS)
     });
 
     if (healthCheck.ok || healthCheck.status === 200) {
@@ -78,85 +85,127 @@ export async function executeWithOpenClaw(params: {
   image?: string;
   prompt: string;
   model?: string;
+  timeoutMs?: number;
+  maxTokens?: number;
+  temperature?: number;
 }): Promise<{
   success: boolean;
   result?: any;
   error?: string;
   provider: string;
+  model?: string;
+  endpoint?: string;
   usage?: any;
 }> {
   try {
-    const { image, prompt, model = OPENCLAW_MODEL } = params;
+    const {
+      image,
+      prompt,
+      model = OPENCLAW_MODEL,
+      timeoutMs = OPENCLAW_REQUEST_TIMEOUT_MS,
+      maxTokens = 1400,
+      temperature = 0.2
+    } = params;
 
-    // Try OpenAI-compatible endpoint first (if Gateway supports it)
-    try {
-      const messages: any[] = [{
-        role: 'user',
-        content: image 
-          ? [
-              { type: 'image_url', image_url: { url: image } },
-              { type: 'text', text: prompt }
-            ]
-          : prompt
-      }];
+    const deadline = Date.now() + timeoutMs;
+    const endpointOrder: OpenClawEndpoint[] = preferredOpenClawEndpoint === 'openai'
+      ? ['openai', 'direct']
+      : ['direct', 'openai'];
+    let lastError: Error | null = null;
 
-      const response = await fetch(`${OPENCLAW_GATEWAY_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENCLAW_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: messages,
-          max_tokens: 2048,
-          temperature: 0.7
-        }),
-        signal: AbortSignal.timeout(60000)
-      });
+    for (const endpoint of endpointOrder) {
+      const remainingMs = deadline - Date.now();
+      if (remainingMs <= 750) {
+        break;
+      }
 
-      if (response.ok) {
+      try {
+        if (endpoint === 'direct') {
+          const directResponse = await fetch(`${OPENCLAW_GATEWAY_URL}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENCLAW_API_KEY}`
+            },
+            body: JSON.stringify({
+              message: prompt,
+              model,
+              image,
+              stream: false,
+              max_tokens: maxTokens,
+              temperature
+            }),
+            signal: AbortSignal.timeout(remainingMs)
+          });
+
+          if (!directResponse.ok) {
+            throw new Error(`OpenClaw direct API error: ${directResponse.status} ${directResponse.statusText}`);
+          }
+
+          const result = await directResponse.json();
+          preferredOpenClawEndpoint = 'direct';
+
+          return {
+            success: true,
+            result: result.response || result.message || result.content,
+            provider: 'openclaw',
+            model,
+            endpoint: 'api/chat',
+            usage: result.usage
+          };
+        }
+
+        const messages: any[] = [{
+          role: 'user',
+          content: image
+            ? [
+                { type: 'image_url', image_url: { url: image } },
+                { type: 'text', text: prompt }
+              ]
+            : prompt
+        }];
+
+        const response = await fetch(`${OPENCLAW_GATEWAY_URL}/v1/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENCLAW_API_KEY}`
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            max_tokens: maxTokens,
+            temperature
+          }),
+          signal: AbortSignal.timeout(remainingMs)
+        });
+
+        if (!response.ok) {
+          throw new Error(`OpenClaw OpenAI API error: ${response.status} ${response.statusText}`);
+        }
+
         const result = await response.json();
+        preferredOpenClawEndpoint = 'openai';
+
         return {
           success: true,
-          result: result.choices[0].message.content,
+          result: result.choices?.[0]?.message?.content,
           provider: 'openclaw',
+          model,
+          endpoint: 'v1/chat/completions',
           usage: result.usage
         };
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        console.warn(`OpenClaw ${endpoint} endpoint failed: ${lastError.message}`);
       }
-    } catch (openaiError) {
-      // OpenAI endpoint not available, try direct API
-      console.log('OpenAI endpoint not available, trying direct API...');
     }
 
-    // Fallback: Direct OpenClaw API
-    const directResponse = await fetch(`${OPENCLAW_GATEWAY_URL}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENCLAW_API_KEY}`
-      },
-      body: JSON.stringify({
-        message: prompt,
-        model: model,
-        image: image,
-        stream: false
-      }),
-      signal: AbortSignal.timeout(60000)
-    });
-
-    if (!directResponse.ok) {
-      throw new Error(`OpenClaw API error: ${directResponse.status} ${directResponse.statusText}`);
+    if (lastError) {
+      throw lastError;
     }
 
-    const result = await directResponse.json();
-    
-    return {
-      success: true,
-      result: result.response || result.message || result.content,
-      provider: 'openclaw',
-      usage: result.usage
-    };
+    throw new Error('OpenClaw request timed out before any endpoint could be tried');
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

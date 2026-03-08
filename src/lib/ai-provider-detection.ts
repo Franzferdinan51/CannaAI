@@ -1,16 +1,17 @@
 /**
  * AI Provider Detection and Management for Serverless Environments
  * Handles detection of different AI providers - NO FALLBACK to rule-based analysis
- * 
- * Provider Priority:
+ *
+ * Provider Priority (Vision-aware):
  * 1. OpenClaw Gateway (PRIMARY - centralized model management)
- * 2. Alibaba Bailian (Qwen) - Singapore endpoint
- * 3. LM Studio - Local models
- * 4. OpenRouter - FREE cloud models
+ * 2. Alibaba Bailian (Qwen) - Singapore endpoint (VISION: qwen-vl-max-latest)
+ * 3. OpenRouter - FREE cloud models (VISION: qwen-vl-max)
+ * 4. LM Studio - Local models (limited vision support)
  */
 
-import { checkOpenClaw } from './ai-provider-openclaw';
-import { checkBailian } from './ai-provider-bailian';
+import { checkOpenClaw, executeWithOpenClaw } from './ai-provider-openclaw';
+import { checkBailian, executeWithBailian } from './ai-provider-bailian';
+import { checkOpenRouter } from './ai-provider-openrouter';
 
 // Environment detection
 export const isServerless = process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
@@ -45,11 +46,45 @@ export class AIProviderUnavailableError extends Error {
 // Provider detection results
 export interface ProviderDetectionResult {
   isAvailable: boolean;
-  provider: 'lm-studio' | 'openrouter' | 'fallback';
+  provider: 'lm-studio' | 'openrouter' | 'bailian' | 'openclaw' | 'fallback';
   reason: string;
   config: any;
   recommendations: string[];
 }
+
+type SupportedProvider = Exclude<ProviderDetectionResult['provider'], 'fallback'>;
+
+interface ProviderDetectionSummary {
+  primary: ProviderDetectionResult;
+  fallback: ProviderDetectionResult[];
+  recommendations: string[];
+}
+
+interface DetectProvidersOptions {
+  forceRefresh?: boolean;
+  maxAgeMs?: number;
+}
+
+const PROVIDER_PRIORITY: SupportedProvider[] = ['openclaw', 'bailian', 'openrouter', 'lm-studio'];
+const PROVIDER_DETECTION_CACHE_TTL_MS = parseInt(process.env.AI_PROVIDER_CACHE_TTL_MS || '15000', 10);
+const PROVIDER_SETTINGS_CACHE_TTL_MS = parseInt(process.env.AI_PROVIDER_SETTINGS_CACHE_TTL_MS || '30000', 10);
+const PROVIDER_SETTINGS_TIMEOUT_MS = parseInt(process.env.AI_PROVIDER_SETTINGS_TIMEOUT_MS || '750', 10);
+
+let providerDetectionCache:
+  | {
+      expiresAt: number;
+      value: ProviderDetectionSummary;
+      pending?: Promise<ProviderDetectionSummary>;
+    }
+  | undefined;
+
+let providerSettingsCache:
+  | {
+      expiresAt: number;
+      value: any;
+      pending?: Promise<any>;
+    }
+  | undefined;
 
 // LM Studio configuration
 interface LMStudioConfig {
@@ -63,6 +98,15 @@ interface LMStudioConfig {
 interface OpenRouterConfig {
   apiKey: string;
   model: string;
+  baseUrl: string;
+  timeout: number;
+}
+
+// Bailian configuration
+interface BailianConfig {
+  apiKey: string;
+  model: string;
+  visionModel: string;
   baseUrl: string;
   timeout: number;
 }
@@ -379,21 +423,24 @@ export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | '
 }
 
 /**
- * Execute AI call - NO FALLBACK to rule-based analysis
- * Requires actual AI provider to be available
+ * Execute AI call with vision-aware fallback chain
+ * When image is provided, prioritizes vision-capable models
  */
 export async function executeAIWithFallback(
   prompt: string,
   imageBase64?: string,
   options: {
-    primaryProvider?: 'lm-studio' | 'openrouter' | 'openclaw';
+    primaryProvider?: 'lm-studio' | 'openrouter' | 'openclaw' | 'bailian';
     maxRetries?: number;
     timeout?: number;
+    requireVision?: boolean;
   } = {}
 ): Promise<{
   result: any;
-  provider: 'lm-studio' | 'openrouter' | 'openclaw';
+  provider: 'lm-studio' | 'openrouter' | 'openclaw' | 'bailian';
   processingTime: number;
+  model?: string;
+  visionUsed?: boolean;
 }> {
   const startTime = Date.now();
   const { primaryProvider, maxRetries = 1, timeout = 30000 } = options;
@@ -422,21 +469,41 @@ export async function executeAIWithFallback(
     );
   }
 
-  // Determine provider order (NO fallback to rule-based)
-  const providerOrder: ('lm-studio' | 'openrouter' | 'openclaw')[] = [];
+  // Determine provider order (vision-aware when image provided)
+  const providerOrder: ('lm-studio' | 'openrouter' | 'openclaw' | 'bailian')[] = [];
+  const hasImage = !!imageBase64;
 
   if (primaryProvider && primary.provider === primaryProvider && primary.isAvailable && primary.provider !== 'fallback') {
     providerOrder.push(primaryProvider);
   } else if (primary.isAvailable && primary.provider !== 'fallback') {
-    providerOrder.push(primary.provider as 'lm-studio' | 'openrouter' | 'openclaw');
+    providerOrder.push(primary.provider as 'lm-studio' | 'openrouter' | 'openclaw' | 'bailian');
   }
 
-  // Add other available providers
+  // Add other available providers - prioritize vision-capable when image present
   fallbackProviders.forEach(p => {
     if (p.isAvailable && p.provider !== 'fallback' && !providerOrder.includes(p.provider as any)) {
       providerOrder.push(p.provider as any);
     }
   });
+
+  // Re-order for vision: prioritize providers with vision models when image provided
+  if (hasImage || options.requireVision) {
+    const visionCapableOrder: ('lm-studio' | 'openrouter' | 'openclaw' | 'bailian')[] = [];
+
+    // Priority: bailian (qwen-vl-max) > openrouter (qwen-vl-max) > openclaw > lm-studio
+    const visionPriority = ['bailian', 'openrouter', 'openclaw', 'lm-studio'];
+
+    for (const visionProvider of visionPriority) {
+      if (providerOrder.includes(visionProvider as any)) {
+        visionCapableOrder.push(visionProvider as any);
+      }
+    }
+
+    providerOrder.length = 0;
+    providerOrder.push(...visionCapableOrder);
+
+    console.log(`👁️ Vision-aware provider ordering (image: ${hasImage}): ${providerOrder.join(' > ')}`);
+  }
 
   let lastError: Error | null = null;
 
@@ -445,12 +512,18 @@ export async function executeAIWithFallback(
     try {
       const config = await getProviderConfig(provider);
 
-      // Try actual AI provider only
+      // Try actual AI provider
       const result = await callAIProvider(provider, prompt, imageBase64, config, timeout);
+      const visionUsed = !!imageBase64 && (provider === 'bailian' || provider === 'openrouter' || provider === 'openclaw');
+
+      console.log(`✅ AI analysis completed via ${provider}${visionUsed ? ' (VISION)' : ''}`);
+
       return {
         result,
         provider,
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
+        model: config.model,
+        visionUsed
       };
 
     } catch (error) {
@@ -480,10 +553,10 @@ export async function executeAIWithFallback(
 }
 
 /**
- * Call specific AI provider
+ * Call specific AI provider with vision support
  */
 async function callAIProvider(
-  provider: 'lm-studio' | 'openrouter' | 'openclaw',
+  provider: 'lm-studio' | 'openrouter' | 'openclaw' | 'bailian',
   prompt: string,
   imageBase64: string | undefined,
   config: any,
@@ -493,19 +566,43 @@ async function callAIProvider(
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
+    // Build messages with vision support
     const messages = [
       {
         role: 'system',
-        content: 'You are an expert cannabis cultivation specialist with deep knowledge of plant physiology, nutrient deficiencies, pests, diseases, and strain-specific characteristics. You provide detailed, accurate analysis with clear reasoning.'
-      },
-      {
-        role: 'user',
-        content: imageBase64 ? [
-          { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: imageBase64 } }
-        ] : prompt
+        content: 'You are an expert cannabis cultivation specialist with deep knowledge of plant physiology, nutrient deficiencies, pests, diseases, and strain-specific characteristics. You provide detailed, accurate analysis with clear reasoning and visual assessment when images are provided.'
       }
     ];
+
+    // Add user message with optional vision
+    if (imageBase64) {
+      // Vision-capable payload
+      if (provider === 'bailian') {
+        // Bailian uses different format for images
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'image', image_url: imageBase64 },
+            { type: 'text', text: prompt }
+          ]
+        });
+      } else {
+        // OpenAI-compatible format (OpenRouter, OpenClaw, LM Studio)
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: imageBase64 } },
+            { type: 'text', text: prompt }
+          ]
+        });
+      }
+    } else {
+      // Text-only
+      messages.push({
+        role: 'user',
+        content: prompt
+      });
+    }
 
     const requestBody = {
       model: config.model,
@@ -515,22 +612,42 @@ async function callAIProvider(
       stream: false
     };
 
-    const response = await fetch(
-      provider === 'lm-studio' ? `${config.url}/v1/chat/completions` : `${config.baseUrl}/chat/completions`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` }),
-          ...(provider === 'openrouter' && {
-            'HTTP-Referer': config.referer,
-            'X-Title': config.title
-          })
-        },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal
-      }
-    );
+    // Determine endpoint based on provider
+    let endpoint: string;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (config.apiKey) {
+      headers['Authorization'] = `Bearer ${config.apiKey}`;
+    }
+
+    switch (provider) {
+      case 'lm-studio':
+        endpoint = `${config.url}/v1/chat/completions`;
+        break;
+      case 'openrouter':
+        endpoint = `${config.baseUrl}/chat/completions`;
+        headers['HTTP-Referer'] = config.referer || 'http://localhost:3000';
+        headers['X-Title'] = config.title || 'CannaAI Pro';
+        break;
+      case 'bailian':
+        endpoint = `${config.baseUrl}/chat/completions`;
+        break;
+      case 'openclaw':
+        // Try OpenAI-compatible endpoint first
+        endpoint = `${config.baseUrl}/chat/completions`;
+        break;
+      default:
+        throw new Error(`Unknown provider: ${provider}`);
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
+    });
 
     clearTimeout(timeoutId);
 
@@ -541,31 +658,25 @@ async function callAIProvider(
     const data = await response.json();
     let content = data.choices?.[0]?.message?.content;
 
-    // Handle LM Studio models that put content in reasoning_content
-    if (!content && data.choices?.[0]?.message?.reasoning_content) {
-      content = data.choices[0].message.reasoning_content;
-    }
-
-    // Enhanced content parsing for different model formats
+    // Handle different response formats
     if (!content) {
       // Try alternative content locations
       content = data.choices?.[0]?.text ||
                  data.content ||
                  data.response ||
-                 data.output;
+                 data.output ||
+                 data.choices?.[0]?.message?.reasoning_content;
 
-      // Log the response structure for debugging
+      // Log for debugging
       console.warn(`🔍 Content parsing for ${provider}:`, {
         hasChoices: !!data.choices,
         choiceCount: data.choices?.length,
-        firstChoiceKeys: data.choices?.[0] ? Object.keys(data.choices[0]) : [],
-        dataKeys: Object.keys(data),
-        responseStructure: JSON.stringify(data).substring(0, 200) + '...'
+        dataKeys: Object.keys(data)
       });
     }
 
     if (!content) {
-      throw new Error(`No response content from ${provider}. Response structure: ${JSON.stringify(Object.keys(data))}`);
+      throw new Error(`No response content from ${provider}`);
     }
 
     console.log(`✅ ${provider} response received successfully`);

@@ -30,6 +30,7 @@
     "test": "jest",
     "test:unit": "jest --testPathPattern=tests/unit",
     "test:integration": "jest --testPathPattern=tests/integration",
+    "test:integration:analyze": "jest --runInBand --testPathPattern=tests/integration/analyze.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:chrome": "playwright test --project=chromium",
     "test:e2e:headed": "playwright test --headed",
