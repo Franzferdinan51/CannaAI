@@ -346,6 +346,16 @@ export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | '
         title: 'CannaAI Pro'
       };
 
+    case 'bailian':
+      return {
+        baseUrl: process.env.QWEN_BASE_URL || 'https://coding-intl.dashscope.aliyuncs.com/compatible-mode/v1',
+        model: process.env.QWEN_MODEL || 'qwen3.5-plus',
+        apiKey: process.env.ALIBABA_API_KEY || 'sk-sp-e1b3a679b93047978549f49bfcf73480',
+        timeout: parseInt(process.env.BAILIAN_TIMEOUT || '120000'),
+        maxTokens: parseInt(process.env.BAILIAN_MAX_TOKENS || '2048'),
+        temperature: parseFloat(process.env.BAILIAN_TEMPERATURE || '0.7')
+      };
+
     case 'openclaw':
       return {
         baseUrl: userSettings?.openclaw?.baseUrl || process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789/v1',

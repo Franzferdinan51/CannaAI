@@ -1124,6 +1124,7 @@ function normalizeUrgencyReasons(
     return directReasons;
   }
 
+  // Deduplicate and filter reasons
   const reasons = filterMeaningfulStrings(uniqStrings([
     ...detectedIssues.slice(0, 3).map(issue => {
       const evidence = issue.evidence[0];
@@ -1140,14 +1141,14 @@ function normalizeUrgencyReasons(
     return reasons;
   }
 
+  // DETERMINISTIC FALLBACK: Guaranteed non-empty urgency reasons
   if (normalizeUrgency(result.urgency, 'medium') === 'low') {
     return ['No acute drivers were identified in the returned analysis.'];
   }
 
-  return [
-    'Specific urgency drivers were not returned explicitly by the model.',
-    'The overall diagnosis still requires active monitoring.'
-  ];
+  // Always return at least one meaningful reason
+  const diagnosis = normalizeMeaningfulString(result.diagnosis, 'Plant condition');
+  return [`${diagnosis} requires active monitoring and follow-up assessment.`];
 }
 
 function normalizeHealthScoreBreakdown(
@@ -1877,6 +1878,19 @@ function deriveMeaningfulDiagnosis(
     return inputCause;
   }
 
+  // DETERMINISTIC FALLBACK: Use input context for specific diagnosis
+  const strain = normalizeMeaningfulString(inputParameters?.strain, '');
+  const stage = normalizeMeaningfulString(inputParameters?.growthStage, '');
+  const symptoms = normalizeMeaningfulString(inputParameters?.leafSymptoms, '');
+  
+  if (strain || stage || symptoms) {
+    const parts = [];
+    if (strain) parts.push(strain);
+    if (stage) parts.push(`${stage} stage`);
+    parts.push('requires assessment');
+    return parts.join(' ');
+  }
+  
   return 'Plant condition requires follow-up review';
 }
 

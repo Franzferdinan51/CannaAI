@@ -6,83 +6,51 @@
 
 import { ProviderDetectionResult } from './ai-provider-detection';
 
-const BAILIAN_BASE_URL = process.env.QWEN_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1';
-const BAILIAN_MODEL = process.env.QWEN_MODEL || 'qwen-vl-max-latest';
-const BAILIAN_API_KEY = process.env.ALIBABA_API_KEY || 'sk-0a5ffe492bfe4222b8964b685554aa00';
+const BAILIAN_BASE_URL = process.env.QWEN_BASE_URL || 'https://coding-intl.dashscope.aliyuncs.com/v1';
+const BAILIAN_MODEL = process.env.QWEN_MODEL || 'qwen3.5-plus';
+const BAILIAN_API_KEY = process.env.ALIBABA_API_KEY || 'sk-sp-e1b3a679b93047978549f49bfcf73480';
+const BAILIAN_TIMEOUT_MS = parseInt(process.env.BAILIAN_TIMEOUT_MS || '120000');
 
 /**
  * Check if Alibaba Bailian (Qwen) is available
  */
 export async function checkBailian(): Promise<ProviderDetectionResult> {
-  try {
-    // Test API key validity with a simple models request
-    const modelsCheck = await fetch(`${BAILIAN_BASE_URL.replace('/compatible-mode/v1', '')}/api/v1/models`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${BAILIAN_API_KEY}`
-      },
-      signal: AbortSignal.timeout(5000)
-    });
-
-    if (modelsCheck.ok) {
-      const models = await modelsCheck.json();
-      return {
-        isAvailable: true,
-        provider: 'bailian',
-        reason: 'Alibaba Qwen API responding (Singapore endpoint)',
-        config: {
-          type: 'bailian',
-          baseUrl: BAILIAN_BASE_URL,
-          model: BAILIAN_MODEL,
-          apiKey: BAILIAN_API_KEY,
-          models: models.data || [],
-          quota: {
-            monthly: '18K tokens',
-            weekly: '9K tokens',
-            hourly: '1.2K tokens/5hr'
-          }
-        },
-        recommendations: []
-      };
-    } else if (modelsCheck.status === 401 || modelsCheck.status === 403) {
-      return {
-        isAvailable: false,
-        provider: 'bailian',
-        reason: `API key invalid/expired (${modelsCheck.status})`,
-        config: { type: 'bailian', baseUrl: BAILIAN_BASE_URL },
-        recommendations: [
-          'Check API key in .env file',
-          'Verify key is for Singapore/International endpoint',
-          'Generate new key at: https://dashscope.console.aliyun.com/'
-        ]
-      };
-    } else {
-      return {
-        isAvailable: false,
-        provider: 'bailian',
-        reason: `API returned status ${modelsCheck.status}`,
-        config: { type: 'bailian', baseUrl: BAILIAN_BASE_URL },
-        recommendations: ['Check API endpoint and network connectivity']
-      };
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  // Simple availability check: API key present and non-empty
+  if (BAILIAN_API_KEY && BAILIAN_API_KEY.startsWith('sk-')) {
     return {
-      isAvailable: false,
+      isAvailable: true,
       provider: 'bailian',
-      reason: `Bailian API not reachable: ${errorMessage}`,
-      config: { type: 'bailian', baseUrl: BAILIAN_BASE_URL },
-      recommendations: [
-        'Check internet connection',
-        'Verify Singapore endpoint URL',
-        'Ensure API key is valid'
-      ]
+      reason: 'Alibaba Bailian API key configured',
+      config: {
+        type: 'bailian',
+        baseUrl: BAILIAN_BASE_URL,
+        model: BAILIAN_MODEL,
+        apiKey: BAILIAN_API_KEY,
+        quota: {
+          monthly: '18K tokens',
+          weekly: '9K tokens',
+          hourly: '1.2K tokens/5hr'
+        }
+      },
+      recommendations: []
     };
   }
+  
+  return {
+    isAvailable: false,
+    provider: 'bailian',
+    reason: 'API key not configured or invalid format',
+    config: { type: 'bailian', baseUrl: BAILIAN_BASE_URL },
+    recommendations: [
+      'Set ALIBABA_API_KEY in .env.local',
+      'Key should start with "sk-"'
+    ]
+  };
 }
 
 /**
  * Execute analysis using Alibaba Bailian (Qwen)
+ * Note: qwen3.5-plus is text-only. For vision, use OpenRouter or LM Studio.
  */
 export async function executeWithBailian(params: {
   image?: string;
@@ -98,15 +66,10 @@ export async function executeWithBailian(params: {
   try {
     const { image, prompt, model = BAILIAN_MODEL } = params;
 
-    // Build messages for OpenAI-compatible API
+    // qwen3.5-plus is text-only - ignore image if provided
     const messages: any[] = [{
       role: 'user',
-      content: image 
-        ? [
-            { type: 'image_url', image_url: { url: image } },
-            { type: 'text', text: prompt }
-          ]
-        : prompt
+      content: prompt
     }];
 
     const response = await fetch(`${BAILIAN_BASE_URL}/chat/completions`, {
@@ -121,7 +84,7 @@ export async function executeWithBailian(params: {
         max_tokens: 2048,
         temperature: 0.7
       }),
-      signal: AbortSignal.timeout(60000)
+      signal: AbortSignal.timeout(BAILIAN_TIMEOUT_MS)
     });
 
     if (!response.ok) {

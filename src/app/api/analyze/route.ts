@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+dotenv.config();
 import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
@@ -443,12 +446,12 @@ export async function POST(request: NextRequest) {
           });
         }
       } else if (providerDetection.primary.provider === 'bailian') {
-        // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint)
-        console.log('🔷 Using Alibaba Qwen (Singapore endpoint)...');
+        // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint) - TEXT ONLY
+        console.log('🔷 Using Alibaba Qwen (Singapore endpoint) - text analysis...');
         aiResult = await executeWithBailian({
           prompt: prompt,
-          image: imageBase64ForAI,
-          model: process.env.QWEN_MODEL || 'qwen-vl-max-latest'
+          image: undefined, // qwen3.5-plus is text-only
+          model: process.env.QWEN_MODEL || 'qwen3.5-plus'
         });
         
         if (!aiResult.success) {
