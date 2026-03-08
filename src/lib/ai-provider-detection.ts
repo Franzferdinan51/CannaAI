@@ -2,16 +2,16 @@
  * AI Provider Detection and Management for Serverless Environments
  * Handles detection of different AI providers - NO FALLBACK to rule-based analysis
  *
- * Provider Priority (Vision-aware):
+ * Provider Priority (Vision-aware) - FREE MODELS ONLY:
  * 1. OpenClaw Gateway (PRIMARY - centralized model management)
- * 2. Alibaba Bailian (Qwen) - Singapore endpoint (VISION: qwen-vl-max-latest)
- * 3. OpenRouter - FREE cloud models (VISION: qwen-vl-max)
- * 4. LM Studio - Local models (limited vision support)
+ * 2. Alibaba Bailian (Qwen) - Singapore endpoint (VISION: qwen3.5-plus - FREE)
+ * 3. LM Studio - Local models (FREE)
+ * 
+ * NO PAID PROVIDERS - Only free Bailian models
  */
 
 import { checkOpenClaw, executeWithOpenClaw } from './ai-provider-openclaw';
 import { checkBailian, executeWithBailian } from './ai-provider-bailian';
-import { checkOpenRouter } from './ai-provider-openrouter';
 
 // Environment detection
 export const isServerless = process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
@@ -134,20 +134,16 @@ export async function detectAvailableProviders(): Promise<{
   const lmStudioResult = await checkLMStudio();
   results.push(lmStudioResult);
 
-  // Check OpenRouter (works everywhere) - FALLBACK
-  const openRouterResult = await checkOpenRouter();
-  results.push(openRouterResult);
-
-  // Sort by availability and preference
+  // Sort by availability and preference (FREE MODELS ONLY)
   const availableProviders = results.filter(r => r.isAvailable);
   const unavailableProviders = results.filter(r => !r.isAvailable);
 
-  // Primary provider selection
+  // Primary provider selection - prefer Bailian (FREE)
   let primary: ProviderDetectionResult;
 
   if (availableProviders.length > 0) {
-    // Prefer OpenRouter for production reliability
-    primary = availableProviders.find(p => p.provider === 'openrouter') || availableProviders[0];
+    // Prefer Bailian for FREE quota
+    primary = availableProviders.find(p => p.provider === 'bailian') || availableProviders[0];
   } else {
     // No AI providers available - indicate setup required
     primary = {
@@ -156,20 +152,16 @@ export async function detectAvailableProviders(): Promise<{
       reason: 'No AI providers configured - setup required',
       config: { type: 'setup-required' },
       recommendations: [
-        'Configure OpenRouter API key for cloud-based AI analysis',
-        'Set up LM Studio for local development (non-serverless only)',
+        'Configure Alibaba Bailian API key (FREE quota: 18K/month)',
+        'Set up LM Studio for local development (FREE)',
         'Visit Settings to configure your AI provider'
       ]
     };
   }
 
-  // Generate recommendations
+  // Generate recommendations (FREE MODELS ONLY)
   if (isServerless && lmStudioResult.isAvailable) {
-    recommendations.push('LM Studio detected but will not work in serverless environments - configure OpenRouter for production');
-  }
-
-  if (!openRouterResult.isAvailable) {
-    recommendations.push('Configure OpenRouter API key for reliable AI analysis in production');
+    recommendations.push('LM Studio works locally but Bailian recommended for serverless (FREE quota)');
   }
 
   if (isDevelopment && !lmStudioResult.isAvailable) {
@@ -367,27 +359,6 @@ export async function getProviderConfig(provider: 'lm-studio' | 'openrouter' | '
         timeout: parseInt(userSettings?.lmStudio?.timeout || process.env.LM_STUDIO_TIMEOUT || '120000'), // 2 minutes
         maxTokens: parseInt(userSettings?.lmStudio?.maxTokens || process.env.LM_STUDIO_MAX_TOKENS || '2000'),
         temperature: parseFloat(userSettings?.lmStudio?.temperature || process.env.LM_STUDIO_TEMPERATURE || '0.3')
-      };
-
-    case 'openrouter':
-      // CRITICAL: Use user's manual model selection from settings
-      const userSelectedModel = userSettings?.openRouter?.model;
-      const fallbackModel = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free';
-
-      console.log(`🎯 OpenRouter Model Selection:`);
-      console.log(`   User Manual Model: ${userSelectedModel || 'Not set'}`);
-      console.log(`   Environment Fallback: ${fallbackModel}`);
-      console.log(`   Final Model: ${userSelectedModel || fallbackModel}`);
-
-      return {
-        apiKey: userSettings?.openRouter?.apiKey || process.env.OPENROUTER_API_KEY,
-        model: userSelectedModel || fallbackModel, // User's manual selection takes priority
-        baseUrl: 'https://openrouter.ai/api/v1',
-        timeout: parseInt(userSettings?.openRouter?.timeout || process.env.OPENROUTER_TIMEOUT || '30000'),
-        maxTokens: parseInt(userSettings?.openRouter?.maxTokens || process.env.OPENROUTER_MAX_TOKENS || '2000'),
-        temperature: parseFloat(userSettings?.openRouter?.temperature || process.env.OPENROUTER_TEMPERATURE || '0.3'),
-        referer: process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000',
-        title: 'CannaAI Pro'
       };
 
     case 'bailian':
@@ -625,11 +596,6 @@ async function callAIProvider(
     switch (provider) {
       case 'lm-studio':
         endpoint = `${config.url}/v1/chat/completions`;
-        break;
-      case 'openrouter':
-        endpoint = `${config.baseUrl}/chat/completions`;
-        headers['HTTP-Referer'] = config.referer || 'http://localhost:3000';
-        headers['X-Title'] = config.title || 'CannaAI Pro';
         break;
       case 'bailian':
         endpoint = `${config.baseUrl}/chat/completions`;

@@ -6,17 +6,17 @@ import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
-import { executeWithOpenRouter } from '@/lib/ai-provider-openrouter';
 import { normalizePlantAnalysisResult } from '@/lib/plant-analysis-report-v2';
 import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
 import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
 
 /**
- * Provider Priority Chain (Vision-aware):
+ * Provider Priority Chain (FREE MODELS ONLY):
  * 1. OpenClaw Gateway (PRIMARY) - Centralized model management
- * 2. Alibaba Bailian (Qwen) - VISION: qwen-vl-max-latest
- * 3. OpenRouter - VISION: qwen-vl-max (FREE tier)
- * 4. LM Studio - Local models (limited vision)
+ * 2. Alibaba Bailian (Qwen) - VISION: qwen3.5-plus (FREE: 18K/month)
+ * 3. LM Studio - Local models (FREE)
+ * 
+ * NO PAID PROVIDERS
  */
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -415,7 +415,7 @@ export async function POST(request: NextRequest) {
           'No AI providers are configured. Please connect an AI provider to use plant analysis.',
           {
             recommendations: [
-              'Configure OpenRouter API key for cloud-based AI analysis',
+              'Configure Alibaba Bailian API key (FREE: 18K tokens/month)',
               'Set up LM Studio for local development (non-serverless only)',
               'Visit Settings to configure your AI provider'
             ],
@@ -447,25 +447,6 @@ export async function POST(request: NextRequest) {
             requireVision: !!imageBase64ForAI
           });
         }
-      } else if (providerDetection.primary.provider === 'openrouter') {
-        // PRIMARY: Use OpenRouter with vision-capable models
-        console.log('🌐 Using OpenRouter as primary provider...');
-        aiResult = await executeWithOpenRouter({
-          prompt: prompt,
-          image: imageBase64ForAI,
-          requireVision: !!imageBase64ForAI
-        });
-
-        if (!aiResult.success) {
-          console.log('⚠️ OpenRouter failed, trying fallback...');
-          // OpenRouter failed, try fallback chain
-          aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-            primaryProvider: 'bailian',
-            timeout: 90000,
-            maxRetries: 2,
-            requireVision: !!imageBase64ForAI
-          });
-        }
       } else if (providerDetection.primary.provider === 'bailian') {
         // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint) - VISION CAPABLE
         console.log('🔷 Using Alibaba Qwen (Singapore endpoint) - vision analysis...');
@@ -476,9 +457,9 @@ export async function POST(request: NextRequest) {
         });
 
         if (!aiResult.success) {
-          console.log('⚠️ Bailian failed, trying fallback...');
+          console.log('⚠️ Bailian failed, trying LM Studio fallback...');
           aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-            primaryProvider: 'openrouter',
+            primaryProvider: 'lm-studio',
             timeout: 90000,
             maxRetries: 2,
             requireVision: !!imageBase64ForAI
