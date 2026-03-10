@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { startOfDay, subDays } from 'date-fns';
 
 export async function GET(request: Request) {
@@ -93,7 +94,7 @@ export async function GET(request: Request) {
         COUNT(*) as count
       FROM SensorAnalytics
       WHERE timestamp >= ${startDate.toISOString()} AND timestamp <= ${endDate.toISOString()}
-      ${sensorId ? prisma.$unsafe(`AND sensorId = '${sensorId}'`) : ''}
+      ${sensorId ? Prisma.sql`AND sensorId = ${sensorId}` : Prisma.empty}
       GROUP BY hour, sensorId
       ORDER BY hour ASC
     ` as any[];
