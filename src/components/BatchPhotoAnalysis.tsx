@@ -12,8 +12,14 @@ import {
   CheckCircle2,
   AlertTriangle,
   Layers,
-  Zap
+  Zap,
+  Plus
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 type BatchImage = {
@@ -214,7 +220,7 @@ export function BatchPhotoAnalysis({ onAnalysisComplete }: BatchPhotoAnalysisPro
                   <div className="aspect-square relative">
                     <img
                       src={image.preview}
-                      alt="Preview"
+                      alt={`Preview of ${image.file.name}`}
                       className="w-full h-full object-cover"
                     />
 
@@ -236,14 +242,22 @@ export function BatchPhotoAnalysis({ onAnalysisComplete }: BatchPhotoAnalysisPro
 
                     {/* Remove Button */}
                     {!isAnalyzing && (
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(image.id)}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 w-6 h-6 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                            onClick={() => removeImage(image.id)}
+                            aria-label={`Remove ${image.file.name}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Remove image</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
 
                     {/* Health Score Badge */}
