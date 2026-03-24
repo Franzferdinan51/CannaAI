@@ -99,8 +99,25 @@ export async function POST(request: NextRequest) {
       if (tool) {
         result = await callCannaAI(tool.endpoint, tool.method ? { method: tool.method, body: JSON.stringify(args) } : {});
       } else if (name === 'analyze_plant') {
-        // AI analysis - use council endpoint
-        result = { analysis: 'Use /api/council endpoint for AI analysis' };
+        // AI plant analysis using simple endpoint
+        try {
+          const analysis = await callCannaAI('/api/analyze-simple', {
+            method: 'POST',
+            body: JSON.stringify({
+              strain: args.strain || 'Unknown',
+              leafSymptoms: args.leafSymptoms || args.symptoms || 'No symptoms described',
+              phLevel: args.phLevel,
+              temperature: args.temperature,
+              humidity: args.humidity,
+              medium: args.medium,
+              growthStage: args.growthStage,
+              urgency: args.urgency || 'medium'
+            })
+          });
+          result = analysis;
+        } catch (error) {
+          result = { success: false, error: error instanceof Error ? error.message : 'Analysis failed' };
+        }
       } else if (name === 'get_grow_recommendations') {
         result = { recommendations: 'Use /api/council endpoint for AI recommendations' };
       } else if (name === 'analyze_environment') {

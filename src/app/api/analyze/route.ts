@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
   try {
     // Enhanced validation with comprehensive schema
     let body;
-    let rawBody: any;
+    let rawBody: any = {};
     try {
       rawBody = await request.json();
 
@@ -742,7 +742,7 @@ export async function POST(request: NextRequest) {
         requestId: crypto.randomUUID().substring(0, 8)
       },
       alternatives: {
-        textOnlyAnalysis: !!(rawBody?.leafSymptoms && rawBody?.strain),
+        textOnlyAnalysis: false,
         retryRecommendations: [
           'Check your internet connection',
           'Verify AI provider is configured in Settings',
