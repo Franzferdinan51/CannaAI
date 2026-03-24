@@ -34,6 +34,8 @@ const tools = [
   { name: 'analyze_environment', description: 'AI environment analysis' },
   { name: 'get_status', description: 'Get status' },
   { name: 'get_providers', description: 'Get AI providers' },
+  { name: 'get_lmstudio_models', description: 'List available LM Studio models' },
+  { name: 'set_lmstudio_model', description: 'Set LM Studio model: {type, model}' },
 ];
 
 async function callCannaAI(endpoint: string, options: RequestInit = {}) {
@@ -108,6 +110,29 @@ export async function POST(request: NextRequest) {
           minimax: { url: 'https://api.minimax.io', configured: true },
           lmstudio: { url: 'http://100.116.54.125:1234', configured: true }
         };
+      } else if (name === 'get_lmstudio_models') {
+        try {
+          const { getAvailableModels, getVisionModels, getTextModels, getConfiguredModels } = await import('@/lib/ai-provider-lmstudio');
+          const [all, vision, text, current] = await Promise.all([
+            getAvailableModels(),
+            getVisionModels(),
+            getTextModels(),
+            Promise.resolve(getConfiguredModels()),
+          ]);
+          result = { all_models: all, vision_models: vision, text_models: text, current };
+        } catch (error) {
+          result = { success: false, error: error instanceof Error ? error.message : 'Failed' };
+        }
+      } else if (name === 'set_lmstudio_model') {
+        try {
+          const { setModel } = await import('@/lib/ai-provider-lmstudio');
+          const { type, model } = args;
+          if (!type || !model) throw new Error('Use: {type, model}');
+          setModel(type, model);
+          result = { success: true, message: `Set ${type} to ${model}` };
+        } catch (error) {
+          result = { success: false, error: error instanceof Error ? error.message : 'Failed' };
+        }
       } else {
         throw new Error(`Unknown tool: ${name}`);
       }

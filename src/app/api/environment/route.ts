@@ -5,14 +5,19 @@ import { ensureSeedData } from '@/lib/seed-data';
 export async function GET() {
   await ensureSeedData();
   
-  const alerts = await prisma.alert.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 20,
+  const readings = await prisma.sensorReading.findMany({
+    orderBy: { timestamp: 'desc' },
+    take: 10,
   });
 
   return NextResponse.json({
     success: true,
-    data: alerts,
-    count: alerts.length,
+    data: {
+      readings,
+      environment: {
+        location: 'grow-tent',
+        timestamp: new Date().toISOString(),
+      }
+    }
   });
 }

@@ -1,4 +1,6 @@
 
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, Send, Cpu, Activity, ArrowRight, Eye, ThumbsUp, ThumbsDown, X, WifiOff, Maximize2, Minimize2, Settings, Save, Server, Key, BrainCircuit, Play, Square, FileText, Info } from 'lucide-react';
 import { View, TrainingConfig, SystemStatus, AgentResponse, ContextSnapshot, AgentAction, AgentSettings, AgentToolType } from '../types';

@@ -4,61 +4,53 @@ import { PlantImage, AnalysisResult } from './types';
 import { analyzePlantImage } from './services/geminiService';
 
 // --- MOCK DATA INITIALIZATION ---
-const MOCK_IMAGES: PlantImage[] = [
-  {
-    id: '1',
-    url: 'https://images.unsplash.com/photo-1566314737454-47f2f36e42d0?q=80&w=600&auto=format&fit=crop',
-    timestamp: '12:35 AM',
-    status: 'Healthy',
-    batchId: '#452',
-    strain: 'Gorilla Glue #4',
-    analysis: {
-      overallHealth: 'Healthy',
-      issues: [],
-      recommendations: 'Plant is thriving. Maintain current light cycles and nutrient feed.',
-    }
-  },
-  {
-    id: '2',
-    url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?q=80&w=600&auto=format&fit=crop', // Generic leaf for processing
-    timestamp: '12:37 AM',
-    status: 'Processing',
-    batchId: '#452',
-    strain: 'Gorilla Glue #4',
-  },
-  {
-    id: '3',
-    url: 'https://images.unsplash.com/photo-1587924308406-061f366c8a23?q=80&w=600&auto=format&fit=crop',
-    timestamp: '12:33 AM',
-    status: 'Warning',
-    batchId: '#452',
-    strain: 'Gorilla Glue #4',
-    analysis: {
-      overallHealth: 'Issues Detected',
-      issues: [{ name: 'Nutrient Deficiency', confidence: 82 }],
-      recommendations: 'Signs of Nitrogen deficiency detected. Increase nitrogen content in the next feeding cycle.',
-    }
-  },
-  {
-    id: '4',
-    url: 'https://images.unsplash.com/photo-1536652137234-b56d066dfa09?q=80&w=600&auto=format&fit=crop',
-    timestamp: '12:32 AM',
-    status: 'Critical',
-    batchId: '#452',
-    strain: 'Gorilla Glue #4',
-    analysis: {
-      overallHealth: 'Critical',
-      issues: [{ name: 'Spider Mites', confidence: 88 }, { name: 'Leaf Septoria', confidence: 65 }],
-      recommendations: 'Increase airflow immediately. Apply neem oil spray during dark cycle. Monitor humidity levels closely.',
-    }
-  },
-];
+// Removed hardcoded Unsplash images - now fetching real plant data from API
 
 export default function App() {
-  const [images, setImages] = useState<PlantImage[]>(MOCK_IMAGES);
-  const [selectedId, setSelectedId] = useState<string>('4');
+  const [images, setImages] = useState<PlantImage[]>([]);
+  const [selectedId, setSelectedId] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [plants, setPlants] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch real plant data from CannaAI API
+  useEffect(() => {
+    const fetchPlants = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/plants');
+        const data = await response.json();
+        
+        if (data.success && data.data.plants.length > 0) {
+          setPlants(data.data.plants);
+          
+          // Transform API plant data to PlantImage format
+          const plantImages: PlantImage[] = data.data.plants.map((plant: any) => ({
+            id: plant.id,
+            url: plant.images?.[0] || '', // Use first image or empty
+            timestamp: new Date(plant.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: plant.health?.status === 'healthy' ? 'Healthy' : 
+                    plant.health?.status === 'critical' ? 'Critical' : 'Warning',
+            batchId: plant.locationId || '#001',
+            strain: plant.name || plant.strainId,
+            analysis: plant.health ? {
+              overallHealth: plant.health.status === 'healthy' ? 'Healthy' : 'Issues Detected',
+              issues: plant.health.issues || [],
+              recommendations: plant.health.recommendations?.join(' ') || '',
+            } : undefined,
+          }));
+          
+          setImages(plantImages);
+          if (plantImages.length > 0) {
+            setSelectedId(plantImages[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch plants:', error);
+      }
+    };
+    
+    fetchPlants();
+  }, []);
 
   const selectedImage = images.find(img => img.id === selectedId) || images[0];
 

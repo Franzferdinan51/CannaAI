@@ -1,3 +1,24 @@
+'use client'
+
+// Guard against SSR
+if (typeof window === 'undefined') {
+  // @ts-ignore
+  globalThis.localStorage = {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+  };
+}
+
+
+// Safe localStorage wrapper for SSR compatibility
+const safeLocalStorage = {
+  getItem: (key: string) => { try { return safeLocalStorage.getItem(key); } catch { return null; } },
+  setItem: (key: string, value: string) => { try { safeLocalStorage.setItem(key, value); } catch {} },
+  removeItem: (key: string) => { try { safeLocalStorage.removeItem(key); } catch {} },
+};
+
+
 // Client-side AI service for static hosting compatibility
 interface AIConfig {
   provider: 'lm-studio' | 'openrouter' | 'fallback';
@@ -54,7 +75,7 @@ class ClientAIService {
     }
 
     try {
-      const saved = localStorage.getItem('ai-config');
+      let saved = null; try { saved = safeLocalStorage.getItem('ai-config'); } catch (e) {}
       if (saved) {
         return JSON.parse(saved);
       }
@@ -68,7 +89,7 @@ class ClientAIService {
   updateConfig(config: AIConfig) {
     this.config = config;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('ai-config', JSON.stringify(config));
+      try { safeLocalStorage.setItem('ai-config', JSON.stringify(config)); } catch (e) {}
     }
   }
 

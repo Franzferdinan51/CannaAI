@@ -188,7 +188,7 @@ export default function NutrientCalculatorPage() {
 
   // Load saved recipes from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('nutrientRecipes');
+    const stored = safeLocalStorage.getItem('nutrientRecipes');
     if (stored) {
       try {
         const recipes = JSON.parse(stored);
@@ -300,7 +300,7 @@ export default function NutrientCalculatorPage() {
     setSavedRecipes([...PRESET_RECIPES, ...updatedRecipes]);
 
     // Save to localStorage
-    localStorage.setItem('nutrientRecipes', JSON.stringify(updatedRecipes));
+    safeLocalStorage.setItem('nutrientRecipes', JSON.stringify(updatedRecipes));
 
     setShowSaveDialog(false);
     setCurrentRecipe(prev => ({ ...prev, name: '' }));
@@ -314,7 +314,7 @@ export default function NutrientCalculatorPage() {
 
       // Update localStorage
       const userRecipes = updatedRecipes.filter(r => !r.isPreset);
-      localStorage.setItem('nutrientRecipes', JSON.stringify(userRecipes));
+      safeLocalStorage.setItem('nutrientRecipes', JSON.stringify(userRecipes));
     }
   };
 

@@ -71,7 +71,7 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
 
   // Load config from localStorage
   useEffect(() => {
-    const savedConfig = localStorage.getItem('ai-config');
+    const savedConfig = safeLocalStorage.getItem('ai-config');
     if (savedConfig) {
       try {
         const parsed = JSON.parse(savedConfig);
@@ -86,7 +86,7 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
   // Save config to localStorage
   const saveConfig = (newConfig: AIConfig) => {
     setConfig(newConfig);
-    localStorage.setItem('ai-config', JSON.stringify(newConfig));
+    safeLocalStorage.setItem('ai-config', JSON.stringify(newConfig));
     onConfigChange(newConfig);
   };
 

@@ -110,7 +110,7 @@ export function CannaAIAssistantSidebar({
   // Load chat history from localStorage
   useEffect(() => {
     try {
-      const savedHistory = localStorage.getItem('cannai-chat-history');
+      const savedHistory = safeLocalStorage.getItem('cannai-chat-history');
       if (savedHistory) {
         const parsedHistory = JSON.parse(savedHistory);
         setMessages(parsedHistory.map((msg: any) => ({
@@ -127,7 +127,7 @@ export function CannaAIAssistantSidebar({
   useEffect(() => {
     try {
       if (messages.length > 0) {
-        localStorage.setItem('cannai-chat-history', JSON.stringify(messages));
+        safeLocalStorage.setItem('cannai-chat-history', JSON.stringify(messages));
       }
     } catch (error) {
       console.warn('Failed to save chat history:', error);
@@ -292,7 +292,7 @@ export function CannaAIAssistantSidebar({
   // Clear chat history
   const clearChat = () => {
     setMessages([]);
-    localStorage.removeItem('cannai-chat-history');
+    safeLocalStorage.removeItem('cannai-chat-history');
   };
 
   // Export chat history
