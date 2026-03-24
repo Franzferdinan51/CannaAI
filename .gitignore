@@ -51,4 +51,5 @@ server.log
 # backup files
 *.zip
 *.tar.gz
-*.7z
+*.7zsrc/mcp-server/node_modules/
+src/mcp-server/dist/

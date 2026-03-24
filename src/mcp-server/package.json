@@ -1,0 +1,16 @@
+{
+  "name": "@cannaai/mcp-server",
+  "version": "2.0.0",
+  "description": "CannaAI MCP Server with AI integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.1",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  }
+}
