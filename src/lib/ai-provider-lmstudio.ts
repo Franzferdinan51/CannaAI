@@ -7,13 +7,23 @@ const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_BASE_URL || 'http://100.116.54.
 const LM_STUDIO_API_KEY = process.env.LM_STUDIO_API_KEY || 'sk-lm-zO7bswIc:WkHEMTUfVNkq5WYNyFOW';
 
 // Default models (can be overridden)
-const LM_STUDIO_VISION_MODEL = process.env.LM_STUDIO_VISION_MODEL || 'jan-v2-vl-high';
+const LM_STUDIO_VISION_MODEL = process.env.LM_STUDIO_VISION_MODEL || 'qwen/qwen3.5-9b';
 const LM_STUDIO_TEXT_MODEL = process.env.LM_STUDIO_TEXT_MODEL || 'qwen/qwen3.5-27b';
 
 // Cache available models
 let availableModelsCache: string[] | null = null;
 let cacheTime = 0;
 const CACHE_TTL = 60000; // 1 minute
+
+function normalizeImageUrl(image?: string): string | undefined {
+  if (!image) return undefined;
+  const value = String(image).trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:image/')) return value;
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  // Treat raw base64 from the CannaAI pipeline as PNG unless already wrapped.
+  return `data:image/png;base64,${value}`;
+}
 
 export async function checkLMStudio(): Promise<boolean> {
   try {
@@ -90,14 +100,16 @@ export async function executeWithLMStudio(
   let formattedMessages = messages;
   
   // Add image to message if using vision model
-  if (options.image && options.useVision !== false) {
+  const normalizedImage = normalizeImageUrl(options.image);
+
+  if (normalizedImage && options.useVision !== false) {
     formattedMessages = messages.map((msg: any) => {
       if (msg.role === 'user') {
         return {
           role: 'user',
           content: [
             { type: 'text', text: msg.content },
-            { type: 'image_url', image_url: { url: options.image } },
+            { type: 'image_url', image_url: { url: normalizedImage } },
           ],
         };
       }

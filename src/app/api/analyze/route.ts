@@ -4,6 +4,7 @@ dotenv.config({ path: '.env.local' });
 dotenv.config();
 import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
+import { executeWithLMStudio } from '@/lib/ai-provider-lmstudio';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
 import { executeWithOpenRouter } from '@/lib/ai-provider-openrouter';
@@ -13,10 +14,10 @@ import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } fro
 
 /**
  * Provider Priority Chain:
- * 1. OpenClaw Gateway (PRIMARY) - Centralized model management
- * 2. Alibaba Bailian (Qwen) - PRIMARY: qwen3.5-plus (use quota)
- * 3. OpenRouter - FALLBACK: FREE tier only (qwen-vl-max, etc.)
- * 4. LM Studio - Local models (FREE)
+ * 1. LM Studio - Local models (PRIMARY for vision)
+ * 2. OpenClaw Gateway - Local model management fallback
+ * 3. Alibaba Bailian - Cloud fallback
+ * 4. OpenRouter - Emergency fallback
  */
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -394,10 +395,22 @@ export async function POST(request: NextRequest) {
 
     // Enhanced AI provider detection with detailed logging
     const providerDetection = await detectAvailableProviders();
-    console.log(`📡 AI provider detected: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
+    const primaryProvider = providerDetection.lmstudio
+      ? { isAvailable: true, provider: 'lmstudio', reason: 'LM Studio is available' }
+      : providerDetection.openclaw
+        ? { isAvailable: true, provider: 'openclaw', reason: 'OpenClaw Gateway is running' }
+        : providerDetection.bailian
+          ? { isAvailable: true, provider: 'bailian', reason: 'Alibaba Bailian is available' }
+          : providerDetection.openrouter
+            ? { isAvailable: true, provider: 'openrouter', reason: 'OpenRouter is available' }
+            : { isAvailable: false, provider: 'fallback', reason: 'No AI providers detected' };
 
-    if (providerDetection.fallback.length > 0) {
-      console.log(`🔄 Available fallback providers: ${providerDetection.fallback.map(f => f.provider).join(', ')}`);
+    console.log(`📡 AI provider detected: ${primaryProvider.provider} (${primaryProvider.reason})`);
+
+    const fallbackProviders = ['lmstudio', 'openclaw', 'bailian', 'openrouter']
+      .filter((name) => name !== primaryProvider.provider && Boolean((providerDetection as any)[name]));
+    if (fallbackProviders.length > 0) {
+      console.log(`🔄 Available fallback providers: ${fallbackProviders.join(', ')}`);
     }
 
     let analysisResult;
@@ -410,7 +423,7 @@ export async function POST(request: NextRequest) {
       const analysisStartTime = Date.now();
 
       // Check if AI providers are available before processing
-      if (!providerDetection.primary.isAvailable || providerDetection.primary.provider === 'fallback') {
+      if (!primaryProvider.isAvailable || primaryProvider.provider === 'fallback') {
         throw new AIProviderUnavailableError(
           'No AI providers are configured. Please connect an AI provider to use plant analysis.',
           {
@@ -428,9 +441,30 @@ export async function POST(request: NextRequest) {
       // Execute AI analysis with vision-aware fallback
       let aiResult;
 
-      if (providerDetection.primary.provider === 'openclaw') {
-        // PRIMARY: Use OpenClaw Gateway (routes to best available model)
-        console.log('🚀 Using OpenClaw Gateway as primary provider...');
+      if (primaryProvider.provider === 'lmstudio') {
+        // PRIMARY: Use LM Studio locally for vision and text
+        console.log('🟣 Using LM Studio as primary provider...');
+        const lmStudioModel = imageBase64ForAI
+          ? process.env.LM_STUDIO_VISION_MODEL || 'qwen/qwen3.5-9b'
+          : process.env.LM_STUDIO_TEXT_MODEL || 'qwen/qwen3.5-27b';
+        const lmStudioRaw = await executeWithLMStudio(
+          [{ role: 'user', content: prompt }],
+          {
+            image: imageBase64ForAI,
+            model: lmStudioModel,
+            temperature: 0.15,
+            useVision: !!imageBase64ForAI,
+          }
+        );
+        aiResult = {
+          success: true,
+          provider: 'lmstudio',
+          model: lmStudioModel,
+          visionUsed: !!imageBase64ForAI,
+          result: lmStudioRaw,
+        };
+      } else if (primaryProvider.provider === 'openclaw') {
+        console.log('🚀 Using OpenClaw Gateway as fallback provider...');
         aiResult = await executeWithOpenClaw({
           prompt: prompt,
           image: imageBase64ForAI,
@@ -439,7 +473,6 @@ export async function POST(request: NextRequest) {
 
         if (!aiResult.success) {
           console.log('⚠️ OpenClaw failed, trying fallback...');
-          // OpenClaw failed, try fallback chain (vision-aware)
           aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
             primaryProvider: 'bailian',
             timeout: 90000,
@@ -447,7 +480,7 @@ export async function POST(request: NextRequest) {
             requireVision: !!imageBase64ForAI
           });
         }
-      } else if (providerDetection.primary.provider === 'bailian') {
+      } else if (primaryProvider.provider === 'bailian') {
         // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint) - VISION CAPABLE
         console.log('🔷 Using Alibaba Qwen (Singapore endpoint) - vision analysis...');
         aiResult = await executeWithBailian({
@@ -476,9 +509,9 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // FALLBACK 2: Use standard fallback chain (vision-aware)
-        console.log(`🔄 Using fallback provider: ${providerDetection.primary.provider}`);
+        console.log(`🔄 Using fallback provider: ${primaryProvider.provider}`);
         aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-          primaryProvider: providerDetection.primary.provider as 'lm-studio' | 'openrouter' | 'bailian',
+          primaryProvider: primaryProvider.provider as 'lm-studio' | 'openrouter' | 'bailian',
           timeout: 90000,
           maxRetries: 2,
           requireVision: !!imageBase64ForAI
@@ -625,12 +658,14 @@ export async function POST(request: NextRequest) {
       },
       provider: {
         used: usedProvider,
-        primary: providerDetection?.primary?.provider || 'unknown',
+        primary: primaryProvider.provider,
         available: providerDetection ? [
-          providerDetection.primary.isAvailable && providerDetection.primary.provider !== 'fallback' ? providerDetection.primary.provider : null,
-          ...providerDetection.fallback.filter(f => f.isAvailable && f.provider !== 'fallback').map(f => f.provider)
+          providerDetection.lmstudio ? 'lmstudio' : null,
+          providerDetection.openclaw ? 'openclaw' : null,
+          providerDetection.bailian ? 'bailian' : null,
+          providerDetection.openrouter ? 'openrouter' : null
         ].filter(Boolean) : [],
-        recommendations: providerDetection?.recommendations || [],
+        recommendations: primaryProvider.isAvailable ? [] : ['Check LM Studio is running locally', 'Verify OpenClaw Gateway is online'],
         status: 'ai_analysis'
       },
       rateLimit: {

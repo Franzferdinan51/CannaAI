@@ -63,6 +63,15 @@ ${hasImage ? '📸 IMAGE ANALYSIS: High-resolution visual examination of plant p
 
 **YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT.**
 
+## SPECIFICITY CONTRACT
+- Do NOT answer with generic phrases like 'general stress', 'environmental stress', 'monitor closely', or 'needs closer look' unless you also name the exact visible symptoms that led you there.
+- If the image is clear enough, name ONE primary diagnosis and ONE backup diagnosis.
+- Every diagnosis must cite visible evidence from the image, not just the provided text fields.
+- If uncertain, say exactly which visual cues are unclear and what additional image or data would resolve it.
+- Prefer concrete plant-physiology language over vague wording.
+- Do not hedge away from a best guess; make a specific call with confidence.
+
+
 ### ABSOLUTE RULES:
 1. ✅ START your response with { (opening curly brace)
 2. ✅ END your response with } (closing curly brace)
@@ -406,6 +415,10 @@ Every response MUST include these TOP-LEVEL KEYS (all required, never omit):
 ## 🧠 ANALYSIS METHODOLOGY - THINK BEFORE OUTPUTTING JSON
 
 **INTERNAL REASONING PROCESS** (do this in your "mind" before generating JSON):
+
+### Visual Evidence Requirement
+- If hasImage is true, the diagnosis must mention at least 3 visible cues from the photo (color, posture, tissue pattern, damage location, or pest/disease signs).
+- If the response does not reference visible cues, treat it as invalid and regenerate.
 
 ### Step 1: Symptom Pattern Recognition
 - Is chlorosis interveinal or uniform?
