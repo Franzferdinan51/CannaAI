@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, Image, SendHorizontal } from 'lucide-react';
+import { Camera, Image as ImageIcon, SendHorizontal } from 'lucide-react';
 import { useState } from 'react';
 
 interface ChatInputProps {
@@ -61,6 +61,7 @@ export const ChatInput = ({
             variant="outline"
             className={`bg-slate-700 text-slate-200 hover:bg-slate-600 ${cameraActive ? 'bg-red-600' : ''}`}
             onClick={() => setCameraActive(!cameraActive)}
+            aria-label={cameraActive ? "Close camera preview" : "Open camera preview"}
           >
             {cameraActive ? <Camera className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
           </Button>
@@ -70,8 +71,9 @@ export const ChatInput = ({
             className="bg-slate-700 text-slate-200 hover:bg-slate-600"
             onClick={() => fileInputRef.current?.click()}
             title="Upload plant photo"
+            aria-label="Upload plant photo"
           >
-            <Image className="h-4 w-4" />
+            <ImageIcon className="h-4 w-4" />
           </Button>
           <input
             type="file"
@@ -85,12 +87,14 @@ export const ChatInput = ({
             placeholder={`Ask about cultivation (${modeInfo.name} mode)...`}
             className="flex-1 bg-slate-700 border-slate-600 text-white placeholder-slate-400"
             disabled={disabled}
+            aria-label="Chat message input"
           />
           <Button
             onClick={onSendMessage}
             disabled={disabled}
             size="sm"
             className="bg-blue-600 hover:bg-blue-500 text-white"
+            aria-label="Send message"
           >
             <SendHorizontal className="h-4 w-4" />
           </Button>
