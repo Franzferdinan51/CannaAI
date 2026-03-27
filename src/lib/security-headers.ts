@@ -137,16 +137,6 @@ export function applySecurityHeaders(
   return response;
 }
 
-// Middleware function for Next.js
-export function securityHeadersMiddleware(
-  request: NextRequest,
-  customHeaders?: Partial<SecurityHeadersConfig>
-) {
-  const response = NextResponse.next();
-
-  return applySecurityHeaders(request, response, customHeaders);
-}
-
 // Export configuration
 export const securityHeadersConfig = {
   production: {
