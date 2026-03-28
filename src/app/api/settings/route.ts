@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { maskSettings } from '@/lib/settings-security';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -130,7 +131,7 @@ export async function GET() {
   try {
     return NextResponse.json({
       success: true,
-      settings
+      settings: maskSettings(settings)
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -166,6 +167,11 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // Prevent overwriting API keys with masked values
+        if (config.apiKey && config.apiKey.includes('***')) {
+          delete config.apiKey;
+        }
+
         if (provider === 'lm-studio') {
           settings.lmStudio = { ...settings.lmStudio, ...config };
         } else if (provider === 'openrouter') {
@@ -188,7 +194,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           message: `${provider} settings updated successfully`,
-          settings: settings[provider]
+          settings: maskSettings(settings)[provider]
         });
 
       case 'switch_provider':
