@@ -446,6 +446,8 @@ model AlertThreshold {
   updatedAt DateTime @updatedAt
 
   @@index([metric, enabled])
+  @@index([roomId])
+  @@index([sensorId])
 }
 
 model DataAggregation {
@@ -488,6 +490,7 @@ model AutomationRule {
   @@index([plantId])
   @@index([type])
   @@index([scheduleId])
+  @@index([triggerId])
 }
 
 model Schedule {
