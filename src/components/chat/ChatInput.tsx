@@ -74,6 +74,7 @@ export function ChatInput({
               variant="ghost"
               onClick={onRemoveImage}
               className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+              aria-label="Remove image"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -98,6 +99,7 @@ export function ChatInput({
             accept="image/*"
             onChange={handleFileSelect}
             className="hidden"
+            aria-label="File upload"
           />
 
           <Button
@@ -106,6 +108,7 @@ export function ChatInput({
             onClick={() => fileInputRef.current?.click()}
             className="bg-emerald-800/50 border-emerald-600/50 text-emerald-300 hover:bg-emerald-700/50"
             disabled={isLoading}
+            aria-label="Upload image"
           >
             <Camera className="h-4 w-4 mr-2" />
             Image
@@ -118,12 +121,14 @@ export function ChatInput({
             placeholder="Ask me anything about cannabis cultivation... (Shift+Enter for new line)"
             className="flex-1 bg-emerald-800/30 border-emerald-600/50 text-emerald-100 placeholder-emerald-500 resize-none h-12 min-h-12 max-h-32"
             disabled={isLoading}
+            aria-label="Chat message"
           />
 
           <Button
             onClick={onSendMessage}
             disabled={isLoading || (!input.trim() && !selectedImage)}
             className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+            aria-label={isLoading ? "Sending message..." : "Send message"}
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
