@@ -1,0 +1,4 @@
+## 2024-05-22 - [Exposed Secrets in Settings API]
+**Vulnerability:** The `/api/settings` endpoint returned the full in-memory settings object, including unencrypted API keys for AI providers (OpenAI, Anthropic, etc.), allowing any authenticated (or unauthenticated, if auth is missing) user to view them.
+**Learning:** Storing configuration in a simple in-memory object and returning it directly via REST API is a common pattern for rapid development but creates a critical information disclosure risk. Frontend components often require the configuration object structure but do not need the actual secret values.
+**Prevention:** Implement a recursive masking utility that sanitizes sensitive fields (e.g., `apiKey`, `secret`) before sending responses. Ensure the update (POST) logic detects masked values (e.g., `****************`) and preserves the existing secret instead of overwriting it with the mask.
