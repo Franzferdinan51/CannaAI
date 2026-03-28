@@ -1,7 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, Image, SendHorizontal } from 'lucide-react';
+import { Camera, Image as ImageIcon, SendHorizontal } from 'lucide-react';
 import { useState } from 'react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ChatInputProps {
   inputRef: React.RefObject<HTMLInputElement>;
@@ -56,23 +61,41 @@ export const ChatInput = ({
       {/* Input area */}
       <div className="border-t border-slate-600 p-3">
         <div className="flex space-x-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className={`bg-slate-700 text-slate-200 hover:bg-slate-600 ${cameraActive ? 'bg-red-600' : ''}`}
-            onClick={() => setCameraActive(!cameraActive)}
-          >
-            {cameraActive ? <Camera className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="bg-slate-700 text-slate-200 hover:bg-slate-600"
-            onClick={() => fileInputRef.current?.click()}
-            title="Upload plant photo"
-          >
-            <Image className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className={`bg-slate-700 text-slate-200 hover:bg-slate-600 ${cameraActive ? 'bg-red-600' : ''}`}
+                onClick={() => setCameraActive(!cameraActive)}
+                aria-label={cameraActive ? "Close camera" : "Open camera"}
+              >
+                {cameraActive ? <Camera className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{cameraActive ? "Close camera" : "Open camera"}</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-slate-700 text-slate-200 hover:bg-slate-600"
+                onClick={() => fileInputRef.current?.click()}
+                title="Upload plant photo"
+                aria-label="Upload plant photo"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Upload plant photo</p>
+            </TooltipContent>
+          </Tooltip>
+
           <input
             type="file"
             accept="image/*"
@@ -86,14 +109,22 @@ export const ChatInput = ({
             className="flex-1 bg-slate-700 border-slate-600 text-white placeholder-slate-400"
             disabled={disabled}
           />
-          <Button
-            onClick={onSendMessage}
-            disabled={disabled}
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-500 text-white"
-          >
-            <SendHorizontal className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={onSendMessage}
+                disabled={disabled}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-500 text-white"
+                aria-label="Send message"
+              >
+                <SendHorizontal className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Send message</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </>
