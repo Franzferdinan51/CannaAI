@@ -18,7 +18,7 @@ import {
   Zap,
   FileText,
   BarChart3,
-  Memory,
+  MemoryStick as Memory,
   Sparkles,
   ChevronDown,
   ChevronRight
@@ -120,9 +120,11 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
   const PersonaCard = ({ persona }: { persona: CouncilPersona }) => {
     const isSelected = selectedPersonas.includes(persona.id);
     return (
-      <div
+      <button
+        type="button"
         onClick={() => togglePersona(persona.id)}
-        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+        aria-pressed={isSelected}
+        className={`w-full text-left p-4 rounded-xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
           isSelected
             ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -137,7 +139,7 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
             </span>
           ))}
         </div>
-      </div>
+      </button>
     );
   };
 
@@ -157,7 +159,10 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-white dark:bg-gray-900 p-1 rounded-xl border shadow-sm mb-6 overflow-x-auto">
+      <div
+        role="tablist"
+        className="flex bg-white dark:bg-gray-900 p-1 rounded-xl border shadow-sm mb-6 overflow-x-auto"
+      >
         {[
           { id: 'session' as const, icon: MessageSquare, label: 'Session' },
           { id: 'prediction' as const, icon: TrendingUp, label: 'Prediction Market' },
@@ -168,8 +173,10 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
         ].map(tab => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
               activeTab === tab.id
                 ? 'bg-indigo-100 text-indigo-700'
                 : 'text-gray-500 hover:text-gray-700'
@@ -204,7 +211,7 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
                 Suggested mode: {suggestedMode}
                 <button
                   onClick={() => setSessionMode(suggestedMode!)}
-                  className="ml-2 text-xs bg-indigo-100 px-2 py-1 rounded"
+                  className="ml-2 text-xs bg-indigo-100 px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 >
                   Use
                 </button>
@@ -233,7 +240,8 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
                 <button
                   key={mode}
                   onClick={() => setSessionMode(mode as SessionMode)}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold capitalize transition-all ${
+                  aria-pressed={sessionMode === mode}
+                  className={`px-3 py-2 rounded-lg text-xs font-bold capitalize transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                     sessionMode === mode
                       ? 'bg-indigo-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -253,7 +261,7 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
               </label>
               <button
                 onClick={() => setSelectedPersonas(personas.map(p => p.id))}
-                className="text-xs bg-gray-100 px-3 py-1 rounded"
+                className="text-xs bg-gray-100 px-3 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 Select All
               </button>
@@ -270,7 +278,7 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
             <button
               onClick={runSession}
               disabled={isLoading || !topic || selectedPersonas.length === 0}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50"
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-600"
             >
               {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
               Run Council Session
