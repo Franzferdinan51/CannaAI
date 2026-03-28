@@ -35,7 +35,13 @@ export async function GET(request: Request) {
       plantAnalyses,
       apiMetrics
     ] = await Promise.all([
-      prisma.plant.findMany(),
+      // Optimize: Only fetch health data for calculating average score
+      // This avoids loading potentially large plant objects with images/metadata
+      prisma.plant.findMany({
+        select: {
+          health: true,
+        },
+      }),
       prisma.alert.count({
         where: {
           createdAt: {
@@ -52,6 +58,7 @@ export async function GET(request: Request) {
           },
         },
       }),
+      // Optimize: Only fetch value and timestamp for chart generation
       prisma.sensorReading.findMany({
         where: {
           timestamp: {
@@ -61,6 +68,10 @@ export async function GET(request: Request) {
         },
         orderBy: { timestamp: 'desc' },
         take: 100,
+        select: {
+          value: true,
+          timestamp: true,
+        },
       }),
       prisma.plantAnalysis.count({
         where: {
@@ -70,6 +81,7 @@ export async function GET(request: Request) {
           },
         },
       }),
+      // Optimize: Only fetch success/latency for metrics calculation
       prisma.aPIPerformanceMetrics.findMany({
         where: {
           timestamp: {
@@ -79,6 +91,10 @@ export async function GET(request: Request) {
         },
         orderBy: { timestamp: 'desc' },
         take: 100,
+        select: {
+          success: true,
+          responseTime: true,
+        },
       }),
     ]);
 
