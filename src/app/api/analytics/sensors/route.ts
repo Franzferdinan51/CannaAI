@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { startOfDay, subDays } from 'date-fns';
 
 export async function GET(request: Request) {
@@ -82,6 +83,10 @@ export async function GET(request: Request) {
     };
 
     // Get time-series data for charts
+    const sensorCondition = sensorId
+      ? Prisma.sql`AND sensorId = ${sensorId}`
+      : Prisma.empty;
+
     const timeSeriesData = await prisma.$queryRaw`
       SELECT
         strftime('%Y-%m-%d %H:00:00', timestamp) as hour,
@@ -93,7 +98,7 @@ export async function GET(request: Request) {
         COUNT(*) as count
       FROM SensorAnalytics
       WHERE timestamp >= ${startDate.toISOString()} AND timestamp <= ${endDate.toISOString()}
-      ${sensorId ? prisma.$unsafe(`AND sensorId = '${sensorId}'`) : ''}
+      ${sensorCondition}
       GROUP BY hour, sensorId
       ORDER BY hour ASC
     ` as any[];
