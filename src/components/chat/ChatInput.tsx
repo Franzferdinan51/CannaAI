@@ -4,6 +4,11 @@ import React, { useRef } from 'react';
 import { Send, Loader2, Camera, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ChatInputProps {
   input: string;
@@ -74,6 +79,7 @@ export function ChatInput({
               variant="ghost"
               onClick={onRemoveImage}
               className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+              aria-label="Remove image"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -118,19 +124,30 @@ export function ChatInput({
             placeholder="Ask me anything about cannabis cultivation... (Shift+Enter for new line)"
             className="flex-1 bg-emerald-800/30 border-emerald-600/50 text-emerald-100 placeholder-emerald-500 resize-none h-12 min-h-12 max-h-32"
             disabled={isLoading}
+            aria-label="Type your message"
           />
 
-          <Button
-            onClick={onSendMessage}
-            disabled={isLoading || (!input.trim() && !selectedImage)}
-            className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0}>
+                <Button
+                  onClick={onSendMessage}
+                  disabled={isLoading || (!input.trim() && !selectedImage)}
+                  className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+                  aria-label="Send message"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Send message</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="flex items-center gap-2 mt-2 text-xs text-emerald-400">
