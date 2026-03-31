@@ -65,7 +65,7 @@ export function ChatInput({
           <div className="flex items-center gap-2">
             <img
               src={selectedImage}
-              alt="Selected"
+              alt="Selected image preview"
               className="w-12 h-12 object-cover rounded"
             />
             <span className="text-emerald-300 text-sm flex-1">Image ready for analysis</span>
@@ -74,6 +74,7 @@ export function ChatInput({
               variant="ghost"
               onClick={onRemoveImage}
               className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+              aria-label="Remove selected image"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -118,12 +119,14 @@ export function ChatInput({
             placeholder="Ask me anything about cannabis cultivation... (Shift+Enter for new line)"
             className="flex-1 bg-emerald-800/30 border-emerald-600/50 text-emerald-100 placeholder-emerald-500 resize-none h-12 min-h-12 max-h-32"
             disabled={isLoading}
+            aria-label="Chat input"
           />
 
           <Button
             onClick={onSendMessage}
             disabled={isLoading || (!input.trim() && !selectedImage)}
             className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+            aria-label={isLoading ? "Sending message..." : "Send message"}
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
