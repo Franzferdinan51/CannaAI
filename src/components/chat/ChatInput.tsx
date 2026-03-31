@@ -74,6 +74,7 @@ export function ChatInput({
               variant="ghost"
               onClick={onRemoveImage}
               className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+              aria-label="Remove selected image"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -124,6 +125,7 @@ export function ChatInput({
             onClick={onSendMessage}
             disabled={isLoading || (!input.trim() && !selectedImage)}
             className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+            aria-label="Send message"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
