@@ -8,6 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Loader2,
   Upload,
   Camera,
@@ -244,14 +249,22 @@ export default function PhotoAnalysisPage() {
                     <div className="space-y-4">
                       <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-950">
                         <img src={imageData} alt="Preview" className="w-full h-full object-contain" />
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={() => setImageData(undefined)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2"
+                              onClick={() => setImageData(undefined)}
+                              aria-label="Remove image"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Remove image</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                       <p className="text-sm text-center text-slate-400">
                         Image ready for analysis
