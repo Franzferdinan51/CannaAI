@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -244,14 +245,22 @@ export default function PhotoAnalysisPage() {
                     <div className="space-y-4">
                       <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-950">
                         <img src={imageData} alt="Preview" className="w-full h-full object-contain" />
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={() => setImageData(undefined)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2"
+                              onClick={() => setImageData(undefined)}
+                              aria-label="Remove image"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Remove image</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                       <p className="text-sm text-center text-slate-400">
                         Image ready for analysis
