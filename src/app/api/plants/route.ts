@@ -15,6 +15,25 @@ export async function GET(request: Request) {
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        strainId: true,
+        stage: true,
+        age: true,
+        plantedDate: true,
+        locationId: true,
+        notes: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        strain: {
+          select: {
+            name: true,
+            type: true,
+          },
+        },
+      },
     }),
     prisma.plant.count(),
   ]);
