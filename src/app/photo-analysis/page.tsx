@@ -249,6 +249,8 @@ export default function PhotoAnalysisPage() {
                           size="icon"
                           className="absolute top-2 right-2"
                           onClick={() => setImageData(undefined)}
+                          aria-label="Remove image"
+                          type="button"
                         >
                           <X className="w-4 h-4" />
                         </Button>
