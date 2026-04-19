@@ -241,4 +241,7 @@ MIT - See LICENSE file
 
 ---
 
-**Last Updated:** February 26, 2026
+![Version](https://img.shields.io/badge/version-0.2.0-brightgreen.svg)
+![Last Updated](https://img.shields.io/badge/last%20updated-April%2019%2C%2026-blue.svg)
+
+**Last Updated:** April 19, 2026
