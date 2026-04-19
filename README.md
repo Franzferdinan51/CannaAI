@@ -128,6 +128,44 @@ CannaAI/
 
 ---
 
+## 🦆 Duck CLI Integration
+
+CannaAI is accessible via Duck CLI:
+
+```bash
+# Install (Duck CLI v0.9.0+)
+# CannaAI commands are auto-registered in Duck CLI
+
+# Check system status
+duck cannaai status
+
+# Monitor environment
+duck cannaai monitor
+
+# Analyze plant photo (direct)
+duck cannaai analyze /path/to/plant.jpg
+
+# Analyze with AI Council deliberation (6 cannabis specialists)
+duck cannaai analyze /path/to/plant.jpg --council
+
+# List plants
+duck cannaai plants
+
+# Check alerts
+duck cannaai alerts
+
+# Ask AI Council for grow advice
+duck cannaai council "What nutrients does my flowering plant need?"
+```
+
+**Environment:**
+- `CANNAAI_URL` — CannaAI server (default: http://localhost:3000)
+- `AI_COUNCIL_URL` — AI Council server (default: http://localhost:3006)
+
+**AI Council Cannabis Councilors:** The Cultivator, The Trichome Inspector, The Nutrient Manager, The IPM Specialist, The Cure Master, The Compliance Officer.
+
+---
+
 ## 🔧 Configuration
 
 Copy `.env.example` to `.env` and configure:
