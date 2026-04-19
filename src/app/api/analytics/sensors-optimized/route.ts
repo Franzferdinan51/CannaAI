@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { trackPrismaQuery } from '@/lib/db-monitoring';
 import { paginate, optimizeInclude, QueryBuilder } from '@/lib/db-optimization';
 import { startOfDay, subDays } from 'date-fns';
@@ -96,6 +97,19 @@ export async function GET(request: Request) {
         : 0,
     };
 
+    // Prepare filter for raw query
+    let sensorFilter = Prisma.empty;
+    const resultSensorIds = result.data.map(a => a.sensorId);
+
+    if (sensorId) {
+      sensorFilter = Prisma.sql`AND sensorId = ${sensorId}`;
+    } else if (roomId && resultSensorIds.length > 0) {
+      sensorFilter = Prisma.sql`AND sensorId IN (${Prisma.join(resultSensorIds)})`;
+    } else if (roomId) {
+      // Room selected but no sensors found
+      sensorFilter = Prisma.sql`AND 1=0`;
+    }
+
     // Use $queryRaw for complex aggregations (more efficient than JS processing)
     const timeSeriesData = await trackPrismaQuery(
       'sensorAnalytics.queryRaw.timeseries',
@@ -110,7 +124,7 @@ export async function GET(request: Request) {
           COUNT(*) as count
         FROM SensorAnalytics
         WHERE timestamp >= ${startDate.toISOString()} AND timestamp <= ${endDate.toISOString()}
-        ${sensorId ? prisma.$unsafe(`AND sensorId = '${sensorId}'`) : roomId ? prisma.$unsafe(`AND sensorId IN (${JSON.stringify(result.data.map(a => a.sensorId)).replace(/[\[\]"]/g, '')})`) : prisma.$unsafe('')}
+        ${sensorFilter}
         GROUP BY hour, sensorId
         ORDER BY hour ASC
       `
