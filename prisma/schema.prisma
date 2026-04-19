@@ -488,6 +488,7 @@ model AutomationRule {
   @@index([plantId])
   @@index([type])
   @@index([scheduleId])
+  @@index([triggerId])
 }
 
 model Schedule {
