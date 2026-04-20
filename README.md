@@ -121,7 +121,7 @@ CannaAI/
 
 ## 📋 Requirements
 
-- Node.js 22+
+- Node.js 22+ (or Termux on Android — see Android section below)
 - PostgreSQL 15+
 - npm or pnpm
 - (Optional) OpenClaw Gateway
@@ -198,6 +198,43 @@ node test-api-endpoint.js
 ```
 
 ---
+
+## 📱 Android / Termux Support
+
+CannaAI runs on Android devices via Termux — no Node.js PC required.
+
+### Android Backend (Python — No Node Dependencies)
+For lightweight plant monitoring on Android without the full Node.js stack:
+```bash
+cd android_backend
+./start.sh
+# Server starts on port 3000 with basic health, strains, and chat endpoints
+```
+
+### Full CannaAI on Termux
+```bash
+# Install Node.js in Termux
+pkg install nodejs
+
+# Install dependencies (esbuild fix for android-arm64)
+pm install @esbuild/android-arm64 --force
+
+# Start server
+npm run dev
+```
+
+### Android Compatibility Notes
+- `sharp` image processing is bypassed by default on android-arm64 — uses `image-simple.ts` (pure JS, no native binaries)
+- `heic-convert` is lazy-loaded to avoid Node.js/localStorage compatibility issues
+- Prisma may need `binaryTargets` adjusted in `prisma/schema.prisma` for your platform
+- Use the Python backend (`android_backend/`) for zero-dependency plant monitoring
+
+### ADB Control via OpenClaw
+Connect to your Android device wirelessly via ADB for full remote control:
+```bash
+adb connect <device-ip>:5555
+```
+OpenClaw can then take screenshots, tap, swipe, and interact with the CannaAI web UI directly from the phone.
 
 ## 🚢 Deployment
 
