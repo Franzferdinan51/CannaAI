@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 dotenv.config();
-import { processImageForVisionModel, base64ToBuffer, ImageProcessingError } from '@/lib/image';
+import { base64ToBuffer, ImageProcessingError } from '@/lib/base64';
+// processImageForVisionModel is loaded dynamically to avoid sharp/heic-convert crashing on android-arm64 server
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithLMStudio } from '@/lib/ai-provider-lmstudio';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
@@ -296,9 +297,9 @@ export async function POST(request: NextRequest) {
           throw new Error('Image too large. Please use an image under 500MB.');
         }
 
-        // Get image metadata for adaptive processing
-        const sharp = await import('sharp');
-        const metadata = await sharp.default(buffer).metadata();
+        // Get image metadata for adaptive processing (uses image-simple to avoid sharp on android-arm64)
+        const { getImageMetadata } = await import('@/lib/image-simple');
+        const metadata = await getImageMetadata(buffer);
         const originalMegapixels = (metadata.width || 0) * (metadata.height || 0) / 1000000;
 
         // Adaptive compression based on image size and quality requirements
@@ -343,7 +344,8 @@ export async function POST(request: NextRequest) {
           };
         }
 
-        // Process image with adaptive settings
+        // Process image with adaptive settings (uses image-simple to avoid sharp/heic-convert on android-arm64)
+        const { processImageForVisionModel } = await import('@/lib/image-simple');
         const processedImage = await processImageForVisionModel(buffer, processingOptions);
 
         // Calculate compression efficiency

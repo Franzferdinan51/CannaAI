@@ -8,6 +8,12 @@ import { Server } from 'socket.io';
 import { WebSocketServer } from 'ws';
 import next from 'next';
 
+// Prevent server crashes from unhandled promise rejections (e.g., libheif-js localStorage in Node.js)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit - let the server continue running
+});
+
 const dev = process.env.NODE_ENV !== 'production';
 const currentPort = Number(process.env.PORT) || 3000;
 // Bind to all interfaces (0.0.0.0) for remote access via Tailscale

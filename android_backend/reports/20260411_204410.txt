@@ -1,0 +1,63 @@
+CannaAI Plant Analysis Report
+Generated: 2026-04-11 20:44:10.622606
+Model: google/gemma-4-26b-a4b
+Strain: Blunt Force Fauna
+Stage: Late Vegetative
+==================================================
+
+
+
+Expert Cannabis Cultivator.
+Analyze a single plant based on an image and provided context.
+"Blunt Force Fauna", "Late Vegetative".
+A photo of a cannabis plant in a grow tent, seemingly healthy but showing some minor signs of stress/nutrient variation.
+
+        1.  Growth Stage Assessment
+        2.  Detailed Health Score (1-10)
+        3.  Comprehensive Nutrient Analysis
+        4.  Detailed Pest & Disease Check
+        5.  Environmental Assessment
+        6.  Plant Genetics & Variety Indicators
+        7.  Specific Actionable Recommendations
+
+    *   *Overall Impression:* Large, bushy plant, looks vigorous. Typical late veg structure.
+    *   *Coloring:* Mostly deep green. Some lighter green/yellowish patches on some mid-to-lower leaves. No obvious large-scale chlorosis (yellowing) of the whole plant, but some tip/edge discoloration visible on a few leaves.
+    *   *Structure:* Very bushy. Node spacing looks relatively tight to moderate (not extreme stretching). The main stem appears thick enough for its size.
+    *   *Leaves:* Serrated edges look healthy. No obvious "clawing" (Nitrogen toxicity) or "curling up/down" (Heat/pH stress), though some lower leaves show slight yellowing/browning at the tips.
+    *   *Environment:* Grow tent is visible. Reflective material looks clean. A light strip (LED bar?) is visible on the left. An air duct is visible on the right. The pot is a black nursery/fabric style.
+    *   *Pests/Disease:* No visible webbing, white spots (PM), or obvious holes from insects at this resolution.
+
+    *   **Section 1: Growth Stage Assessment**
+        *   Context says "Late Vegetative".
+        *   Visual confirmation: Significant leaf mass, established root system (implied by size), no visible pistils/flowers yet.
+        *   Stage: Late Vegetative (Pre-flowering transition imminent).
+
+    *   **Section 2: Detailed Health Score**
+        *   Score: 8.5/10.
+        *   Why? Robust canopy, strong central structure, good vigor. Small deductions for minor tip burn or nutrient fluctuations visible on lower leaves.
+
+    *   **Section 3: Comprehensive Nutrient Analysis**
+        *   *Nitrogen (N):* Generally high/stable. Some older leaves show slight yellowing, which is normal in late veg as the plant prepares to shift N usage, but could indicate a slight dip if it progresses.
+        *   *Phosphorus (P)/Potassium (K):* No purple stems or significant edge burn seen. K looks stable.
+        *   *Calcium/Magnesium:* No obvious interveinal chlorosis on new growth. Newest leaves look vibrant green.
+        *   *pH/Lockout:* No "clawing" (high N) or severe curling (low pH).
+
+    *   **Section 4: Detailed Pest & Disease Check**
+        *   Visible: None.
+        *   Action: Monitor leaf undersides for spider mites/thrips.
+
+    *   **Section 5: Environmental Assessment**
+        *   Light: The LED bar is close. Some lower leaves might be getting slightly too much heat or light intensity (slight tip browning), but the canopy looks well-distributed.
+        *   Humidity/Temp: No "cupping" (heat) or "crispy edges" (low RH). Airflow seems okay given the ducting, but needs to ensure no dead spots in the center of that dense canopy.
+
+    *   **Section 6: Genetics & Variety Indicators**
+        *   Strain: Blunt Force Fauna.
+        *   Morphology: Broad leaflets, dense structure suggests a heavy-hitting hybrid/indica leaning (typical for "Blunt Force" style naming). High vigor.
+
+    *   **Section 7: Actionable Recommendations**
+        *   *Immediate:* Check pH/EC of runoff. Prune lower fan leaves if they are shading the bottom too much to prepare for flower.
+        *   *Weekly:* Prepare for "Flip". Reduce N, increase P/K.
+        *   *Training:* LST (Low Stress Training) or topping if not already done to maximize top sites.
+
+    *   Use professional terminology: *Chlorosis, interveinal, node spacing, anthocyanins, LST, EC/pH.*
+    *   Maintain an authoritative yet observant tone.

@@ -1,5 +1,32 @@
 import sharp from 'sharp';
-import { convert } from 'heic-convert';
+// heic-convert uses localStorage at module load time (browser-only) — load lazily
+export async function convertHeicToJpeg(
+  heicBuffer: Buffer,
+  quality: number = 90
+): Promise<Buffer> {
+  try {
+    console.log('🔄 Converting HEIC/HEIF to JPEG...');
+
+    // Lazy-load heic-convert only when needed (avoids server-side localStorage crash)
+    const { convert } = await import('heic-convert');
+
+    // Use heic-convert to convert to JPEG
+    const outputBuffer = await convert({
+      buffer: heicBuffer,
+      format: 'JPEG',
+      quality
+    });
+
+    console.log('✅ HEIC/HEIF conversion successful');
+    return outputBuffer;
+  } catch (error) {
+    console.error('❌ HEIC/HEIF conversion failed:', error);
+    throw new HeicConversionError(
+      'Failed to convert HEIC/HEIF image to JPEG',
+      error as Error
+    );
+  }
+}
 
 // Supported image formats
 export const SUPPORTED_FORMATS = {
@@ -90,33 +117,7 @@ export function isFormatSupported(mimeType: string): boolean {
   return Object.values(SUPPORTED_FORMATS).includes(mimeType as any);
 }
 
-/**
- * Convert HEIC/HEIF to JPEG/PNG for processing
- */
-export async function convertHeicToJpeg(
-  heicBuffer: Buffer,
-  quality: number = 90
-): Promise<Buffer> {
-  try {
-    console.log('🔄 Converting HEIC/HEIF to JPEG...');
 
-    // Use heic-convert to convert to JPEG
-    const outputBuffer = await convert({
-      buffer: heicBuffer,
-      format: 'JPEG',
-      quality
-    });
-
-    console.log('✅ HEIC/HEIF conversion successful');
-    return outputBuffer;
-  } catch (error) {
-    console.error('❌ HEIC/HEIF conversion failed:', error);
-    throw new HeicConversionError(
-      'Failed to convert HEIC/HEIF image to JPEG',
-      error as Error
-    );
-  }
-}
 
 /**
  * Detect if buffer is HEIC/HEIF format
