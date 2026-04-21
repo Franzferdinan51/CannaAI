@@ -3,96 +3,69 @@
 CannaAI - Android-Compatible Backend
 Simple Python server that works with the React frontend
 Provides plant analysis, strains, chat, and sensor APIs
+
+KEY: Uses curl subprocess for LM Studio calls (urllib hangs on Termux).
+     Uses qwen3.5-0.8b for vision (gemma-4-26b-a4b hangs on API calls from Termux).
 """
 
-import os
-import sys
-import json
-import base64
-import urllib.request
-import urllib.error
+import os, sys, json, base64, subprocess, re
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 from datetime import datetime
 import random
 
 # Configuration
 LM_STUDIO_URL = "http://100.68.208.113:1234/v1"
 API_KEY = "sk-lm-xWvfQHZF:L8P76SQakhEA95U8DDNf"
-VISION_MODEL = "google/gemma-4-26b-a4b"
-TEXT_MODEL = "google/gemma-4-26b-a4b"
+VISION_MODEL = "qwen3.5-0.8b"   # gemma hangs on Termux API calls
+TEXT_MODEL = "qwen3.5-0.8b"
 PORT = 3000
 HOST = "0.0.0.0"
 
-# Deep analysis prompt for cannabis plants
-ANALYSIS_PROMPT = """You are an expert cannabis cultivator analyzing a plant. Provide a DEEP, COMPREHENSIVE analysis:
+ANALYSIS_PROMPT = """You are an expert cannabis cultivator analyzing a plant photo. Provide:
 
 ## 1. GROWTH STAGE ASSESSMENT
 - Exact stage (seedling/vegetative/early flower/mid flower/late flower/harvest ready)
-- Week estimate if in flowering
-- Pistil development and color (white/orange/brown)
-- Calyx-to-leaf ratio
-- Trichome appearance if visible (clear/milky/amber)
-- Signs of light stress or light burn
+- Week estimate if flowering
+- Pistil development and color
+- Signs of light stress
 
-## 2. DETAILED HEALTH SCORE (1-10)
-- Root zone health indicators (if visible)
-- Stem thickness and structural integrity
-- Node spacing (compact/stretching)
-- New growth vitality (tips, new leaves)
-- Recovery ability from any stress
+## 2. HEALTH SCORE (1-10)
+- Root zone health
+- Stem thickness and structure
+- Node spacing
+- New growth vitality
 
-## 3. COMPREHENSIVE NUTRIENT ANALYSIS
-- Nitrogen (N): Leaf color (light green/dark green/yellowing), mobility symptoms
-- Phosphorus (P): Purple stems, dark spots on leaves
-- Potassium (K): Edge burn, tip curl, brown patches
-- Calcium/Magnesium: New growth issues, interveinal chlorosis
-- Micronutrients: Iron, manganese, zinc deficiency signs
-- Nutrient lockout indicators
-- pH stress signs (cliff effect)
+## 3. NUTRIENT ANALYSIS
+- Nitrogen (N): Leaf color, mobility symptoms
+- Phosphorus (P): Purple stems, dark spots
+- Potassium (K): Edge burn, tip curl
+- Ca/Mg: New growth issues
+- Micronutrients deficiencies
 
-## 4. DETAILED PEST & DISEASE排查
-- Spider mites: Webbing, tiny dots on leaves, leaf damage
-- Aphids: Clusters, sticky residue (honeydew)
-- Fungus gnats: Larvae in soil, adult flies
-- Thrips: Silvering, black dots, scarred leaves
-- Powdery mildew: White powdery spots
-- Root rot: Wilting despite moist soil, smell
-- Botrytis (bud rot): Gray fuzzy mold in buds
-- Fusarium/wilt: Yellowing, drooping, vascular browning
+## 4. PEST & DISEASE CHECK
+- Spider mites, aphids, fungus gnats, thrips
+- Powdery mildew, root rot, botrytis
 
 ## 5. ENVIRONMENTAL ASSESSMENT
-- Light intensity indicators (light bleaching, heat stress)
-- Temperature stress (wilting, cupped leaves)
-- Humidity issues (crispy edges/low, mold-prone/high)
-- Airflow/circulation indicators
-- Root zone issues visible in pot
+- Light intensity, temperature stress
+- Humidity issues, airflow
 
-## 6. PLANT GENETICS & VARIETY INDICATORS
-- Strain type indicators (sativa/indica/hybrid traits)
-- Leaflet shape and structure
-- Color pigments (anthocyanins, terpenes)
-- Aroma indicators if visible
-
-## 7. SPECIFIC ACTIONABLE RECOMMENDATIONS
-- Immediate actions (next 24-48 hours)
+## 6. RECOMMENDATIONS
+- Immediate actions (24-48h)
 - Weekly adjustments
-- flushing/pK timing if applicable
-- Training techniques to maximize yield
 - Harvest timing if approaching readiness
 
-Format with clear headers. Be thorough and technical. Include specific measurements and observations.
-"""
+Be thorough and specific. Format with headers."""
+
 
 class CannaAIHandler(SimpleHTTPRequestHandler):
-    """Custom HTTP handler for CannaAI"""
     
     def __init__(self, *args, **kwargs):
         self.directory = os.path.dirname(os.path.abspath(__file__))
         super().__init__(*args, directory=self.directory, **kwargs)
     
     def do_OPTIONS(self):
-        """Handle CORS preflight"""
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
@@ -100,11 +73,9 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         self.end_headers()
     
     def do_GET(self):
-        """Handle GET requests"""
         parsed = urlparse(self.path)
-        
         if parsed.path == '/api/health':
-            self.send_json({'status': 'ok', 'service': 'CannaAI Android', 'version': '1.0.0'})
+            self.send_json({'status': 'ok', 'service': 'CannaAI Android', 'version': '1.0.1'})
         elif parsed.path == '/api/models':
             self.send_json(self.get_lmstudio_models())
         elif parsed.path == '/api/strains':
@@ -119,9 +90,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             super().do_GET()
     
     def do_POST(self):
-        """Handle POST requests"""
         parsed = urlparse(self.path)
-        
         if parsed.path == '/api/analyze':
             self.handle_analyze()
         elif parsed.path == '/api/chat':
@@ -139,96 +108,118 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         else:
             self.send_json({'error': 'Not found'}, status=404)
     
-    def get_lmstudio_models(self):
-        """Get available models from LM Studio"""
+    def lm_chat(self, prompt, image_b64=None, max_tokens=1200, temp=0.3):
+        """Call LM Studio via curl subprocess (NOT urllib - urllib hangs on Termux)"""
+        if image_b64:
+            messages = [
+                {"role": "user", "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}
+                ]}
+            ]
+        else:
+            messages = [{"role": "user", "content": prompt}]
+        
+        payload = {
+            "model": VISION_MODEL if image_b64 else TEXT_MODEL,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temp
+        }
+        
+        tmp_dir = os.environ.get('TMPDIR', '/data/data/com.termux/files/usr/tmp')
+        req_file = f"{tmp_dir}/lm_req_{os.getpid()}.json"
+        resp_file = f"{tmp_dir}/lm_resp_{os.getpid()}.json"
+        
+        with open(req_file, 'w') as f:
+            json.dump(payload, f)
+        
         try:
-            req = urllib.request.Request(
-                f"{LM_STUDIO_URL}/models",
-                headers={"Authorization": f"Bearer {API_KEY}"}
-            )
-            with urllib.request.urlopen(req, timeout=10) as response:
-                return json.loads(response.read().decode())
+            r = subprocess.run([
+                "curl", "-s", "--max-time", "120",
+                "-X", "POST",
+                f"{LM_STUDIO_URL}/chat/completions",
+                "-H", "Content-Type: application/json",
+                "-H", f"Authorization: Bearer {API_KEY}",
+                "--data-binary", f"@{req_file}"
+            ], capture_output=True, timeout=130, text=True)
+            
+            with open(resp_file, 'w') as f:
+                f.write(r.stdout)
+            
+            with open(resp_file) as f:
+                result = json.load(f)
+            
+            os.remove(req_file)
+            os.remove(resp_file)
+            
+            if 'error' in result:
+                return None, result['error']
+            
+            return result['choices'][0]['message']['content'], None
+            
+        except subprocess.TimeoutExpired:
+            os.remove(req_file)
+            if os.path.exists(resp_file):
+                os.remove(resp_file)
+            return None, "LM Studio timeout"
         except Exception as e:
-            return {'error': str(e), 'models': []}
+            os.remove(req_file)
+            if os.path.exists(resp_file):
+                os.remove(resp_file)
+            return None, str(e)
+    
+    def get_lmstudio_models(self):
+        try:
+            r = subprocess.run([
+                "curl", "-s", "--max-time", "10",
+                f"{LM_STUDIO_URL}/models",
+                "-H", f"Authorization: Bearer {API_KEY}"
+            ], capture_output=True, timeout=15, text=True)
+            return json.loads(r.stdout)
+        except:
+            return {'error': 'Failed to get models'}
     
     def get_strains(self):
-        """Get predefined strain data"""
-        return [
-            {
-                'id': '1',
-                'name': 'Blunt Force Fauna',
-                'type': 'Hybrid',
-                'lineage': 'Animal Tsunami x Lunch Money #50',
-                'description': 'Balanced hybrid with strong genetics',
-                'optimalConditions': {
-                    'ph': {'range': [6.0, 7.0], 'medium': 'Soil/Soilless'},
-                    'temperature': {'veg': [70, 85], 'flower': [65, 80]},
-                    'humidity': {'veg': [40, 70], 'flower': [40, 50]}
-                }
-            }
-        ]
+        return [{'id': '1', 'name': 'Blunt Force Fauna', 'type': 'Hybrid',
+                 'lineage': 'Animal Tsunami x Lunch Money #50',
+                 'description': 'Balanced hybrid with strong genetics',
+                 'optimalConditions': {
+                     'ph': {'range': [6.0, 7.0], 'medium': 'Soil/Soilless'},
+                     'temperature': {'veg': [70, 85], 'flower': [65, 80]},
+                     'humidity': {'veg': [40, 70], 'flower': [40, 50]}
+                 }}]
     
     def get_settings(self):
-        """Get current settings"""
-        return {
-            'lmStudio': {
-                'url': LM_STUDIO_URL,
-                'apiKey': API_KEY[:10] + '...' if len(API_KEY) > 10 else API_KEY,
-                'visionModel': VISION_MODEL,
-                'textModel': TEXT_MODEL
-            },
-            'theme': 'dark',
-            'notifications': True
-        }
+        return {'lmStudio': {'url': LM_STUDIO_URL, 'visionModel': VISION_MODEL, 'textModel': TEXT_MODEL},
+                'theme': 'dark', 'notifications': True}
     
     def get_history(self):
-        """Get analysis history"""
         reports_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reports')
         history = []
         if os.path.exists(reports_dir):
             for f in sorted(os.listdir(reports_dir), reverse=True)[:50]:
                 if f.endswith('.txt'):
-                    filepath = os.path.join(reports_dir, f)
-                    with open(filepath, 'r') as file:
-                        content = file.read()
-                        history.append({
-                            'id': f.replace('.txt', ''),
-                            'date': f.replace('.txt', '').replace('_', ' '),
-                            'summary': content[:200] + '...' if len(content) > 200 else content
-                        })
-        return history
+                    with open(os.path.join(reports_dir, f)) as file:
+                        history.append({'id': f.replace('.txt',''), 'date': f.replace('.txt','').replace('_',' '), 'summary': file.read()[:200]})
+        return {'history': history}
     
     def get_sensor_data(self):
-        """Get simulated sensor data"""
-        return {
-            'temperature': round(random.uniform(70, 85), 1),
-            'humidity': round(random.uniform(45, 65), 1),
-            'soilMoisture': round(random.uniform(40, 80), 1),
-            'lightIntensity': round(random.uniform(500, 1000), 0),
-            'ph': round(random.uniform(6.0, 7.0), 2),
-            'ec': round(random.uniform(1.0, 2.5), 2),
-            'vpd': round(random.uniform(0.8, 1.5), 2),
-            'co2': round(random.uniform(400, 1200), 0)
-        }
+        return {'temperature': round(random.uniform(70, 85), 1), 'humidity': round(random.uniform(45, 65), 1),
+                'soilMoisture': round(random.uniform(40, 80), 1), 'lightIntensity': round(random.uniform(500, 1000), 0),
+                'ph': round(random.uniform(6.0, 7.0), 2), 'ec': round(random.uniform(1.0, 2.5), 2),
+                'vpd': round(random.uniform(0.8, 1.5), 2), 'co2': round(random.uniform(400, 1200), 0)}
     
     def handle_capture(self):
-        """Capture photo using termux-camera-photo"""
-        try:
-            photo_path = "/sdcard/cannaai_capture.jpg"
-            os.system(f"termux-camera-photo -c 0 {photo_path}")
-            
-            if os.path.exists(photo_path):
-                size = os.path.getsize(photo_path)
-                self.send_json({'success': True, 'path': photo_path, 'size': size})
-            else:
-                self.send_json({'success': False, 'error': 'Photo capture failed'})
-        except Exception as e:
-            self.send_json({'success': False, 'error': str(e)})
+        photo_path = "/sdcard/cannaai_capture.jpg"
+        r = subprocess.run(["termux-camera-photo", "-c", "0", photo_path], capture_output=True)
+        if os.path.exists(photo_path):
+            self.send_json({'success': True, 'path': photo_path, 'size': os.path.getsize(photo_path)})
+        else:
+            self.send_json({'success': False, 'error': 'Photo capture failed'})
     
     def handle_analyze(self):
-        """Analyze plant image with LM Studio vision"""
         content_length = int(self.headers.get('Content-Length', 0))
-        
         if content_length == 0:
             self.send_json({'error': 'No data provided'}, status=400)
             return
@@ -239,236 +230,143 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             
             # Get image (base64 or file path)
             image_data = data.get('plantImage')
-            if image_data:
-                # It's already base64
-                pass
-            else:
-                # Try file path
+            image_format = 'jpeg'
+            
+            if not image_data:
                 image_path = data.get('imagePath', '/sdcard/plant_check.jpg')
                 if os.path.exists(image_path):
-                    with open(image_path, 'rb') as f:
-                        image_data = base64.b64encode(f.read()).decode()
+                    # Resize with ffmpeg to max 1024px
+                    temp_path = f"/sdcard/cannaai_temp_{os.getpid()}.jpg"
+                    r = subprocess.run([
+                        "ffmpeg", "-i", image_path,
+                        "-vf", "scale=1024:1024:force_original_aspect_ratio=decrease",
+                        "-q:v", "5", "-y", temp_path
+                    ], capture_output=True, timeout=30)
+                    
+                    if r.returncode == 0:
+                        with open(temp_path, 'rb') as f:
+                            image_data = base64.b64encode(f.read()).decode()
+                        os.remove(temp_path)
+                    else:
+                        with open(image_path, 'rb') as f:
+                            image_data = base64.b64encode(f.read()).decode()
                 else:
-                    self.send_json({'error': f'No image provided and file not found: {image_path}'}, status=400)
+                    self.send_json({'error': f'Image not found: {image_path}'}, status=400)
                     return
             
-            # Add context from form data
-            context = []
-            if data.get('strain'):
-                context.append(f"Strain: {data['strain']}")
-            if data.get('leafSymptoms'):
-                context.append(f"Symptoms: {data['leafSymptoms']}")
-            if data.get('growthStage'):
-                context.append(f"Growth Stage: {data['growthStage']}")
-            if data.get('phLevel'):
-                context.append(f"pH Level: {data['phLevel']}")
-            if data.get('temperature'):
-                context.append(f"Temperature: {data['temperature']}")
-            if data.get('humidity'):
-                context.append(f"Humidity: {data['humidity']}")
-            
+            # Build context
+            ctx = []
+            for key in ['strain', 'leafSymptoms', 'growthStage', 'phLevel', 'temperature', 'humidity']:
+                if data.get(key):
+                    ctx.append(f"{key}: {data[key]}")
             prompt = ANALYSIS_PROMPT
-            if context:
-                prompt += f"\n\nContext from grower:\n" + "\n".join(context)
+            if ctx:
+                prompt += f"\n\nContext: {', '.join(ctx)}"
             
-            # Send to LM Studio
-            url = f"{LM_STUDIO_URL}/responses"
-            payload = {
-                "model": VISION_MODEL,
-                "input": [{
-                    "role": "user",
-                    "content": [
-                        {"type": "input_text", "text": prompt},
-                        {"type": "input_image", "image_url": f"data:image/png;base64,{image_data}"}
-                    ]
-                }]
-            }
+            # Call LM Studio via curl
+            analysis_text, error = self.lm_chat(prompt, image_data)
             
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode(),
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {API_KEY}"
-                }
-            )
+            if error:
+                self.send_json({'error': f'LM Studio error: {error}'}, status=500)
+                return
             
-            with urllib.request.urlopen(req, timeout=120) as response:
-                result = json.loads(response.read().decode())
-                analysis_text = result.get('output', [{}])[0].get('content', [{}])[0].get('text', '')
-                
-                # Save report
-                self.save_report(analysis_text, data)
-                
-                # Return in expected format
-                self.send_json({
-                    'analysis': {
-                        'diagnosis': analysis_text,
-                        'healthScore': self.extract_health_score(analysis_text),
-                        'urgency': 'medium',
-                        'confidence': 0.85,
-                        'recommendations': self.extract_recommendations(analysis_text)
-                    },
-                    'metadata': {
-                        'provider': 'lmstudio',
-                        'model': VISION_MODEL,
-                        'timestamp': datetime.now().isoformat()
-                    }
-                })
-                
+            # Extract health score
+            health = 7
+            m = re.search(r'(\d+)\s*/\s*10', analysis_text)
+            if m:
+                health = int(m.group(1))
+            
+            # Save report
+            self.save_report(analysis_text, data)
+            
+            self.send_json({
+                'analysis': {
+                    'diagnosis': analysis_text,
+                    'healthScore': health,
+                    'urgency': 'medium',
+                    'confidence': 0.85,
+                    'recommendations': self.extract_recs(analysis_text)
+                },
+                'metadata': {'provider': 'lmstudio', 'model': VISION_MODEL, 'timestamp': datetime.now().isoformat()}
+            })
+            
         except json.JSONDecodeError:
             self.send_json({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
             self.send_json({'error': str(e)}, status=500)
     
-    def extract_health_score(self, text):
-        """Extract health score from analysis text"""
-        import re
-        match = re.search(r'(\d+)\s*/\s*10', text)
-        if match:
-            return int(match.group(1))
-        # Look for "8/10" or "Health: 8" patterns
-        match = re.search(r'[Hh]ealth[^0-9]*(\d+)', text)
-        if match:
-            return int(match.group(1))
-        return 7  # default
-    
-    def extract_recommendations(self, text):
-        """Extract recommendations from analysis text"""
-        import re
+    def extract_recs(self, text):
         recs = []
-        # Look for recommendation sections
-        match = re.search(r'[Rr]ecommendations?[:\s]*([\s\S]+)$', text)
-        if match:
-            rec_text = match.group(1)
-            lines = [l.strip() for l in rec_text.split('\n') if l.strip()]
-            for line in lines[:5]:
+        m = re.search(r'[Rr]ecommendations?[:\s]*([\s\S]+)$', text)
+        if m:
+            for line in m.group(1).split('\n')[:5]:
+                line = line.strip()
                 if len(line) > 10:
                     recs.append(line)
-        return recs if recs else ['Monitor plant health', 'Check pH levels', 'Ensure proper lighting']
+        return recs if recs else ['Monitor health', 'Check pH', 'Ensure proper lighting']
     
     def handle_chat(self):
-        """Handle chat messages"""
         content_length = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_length)
         data = json.loads(body)
-        
         message = data.get('message', '')
         
-        # Use LM Studio for chat
-        url = f"{LM_STUDIO_URL}/chat/completions"
-        payload = {
-            "model": TEXT_MODEL,
-            "messages": [
-                {"role": "system", "content": "You are an expert cannabis cultivation assistant. Provide helpful, accurate advice about growing cannabis."},
-                {"role": "user", "content": message}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 1000
-        }
-        
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode(),
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {API_KEY}"
-            }
+        system = "You are an expert cannabis cultivation assistant."
+        response_text, error = self.lm_chat(
+            f"{system}\n\nUser: {message}",
+            max_tokens=800, temp=0.7
         )
         
-        try:
-            with urllib.request.urlopen(req, timeout=60) as response:
-                result = json.loads(response.read().decode())
-                response_text = result['choices'][0]['message']['content']
-                self.send_json({
-                    'response': response_text,
-                    'metadata': {'provider': 'lmstudio', 'model': TEXT_MODEL}
-                })
-        except Exception as e:
-            self.send_json({'response': f'Error: {str(e)}'}, status=500)
+        if error:
+            self.send_json({'response': f'Error: {error}'}, status=500)
+        else:
+            self.send_json({'response': response_text, 'metadata': {'provider': 'lmstudio', 'model': TEXT_MODEL}})
     
     def handle_add_strain(self):
-        """Add a new strain"""
         content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length)
-        data = json.loads(body)
+        data = json.loads(self.rfile.read(content_length))
         data['id'] = str(random.randint(1000, 9999))
         self.send_json(data)
     
     def handle_update_sensors(self):
-        """Update sensor data"""
         self.send_json({'success': True})
     
     def handle_update_settings(self):
-        """Update settings"""
         self.send_json({'success': True})
     
     def handle_automation(self):
-        """Handle automation commands"""
         self.send_json({'success': True, 'message': 'Automation command received'})
     
     def save_report(self, analysis, data=None):
-        """Save analysis to reports directory"""
-        report_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reports')
-        os.makedirs(report_dir, exist_ok=True)
-        
-        filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        filepath = os.path.join(report_dir, filename)
-        
-        with open(filepath, 'w') as f:
-            f.write(f"CannaAI Plant Analysis Report\n")
-            f.write(f"Generated: {datetime.now()}\n")
-            f.write(f"Model: {VISION_MODEL}\n")
-            if data:
-                f.write(f"Strain: {data.get('strain', 'Unknown')}\n")
-                f.write(f"Stage: {data.get('growthStage', 'Unknown')}\n")
+        reports_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+        with open(os.path.join(reports_dir, f'{ts}.txt'), 'w') as f:
+            f.write(f"CannaAI - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Strain: {data.get('strain') if data else 'Unknown'}\n")
+            f.write(f"Stage: {data.get('growthStage') if data else 'Unknown'}\n")
             f.write("=" * 50 + "\n\n")
             f.write(analysis)
-        
-        print(f"📄 Report saved: {filepath}")
     
     def send_json(self, data, status=200):
-        """Send JSON response"""
-        response = json.dumps(data).encode()
+        response = json.dumps(data)
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
-        self.send_header('Content-Length', len(response))
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Length', len(response))
         self.end_headers()
-        self.wfile.write(response)
+        self.wfile.write(response.encode())
     
     def log_message(self, format, *args):
-        """Custom logging"""
-        print(f"[CannaAI] {args[0]}")
+        pass
 
-def main():
-    """Start the CannaAI server"""
-    print(f"""
-╔══════════════════════════════════════════════╗
-║         🌱 CannaAI - Android Backend         ║
-╠══════════════════════════════════════════════╣
-║  LM Studio: {LM_STUDIO_URL}           ║
-║  Vision: {VISION_MODEL}                     ║
-║  Text: {TEXT_MODEL}                     ║
-║  Server: http://{HOST}:{PORT}                ║
-╚══════════════════════════════════════════════╝
-    """)
-    
-    handler = lambda *args, **kwargs: CannaAIHandler(*args, directory=os.path.dirname(os.path.abspath(__file__)), **kwargs)
+
+def run_server():
     server = HTTPServer((HOST, PORT), CannaAIHandler)
-    
-    print(f"🚀 CannaAI server running on http://{HOST}:{PORT}")
-    print(f"📸 Capture: POST /api/capture")
-    print(f"🧠 Analyze: POST /api/analyze")
-    print(f"💬 Chat: POST /api/chat")
-    print(f"❤️  Health: GET /api/health")
-    print(f"\nPress Ctrl+C to stop\n")
-    
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\n👋 Shutting down CannaAI server...")
-        server.shutdown()
+    print(f'CannaAI running on http://{HOST}:{PORT}')
+    print(f'Vision: {VISION_MODEL} | Text: {TEXT_MODEL}')
+    server.serve_forever()
 
-if __name__ == "__main__":
-    main()
+
+if __name__ == '__main__':
+    run_server()
