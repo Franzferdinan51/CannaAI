@@ -203,12 +203,35 @@ node test-api-endpoint.js
 
 CannaAI runs on Android devices via Termux — no Node.js PC required.
 
-### Android Backend (Python — No Node Dependencies)
-For lightweight plant monitoring on Android without the full Node.js stack:
+### Android Backend (Python — Zero Node Dependencies) ⭐
 ```bash
 cd android_backend
-./start.sh
-# Server starts on port 3000 with basic health, strains, and chat endpoints
+python3 cannaai_server.py
+# Server starts on port 3000 with full plant analysis
+```
+
+**API Endpoints:**
+- `GET /api/health` — health check
+- `POST /api/analyze` — plant health analysis with vision AI
+- `GET /api/strains` — strain database
+- `GET /api/chat?message=...` — cannabis grow assistant
+
+### Termux-Specific Fixes (Critical for Python Backend)
+
+1. **Use `qwen3.5-0.8b` for vision** — `gemma-4-26b-a4b` hangs on Termux API calls
+2. **Use curl subprocess, NOT urllib** — urllib hangs on Termux when calling LM Studio
+3. **Set TMPDIR to `/data/data/com.termux/files/usr/tmp`** — `/tmp` is a restricted symlink on Android
+
+```python
+# Correct LM Studio call from Termux:
+import subprocess, os
+tmp_dir = os.environ.get('TMPDIR', '/data/data/com.termux/files/usr/tmp')
+req_file = f"{tmp_dir}/req_{os.getpid()}.json"
+subprocess.run(['curl', '-s', '--max-time', '120', '-X', 'POST',
+    f'{LM_STUDIO_URL}/chat/completions',
+    '-H', 'Content-Type: application/json',
+    '-H', f'Authorization: Bearer {API_KEY}',
+    '--data-binary', f'@{req_file}'], capture_output=True, timeout=130)
 ```
 
 ### Full CannaAI on Termux
@@ -226,15 +249,17 @@ npm run dev
 ### Android Compatibility Notes
 - `sharp` image processing is bypassed by default on android-arm64 — uses `image-simple.ts` (pure JS, no native binaries)
 - `heic-convert` is lazy-loaded to avoid Node.js/localStorage compatibility issues
-- Prisma may need `binaryTargets` adjusted in `prisma/schema.prisma` for your platform
+- Prisma may need `binaryTargets = ["native", "debian-openssl-1.1.x"]` in `prisma/schema.prisma`
 - Use the Python backend (`android_backend/`) for zero-dependency plant monitoring
 
 ### ADB Control via OpenClaw
-Connect to your Android device wirelessly via ADB for full remote control:
+Connect to your Android device wirelessly via ADB:
 ```bash
-adb connect <device-ip>:5555
+# Get wireless ADB IP and port from Developer Options → Wireless Debugging
+adb connect <device-ip>:<port>
+# e.g. adb connect 100.91.33.100:40835
 ```
-OpenClaw can then take screenshots, tap, swipe, and interact with the CannaAI web UI directly from the phone.
+OpenClaw can then take screenshots, tap, swipe, and interact with the CannaAI web UI directly.
 
 ## 🚢 Deployment
 
@@ -278,7 +303,7 @@ MIT - See LICENSE file
 
 ---
 
-![Version](https://img.shields.io/badge/version-0.2.0-brightgreen.svg)
-![Last Updated](https://img.shields.io/badge/last%20updated-April%2019%2C%2026-blue.svg)
+![Version](https://img.shields.io/badge/version-0.3.0-brightgreen.svg)
+![Last Updated](https://img.shields.io/badge/last%20updated-April%2021%2C%2026-blue.svg)
 
-**Last Updated:** April 19, 2026
+**Last Updated:** April 21, 2026
