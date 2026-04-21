@@ -1,0 +1,62 @@
+CannaAI Plant Analysis Report
+Generated: 2026-04-20 01:07:20.655491
+Model: google/gemma-4-26b-a4b
+Strain: Blunt Force Fauna
+Stage: vegetative
+==================================================
+
+
+Expert Cannabis Cultivator.
+Deep, comprehensive analysis of a cannabis plant based on an image and provided context.
+
+        *   Strain: Blunt Force Fauna.
+        *   Stage (user-provided): Vegetative.
+        *   Image: A single photo showing a medium-sized cannabis plant in a grow tent/environment.
+
+        1.  Growth Stage Assessment.
+        2.  Detailed Health Score (1-10).
+        3.  Comprehensive Nutrient Analysis.
+        4.  Detailed Pest & Disease Check.
+        5.  Environmental Assessment.
+        6.  Plant Genetics & Variety Indicators.
+        7.  Specific Actionable Recommendations.
+
+    *   *Subject:* One plant, medium density.
+    *   *Structure:* Bushy, somewhat upright but looks a bit "leggy" or stretched in certain areas (hard to tell without top-down view, but internodal spacing seems slightly wide).
+    *   *Color:* Primarily deep green. No obvious yellowing/chlorosis visible on the main leaves shown. Tips look relatively healthy, though some very slight upward curling (potential heat/light) might be present in small areas.
+    *   *Leaves:* Fan leaves are well-developed. No obvious white powdery spots or webbing visible at this resolution.
+    *   *Environment:* Grow tent setup. Some reflections on the tent wall. Lighting seems sufficient for veg, though shadows are deep.
+
+        *   User says "vegetative." I agree. It's not a seedling (leaves are mature). Not flowering (no pistil/calyx development visible; it looks like a single-cola or early bushy top structure).
+        *   *Estimation:* Mid-vegetative stage (likely week 3-5 depending on cultivar and light intensity).
+        *   *Details:* No pistils visible. Calyx-to-leaf ratio is irrelevant yet. Trichomes not visible at this zoom.
+
+        *   *Score:* 8/10. It's a strong plant.
+        *   *Indicators:* Stem thickness looks decent but hard to measure via photo. Node spacing: Looks slightly stretched (indicates light could be closer or more intense, OR it's just the way the camera angle is). New growth vitality: Good, lush green. Recovery ability: Appears robust.
+
+        *   *Nitrogen (N):* Deep green leaves suggest good N levels. No significant yellowing of older leaves visible.
+        *   *Phosphorus (P):* No purple stems or dark spotting seen.
+        *   *Potassium (K):* Edge burn/tip burn isn't prominent, though some leaf tips look slightly "tight."
+        *   *Ca/Mg:* No interveinal chlorosis visible.
+        *   *Lockout/pH:* Hard to tell from one photo, but no obvious distress signals like "clawing" (excess N) or "claw-less" limpness (low N).
+
+        *   *Spider Mites:* No webbing seen.
+        *   *Aphids/Thrips:* No visible honeydew or silvering at this distance.
+        *   *Powdery Mildew:* None visible on the surface of leaves shown.
+        *   *Root Rot/Botrytis:* Not applicable in veg stage (no buds to rot), but plant looks turgid (not wilting).
+
+        *   *Light:* The plant is bushy, which usually means good light, but if it's "stretching," the PPFD might be slightly low for the density. No visible bleaching (light burn) on top leaves.
+        *   *Temperature/Humidity:* Leaves aren't "cupped" upward (which suggests high heat/low humidity). They look relatively flat and healthy.
+        *   *Airflow:* The plant has good mass, but needs internal airflow to prevent microclimates within the canopy.
+
+        *   *Strain:* Blunt Force Fauna (sounds like a heavy Indica or Hybrid).
+        *   *Morphology:* Wide fan leaves/dense structure suggests an Indica-leaning phenotype.
+        *   *Pigments:* Deep green, no anthocyanins visible yet (expected in veg).
+
+        *   *Immediate:* Check pH and EC of runoff. Prune bottom growth if necessary to improve airflow.
+        *   *Weekly:* Monitor node spacing; if stretching continues, increase light intensity or lower light.
+        *   *Training:* Since it's in Veg, suggest LST (Low Stress Training) or Topping to break apical dominance and create a flat canopy for the flowering stage.
+
+    *   Use technical terms (Internodal distance, PPFD, Chlorosis, Apical Dominance, Turgor pressure).
+    *   Ensure all headers are included.
+    *   Maintain a professional "expert" persona.
