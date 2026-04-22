@@ -15,7 +15,7 @@ from datetime import datetime
 import random
 
 # Configuration
-LM_STUDIO_URL = "http://100.68.208.113:1234/v1"
+LM_STUDIO_URL = "http://192.168.1.81:1234/v1"
 API_KEY = "sk-lm-xWvfQHZF:L8P76SQakhEA95U8DDNf"
 VISION_MODEL = "qwen3.6-35b-a3b"   # qwen3.6-35b works via curl subprocess on Termux API calls
 TEXT_MODEL = "qwen3.6-35b-a3b"
