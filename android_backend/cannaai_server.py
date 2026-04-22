@@ -17,14 +17,16 @@ import random
 # Configuration
 LM_STUDIO_URL = "http://100.68.208.113:1234/v1"
 API_KEY = "sk-lm-xWvfQHZF:L8P76SQakhEA95U8DDNf"
-VISION_MODEL = "qwen3.5-0.8b"   # gemma hangs on Termux API calls
-TEXT_MODEL = "qwen3.5-0.8b"
+VISION_MODEL = "qwen3.6-35b-a3b"   # qwen3.6-35b works via curl subprocess on Termux API calls
+TEXT_MODEL = "qwen3.6-35b-a3b"
 PORT = 3000
 HOST = "0.0.0.0"
 
 ANALYSIS_PROMPT = """You are an expert cannabis cultivator analyzing a plant photo. Provide:
 
 ## 1. GROWTH STAGE ASSESSMENT
+- CRITICAL: The plant is in VEGETATIVE STAGE unless clear flowering signs (white pistils, bud formation, flowering trichomes) are visible
+- If flowering signs are ambiguous, default to VEGETATIVE
 - Exact stage (seedling/vegetative/early flower/mid flower/late flower/harvest ready)
 - Week estimate if flowering
 - Pistil development and color
@@ -156,7 +158,12 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             if 'error' in result:
                 return None, result['error']
             
-            return result['choices'][0]['message']['content'], None
+            msg = result['choices'][0]['message']
+            # qwen3.6-35b puts reasoning in reasoning_content, response in content
+            text = msg.get('reasoning_content') or msg.get('content') or ''
+            if not text:
+                text = msg.get('content', '')
+            return text, None
             
         except subprocess.TimeoutExpired:
             os.remove(req_file)
