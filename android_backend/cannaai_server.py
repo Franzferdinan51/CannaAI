@@ -110,7 +110,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         else:
             self.send_json({'error': 'Not found'}, status=404)
     
-    def lm_chat(self, prompt, image_b64=None, max_tokens=1200, temp=0.3):
+    def lm_chat(self, prompt, image_b64=None, max_tokens=4096, temp=0.3):
         """Call LM Studio via curl subprocess (NOT urllib - urllib hangs on Termux)"""
         if image_b64:
             messages = [
@@ -126,7 +126,8 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             "model": VISION_MODEL if image_b64 else TEXT_MODEL,
             "messages": messages,
             "max_tokens": max_tokens,
-            "temperature": temp
+            "temperature": temp,
+            "stream": False
         }
         
         tmp_dir = os.environ.get('TMPDIR', '/data/data/com.termux/files/usr/tmp')
