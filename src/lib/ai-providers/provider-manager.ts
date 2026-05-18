@@ -10,6 +10,7 @@ import { GroqProvider } from './groq-provider';
 import { TogetherProvider } from './together-provider';
 import { ClaudeProvider } from './claude-provider';
 import { PerplexityProvider } from './perplexity-provider';
+import { Gemma4BrowserProvider } from './gemma4-browser-provider';
 import { BaseProvider, AIRequest, AIResponse, ProviderHealth } from './base-provider';
 
 export interface SelectionCriteria {
@@ -140,6 +141,18 @@ export class ProviderManager {
     if (configs.perplexity.apiKey) {
       this.pool.providers.push(new PerplexityProvider(configs.perplexity));
       this.pool.weights.set('perplexity', 0.8);
+    }
+
+    // Gemma4 Browser Extension - only available in browser with extension installed
+    if (typeof window !== 'undefined' && typeof chrome !== 'undefined') {
+      try {
+        const gemma4Provider = new Gemma4BrowserProvider();
+        this.pool.providers.push(gemma4Provider);
+        this.pool.weights.set('gemma4-browser', 0.95); // High priority for local inference
+        console.log('🔌 Gemma4 browser extension provider registered');
+      } catch (error) {
+        console.warn('Gemma4 extension not available:', error);
+      }
     }
 
     console.log(`🔌 Initialized ${this.pool.providers.length} AI providers`);
