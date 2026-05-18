@@ -111,7 +111,7 @@ function AppWithSocket() {
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 {/* Redirect root to dashboard */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/" element={<Navigate to="/scanner" replace />} />
 
                 {/* Main Application Routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
