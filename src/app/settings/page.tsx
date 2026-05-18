@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
 import { LMStudioSettings } from '@/components/lmstudio/LMStudioSettings';
 import { AgentEvolverSettings } from '@/components/ai/AgentEvolverSettings';
-import { Brain, Cpu, ServerCog, Settings2 } from 'lucide-react';
+import Link from 'next/link';
+import { Brain, Cpu, ServerCog, Settings2, ChevronLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -61,6 +63,11 @@ export default function SettingsPage() {
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         <div className="space-y-2">
           <div className="flex items-center space-x-3">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            </Link>
             <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <Settings2 className="w-5 h-5 text-emerald-400" />
             </div>
