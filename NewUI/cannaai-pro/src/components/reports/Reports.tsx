@@ -993,7 +993,6 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
               </button>
             </div>
           </div>
-          </div>
         )}
 
         {activeTab === 'analytics' && (

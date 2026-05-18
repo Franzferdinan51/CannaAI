@@ -19,15 +19,6 @@ export const db =
         url: process.env.DATABASE_URL,
       },
     },
-    // Connection pool configuration
-    pool: {
-      timeout: queryTimeout,
-      poolTimeout: 60000, // 60 seconds
-    },
-    // Transaction configuration
-    transactionOptions: {
-      timeout: queryTimeout,
-    },
     // Error formatting for better debugging
     errorFormat: 'colorless',
   })

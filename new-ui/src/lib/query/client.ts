@@ -37,7 +37,7 @@ const createQueryClient = () => {
     defaultOptions: {
       queries: {
         staleTime: STALE_TIME,
-        cacheTime: CACHE_TIME,
+        gcTime: CACHE_TIME,
         retry: RETRY_COUNT,
         retryDelay: RETRY_DELAY,
         refetchOnWindowFocus: false,

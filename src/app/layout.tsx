@@ -14,6 +14,7 @@ if (typeof window === 'undefined') {
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import './service-worker-register.js';
+import Providers from '@/components/providers';
 
 export const viewport: Viewport = {
   themeColor: '#00ff88',
@@ -41,7 +42,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
