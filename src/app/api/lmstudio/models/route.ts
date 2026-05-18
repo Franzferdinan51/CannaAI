@@ -13,21 +13,18 @@ export const revalidate = false;
 // LM Studio model paths for different operating systems
 const LM_STUDIO_PATHS = {
   win32: [
-    path.join(process.env.USERPROFILE || '', '.lmstudio', 'models'),  // Your actual path
+    path.join(process.env.USERPROFILE || '', '.lmstudio', 'models'),
     path.join(process.env.LOCALAPPDATA || '', 'LM-Studio', 'models'),
     path.join(process.env.USERPROFILE || '', '.cache', 'lm-studio', 'models'),
     path.join(process.env.USERPROFILE || '', 'AppData', 'Roaming', 'LM-Studio', 'models'),
-    'C:\\LM-Studio\\models',
-    'D:\\LM-Studio\\models',
-    'E:\\LM-Studio\\models'
   ],
   darwin: [
-    path.join(process.env.HOME || '', '.lmstudio', 'models'),  // macOS equivalent
+    path.join(process.env.HOME || '', '.lmstudio', 'models'),
     path.join(process.env.HOME || '', 'Library', 'Application Support', 'LM-Studio', 'models'),
     path.join(process.env.HOME || '', '.cache', 'lm-studio', 'models')
   ],
   linux: [
-    path.join(process.env.HOME || '', '.lmstudio', 'models'),  // Linux equivalent
+    path.join(process.env.HOME || '', '.lmstudio', 'models'),
     path.join(process.env.HOME || '', '.local', 'share', 'LM-Studio', 'models'),
     path.join(process.env.HOME || '', '.cache', 'lm-studio', 'models')
   ]
@@ -343,9 +340,8 @@ export async function GET(request: NextRequest) {
 
     // Check if we're running on Netlify or similar serverless platform
     const isNetlify = !!process.env.NETLIFY ||
-                     process.env.VERCEL ||
-                     !process.platform ||
-                     typeof window !== 'undefined';
+                     !!process.env.VERCEL ||
+                     !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
     if (isNetlify) {
       console.log('Running on serverless platform - returning demo data');

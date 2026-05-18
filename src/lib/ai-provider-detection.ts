@@ -58,7 +58,7 @@ export function getProviderConfig(provider: string) {
   switch (provider) {
     case 'lmstudio':
       return {
-        baseUrl: process.env.LM_STUDIO_BASE_URL || 'http://100.116.54.125:1234/v1',
+        baseUrl: process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234/v1',
         apiKey: process.env.LM_STUDIO_API_KEY || '',
         model: process.env.LM_STUDIO_MODEL || 'qwen3-vl-8b',
       };

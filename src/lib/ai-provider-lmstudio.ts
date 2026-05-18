@@ -3,8 +3,8 @@
  * Auto-detects available models and allows selection
  */
 
-const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_BASE_URL || 'http://100.116.54.125:1234/v1';
-const LM_STUDIO_API_KEY = process.env.LM_STUDIO_API_KEY || 'sk-lm-zO7bswIc:WkHEMTUfVNkq5WYNyFOW';
+const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234/v1';
+const LM_STUDIO_API_KEY = process.env.LM_STUDIO_API_KEY || '';
 
 // Default models (can be overridden)
 const LM_STUDIO_VISION_MODEL = process.env.LM_STUDIO_VISION_MODEL || 'qwen/qwen3.5-9b';

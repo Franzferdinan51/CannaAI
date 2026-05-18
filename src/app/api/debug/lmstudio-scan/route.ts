@@ -6,11 +6,12 @@ import path from 'path';
 export const dynamic = 'auto';
 export const revalidate = false;
 
-// Test the exact path you mentioned
+// Test paths for LM Studio
 const TEST_PATHS = [
-  'C:\\Users\\Ryan\\.lmstudio\\models',
-  path.join(process.env.USERPROFILE || '', '.lmstudio', 'models'),
-  'C:/Users/Ryan/.lmstudio/models'
+  path.join(process.env.HOME || process.env.USERPROFILE || '', '.lmstudio', 'models'),
+  path.join(process.env.LOCALAPPDATA || '', 'LM-Studio', 'models'),
+  path.join(process.env.HOME || '', 'Library', 'Application Support', 'LM-Studio', 'models'),
+  path.join(process.env.HOME || '', '.local', 'share', 'LM-Studio', 'models'),
 ];
 
 async function scanDirectory(dirPath: string, depth: number = 0): Promise<any> {

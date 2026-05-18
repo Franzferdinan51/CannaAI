@@ -56,7 +56,7 @@ export class PerplexityProvider extends BaseProvider {
         signal: AbortSignal.timeout(5000)
       });
 
-      return response.ok || response.status === 400; // 400 is ok (just invalid request)
+      return response.ok; // Only 200-299 means available
     } catch (error) {
       return false;
     }

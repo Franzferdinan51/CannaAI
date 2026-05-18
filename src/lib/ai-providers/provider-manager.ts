@@ -228,6 +228,7 @@ export class ProviderManager {
   ): Promise<AIResponse> {
     let attempt = 0;
     let delay = config.baseDelay;
+    let lastError: Error | null = null;
 
     while (attempt < config.maxAttempts) {
       try {
@@ -238,7 +239,7 @@ export class ProviderManager {
         lastError = error as Error;
 
         if (attempt >= config.maxAttempts) {
-          throw error;
+          throw lastError;
         }
 
         // Calculate delay with exponential backoff and jitter

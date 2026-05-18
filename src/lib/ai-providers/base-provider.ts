@@ -217,6 +217,9 @@ export abstract class BaseProvider {
       if (this.health.consecutiveFailures >= 5) {
         this.health.status = 'unhealthy';
         this.circuitBreaker.state = 'open';
+        // Set next attempt time based on resetTimeout (default 30 seconds)
+        const resetTimeout = this.circuitBreaker.config?.resetTimeout || 30000;
+        this.circuitBreaker.nextAttempt = Date.now() + resetTimeout;
       }
     }
 
