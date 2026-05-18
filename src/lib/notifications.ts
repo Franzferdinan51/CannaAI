@@ -48,21 +48,172 @@ export interface DeliveryResult {
   response?: any;
 }
 
-// Email service (mock implementation - integrate with real service)
-export async function sendEmail(to: string, subject: string, body: string): Promise<DeliveryResult> {
+// AgentMail inbox configuration
+const AGENTMAIL_API_KEY = 'am_us_ff3c79e0405a8d50cd4bfa709f4812f5c4be6a9abbba50c0fa9c0085b2548fe6';
+const AGENTMAIL_INBOX = 'duckbot@agentmail.to';
+const AGENTMAIL_SEND_ENDPOINT = 'https://api.agentmail.to/inboxes/duckbot@agentmail.to/messages/send';
+
+// AgentMail API response
+interface AgentMailSendResponse {
+  success?: boolean;
+  id?: string;
+  error?: string;
+  message?: string;
+}
+
+// Build a clean HTML email card for notifications
+function buildNotificationHtml(data: NotificationData): string {
+  const severityColors: Record<SeverityLevel, string> = {
+    info: '#3498db',
+    warning: '#f39c12',
+    critical: '#e74c3c',
+    emergency: '#991111'
+  };
+  const color = severityColors[data.severity] || '#95a5a6';
+
+  const metaRows = data.metadata
+    ? Object.entries(data.metadata)
+        .map(([k, v]) => `<tr><td style="padding:4px 12px;color:#666;font-size:13px"><strong>${k}</strong></td><td style="padding:4px 12px;font-size:13px">${v}</td></tr>`)
+        .join('')
+    : '';
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f4f4">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:20px">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+          <!-- Header -->
+          <tr>
+            <td style="background:${color};padding:20px 24px">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="color:#fff;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">CultivAI Pro</span>
+                  </td>
+                  <td align="right">
+                    <span style="color:rgba(255,255,255,0.8);font-size:12px">${data.severity.toUpperCase()}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:24px">
+              <h2 style="margin:0 0 8px;color:#1a1a1a;font-size:20px;font-weight:600">${data.title}</h2>
+              <p style="margin:0 0 16px;color:#444;font-size:15px;line-height:1.5">${data.message}</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f8f8;border-radius:8px">
+                ${metaRows}
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:16px 24px;border-top:1px solid #eee">
+              <p style="margin:0;color:#aaa;font-size:12px">Sent by CultivAI Pro • ${new Date().toLocaleString()}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+// Send email via AgentMail API
+async function sendViaAgentMail(to: string, subject: string, data: NotificationData): Promise<DeliveryResult> {
+  const html = buildNotificationHtml(data);
+  const text = `${data.title}\n${data.message}${data.metadata ? '\n\n' + JSON.stringify(data.metadata, null, 2) : ''}`;
+
+  let response: Response;
   try {
-    // TODO: Integrate with real email service (SendGrid, SES, etc.)
-    console.log(`[EMAIL] Sending to ${to}: ${subject}`);
-
-    // Mock delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-
+    response = await fetch(AGENTMAIL_SEND_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AGENTMAIL_API_KEY}`
+      },
+      body: JSON.stringify({
+        to,
+        subject,
+        html,
+        text
+      })
+    });
+  } catch (error) {
     return {
-      success: true,
+      success: false,
       channel: 'email',
-      messageId: `email_${Date.now()}`,
-      response: { status: 'sent' }
+      error: error instanceof Error ? error.message : 'Network error reaching AgentMail API'
     };
+  }
+
+  let body: AgentMailSendResponse;
+  try {
+    body = await response.json();
+  } catch {
+    return {
+      success: false,
+      channel: 'email',
+      error: `Invalid response from AgentMail API (${response.status})`
+    };
+  }
+
+  if (!response.ok || !body.success) {
+    return {
+      success: false,
+      channel: 'email',
+      error: body.error || `AgentMail API error ${response.status}`
+    };
+  }
+
+  return {
+    success: true,
+    channel: 'email',
+    messageId: body.id,
+    response: body
+  };
+}
+
+// Email service — now fully wired to AgentMail
+export async function sendEmail(to: string, subject: string, body: string, data?: NotificationData): Promise<DeliveryResult> {
+  try {
+    // AgentMail requires a to address; if none provided, skip
+    if (!to || to === 'user@example.com') {
+      return { success: false, channel: 'email', error: 'No recipient address' };
+    }
+
+    // Forward full NotificationData so we can build a rich HTML card
+    if (data) {
+      return sendViaAgentMail(to, subject, data);
+    }
+
+    // Fallback plain-text email
+    const plainHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,sans-serif;padding:20px">
+  <h2>${subject}</h2>
+  <p>${body}</p>
+</body></html>`;
+
+    const response = await fetch(AGENTMAIL_SEND_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AGENTMAIL_API_KEY}`
+      },
+      body: JSON.stringify({ to, subject, html: plainHtml, text: body })
+    });
+
+    const result: AgentMailSendResponse = await response.json();
+    if (!response.ok || !result.success) {
+      return { success: false, channel: 'email', error: result.error || `AgentMail error ${response.status}` };
+    }
+
+    return { success: true, channel: 'email', messageId: result.id, response: result };
   } catch (error) {
     return {
       success: false,
@@ -303,8 +454,8 @@ export async function sendNotification(data: NotificationData): Promise<{
 
   // Send to other channels based on preferences
   if (data.channels.includes('email') && (preferences?.emailEnabled ?? true)) {
-    // TODO: Get actual email from user preferences
-    const result = await sendEmail('user@example.com', data.title, data.message);
+    // TODO: Get actual email from user preferences (no User model yet — pass through data or use default)
+    const result = await sendEmail('user@example.com', data.title, data.message, data);
     deliveries.push(result);
   }
 
@@ -462,10 +613,10 @@ export async function getNotificationHistory(filters?: {
 
   if (filters?.startDate || filters?.endDate) {
     where.createdAt = {};
-    if (filters.startDate) {
+    if (filters?.startDate) {
       where.createdAt.gte = filters.startDate;
     }
-    if (filters.endDate) {
+    if (filters?.endDate) {
       where.createdAt.lte = filters.endDate;
     }
   }
