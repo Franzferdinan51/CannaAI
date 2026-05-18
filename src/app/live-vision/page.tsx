@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LiveCamera from '@/components/live-camera';
+import Link from 'next/link';
 import {
   Camera,
   Activity,
@@ -21,7 +22,8 @@ import {
   RotateCcw,
   Settings,
   Monitor,
-  Webcam
+  Webcam,
+  ChevronLeft
 } from 'lucide-react';
 
 interface AnalysisResult {
@@ -189,6 +191,11 @@ export default function LiveVisionDashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+              </Link>
               <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
                 <Eye className="h-8 w-8 text-blue-400" />
               </div>
