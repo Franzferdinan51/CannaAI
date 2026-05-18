@@ -48,6 +48,10 @@ import {
   SensorData
 } from './types';
 
+// UI Components
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 interface ChatSidebarProps {
   conversations: ChatConversation[];
   currentConversationId?: string;

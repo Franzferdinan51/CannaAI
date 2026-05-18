@@ -46,6 +46,51 @@ const EnhancedScanner: React.FC = () => {
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Camera state
+  const [cameraActive, setCameraActive] = useState(false);
+
+  // Strains state
+  const [strains, setStrains] = useState<Strain[]>([]);
+
+  // Camera functions
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setCameraActive(true);
+      }
+    } catch (error) {
+      console.error('Camera access denied:', error);
+      toast.error('Camera access denied. Please allow camera permissions.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && currentImage) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        const captured = canvas.toDataURL('image/jpeg', 0.9);
+        setCurrentImage(captured);
+        stopCamera();
+      }
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState<AnalysisFormData>({
