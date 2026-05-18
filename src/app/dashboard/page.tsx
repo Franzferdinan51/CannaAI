@@ -84,9 +84,9 @@ const initialSensorData = {
 const dashboardItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'analysis', label: 'AI Analysis', icon: Brain },
-    { id: 'agent', label: 'Agent Evolution', icon: Bot },
     { id: 'environment', label: 'Environment', icon: Thermometer },
     { id: 'strains', label: 'Strain Database', icon: Sprout },
+    { id: 'agent', label: 'Agent Evolution', icon: Bot },
 ];
 
 // Dashboard component that uses searchParams
@@ -371,6 +371,27 @@ function DashboardContent() {
                         {/* Overview Dashboard */}
                         {activeDashboard === 'overview' && (
                             <>
+                                {/* Photo Analysis Hero Card */}
+                                <Link href="/photo-analysis" className="block">
+                                    <Card className="border-emerald-500/30 bg-gradient-to-r from-emerald-950/50 to-cyan-950/30 backdrop-blur-sm shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 group cursor-pointer">
+                                        <CardContent className="p-6 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-emerald-500/20 rounded-xl group-hover:bg-emerald-500/30 transition-colors">
+                                                    <Camera className="w-8 h-8 text-emerald-400" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-xl font-bold text-slate-100 group-hover:text-emerald-400 transition-colors">Photo Analysis</h2>
+                                                    <p className="text-sm text-slate-400">Upload a plant photo for instant AI-powered health diagnosis</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-emerald-400 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                <span className="text-sm font-medium hidden md:block">Open Scanner</span>
+                                                <Camera className="w-5 h-5" />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                                     {/* New Analysis Card */}
                                     <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm shadow-lg">
@@ -717,6 +738,266 @@ function DashboardContent() {
                             </>
                         )}
 
+                        {/* AI Analysis Tab */}
+                        {activeDashboard === 'analysis' && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-3">
+                                            <Brain className="w-7 h-7 text-emerald-400" />
+                                            AI Plant Analysis
+                                        </h2>
+                                        <p className="text-slate-400 mt-1">Upload photos and get instant AI-powered plant health diagnosis</p>
+                                    </div>
+                                    <Link href="/photo-analysis">
+                                        <Button className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(5,150,105,0.3)]">
+                                            <Camera className="w-4 h-4 mr-2" />
+                                            Open Photo Analysis
+                                        </Button>
+                                    </Link>
+                                </div>
+
+                                {analysisResult ? (
+                                    <Card className="border-emerald-500/20 bg-emerald-950/10 backdrop-blur-sm shadow-lg">
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center text-emerald-400">
+                                                <Activity className="w-5 h-5 mr-2" />
+                                                Latest Analysis Results
+                                                {analysisMetadata?.provider && (
+                                                    <Badge variant="outline" className="ml-auto border-emerald-500/50 text-emerald-400">
+                                                        {analysisMetadata.provider === 'fallback' ? 'Rule-Based' : 'AI Analysis'}
+                                                    </Badge>
+                                                )}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-6 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white">{analysisResult.diagnosis || 'Analysis Complete'}</h3>
+                                                    <div className="flex items-center space-x-2 mt-2">
+                                                        <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${analysisResult.urgency === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border border-red-500/50' :
+                                                            analysisResult.urgency === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' :
+                                                                analysisResult.urgency === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' :
+                                                                    'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                                                            }`}>
+                                                            {analysisResult.urgency || 'NORMAL'}
+                                                        </span>
+                                                        <span className="text-xs text-slate-400">Confidence: {analysisResult.confidence || 0}%</span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className={`text-4xl font-bold ${analysisResult.healthScore > 70 ? "text-emerald-400" : analysisResult.healthScore > 40 ? "text-amber-400" : "text-red-400"}`}>
+                                                        {analysisResult.healthScore || '?'}
+                                                    </div>
+                                                    <div className="text-xs text-slate-500 uppercase font-medium tracking-wider">Health Score</div>
+                                                </div>
+                                            </div>
+                                            {analysisResult.recommendations && (
+                                                <div>
+                                                    <h4 className="text-sm font-medium text-slate-300 mb-3">Recommendations</h4>
+                                                    {Array.isArray(analysisResult.recommendations) ? (
+                                                        <ul className="space-y-2">
+                                                            {analysisResult.recommendations.map((rec: string, i: number) => (
+                                                                <li key={i} className="flex items-start text-sm text-slate-400">
+                                                                    <span className="mr-2 text-emerald-500">*</span>{rec}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {analysisResult.recommendations.immediate && (
+                                                                <div>
+                                                                    <h5 className="text-xs font-semibold text-red-400 uppercase mb-1">Immediate</h5>
+                                                                    <ul className="space-y-1">
+                                                                        {analysisResult.recommendations.immediate.map((rec: string, i: number) => (
+                                                                            <li key={i} className="text-sm text-slate-400">* {rec}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                            {analysisResult.recommendations.shortTerm && (
+                                                                <div>
+                                                                    <h5 className="text-xs font-semibold text-amber-400 uppercase mb-1">Short Term</h5>
+                                                                    <ul className="space-y-1">
+                                                                        {analysisResult.recommendations.shortTerm.map((rec: string, i: number) => (
+                                                                            <li key={i} className="text-sm text-slate-400">* {rec}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm">
+                                        <CardContent className="p-12 text-center">
+                                            <Brain className="w-16 h-16 mx-auto mb-4 text-slate-600" />
+                                            <h3 className="text-lg font-semibold text-slate-300 mb-2">No Analysis Yet</h3>
+                                            <p className="text-slate-500 mb-6">Upload a plant photo to get AI-powered health diagnosis</p>
+                                            <Link href="/photo-analysis">
+                                                <Button className="bg-emerald-600 hover:bg-emerald-500 text-white">
+                                                    <Camera className="w-4 h-4 mr-2" />
+                                                    Start Photo Analysis
+                                                </Button>
+                                            </Link>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Analysis capabilities */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {[
+                                        { icon: Leaf, title: 'Nutrient Deficiencies', desc: 'Detect N, P, K, Ca, Mg, Fe deficiencies from leaf color and patterns', color: 'emerald' },
+                                        { icon: Bug, title: 'Pest & Disease', desc: 'Identify spider mites, aphids, powdery mildew, bud rot and more', color: 'amber' },
+                                        { icon: Activity, title: 'Stress Analysis', desc: 'Light burn, heat stress, overwatering, root issues detection', color: 'blue' },
+                                    ].map((item, i) => (
+                                        <Card key={i} className={`border-slate-800 bg-slate-900/40 hover:border-${item.color}-500/30 transition-colors`}>
+                                            <CardContent className="p-5">
+                                                <item.icon className={`w-8 h-8 mb-3 text-${item.color}-400`} />
+                                                <h3 className="font-semibold text-slate-200 mb-1">{item.title}</h3>
+                                                <p className="text-xs text-slate-400">{item.desc}</p>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Environment Tab */}
+                        {activeDashboard === 'environment' && (
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-3">
+                                    <Thermometer className="w-7 h-7 text-emerald-400" />
+                                    Environment Monitoring
+                                </h2>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {[
+                                        { label: 'Temperature', value: `${sensorData.temperature}C`, icon: Thermometer, color: 'orange', optimal: '22-26C' },
+                                        { label: 'Humidity', value: `${sensorData.humidity}%`, icon: Droplets, color: 'blue', optimal: '50-70%' },
+                                        { label: 'VPD', value: `${sensorData.vpd} kPa`, icon: Cloud, color: 'purple', optimal: '0.8-1.2' },
+                                        { label: 'CO2', value: `${sensorData.co2} ppm`, icon: Wind, color: 'emerald', optimal: '800-1200' },
+                                        { label: 'pH', value: `${sensorData.ph}`, icon: Droplet, color: 'cyan', optimal: '6.0-6.5' },
+                                        { label: 'EC', value: `${sensorData.ec} mS/cm`, icon: Zap, color: 'yellow', optimal: '1.2-1.8' },
+                                        { label: 'Soil Moisture', value: `${sensorData.soilMoisture}%`, icon: Droplets, color: 'blue', optimal: '40-60%' },
+                                        { label: 'Light', value: `${sensorData.lightIntensity} PPFD`, icon: Sun, color: 'amber', optimal: '600-900' },
+                                    ].map((stat, i) => (
+                                        <Card key={i} className="border-slate-800 bg-slate-900/40">
+                                            <CardContent className="p-5">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <stat.icon className={`w-5 h-5 text-${stat.color}-400`} />
+                                                    <span className="text-xs text-slate-500">Optimal: {stat.optimal}</span>
+                                                </div>
+                                                <p className="text-sm text-slate-400">{stat.label}</p>
+                                                <p className="text-2xl font-bold text-slate-100">{stat.value}</p>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+
+                                {/* Environmental chart */}
+                                <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm">
+                                    <CardHeader>
+                                        <CardTitle className="text-slate-100">24-Hour Trends</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="h-[300px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <AreaChart data={[
+                                                    { time: '00:00', temp: 22, hum: 50 },
+                                                    { time: '04:00', temp: 21, hum: 52 },
+                                                    { time: '08:00', temp: 23, hum: 55 },
+                                                    { time: '12:00', temp: 25, hum: 48 },
+                                                    { time: '16:00', temp: 24, hum: 50 },
+                                                    { time: '20:00', temp: 22, hum: 53 },
+                                                    { time: '24:00', temp: 21, hum: 55 },
+                                                ]}>
+                                                    <defs>
+                                                        <linearGradient id="envColorTemp" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
+                                                            <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                                                        </linearGradient>
+                                                        <linearGradient id="envColorHum" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+                                                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
+                                                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: '1px solid #334155', color: '#f8fafc' }} />
+                                                    <Area type="monotone" dataKey="temp" stroke="#f97316" strokeWidth={2} fillOpacity={1} fill="url(#envColorTemp)" name="Temp (C)" />
+                                                    <Area type="monotone" dataKey="hum" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#envColorHum)" name="Humidity (%)" />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                        {/* Strains Tab */}
+                        {activeDashboard === 'strains' && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-3">
+                                        <Sprout className="w-7 h-7 text-emerald-400" />
+                                        Strain Database
+                                    </h2>
+                                    <Badge variant="outline" className="border-emerald-500/50 text-emerald-400">
+                                        {strains.length} strains
+                                    </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {strains.map((strain) => (
+                                        <Card key={strain.id} className="border-slate-800 bg-slate-900/40 hover:border-emerald-500/30 transition-all duration-200 group">
+                                            <CardContent className="p-5">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div>
+                                                        <h3 className="font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors">{strain.name}</h3>
+                                                        <p className="text-xs text-slate-500">{strain.type}</p>
+                                                    </div>
+                                                    {strain.isPurpleStrain && (
+                                                        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">Purple</Badge>
+                                                    )}
+                                                </div>
+                                                {strain.lineage && (
+                                                    <p className="text-xs text-slate-400 mb-2">
+                                                        <span className="text-slate-500">Lineage:</span> {strain.lineage}
+                                                    </p>
+                                                )}
+                                                {strain.description && (
+                                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2">{strain.description}</p>
+                                                )}
+                                                {strain.optimalConditions && (
+                                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                                        <div className="bg-slate-800/50 rounded px-2 py-1">
+                                                            <span className="text-slate-500">pH:</span>{' '}
+                                                            <span className="text-slate-300">{strain.optimalConditions.ph?.range?.join(' - ')}</span>
+                                                        </div>
+                                                        <div className="bg-slate-800/50 rounded px-2 py-1">
+                                                            <span className="text-slate-500">Veg Temp:</span>{' '}
+                                                            <span className="text-slate-300">{strain.optimalConditions.temperature?.veg?.join('-')}C</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <Link href={`/photo-analysis?strain=${encodeURIComponent(strain.name)}`}>
+                                                    <Button variant="outline" size="sm" className="w-full mt-3 border-slate-700 hover:border-emerald-500/50 hover:bg-emerald-500/10">
+                                                        <Camera className="w-3 h-3 mr-2" />
+                                                        Analyze with this strain
+                                                    </Button>
+                                                </Link>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Agent Dashboard */}
                         {activeDashboard === 'agent' && (
                             <div className="max-w-4xl mx-auto">
@@ -724,7 +1005,7 @@ function DashboardContent() {
                             </div>
                         )}
 
-  
+
                         {/* Analytics Dashboard (Placeholder/Alternative) */}
                         {activeDashboard === 'analytics' && (
                             <div className="grid grid-cols-1 gap-6">

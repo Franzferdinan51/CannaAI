@@ -33,17 +33,23 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
   // Navigation items
   // Use static labels to avoid SSR/CSR text drift
   const navItems = [
-    { href: '/', label: 'Dashboard', icon: Home, pageId: 'dashboard' },
+    { href: '/photo-analysis', label: 'Photo Analysis', icon: Camera, pageId: 'photo-analysis' },
+    { href: '/dashboard', label: 'Dashboard', icon: Home, pageId: 'dashboard' },
     { href: '/live-vision', label: 'Live Vision', icon: Camera, pageId: 'live-vision' },
-    { href: '/all-tools', label: 'All Tools', icon: Wrench, pageId: 'all-tools' },
-    { href: 'http://localhost:8000', label: 'Agent Evolver', icon: BrainCircuit, pageId: 'agent-evolver' },
+    { href: '/tools', label: 'Tools', icon: Wrench, pageId: 'tools' },
     { href: '/settings', label: 'Settings', icon: Settings, pageId: 'settings' }
   ];
 
   // Get current page context
   const getCurrentPageContext = () => {
     // Use path only; avoid client-only search params during SSR to prevent hydration drift
-    if (pathname === "/" || pathname.startsWith("/dashboard")) {
+    if (pathname.startsWith("/photo-analysis")) {
+      return {
+        page: "photo-analysis",
+        title: "Photo Analysis",
+        description: "AI-powered plant health diagnosis"
+      };
+    } else if (pathname === "/" || pathname.startsWith("/dashboard")) {
       return {
         page: "dashboard",
         title: "Dashboard",
@@ -55,10 +61,10 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
         title: "Live Vision",
         description: "Real-time plant analysis and monitoring"
       };
-    } else if (pathname.startsWith("/all-tools")) {
+    } else if (pathname.startsWith("/tools")) {
       return {
-        page: "all-tools",
-        title: "Cultivation Tools",
+        page: "tools",
+        title: "Tools",
         description: "Complete toolkit for plant management"
       };
     } else if (pathname.startsWith("/settings")) {
@@ -121,7 +127,7 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
           <nav className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
               const isExternal = item.href.startsWith('http');
 
               return (
@@ -185,7 +191,7 @@ export default function GlobalHeader({ className = "" }: GlobalHeaderProps) {
             <nav className="py-2 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
               const isExternal = item.href.startsWith('http');
 
               return (

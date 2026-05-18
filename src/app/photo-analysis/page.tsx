@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Link from 'next/link';
 import {
   Loader2,
   Upload,
@@ -23,7 +24,9 @@ import {
   Thermometer,
   Bug,
   Virus,
-  Zap
+  Zap,
+  Wrench,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -191,6 +194,11 @@ export default function PhotoAnalysisPage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                </Button>
+              </Link>
               <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg shadow-emerald-500/20">
                 <Camera className="w-6 h-6 text-white" />
               </div>
@@ -201,14 +209,28 @@ export default function PhotoAnalysisPage() {
                 <p className="text-sm text-slate-400">AI-powered plant health diagnosis</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              className="border-slate-700 hover:bg-slate-800"
-              onClick={() => setShowHistory(!showHistory)}
-            >
-              <History className="w-4 h-4 mr-2" />
-              History ({analysisHistory.length})
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link href="/tools">
+                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hidden md:flex">
+                  <Wrench className="w-4 h-4 mr-2" />
+                  Tools
+                </Button>
+              </Link>
+              <Link href="/settings">
+                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hidden md:flex">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                className="border-slate-700 hover:bg-slate-800"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                <History className="w-4 h-4 mr-2" />
+                History ({analysisHistory.length})
+              </Button>
+            </div>
           </div>
         </div>
       </div>
