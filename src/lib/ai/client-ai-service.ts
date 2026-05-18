@@ -13,9 +13,9 @@ if (typeof window === 'undefined') {
 
 // Safe localStorage wrapper for SSR compatibility
 const safeLocalStorage = {
-  getItem: (key: string) => { try { return safeLocalStorage.getItem(key); } catch { return null; } },
-  setItem: (key: string, value: string) => { try { safeLocalStorage.setItem(key, value); } catch {} },
-  removeItem: (key: string) => { try { safeLocalStorage.removeItem(key); } catch {} },
+  getItem: (key: string) => { try { return globalThis.localStorage.getItem(key); } catch { return null; } },
+  setItem: (key: string, value: string) => { try { globalThis.localStorage.setItem(key, value); } catch {} },
+  removeItem: (key: string) => { try { globalThis.localStorage.removeItem(key); } catch {} },
 };
 
 

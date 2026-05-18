@@ -282,34 +282,42 @@ export default function ToolsPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <h4 className="font-medium text-blue-300 mb-3">Q1 2025</h4>
+                <h4 className="font-medium text-blue-300 mb-3">Completed</h4>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full" />
                     <span className="text-sm text-slate-300">Pest & Disease ID</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full" />
-                    <span className="text-sm text-slate-300">Nutrient Calculator</span>
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    <span className="text-sm text-slate-300">Photo Analysis (AI)</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    <span className="text-sm text-slate-300">Live Vision</span>
                   </div>
                 </div>
               </div>
               <div>
-                <h4 className="font-medium text-blue-300 mb-3">Q2 2025</h4>
+                <h4 className="font-medium text-blue-300 mb-3">In Progress</h4>
                 <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full" />
+                    <span className="text-sm text-slate-300">Nutrient Calculator</span>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-yellow-400 rounded-full" />
                     <span className="text-sm text-slate-300">Strain Library</span>
                   </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium text-blue-300 mb-3">Planned</h4>
+                <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-blue-400 rounded-full" />
                     <span className="text-sm text-slate-300">System Diagnostics</span>
                   </div>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-medium text-blue-300 mb-3">Q3 2025</h4>
-                <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-blue-400 rounded-full" />
                     <span className="text-sm text-slate-300">Harvest Optimizer</span>
