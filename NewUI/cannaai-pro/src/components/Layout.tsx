@@ -25,9 +25,18 @@ const mobileNavItems = navItems.filter(item =>
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const handleViewportChange = () => setIsDesktop(mediaQuery.matches);
+    handleViewportChange();
+    mediaQuery.addEventListener('change', handleViewportChange);
+    return () => mediaQuery.removeEventListener('change', handleViewportChange);
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -67,7 +76,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <motion.aside
         initial={false}
         animate={{
-          x: isSidebarOpen ? 0 : -280,
+          // Keep the navigation visible on desktop; the closed transform is
+          // only for the mobile drawer.
+          x: isDesktop || isSidebarOpen ? 0 : -280,
         }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="fixed lg:static inset-y-0 left-0 z-50 w-[280px] bg-[#101712]/95 backdrop-blur-xl border-r border-emerald-950/80 flex flex-col lg:translate-x-0"
