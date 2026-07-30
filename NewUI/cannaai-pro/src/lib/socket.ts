@@ -28,7 +28,10 @@ class SocketService {
       return this.socket;
     }
 
-    this.socket = io('http://localhost:3000', {
+    const backendUrl = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:3000`
+      : 'http://localhost:3000');
+    this.socket = io(backendUrl, {
       path: '/api/socketio',
       transports: ['websocket', 'polling'],
       timeout: 20000,

@@ -36,16 +36,9 @@ class ErrorBoundary extends React.Component<
             >
               Reload Page
             </button>
-            {process.env.NODE_ENV === 'development' && (
-              <details className="mt-4 text-left">
-                <summary className="cursor-pointer text-gray-400">
-                  Error Details
-                </summary>
-                <pre className="mt-2 p-4 bg-gray-800 rounded text-xs overflow-auto">
-                  {this.state.error?.stack}
-                </pre>
-              </details>
-            )}
+            <pre className="mt-4 p-4 bg-gray-800 rounded text-left text-xs overflow-auto whitespace-pre-wrap">
+              {this.state.error?.message || this.state.error?.stack || 'No error details were provided.'}
+            </pre>
           </div>
         </div>
       );
@@ -69,14 +62,15 @@ const LoadingSpinner: React.FC<{ message?: string }> = ({
 
 // Lazy load components for better performance
 const Layout = lazy(() => import('./components/Layout'));
-const Dashboard = lazy(() => import('./components/dashboard/Dashboard').then(module => ({ default: module.Dashboard })));
-const Scanner = lazy(() => import('./components/scanner/Scanner').then(module => ({ default: module.Scanner })));
+const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
+const Scanner = lazy(() => import('./components/scanner/Scanner'));
 const Plants = lazy(() => import('./components/plants/PlantsSimple').then(module => ({ default: module.default })));
 const Sensors = lazy(() => import('./components/sensors').then(module => ({ default: module.default })));
 const Reports = lazy(() => import('./components/reports/ReportsSimple').then(module => ({ default: module.default })));
-const Chat = lazy(() => import('./components/chat/Chat').then(module => ({ default: module.Chat })));
-const Settings = lazy(() => import('./components/settings/Settings').then(module => ({ default: module.Settings })));
+const Chat = lazy(() => import('./components/chat/Chat'));
+const Settings = lazy(() => import('./components/settings/Settings'));
 const Automation = lazy(() => import('./components/automation/AutomationSimple').then(module => ({ default: module.default })));
+const Advisors = lazy(() => import('./components/advisors/LocalMoaAdvisors'));
 
 import { SocketProvider } from './contexts/SocketContext';
 import { useSocket } from './lib/socket';
@@ -122,6 +116,7 @@ function AppWithSocket() {
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/automation" element={<Automation />} />
+                <Route path="/advisors" element={<Advisors />} />
 
                 {/* Nested routes for specific functionality */}
                 <Route path="/plants/:plantId" element={<Plants />} />

@@ -12,6 +12,8 @@ import { ClaudeProvider } from './claude-provider';
 import { PerplexityProvider } from './perplexity-provider';
 import { Gemma4BrowserProvider } from './gemma4-browser-provider';
 import { BaseProvider, AIRequest, AIResponse, ProviderHealth } from './base-provider';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export interface SelectionCriteria {
   requireVision?: boolean;
@@ -73,6 +75,7 @@ export class ProviderManager {
   }
 
   private initializeProviders(): void {
+    const lmStudio = resolveLmStudioConfig();
     const configs = {
       openrouter: {
         apiKey: process.env.OPENROUTER_API_KEY,
@@ -81,9 +84,9 @@ export class ProviderManager {
         title: 'CannaAI Pro'
       },
       'lm-studio': {
-        url: process.env.LM_STUDIO_URL || 'http://localhost:1234',
+        url: lmStudio.url,
         model: process.env.LM_STUDIO_MODEL || 'granite-4.0-micro',
-        apiKey: process.env.LM_STUDIO_API_KEY
+        apiKey: lmStudio.apiKey
       },
       gemini: {
         apiKey: process.env.GEMINI_API_KEY,
@@ -108,7 +111,9 @@ export class ProviderManager {
     };
 
     // Initialize all providers
-    if (configs.openrouter.apiKey || process.env.NODE_ENV === 'development') {
+    // A missing key cannot make requests. Do not advertise a non-existent
+    // development fallback as a connected provider.
+    if (configs.openrouter.apiKey) {
       this.pool.providers.push(new OpenRouterProvider(configs.openrouter));
       this.pool.weights.set('openrouter', 1.0);
     }
@@ -169,7 +174,9 @@ export class ProviderManager {
       try {
         const provider = this.getProvider(providerName);
         if (provider) {
+          const startedAt = Date.now();
           const isAvailable = await provider.isAvailable();
+          provider.setAvailability(isAvailable, Date.now() - startedAt);
           if (!isAvailable) {
             console.warn(`⚠️ Provider ${providerName} is not available`);
           }
@@ -186,6 +193,18 @@ export class ProviderManager {
     };
 
     check();
+  }
+
+  /** Probe every configured provider before reporting it as usable. */
+  async refreshProviderHealth(): Promise<void> {
+    await Promise.all(this.pool.providers.map(async (provider) => {
+      const startedAt = Date.now();
+      try {
+        provider.setAvailability(await provider.isAvailable(), Date.now() - startedAt);
+      } catch {
+        provider.setAvailability(false, Date.now() - startedAt);
+      }
+    }));
   }
 
   /**
@@ -493,4 +512,32 @@ export function shutdownProviderManager(): void {
     providerManager.shutdown();
     providerManager = null;
   }
+}
+
+function resolveLmStudioConfig(): { url: string; apiKey?: string } {
+  const configuredUrl = process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL;
+  const configuredApiKey = process.env.LM_STUDIO_API_KEY;
+  if (configuredUrl && configuredApiKey) return { url: configuredUrl, apiKey: configuredApiKey };
+
+  // CannaAI is often run beside OpenClaw. Reuse its already-configured local
+  // LM Studio connection without copying its credential into this repository.
+  // Explicit CannaAI env vars always win, and non-OpenClaw installations keep
+  // the normal localhost fallback.
+  const configPath = process.env.OPENCLAW_CONFIG_PATH || (process.env.HOME ? join(process.env.HOME, '.openclaw', 'openclaw.json') : '');
+  try {
+    if (configPath && existsSync(configPath)) {
+      const config = JSON.parse(readFileSync(configPath, 'utf8'));
+      const provider = config?.models?.providers?.lmstudio;
+      if (provider?.baseUrl || provider?.apiKey) {
+        return {
+          url: configuredUrl || provider.baseUrl || 'http://localhost:1234',
+          apiKey: configuredApiKey || provider.apiKey
+        };
+      }
+    }
+  } catch (error) {
+    console.warn('Unable to read the local OpenClaw LM Studio configuration:', error instanceof Error ? error.message : error);
+  }
+
+  return { url: configuredUrl || 'http://localhost:1234', apiKey: configuredApiKey };
 }

@@ -12,9 +12,9 @@ import {
 } from './types';
 
 // API Configuration
-const API_BASE_URL = typeof window !== 'undefined' && process.env.NODE_ENV === 'production'
-  ? window.location.origin
-  : 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
+  ? `${window.location.protocol}//${window.location.hostname}:3000`
+  : 'http://localhost:3000');
 
 const API_ENDPOINTS = {
   // Sensor CRUD

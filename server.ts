@@ -126,6 +126,12 @@ async function createCustomServer() {
               return callback(null, true);
             }
 
+            // Allow the HTTPS endpoint Tailscale Serve gives the Pixel. HTTPS
+            // is required for mobile camera capture outside localhost.
+            if (origin.match(/^https:\/\/[\w.-]+\.ts\.net(?::\d+)?$/)) {
+              return callback(null, true);
+            }
+
             // Allow local network ranges
             if (origin.match(/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/) ||
                 origin.match(/^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/) ||
