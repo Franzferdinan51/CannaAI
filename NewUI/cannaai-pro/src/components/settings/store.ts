@@ -95,6 +95,27 @@ const createDefaultSettings = (): Settings => ({
     baseUrl: 'https://api.groq.com/openai/v1',
     connected: false,
   },
+  grok: {
+    model: 'grok-4.20-0309-reasoning',
+    baseUrl: 'openclaw://xai',
+    connected: false,
+    managedAuth: true,
+    description: 'Grok through your OpenClaw-managed xAI OAuth session',
+  },
+  openclaw: {
+    model: '',
+    baseUrl: 'openclaw://local',
+    connected: false,
+    managedAuth: true,
+    description: 'Uses the connected OpenClaw agent and its active provider',
+  },
+  hermes: {
+    model: '',
+    baseUrl: 'hermes://local',
+    connected: false,
+    managedAuth: true,
+    description: 'Uses the connected Hermes Agent and its active provider',
+  },
   anthropic: {
     apiKey: '',
     model: 'claude-3-5-sonnet-20241022',
@@ -589,6 +610,10 @@ export const useSettingsStore = create<SettingsStore>()(
             case 'groq':
             case 'anthropic':
               return !!config.apiKey && !!config.model;
+            case 'grok':
+            case 'openclaw':
+            case 'hermes':
+              return !!config.baseUrl;
             default:
               return false;
           }

@@ -15,7 +15,24 @@ export function middleware(request: NextRequest) {
     headersConfig = { ...headersConfig, ...securityHeadersConfig.apis };
   }
 
-  return applySecurityHeaders(request, response, headersConfig);
+  const securedResponse = applySecurityHeaders(request, response, headersConfig);
+
+  // The Vite UI is intentionally hosted on a sibling port (and the Pixel
+  // reaches it through Tailscale). Expose the JSON API to those clients.
+  // Authentication is handled by the individual routes; these APIs do not
+  // use browser credentials, so a wildcard is safe here and avoids brittle
+  // per-device origin lists.
+  if (isApi) {
+    securedResponse.headers.set('Access-Control-Allow-Origin', '*');
+    securedResponse.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    securedResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  }
+
+  if (isApi && request.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers: securedResponse.headers });
+  }
+
+  return securedResponse;
 }
 
 export const config = {

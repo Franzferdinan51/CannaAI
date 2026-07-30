@@ -25,7 +25,7 @@ const defaultSettings: ChatSettings = {
     lmStudio: {
       enabled: false,
       url: 'http://localhost:1234',
-      model: 'granite-4.0-micro',
+      model: '',
       timeout: 120000,
       maxTokens: 2000,
       temperature: 0.3

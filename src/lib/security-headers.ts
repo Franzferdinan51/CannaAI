@@ -50,7 +50,7 @@ const getDefaultSecurityHeaders = (): SecurityHeadersConfig => {
     permissionsPolicy: [
       'accelerometer=()',
       'autoplay=()',
-      'camera=()',
+      'camera=(self "https://*.ts.net")',
       'clipboard-read=()',
       'clipboard-write=()',
       'display-capture=()',
@@ -61,7 +61,7 @@ const getDefaultSecurityHeaders = (): SecurityHeadersConfig => {
       'hid=()',
       'interest-cohort=()',
       'magnetometer=()',
-      'microphone=()',
+      'microphone=(self "https://*.ts.net")',
       'midi=()',
       'payment=()',
       'usb=()',

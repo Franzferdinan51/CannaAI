@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { maskSettings, safeMergeSettings } from '@/lib/settings-security';
+import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -26,10 +27,11 @@ const defaultSettings = {
   lmStudio: {
     url: 'http://localhost:1234',
     apiKey: '',
-    model: 'llama-3-8b-instruct'
+    // Resolve the model currently loaded in LM Studio at request time.
+    model: ''
   },
   openRouter: {
-    apiKey: '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',
+    apiKey: process.env.OPENROUTER_API_KEY || '',
     model: 'nvidia/nemotron-nano-12b-v2-vl:free',  // FREE backup model
     baseUrl: 'https://openrouter.ai/api/v1'
   },
@@ -48,20 +50,33 @@ const defaultSettings = {
     model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
     baseUrl: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1'
   },
+  grok: {
+    apiKey: '',
+    model: process.env.XAI_MODEL || 'grok-4.20-0309-reasoning',
+    baseUrl: 'openclaw://xai',
+    managedAuth: true
+  },
+  openclaw: {
+    apiKey: '',
+    model: process.env.OPENCLAW_MODEL || '',
+    baseUrl: process.env.OPENCLAW_GATEWAY_URL || 'openclaw://local',
+    managedAuth: true
+  },
+  hermes: {
+    apiKey: '',
+    model: process.env.HERMES_MODEL || '',
+    baseUrl: 'hermes://local',
+    managedAuth: true
+  },
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
     baseUrl: process.env.ANTHROPIC_BASE_URL || 'https://ai.gigamind.dev/claude-code'
   },
   bailian: {
-    apiKey: process.env.ALIBABA_API_KEY || 'sk-0a5ffe492bfe4222b8964b685554aa00',
+    apiKey: process.env.ALIBABA_API_KEY || '',
     model: process.env.QWEN_MODEL || 'qwen-vl-max-latest',
     baseUrl: process.env.QWEN_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
-  },
-  openclaw: {
-    apiKey: process.env.OPENCLAW_API_KEY || 'openclaw-local',
-    model: process.env.OPENCLAW_MODEL || 'qwen3.5-plus',
-    baseUrl: process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789/v1'
   },
   agentEvolver: {
     enabled: false,
@@ -179,6 +194,8 @@ export async function POST(request: NextRequest) {
           settings.groq = safeMergeSettings(settings.groq, config);
         } else if (provider === 'anthropic') {
           settings.anthropic = safeMergeSettings(settings.anthropic, config);
+        } else if (['grok', 'openclaw', 'hermes'].includes(provider)) {
+          settings[provider] = safeMergeSettings(settings[provider], config);
         } else {
           return NextResponse.json(
             { error: 'Invalid provider' },
@@ -200,7 +217,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        if (!['lm-studio', 'openrouter', 'openai', 'gemini', 'groq', 'anthropic'].includes(provider)) {
+        if (!['lm-studio', 'openrouter', 'openai', 'gemini', 'groq', 'anthropic', 'grok', 'openclaw', 'hermes'].includes(provider)) {
           return NextResponse.json(
             { error: 'Invalid provider' },
             { status: 400 }
@@ -475,6 +492,20 @@ export async function POST(request: NextRequest) {
 
 async function getProviderModels(provider: string) {
   try {
+    if (['grok', 'openclaw', 'hermes'].includes(provider)) {
+      const statuses = await getUnifiedAI().refreshProviderHealth();
+      const target = provider === 'grok' ? statuses.find((item) => item.name === 'openclaw') : statuses.find((item) => item.name === provider);
+      return {
+        success: Boolean(target?.health.status === 'healthy'),
+        message: target?.health.status === 'healthy' ? `${provider} agent is connected` : `${provider} agent is not available`,
+        models: target?.health.status === 'healthy' ? [{
+          id: provider === 'grok' ? 'grok-managed-by-openclaw' : `${provider}-active`,
+          name: provider === 'grok' ? 'Grok (OpenClaw OAuth)' : `${provider} active model`,
+          provider,
+          capabilities: ['text-generation', 'long-context']
+        }] : []
+      };
+    }
     if (provider === 'lm-studio') {
       // Get LM Studio models - doesn't need API key
       const response = await fetch(`${settings.lmStudio.url}/v1/models`, {
@@ -891,6 +922,16 @@ function determineCapabilities(modelId: string): string[] {
 
 async function testAIConnection(provider: string) {
   try {
+    if (['grok', 'openclaw', 'hermes'].includes(provider)) {
+      const statuses = await getUnifiedAI().refreshProviderHealth();
+      const target = provider === 'grok' ? statuses.find((item) => item.name === 'openclaw') : statuses.find((item) => item.name === provider);
+      const healthy = target?.health.status === 'healthy';
+      return {
+        success: healthy,
+        message: healthy ? `${provider} is connected through its agent bridge` : `${provider} agent is not available`,
+        details: { managedAuth: true, provider: target?.name || provider, status: target?.health.status || 'unhealthy' }
+      };
+    }
     if (provider === 'lm-studio') {
       // Test LM Studio connection - no API key needed
       const response = await fetch(`${settings.lmStudio.url}/v1/models`, {

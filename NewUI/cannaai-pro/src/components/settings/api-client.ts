@@ -11,7 +11,9 @@ import {
 } from './types';
 
 // API base URL - adjust as needed for your environment
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
+  ? `${window.location.protocol}//${window.location.hostname}:3000`
+  : 'http://localhost:3000');
 
 class SettingsAPIClient {
   private api = axios.create({

@@ -276,13 +276,21 @@ async function main() {
 
     // Start backend first
     colorLog('cyan', '\n🚀 Starting services...');
-    backendProcess = spawnProcess(CONFIG.backend);
+    if (backendPortAvailable) {
+      backendProcess = spawnProcess(CONFIG.backend);
+    } else {
+      colorLog('green', `✅ Reusing the existing backend on port ${CONFIG.backend.port}`);
+    }
 
     // Wait for backend to be ready
     await waitForService(CONFIG.backend);
 
     // Then start frontend
-    frontendProcess = spawnProcess(CONFIG.frontend);
+    if (frontendPortAvailable) {
+      frontendProcess = spawnProcess(CONFIG.frontend);
+    } else {
+      colorLog('green', `✅ Reusing the existing frontend on port ${CONFIG.frontend.port}`);
+    }
 
     // Wait for frontend to be ready
     await waitForService(CONFIG.frontend);

@@ -192,7 +192,7 @@ export async function withSecurity(
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('X-XSS-Protection', '1; mode=block');
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    response.headers.set('Permissions-Policy', 'camera=(self "https://*.ts.net"), microphone=(self "https://*.ts.net"), geolocation=()');
 
     // Add CORS headers
     if (mergedOptions.allowedOrigins && mergedOptions.allowedOrigins.length > 0) {

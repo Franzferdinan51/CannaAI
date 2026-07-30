@@ -14,6 +14,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // The Vite web UI runs on a sibling port during development and on
+        // the same host in the Tailscale deployment. Keep the JSON API
+        // callable from both without requiring per-device CORS edits.
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,PATCH,DELETE,OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, X-Requested-With' },
+        ],
+      },
+      {
         source: '/sw.js',
         headers: [
           {

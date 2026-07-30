@@ -10,6 +10,9 @@ export interface Settings {
   openai: OpenAIConfig;
   gemini: GeminiConfig;
   groq: GroqConfig;
+  grok?: AgentProviderConfig;
+  openclaw?: AgentProviderConfig;
+  hermes?: AgentProviderConfig;
   anthropic: AnthropicConfig;
   agentEvolver: AgentEvolverSettings;
   notifications: NotificationSettings;
@@ -26,7 +29,19 @@ export type AIProviderType =
   | 'openai'
   | 'gemini'
   | 'groq'
-  | 'anthropic';
+  | 'anthropic'
+  | 'grok'
+  | 'openclaw'
+  | 'hermes';
+
+export interface AgentProviderConfig {
+  apiKey?: string;
+  model: string;
+  baseUrl: string;
+  connected: boolean;
+  managedAuth: boolean;
+  description?: string;
+}
 
 export interface LMStudioConfig {
   url: string;

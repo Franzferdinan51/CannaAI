@@ -11,6 +11,7 @@ import { TogetherProvider } from './together-provider';
 import { ClaudeProvider } from './claude-provider';
 import { PerplexityProvider } from './perplexity-provider';
 import { Gemma4BrowserProvider } from './gemma4-browser-provider';
+import { AgentCommandProvider } from './agent-command-provider';
 import { BaseProvider, AIRequest, AIResponse, ProviderHealth } from './base-provider';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -85,7 +86,10 @@ export class ProviderManager {
       },
       'lm-studio': {
         url: lmStudio.url,
-        model: process.env.LM_STUDIO_MODEL || 'granite-4.0-micro',
+        // Let LM Studio report the loaded instance. A stale hard-coded model
+        // makes a healthy server look broken and causes agent fallbacks to
+        // receive an LM-specific model id they cannot use.
+        model: process.env.LM_STUDIO_MODEL || '',
         apiKey: lmStudio.apiKey
       },
       gemini: {
@@ -107,6 +111,14 @@ export class ProviderManager {
       perplexity: {
         apiKey: process.env.PERPLEXITY_API_KEY,
         model: process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online'
+      },
+      openclaw: {
+        command: process.env.OPENCLAW_AGENT_COMMAND || 'openclaw',
+        model: process.env.OPENCLAW_MODEL || ''
+      },
+      hermes: {
+        command: process.env.HERMES_AGENT_COMMAND || 'hermes',
+        model: process.env.HERMES_MODEL || ''
       }
     };
 
@@ -147,6 +159,13 @@ export class ProviderManager {
       this.pool.providers.push(new PerplexityProvider(configs.perplexity));
       this.pool.weights.set('perplexity', 0.8);
     }
+
+    // These agents own OAuth and provider selection. Keep their credentials
+    // out of CannaAI and invoke their supported local interfaces instead.
+    this.pool.providers.push(new AgentCommandProvider('openclaw', configs.openclaw));
+    this.pool.weights.set('openclaw', 0.95);
+    this.pool.providers.push(new AgentCommandProvider('hermes', configs.hermes));
+    this.pool.weights.set('hermes', 0.9);
 
     // Gemma4 Browser Extension - only available in browser with extension installed
     if (typeof window !== 'undefined' && typeof chrome !== 'undefined') {
@@ -231,11 +250,12 @@ export class ProviderManager {
 
     let lastError: Error | null = null;
 
+    let providerRequest = request;
     for (const provider of providers) {
       try {
         const response = await this.executeWithRetry(
           provider,
-          request,
+          providerRequest,
           retryConfig
         );
 
@@ -246,6 +266,9 @@ export class ProviderManager {
       } catch (error) {
         lastError = error as Error;
         console.warn(`Provider ${provider.config.name} failed:`, lastError.message);
+        // A model id belongs to the provider that supplied it. Do not pass an
+        // LM Studio or Grok model id into a fallback agent provider.
+        providerRequest = { ...request, model: undefined };
         continue;
       }
     }
@@ -399,6 +422,7 @@ export class ProviderManager {
    */
   getProvidersStatus(): Array<{
     name: string;
+    model: string;
     health: ProviderHealth;
     metrics: any;
     capabilities: any;
@@ -406,6 +430,7 @@ export class ProviderManager {
   }> {
     return this.pool.providers.map(provider => ({
       name: provider.config.name,
+      model: provider.config.model,
       health: provider.getHealth(),
       metrics: provider.getMetrics(),
       capabilities: provider.getCapabilities(),
@@ -527,7 +552,7 @@ function resolveLmStudioConfig(): { url: string; apiKey?: string } {
   try {
     if (configPath && existsSync(configPath)) {
       const config = JSON.parse(readFileSync(configPath, 'utf8'));
-      const provider = config?.models?.providers?.lmstudio;
+      const provider = config?.models?.providers?.lmstudio || config?.models?.lmstudio;
       if (provider?.baseUrl || provider?.apiKey) {
         return {
           url: configuredUrl || provider.baseUrl || 'http://localhost:1234',

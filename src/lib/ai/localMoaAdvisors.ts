@@ -39,14 +39,35 @@ const skepticInstruction = [
 ].join(' ');
 
 export class LocalMoaAdvisors {
-  constructor(private readonly ai: Pick<UnifiedAI, 'execute'> = getUnifiedAI()) {}
+  constructor(private readonly ai: Pick<UnifiedAI, 'execute'> & Partial<Pick<UnifiedAI, 'refreshProviderHealth'>> = getUnifiedAI()) {}
 
   async run(request: LocalMoaRequest): Promise<LocalMoaResult> {
     const task = request.task.trim();
     if (!task) throw new Error('A task is required for MoA advice.');
 
-    const planner = await this.runStage('planner', plannerInstruction, task, request.context, request, request.maxAdvisorTokens || 500);
-    const skeptic = await this.runStage('skeptic', skepticInstruction, task, request.context, request, request.maxAdvisorTokens || 500);
+    // Refresh before selecting so a stale startup health value cannot route
+    // the entire three-stage workflow into a dead provider. Prefer the
+    // currently loaded local model, then the connected agent bridges.
+    const statuses = this.ai.refreshProviderHealth
+      ? await this.ai.refreshProviderHealth()
+      : [];
+    const requestedProvider = request.provider === 'grok' ? 'openclaw' : request.provider;
+    const selectedProvider = requestedProvider || [
+      'lm-studio',
+      'openclaw',
+      'hermes',
+      'openrouter',
+      'gemini'
+    ].find((name) => statuses.some((status) => status.name === name && status.health.status === 'healthy'));
+    const selectedModel = request.model || (request.provider === 'grok' ? 'grok-4.20-0309-reasoning' : undefined);
+    if (!selectedProvider) {
+      throw new Error('No connected AI provider is available. Connect LM Studio, OpenClaw, or Hermes in Settings.');
+    }
+
+    const selectedRequest = { ...request, provider: selectedProvider, model: selectedModel };
+
+    const planner = await this.runStage('planner', plannerInstruction, task, request.context, selectedRequest, request.maxAdvisorTokens || 500);
+    const skeptic = await this.runStage('skeptic', skepticInstruction, task, request.context, selectedRequest, request.maxAdvisorTokens || 500);
 
     const synthesisPrompt = [
       'You are the final synthesizer in CannaAI\'s local Mixture-of-Agents workflow.',
@@ -64,7 +85,7 @@ export class LocalMoaAdvisors {
       synthesisPrompt,
       task,
       undefined,
-      request,
+      selectedRequest,
       request.maxAggregatorTokens || 1400,
       true
     );

@@ -12,7 +12,7 @@ import { ProviderDetectionResult } from './ai-provider-detection';
 
 const BAILIAN_BASE_URL = process.env.QWEN_BASE_URL || 'https://coding-intl.dashscope.aliyuncs.com/v1';
 const BAILIAN_MODEL = process.env.QWEN_MODEL || 'qwen3.5-plus';
-const BAILIAN_API_KEY = process.env.ALIBABA_API_KEY || 'sk-sp-e1b3a679b93047978549f49bfcf73480';
+const BAILIAN_API_KEY = process.env.ALIBABA_API_KEY || '';
 const BAILIAN_TIMEOUT_MS = parseInt(process.env.BAILIAN_TIMEOUT_MS || '120000');
 
 // Vision-capable model for plant image analysis (qwen3.5-plus supports vision)

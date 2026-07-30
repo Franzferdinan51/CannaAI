@@ -79,8 +79,8 @@ export async function GET(request: NextRequest) {
       providers: providerStatus.map(p => ({
         id: p.name,
         name: p.name,
-        type: p.name === 'lm-studio' ? 'local' : 'cloud',
-        models: [],
+        type: ['lm-studio', 'openclaw', 'hermes'].includes(p.name) ? 'local' : 'cloud',
+        models: p.model ? [{ id: p.model, name: p.model, provider: p.name }] : [],
         config: p.capabilities,
         status: p.health.status === 'healthy' ? 'available' : p.health.status === 'unhealthy' ? 'error' : 'unavailable',
         lastChecked: new Date().toISOString(),
@@ -125,7 +125,9 @@ function getApiKeyStatus(provider: string): boolean {
     openrouter: process.env.OPENROUTER_API_KEY || '',
     'lm-studio': process.env.LM_STUDIO_URL || '',
     gemini: process.env.GEMINI_API_KEY || '',
-    groq: process.env.GROQ_API_KEY || '',
+    grok: process.env.XAI_API_KEY || '',
+    openclaw: process.env.OPENCLAW_AGENT_COMMAND || '',
+    hermes: process.env.HERMES_AGENT_COMMAND || '',
     together: process.env.TOGETHER_API_KEY || '',
     claude: process.env.ANTHROPIC_API_KEY || '',
     perplexity: process.env.PERPLEXITY_API_KEY || ''
@@ -139,7 +141,9 @@ function getEnvironmentVars(provider: string): string[] {
     openrouter: ['OPENROUTER_API_KEY', 'OPENROUTER_MODEL'],
     'lm-studio': ['LM_STUDIO_URL', 'LM_STUDIO_MODEL'],
     gemini: ['GEMINI_API_KEY', 'GEMINI_MODEL'],
-    groq: ['GROQ_API_KEY', 'GROQ_MODEL'],
+    grok: ['XAI_API_KEY', 'XAI_MODEL'],
+    openclaw: ['OPENCLAW_AGENT_COMMAND', 'OPENCLAW_MODEL'],
+    hermes: ['HERMES_AGENT_COMMAND', 'HERMES_MODEL'],
     together: ['TOGETHER_API_KEY', 'TOGETHER_MODEL'],
     claude: ['ANTHROPIC_API_KEY', 'CLAUDE_MODEL'],
     perplexity: ['PERPLEXITY_API_KEY', 'PERPLEXITY_MODEL']

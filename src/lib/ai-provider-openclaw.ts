@@ -12,8 +12,13 @@
  */
 
 import { ProviderDetectionResult } from './ai-provider-detection';
+import { AgentCommandProvider } from './ai-providers/agent-command-provider';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
-const OPENCLAW_GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789';
+const execFileAsync = promisify(execFile);
+
+const OPENCLAW_GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || resolveOpenClawGatewayUrl();
 const OPENCLAW_MODEL = process.env.OPENCLAW_MODEL || 'qwen3.5-plus';
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'openclaw-local';
 const OPENCLAW_HEALTHCHECK_TIMEOUT_MS = parseInt(process.env.OPENCLAW_HEALTHCHECK_TIMEOUT_MS || '2000', 10);
@@ -50,12 +55,13 @@ export async function checkOpenClaw(): Promise<ProviderDetectionResult> {
         recommendations: []
       };
     } else {
+      await execFileAsync(process.env.OPENCLAW_AGENT_COMMAND || 'openclaw', ['gateway', 'health'], { timeout: OPENCLAW_HEALTHCHECK_TIMEOUT_MS });
       return {
-        isAvailable: false,
+        isAvailable: true,
         provider: 'openclaw',
-        reason: `Gateway returned status ${healthCheck.status}`,
+        reason: 'OpenClaw Gateway is healthy through its supported CLI',
         config: { type: 'openclaw', baseUrl: OPENCLAW_GATEWAY_URL },
-        recommendations: ['Ensure OpenClaw Gateway is running on port 18789']
+        recommendations: []
       };
     }
   } catch (error) {
@@ -108,6 +114,28 @@ export async function executeWithOpenClaw(params: {
     } = params;
 
     const deadline = Date.now() + timeoutMs;
+
+    // The current OpenClaw gateway is an authenticated WebSocket/RPC service,
+    // so its supported CLI is the reliable text bridge. Keep REST probing for
+    // image-capable/older installations, but do not make current users wait
+    // through dead REST endpoints first.
+    if (!image && process.env.OPENCLAW_TRANSPORT !== 'rest') {
+      const bridge = new AgentCommandProvider('openclaw', { model });
+      const response = await bridge.execute({
+        messages: [{ role: 'user', content: prompt }],
+        model,
+        temperature,
+        maxTokens
+      });
+      return {
+        success: true,
+        result: response.choices[0]?.message.content,
+        provider: 'openclaw',
+        model: response.metadata?.modelUsed || model,
+        endpoint: 'openclaw-agent-cli',
+        usage: response.usage
+      };
+    }
     const endpointOrder: OpenClawEndpoint[] = preferredOpenClawEndpoint === 'openai'
       ? ['openai', 'direct']
       : ['direct', 'openai'];
@@ -214,6 +242,18 @@ export async function executeWithOpenClaw(params: {
       error: errorMessage,
       provider: 'openclaw'
     };
+  }
+}
+
+function resolveOpenClawGatewayUrl(): string {
+  try {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const configPath = process.env.OPENCLAW_CONFIG_PATH || path.join(process.env.HOME || '', '.openclaw', 'openclaw.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    return `http://127.0.0.1:${config?.gateway?.port || 18790}`;
+  } catch {
+    return 'http://127.0.0.1:18790';
   }
 }
 
