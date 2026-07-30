@@ -3,8 +3,85 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { existsSync, readFileSync } from 'fs';
+import dotenv from 'dotenv';
 
 const execAsync = promisify(exec);
+dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+
+function getRemoteLMStudioConfig(urlOverride?: string): { baseUrl: string; apiKey?: string } {
+  let fileUrl = '';
+  try {
+    const envText = readFileSync(path.join(process.cwd(), '.env.local'), 'utf8');
+    fileUrl = envText.match(/^LM_STUDIO_(?:URL|BASE_URL)\s*=\s*["']?([^"'\n]+)["']?/m)?.[1]?.trim() || '';
+  } catch { /* optional local env file */ }
+  const configuredUrl = process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || fileUrl;
+  const configuredKey = process.env.LM_STUDIO_API_KEY;
+  const configPath = process.env.OPENCLAW_CONFIG_PATH ||
+    (process.env.HOME ? path.join(process.env.HOME, '.openclaw', 'openclaw.json') : '');
+
+  try {
+    if (configPath && existsSync(configPath)) {
+      const config = JSON.parse(readFileSync(configPath, 'utf8'));
+      const provider = config?.models?.providers?.lmstudio;
+      return {
+        baseUrl: (urlOverride || configuredUrl || provider?.baseUrl || 'http://localhost:1234').replace(/\/v1\/?$/, '').replace(/\/$/, ''),
+        apiKey: configuredKey || provider?.apiKey
+      };
+    }
+  } catch (error) {
+    console.warn('Unable to read LM Studio connection settings:', error);
+  }
+
+  return {
+    baseUrl: (urlOverride || configuredUrl || 'http://localhost:1234').replace(/\/v1\/?$/, '').replace(/\/$/, ''),
+    apiKey: configuredKey
+  };
+}
+
+async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
+  const { baseUrl, apiKey } = getRemoteLMStudioConfig(urlOverride);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/models`, {
+      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!response.ok) return null;
+
+    const payload = await response.json();
+    return (payload.models || []).map((model: any) => {
+      const loaded = Array.isArray(model.loaded_instances) && model.loaded_instances.length > 0;
+      const input = Array.isArray(model.capabilities?.vision) && model.capabilities.vision ? ['text', 'image'] : ['text'];
+      return {
+        id: model.key || model.id,
+        name: model.display_name || model.name || model.key || model.id,
+        filename: model.key || model.id,
+        author: model.publisher || 'LM Studio',
+        filepath: '',
+        relativePath: '',
+        fullPath: '',
+        size: model.size_bytes || 0,
+        sizeFormatted: model.size_bytes ? `${(model.size_bytes / (1024 ** 3)).toFixed(2)} GB` : 'Remote',
+        sizeGB: model.size_bytes ? model.size_bytes / (1024 ** 3) : 0,
+        sizeMB: model.size_bytes ? model.size_bytes / (1024 ** 2) : 0,
+        modified: new Date().toISOString(),
+        provider: 'lmstudio-remote',
+        type: 'remote',
+        loaded,
+        capabilities: [
+          'text-generation',
+          ...(input.includes('image') ? ['vision', 'image-analysis'] : []),
+          ...(loaded ? ['loaded'] : [])
+        ],
+        quantization: model.quantization || 'Unknown',
+        contextLength: model.max_context_length || 0,
+        metadata: { source: 'LM Studio API', publisher: model.publisher, key: model.key, input }
+      };
+    });
+  } catch {
+    return null;
+  }
+}
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -430,21 +507,22 @@ export async function GET(request: NextRequest) {
     console.log('User Profile:', process.env.USERPROFILE);
     console.log('Local AppData:', process.env.LOCALAPPDATA);
 
-    // First check if LM Studio is running
     const { searchParams } = new URL(request.url);
-    const url = searchParams.get('url') || 'http://localhost:1234';
-
-    // First check if LM Studio is running
-    let lmStudioRunning = false;
-    try {
-      const response = await fetch(`${url}/v1/models`, {
-        signal: AbortSignal.timeout(2000) // 2 second timeout
+    const remoteModels = await getRemoteModels(searchParams.get('url') || undefined);
+    if (remoteModels) {
+      return NextResponse.json({
+        status: 'success',
+        lmStudioRunning: true,
+        models: remoteModels,
+        summary: {
+          total: remoteModels.length,
+          vision: remoteModels.filter(model => model.capabilities.includes('vision')).length,
+          textOnly: remoteModels.filter(model => !model.capabilities.includes('vision')).length,
+          plantAnalysis: remoteModels.filter(model => model.capabilities.includes('plant-analysis')).length
+        },
+        timestamp: new Date().toISOString(),
+        source: 'remote-api'
       });
-      lmStudioRunning = response.ok;
-      console.log('LM Studio running:', lmStudioRunning);
-    } catch (error) {
-      lmStudioRunning = false;
-      console.log('LM Studio not running:', error.message);
     }
 
     // Scan for local models
