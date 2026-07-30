@@ -625,7 +625,10 @@ export const useSettingsStore = create<SettingsStore>()(
         },
       }),
       {
-        name: 'cannai-settings-store',
+        // Schema changed as provider integrations were added. Use a new
+        // storage key so older persisted settings cannot hydrate incompatible
+        // component state and crash the Settings route (React #130).
+        name: 'cannai-settings-store-v2',
         partialize: (state) => ({
           settings: state.settings,
           defaultSettings: state.defaultSettings,

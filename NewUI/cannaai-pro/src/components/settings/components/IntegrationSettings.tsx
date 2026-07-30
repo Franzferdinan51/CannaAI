@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Globe, Api, Webhook } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 const IntegrationSettings: React.FC = () => {
   return (

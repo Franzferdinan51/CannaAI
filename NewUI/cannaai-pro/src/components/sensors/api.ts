@@ -51,6 +51,70 @@ const API_ENDPOINTS = {
   STATUS: '/api/status'
 } as const;
 
+/**
+ * The backend has two sensor API generations in use:
+ * the legacy UI expects arrays of SensorConfig/RoomConfig, while the
+ * current routes return `{ success, readings }` and `{ success, data }`.
+ * Keep that compatibility at the API boundary so screens never receive a
+ * response envelope where they expect an array.
+ */
+function sensorTypeFromId(id: string): SensorConfig['type'] {
+  const value = id.toLowerCase();
+  if (value.includes('humid')) return 'humidity';
+  if (value.includes('temp')) return 'temperature';
+  if (value.includes('soil') || value.includes('moist')) return 'soil_moisture';
+  if (value.includes('light') || value.includes('par') || value.includes('lux')) return 'light_intensity';
+  if (value.includes('ph')) return 'ph';
+  if (value.includes('ec')) return 'ec';
+  if (value.includes('co2')) return 'co2';
+  if (value.includes('vpd')) return 'vpd';
+  return 'temperature';
+}
+
+function normalizeSensors(payload: any): SensorConfig[] {
+  const values = Array.isArray(payload) ? payload : payload?.readings;
+  if (!Array.isArray(values)) return [];
+
+  return values.map((reading: any) => {
+    const id = String(reading.id || reading.sensorId || `sensor-${Math.random().toString(36).slice(2)}`);
+    const type = sensorTypeFromId(String(reading.sensorId || id));
+    const numericValue = typeof reading.value === 'number' ? reading.value : Number(reading.value) || 0;
+    const timestamp = reading.timestamp || new Date().toISOString();
+    return {
+      ...reading,
+      id,
+      name: reading.name || String(reading.sensorId || id).replace(/[_-]/g, ' '),
+      type: reading.type || type,
+      location: reading.location || 'Main Grow Room',
+      roomName: reading.roomName || 'Main Grow Room',
+      enabled: reading.enabled !== false,
+      alerts: Array.isArray(reading.alerts) ? reading.alerts : [],
+      dataHistory: Array.isArray(reading.dataHistory) ? reading.dataHistory : [{
+        timestamp,
+        value: numericValue,
+        quality: 'good' as const,
+        source: 'sensor' as const,
+      }],
+    } as SensorConfig;
+  });
+}
+
+function normalizeRooms(payload: any): RoomConfig[] {
+  const values = Array.isArray(payload) ? payload : payload?.data;
+  if (!Array.isArray(values)) return [];
+  return values.map((room: any) => ({
+    ...room,
+    id: String(room.id),
+    name: room.name || 'Grow Room',
+    active: room.active !== false,
+    targetEnvironment: room.targetEnvironment || {
+      temperature: { min: 65, max: 85 },
+      humidity: { min: 40, max: 65 },
+      co2: { min: 800, max: 1400 },
+    },
+  })) as RoomConfig[];
+}
+
 
 // Error handling
 class SensorAPIError extends Error {
@@ -103,7 +167,7 @@ async function apiRequest<T>(
 export const sensorAPI = {
   // Get all sensors
   async getSensors(): Promise<SensorConfig[]> {
-    return apiRequest<SensorConfig[]>(API_ENDPOINTS.SENSORS);
+    return normalizeSensors(await apiRequest<any>(API_ENDPOINTS.SENSORS));
   },
 
   // Get sensor by ID
@@ -200,7 +264,7 @@ export const sensorAPI = {
 export const roomAPI = {
   // Get all rooms
   async getRooms(): Promise<RoomConfig[]> {
-    return apiRequest<RoomConfig[]>(API_ENDPOINTS.ROOMS);
+    return normalizeRooms(await apiRequest<any>(API_ENDPOINTS.ROOMS));
   },
 
   // Get room by ID

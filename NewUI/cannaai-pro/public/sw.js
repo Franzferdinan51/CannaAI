@@ -3,8 +3,10 @@
  * Provides offline functionality and caching strategies
  */
 
-const CACHE_NAME = 'cannaai-pro-v1.0.0';
-const RUNTIME_CACHE = 'cannaai-runtime-v1.0.0';
+// Bump this whenever the production bundle changes so installed phones do
+// not keep serving a stale route chunk after an app update.
+const CACHE_NAME = 'cannaai-pro-v1.0.1';
+const RUNTIME_CACHE = 'cannaai-runtime-v1.0.1';
 
 // Resources to cache on install
 const PRECACHE_RESOURCES = [

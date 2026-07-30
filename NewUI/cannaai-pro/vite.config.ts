@@ -38,12 +38,12 @@ export default defineConfig(({ mode }) => {
           },
         },
         chunkSizeWarningLimit: 1000,
-        minify: 'terser',
-        terserOptions: {
-          compress: {
-            drop_console: mode === 'production',
-            drop_debugger: mode === 'production',
-          },
+        // Terser was producing an invalid React element in the optimized
+        // Settings chunk (React error #130). Vite's esbuild minifier keeps
+        // the same optimized output without corrupting Radix/lazy modules.
+        minify: 'esbuild',
+        esbuild: {
+          drop: mode === 'production' ? ['console', 'debugger'] : [],
         },
       },
       optimizeDeps: {
