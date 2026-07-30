@@ -1011,6 +1011,8 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
         {activeTab === 'builder' && (
           <ReportBuilder />
         )}
+        </div>
+        )}
       </div>
     </div>
   );

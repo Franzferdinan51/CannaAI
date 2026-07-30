@@ -259,8 +259,6 @@ const PlantInventory: React.FC<PlantInventoryProps> = ({ inventory, detailed = f
                 </CardContent>
               </Card>
             </div>
-          </div>
-          </div>
 
           {/* Top Strains */}
           {Object.keys(inventory.byStrain).length > 0 && (

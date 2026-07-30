@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu, X, Wifi, WifiOff, LayoutDashboard, ScanLine, Sprout,
   Activity, FileText, MessageSquare, Settings, Zap, ChevronRight,
-  Camera, AlertTriangle, BrainCircuit
+  Camera, AlertTriangle, BrainCircuit, Plus, Search
 } from "lucide-react";
 
 const navItems = [
@@ -154,9 +154,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/55">CannaAI workspace</p>
             <h2 className="mt-1 text-xl font-semibold text-white">{currentPage.label}</h2>
           </div>
-          <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${isOnline ? 'border-emerald-400/15 bg-emerald-400/5 text-emerald-300' : 'border-red-400/15 bg-red-400/5 text-red-300'}`}>
-            <span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_10px_#34d399]' : 'bg-red-400'}`} />
-            {isOnline ? 'System online' : 'Offline mode'}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/scanner')}
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3.5 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+            >
+              <Plus className="h-4 w-4" />
+              New analysis
+            </button>
+            <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${isOnline ? 'border-emerald-400/15 bg-emerald-400/5 text-emerald-300' : 'border-red-400/15 bg-red-400/5 text-red-300'}`}>
+              <span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_10px_#34d399]' : 'bg-red-400'}`} />
+              {isOnline ? 'System online' : 'Offline mode'}
+            </div>
           </div>
         </header>
 

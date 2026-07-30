@@ -693,7 +693,7 @@ export const useSettingsStore = create<SettingsStore>()(
           const { settings, defaultSettings } = get();
           return !!(settings && defaultSettings && JSON.stringify(settings) !== JSON.stringify(defaultSettings));
         },
-      })),
+      }),
       {
         name: 'cannai-settings-store',
         partialize: (state) => ({
