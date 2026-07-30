@@ -9,7 +9,9 @@ export class LMStudioProvider extends BaseProvider {
   constructor(config: any) {
     super({
       name: 'lm-studio',
-      baseUrl: config.url || 'http://localhost:1234',
+      // Both LM Studio's native endpoint and CannaAI's historic setting may
+      // include /v1. Provider methods append /v1 themselves.
+      baseUrl: (config.url || 'http://localhost:1234').replace(/\/v1\/?$/, ''),
       timeout: 120000, // Longer timeout for local inference
       maxRetries: 1,
       retryDelay: 1000,
@@ -42,15 +44,7 @@ export class LMStudioProvider extends BaseProvider {
         return false;
       }
 
-      const response = await fetch(`${this.config.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: {
-          ...(this.config.apiKey && { 'Authorization': `Bearer ${this.config.apiKey}` })
-        },
-        signal: AbortSignal.timeout(5000)
-      });
-
-      return response.ok;
+      return Boolean(await this.getLoadedModel());
     } catch (error) {
       return false;
     }
@@ -58,7 +52,11 @@ export class LMStudioProvider extends BaseProvider {
 
   async execute(request: AIRequest): Promise<AIResponse> {
     const startTime = Date.now();
-    const normalizedRequest = this.normalizeRequest(request);
+    const loadedModel = request.model || await this.getLoadedModel();
+    if (!loadedModel) {
+      throw new Error('LM Studio is reachable, but no chat model is loaded. Load a model in LM Studio and retry.');
+    }
+    const normalizedRequest = this.normalizeRequest({ ...request, model: loadedModel });
 
     try {
       const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
@@ -102,6 +100,27 @@ export class LMStudioProvider extends BaseProvider {
       this.recordMetrics(latency, 0, 0, 0, false);
       throw error;
     }
+  }
+
+  /**
+   * LM Studio's OpenAI list includes installed models. Its native endpoint
+   * identifies the model instance actually loaded and ready to answer.
+   */
+  private async getLoadedModel(): Promise<string | undefined> {
+    const response = await fetch(`${this.config.baseUrl}/api/v1/models`, {
+      method: 'GET',
+      headers: {
+        ...(this.config.apiKey && { 'Authorization': `Bearer ${this.config.apiKey}` })
+      },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!response.ok) return undefined;
+
+    const payload = await response.json();
+    const instance = payload?.models
+      ?.flatMap((model: any) => Array.isArray(model?.loaded_instances) ? model.loaded_instances : [])
+      ?.find((candidate: any) => typeof candidate?.id === 'string' && candidate.id.trim());
+    return instance?.id;
   }
 
   protected normalizeRequest(request: AIRequest): any {

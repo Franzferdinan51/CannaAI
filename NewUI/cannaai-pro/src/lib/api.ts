@@ -9,7 +9,7 @@ export interface ApiError {
 class ApiClient {
   private client: AxiosInstance;
 
-  constructor(baseURL: string = 'http://localhost:3000/api') {
+  constructor(baseURL: string = `${import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3000` : 'http://localhost:3000')}/api`) {
     this.client = axios.create({
       baseURL,
       timeout: 30000,
@@ -165,6 +165,10 @@ export const api = {
 
   // Chat & AI
   chat: (message: string) => apiClient.post('/chat', { message }),
+  advisors: {
+    status: () => apiClient.get('/advisors'),
+    run: (data: { task: string; context?: string; provider?: string }) => apiClient.post('/advisors', data),
+  },
   lmstudio: {
     chat: (message: string) => apiClient.post('/lmstudio/chat', { message }),
     models: () => apiClient.get('/lmstudio/models'),

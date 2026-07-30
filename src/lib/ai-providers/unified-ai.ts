@@ -343,6 +343,11 @@ export class UnifiedAI {
     return this.providerManager.getProvidersStatus();
   }
 
+  async refreshProviderHealth() {
+    await this.providerManager.refreshProviderHealth();
+    return this.getProviderStatus();
+  }
+
   /**
    * Get cost summary
    */

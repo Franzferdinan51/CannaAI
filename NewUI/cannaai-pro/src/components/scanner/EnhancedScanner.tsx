@@ -4,8 +4,7 @@ import {
   Upload, Camera, Scan, Brain, AlertTriangle, CheckCircle, XCircle,
   RefreshCw, Loader2, FileText, Settings, Activity, Droplets, Thermometer,
   Sun, Wind, Sprout, FlaskConical, Bug, Zap, Eye, Clock, ChevronDown,
-  Info, AlertCircle, Plus, Minus, Save, Trash2, Download, Grid, List,
-  Leaf, Image as ImageIcon, Microscope, Smartphone, Monitor
+  Info, AlertCircle, Plus, Minus, Save, Trash2, Download, Grid, List
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import toast from 'react-hot-toast';
@@ -35,9 +34,6 @@ import {
   ScannerStats
 } from '../../types/scanner';
 
-// Analysis stage for visual progress
-type AnalysisStage = 'idle' | 'capturing' | 'processing' | 'analyzing' | 'complete';
-
 const EnhancedScanner: React.FC = () => {
   // State management
   const [images, setImages] = useState<PlantImage[]>([]);
@@ -47,109 +43,55 @@ const EnhancedScanner: React.FC = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [currentImage, setCurrentImage] = useState<string>('');
   const [scannerStats, setScannerStats] = useState<ScannerStats | null>(null);
-
-  // Drag state
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Analysis stage for progress visualization
-  const [analysisStage, setAnalysisStage] = useState<AnalysisStage>('idle');
+  const [cameraActive, setCameraActive] = useState(false);
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
 
-  // Camera state
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraMode, setCameraMode] = useState<'webcam' | 'microscope' | 'mobile'>('webcam');
+  const strains = [
+    { id: 'blue-dream', name: 'Blue Dream', type: 'Hybrid' },
+    { id: 'granddaddy-purple', name: 'Granddaddy Purple', type: 'Indica' },
+    { id: 'girl-scout-cookies', name: 'Girl Scout Cookies', type: 'Hybrid' },
+    { id: 'sour-diesel', name: 'Sour Diesel', type: 'Sativa Dominant' },
+  ];
 
-  // Strains state
-  const [strains, setStrains] = useState<Strain[]>([]);
-
-  // Camera functions
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: cameraMode === 'microscope' ? { width: 2048, height: 1536 } : undefined
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraActive(true);
-        setAnalysisStage('capturing');
-      }
-    } catch (error) {
-      console.error('Camera access denied:', error);
-      toast.error('Camera access denied. Please allow camera permissions.');
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
+  const stopCamera = useCallback(() => {
+    cameraStreamRef.current?.getTracks().forEach(track => track.stop());
+    cameraStreamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
     setCameraActive(false);
-    setAnalysisStage('idle');
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current) {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(videoRef.current, 0, 0);
-          const captured = canvas.toDataURL('image/jpeg', 0.95);
-          setCurrentImage(captured);
-          stopCamera();
-          toast.success('Photo captured!');
-        }
-      }
-    }
-  };
-
-  // Drag handlers
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleFileFromDrop(file);
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      cameraStreamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setCameraActive(true);
+    } catch (error) {
+      console.error('Camera access failed:', error);
+      toast.error('Camera access failed. Check Chrome camera permission and try again.');
     }
   }, []);
 
-  const handleFileFromDrop = async (file: File) => {
-    const validation = validateImageFile(file);
-    if (!validation.valid) {
-      toast.error(validation.error);
+  const capturePhoto = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || !video.videoWidth) {
+      toast.error('Camera is not ready yet.');
       return;
     }
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    setCurrentImage(canvas.toDataURL('image/jpeg', 0.9));
+    stopCamera();
+  }, [stopCamera]);
 
-    try {
-      const compressedBlob = await compressImage(file);
-      const base64String = await fileToBase64(compressedBlob);
-      setCurrentImage(base64String);
-      setAnalysisStage('capturing');
-      toast.success('Image uploaded successfully!');
-    } catch (error) {
-      console.error('Image processing failed:', error);
-      toast.error('Failed to process image. Please try another file.');
-    }
-  };
+  useEffect(() => () => stopCamera(), [stopCamera]);
 
   // Form state
   const [formData, setFormData] = useState<AnalysisFormData>({
@@ -179,6 +121,7 @@ const EnhancedScanner: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file
     const validation = validateImageFile(file);
     if (!validation.valid) {
       toast.error(validation.error);
@@ -186,10 +129,10 @@ const EnhancedScanner: React.FC = () => {
     }
 
     try {
+      // Compress image
       const compressedBlob = await compressImage(file);
       const base64String = await fileToBase64(compressedBlob);
       setCurrentImage(base64String);
-      setAnalysisStage('capturing');
       toast.success('Image uploaded and compressed successfully');
     } catch (error) {
       console.error('Image processing failed:', error);
@@ -217,10 +160,9 @@ const EnhancedScanner: React.FC = () => {
       additionalNotes: ''
     });
     setCurrentImage('');
-    setAnalysisStage('idle');
   };
 
-  // Analysis handler with visual progress
+  // Analysis handler
   const handleAnalysis = async () => {
     if (!formData.strain) {
       toast.error('Please select a strain');
@@ -233,7 +175,6 @@ const EnhancedScanner: React.FC = () => {
     }
 
     setIsAnalyzing(true);
-    setAnalysisStage('processing');
 
     const newImage: PlantImage = {
       id: Date.now().toString(),
@@ -248,9 +189,6 @@ const EnhancedScanner: React.FC = () => {
     setImages(prev => [newImage, ...prev]);
     setSelectedId(newImage.id);
 
-    // Animate through stages
-    setTimeout(() => setAnalysisStage('analyzing'), 1500);
-
     try {
       const analysisPayload = {
         ...formData,
@@ -260,7 +198,6 @@ const EnhancedScanner: React.FC = () => {
       const response = await api.analyze(analysisPayload);
 
       if (response.success) {
-        setAnalysisStage('complete');
         setImages(prev => prev.map(img => {
           if (img.id === newImage.id) {
             return {
@@ -271,6 +208,7 @@ const EnhancedScanner: React.FC = () => {
           }
           return img;
         }));
+
         toast.success('Analysis completed successfully!');
       } else {
         throw new Error(response.error?.message || 'Analysis failed');
@@ -283,74 +221,11 @@ const EnhancedScanner: React.FC = () => {
         }
         return img;
       }));
+
       toast.error(error.message || 'Analysis failed. Please try again.');
-      setAnalysisStage('idle');
     } finally {
       setIsAnalyzing(false);
     }
-  };
-
-  // Progress indicator component
-  const AnalysisProgress: React.FC<{ stage: AnalysisStage }> = ({ stage }) => {
-    const stages = [
-      { key: 'capturing', label: 'Capturing Image', icon: Camera },
-      { key: 'processing', label: 'Processing', icon: FlaskConical },
-      { key: 'analyzing', label: 'AI Analysis', icon: Brain },
-      { key: 'complete', label: 'Complete', icon: CheckCircle }
-    ];
-
-    const currentIndex = stages.findIndex(s => s.key === stage);
-
-    return (
-      <div className="space-y-3">
-        {stages.map((s, index) => {
-          const Icon = s.icon;
-          const isActive = index <= currentIndex;
-          const isCurrent = index === currentIndex;
-
-          return (
-            <motion.div
-              key={s.key}
-              initial={{ opacity: 0.5 }}
-              animate={{
-                opacity: isActive ? 1 : 0.4,
-                scale: isCurrent ? 1.05 : 1
-              }}
-              className="flex items-center gap-3"
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-500'
-              } ${isCurrent ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-[#181b21]' : ''}`}>
-                {isCurrent ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </motion.div>
-                ) : (
-                  <Icon className="w-4 h-4" />
-                )}
-              </div>
-              <span className={`text-sm font-medium ${
-                isCurrent ? 'text-emerald-400' : isActive ? 'text-gray-300' : 'text-gray-500'
-              }`}>
-                {s.label}
-              </span>
-              {isCurrent && (
-                <motion.div
-                  className="ml-auto"
-                  initial={{ width: 0 }}
-                  animate={{ width: 'auto' }}
-                >
-                  <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
-                </motion.div>
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
-    );
   };
 
   // Status pill component
@@ -377,337 +252,168 @@ const EnhancedScanner: React.FC = () => {
     );
   };
 
-  // Health score ring component
-  const HealthScoreRing: React.FC<{ score: number; size?: 'sm' | 'lg' }> = ({ score, size = 'sm' }) => {
-    const radius = size === 'lg' ? 45 : 28;
-    const stroke = size === 'lg' ? 6 : 4;
-    const circumference = 2 * Math.PI * radius;
-    const progress = (score / 100) * circumference;
+  // Urgency indicator
+  const UrgencyIndicator: React.FC<{ urgency: string }> = ({ urgency }) => {
+    const getConfig = () => {
+      switch (urgency) {
+        case 'critical': return { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
+        case 'high': return { color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' };
+        case 'medium': return { color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' };
+        default: return { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+      }
+    };
 
-    const color = score > 70 ? '#10b981' : score > 40 ? '#f59e0b' : '#ef4444';
+    const config = getConfig();
 
     return (
-      <div className="relative inline-flex items-center justify-center">
-        <svg className="transform -rotate-90" width={radius * 2 + stroke * 2} height={radius * 2 + stroke * 2}>
-          <circle
-            cx={radius + stroke}
-            cy={radius + stroke}
-            r={radius}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={stroke}
-            className="text-gray-700"
-          />
-          <motion.circle
-            cx={radius + stroke}
-            cy={radius + stroke}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: circumference - progress }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-${size === 'lg' ? 'xl' : 'sm'} font-bold`} style={{ color }}>
-            {score}
-          </span>
-        </div>
-      </div>
+      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${config.color} ${config.bg} ${config.border} border`}>
+        {urgency}
+      </span>
     );
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <div className="bg-gradient-to-br from-emerald-900/30 via-[#181b21] to-emerald-950/20 rounded-2xl border border-emerald-500/20 p-8 relative overflow-hidden">
-          {/* Background decoration */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-
-          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <Leaf className="w-6 h-6 text-black" />
-                </div>
-                <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold text-white">
-                    Plant Health Scanner
-                  </h1>
-                  <p className="text-emerald-400/80 text-sm mt-1">AI-Powered Analysis</p>
-                </div>
-              </div>
-              <p className="text-gray-400 max-w-xl">
-                Upload plant photos for instant AI-powered diagnosis. Identify diseases,
-                nutrient deficiencies, and get personalized treatment recommendations.
-              </p>
-            </div>
-
-            {/* Quick stats */}
-            <div className="flex gap-4">
-              <div className="bg-black/30 backdrop-blur-sm rounded-xl px-4 py-3 border border-emerald-500/20">
-                <div className="text-2xl font-bold text-white">{images.length}</div>
-                <div className="text-xs text-gray-400">Total Scans</div>
-              </div>
-              <div className="bg-black/30 backdrop-blur-sm rounded-xl px-4 py-3 border border-emerald-500/20">
-                <div className="text-2xl font-bold text-emerald-400">
-                  {images.filter(img => img.status === 'Healthy').length}
-                </div>
-                <div className="text-xs text-gray-400">Healthy</div>
-              </div>
-              <div className="bg-black/30 backdrop-blur-sm rounded-xl px-4 py-3 border border-orange-500/20">
-                <div className="text-2xl font-bold text-orange-400">
-                  {images.filter(img => img.status === 'Warning' || img.status === 'Critical').length}
-                </div>
-                <div className="text-xs text-gray-400">Need Care</div>
-              </div>
-            </div>
+    <div className="flex-1 overflow-y-auto p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Plant Health Scanner</h1>
+            <p className="text-gray-400">AI-powered plant analysis with strain detection</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
+            >
+              {viewMode === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Input Section */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Hero Upload Zone */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`
-              relative bg-[#181b21] rounded-2xl border-2 border-dashed p-8
-              transition-all duration-300 cursor-pointer
-              ${isDragging
-                ? 'border-emerald-500 bg-emerald-500/10 scale-[1.02]'
-                : 'border-gray-700 hover:border-emerald-500/50 hover:bg-emerald-500/5'
-              }
-            `}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              accept="image/*"
-              onChange={handleFileUpload}
-            />
-
-            <AnimatePresence mode="wait">
-              {!currentImage && !cameraActive ? (
-                <motion.div
-                  key="upload-prompt"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center py-12"
-                >
-                  <motion.div
-                    animate={isDragging ? { scale: 1.1 } : { scale: 1 }}
-                    className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center mb-6 border border-emerald-500/30"
-                  >
-                    <Leaf className="w-12 h-12 text-emerald-400" />
-                  </motion.div>
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    {isDragging ? 'Drop your plant photo here' : 'Upload Plant Photo'}
-                  </h3>
-                  <p className="text-gray-400 text-center mb-6 max-w-md">
-                    Drag and drop an image or click to browse. JPG, PNG up to 50MB.
-                  </p>
-
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-black font-semibold rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload Image
-                    </motion.button>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-sm">or</span>
-                    </div>
-
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={startCamera}
-                      className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl flex items-center gap-2 border border-gray-600"
-                    >
-                      <Camera className="w-4 h-4" />
-                      Use Camera
-                    </motion.button>
-                  </div>
-
-                  {/* Camera mode selector */}
-                  <div className="flex items-center gap-2 mt-6 pt-6 border-t border-gray-800">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Camera Type:</span>
-                    {[
-                      { id: 'webcam', icon: Monitor, label: 'Webcam' },
-                      { id: 'microscope', icon: Microscope, label: 'Microscope' },
-                      { id: 'mobile', icon: Smartphone, label: 'Mobile' }
-                    ].map(mode => (
-                      <button
-                        key={mode.id}
-                        onClick={() => setCameraMode(mode.id as any)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
-                          cameraMode === mode.id
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        <mode.icon className="w-3 h-3" />
-                        {mode.label}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              ) : cameraActive ? (
-                <motion.div
-                  key="camera-active"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-4"
-                >
-                  <div className="relative bg-black rounded-xl overflow-hidden">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full h-72 lg:h-80 object-contain"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1.5 bg-red-500/80 text-white text-xs font-bold rounded-full flex items-center gap-1.5 backdrop-blur-sm">
-                        <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                        LIVE
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-center gap-4">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={capturePhoto}
-                      className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-black font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-                    >
-                      <Camera className="w-5 h-5" />
-                      Capture
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={stopCamera}
-                      className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl border border-gray-600"
-                    >
-                      Cancel
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="image-preview"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-4"
-                >
-                  <div className="relative bg-black rounded-xl overflow-hidden">
-                    <img
-                      src={currentImage}
-                      alt="Captured plant"
-                      className="w-full h-72 lg:h-80 object-contain"
-                    />
-                    {isAnalyzing && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
-                        <div className="text-center">
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                            className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"
-                          />
-                          <p className="text-white font-medium">Analyzing...</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex justify-center gap-3">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setCurrentImage('')}
-                      className="px-5 py-2.5 bg-red-900/50 hover:bg-red-900 text-red-300 font-medium rounded-xl flex items-center gap-2 border border-red-700/50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Remove
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl flex items-center gap-2 border border-gray-600"
-                    >
-                      <ImageIcon className="w-4 h-4" />
-                      Change
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Hidden canvas for capture */}
-            <canvas ref={canvasRef} className="hidden" />
-          </motion.div>
-
-          {/* Analysis Progress (shown when analyzing) */}
-          <AnimatePresence>
-            {isAnalyzing && analysisStage !== 'idle' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="bg-[#181b21] rounded-xl border border-emerald-500/20 p-6 overflow-hidden"
-              >
-                <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-4">
-                  Analysis Progress
-                </h3>
-                <AnalysisProgress stage={analysisStage} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Analysis Form */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-[#181b21] rounded-2xl border border-gray-800 p-6"
-          >
+          {/* Image Capture Section */}
+          <div className="bg-[#181b21] rounded-xl border border-gray-800 p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <Brain className="w-5 h-5 mr-2 text-emerald-400" />
-              Analysis Details
+              <Camera className="w-5 h-5 mr-2 text-emerald-400" />
+              Image Capture
             </h3>
 
-            <div className="space-y-5">
+            {!cameraActive && !currentImage && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-700 rounded-lg hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all"
+                  >
+                    <Upload className="w-8 h-8 text-gray-500 mb-2" />
+                    <span className="text-sm text-gray-400">Upload Image</span>
+                    <span className="text-xs text-gray-500 mt-1">JPG, PNG up to 50MB</span>
+                  </button>
+
+                  <button
+                    onClick={startCamera}
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-700 rounded-lg hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all"
+                  >
+                    <Camera className="w-8 h-8 text-gray-500 mb-2" />
+                    <span className="text-sm text-gray-400">Use Camera</span>
+                    <span className="text-xs text-gray-500 mt-1">Live photo capture</span>
+                  </button>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                />
+              </div>
+            )}
+
+            {cameraActive && (
+              <div className="space-y-4">
+                <div className="relative bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-64 object-cover"
+                  />
+                </div>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={capturePhoto}
+                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Capture Photo
+                  </button>
+                  <button
+                    onClick={stopCamera}
+                    className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {currentImage && !cameraActive && (
+              <div className="space-y-4">
+                <div className="relative bg-black rounded-lg overflow-hidden">
+                  <img
+                    src={currentImage}
+                    alt="Captured plant"
+                    className="w-full h-64 object-contain"
+                  />
+                </div>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => setCurrentImage('')}
+                    className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Remove Image
+                  </button>
+                  <button
+                    onClick={startCamera}
+                    className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Retake
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+
+          {/* Analysis Form */}
+          <div className="bg-[#181b21] rounded-xl border border-gray-800 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+              <Brain className="w-5 h-5 mr-2 text-emerald-400" />
+              Analysis Information
+            </h3>
+
+            <div className="space-y-4">
               {/* Strain Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Strain *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Strain</label>
                 <select
                   value={formData.strain}
                   onChange={(e) => handleInputChange('strain', e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 >
                   <option value="">Select Strain</option>
                   {strains.map(strain => (
@@ -715,414 +421,402 @@ const EnhancedScanner: React.FC = () => {
                       {strain.name} ({strain.type})
                     </option>
                   ))}
-                  <option value="unknown">Unknown Strain</option>
                 </select>
               </div>
 
               {/* Symptoms */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Observed Symptoms</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Symptoms Description</label>
                 <textarea
-                  placeholder="Describe what you observe: yellowing leaves, spots, wilting, pests..."
+                  placeholder="Describe what you observe: yellowing leaves, spots, curling, etc."
                   value={formData.leafSymptoms}
                   onChange={(e) => handleInputChange('leafSymptoms', e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none transition-all placeholder-gray-500"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
                 />
               </div>
 
               {/* Environmental Parameters */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">pH Level</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">pH Level</label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="6.5"
+                    placeholder="6.2"
                     value={formData.phLevel}
                     onChange={(e) => handleInputChange('phLevel', e.target.value)}
-                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Temp (°F)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Temperature (°F)</label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="72"
+                    placeholder="75"
                     value={formData.temperature}
                     onChange={(e) => handleInputChange('temperature', e.target.value)}
-                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Humidity (%)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Humidity (%)</label>
                   <input
                     type="number"
                     step="1"
-                    placeholder="55"
+                    placeholder="50"
                     value={formData.humidity}
                     onChange={(e) => handleInputChange('humidity', e.target.value)}
-                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
-              </div>
 
-              {/* Growth Stage */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Growth Stage</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {['seedling', 'vegetative', 'flowering', 'harvest'].map(stage => (
-                    <button
-                      key={stage}
-                      onClick={() => handleInputChange('growthStage', stage)}
-                      className={`px-3 py-2 rounded-lg text-xs font-medium capitalize transition-all ${
-                        formData.growthStage === stage
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                      }`}
-                    >
-                      {stage}
-                    </button>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Growth Stage</label>
+                  <select
+                    value={formData.growthStage}
+                    onChange={(e) => handleInputChange('growthStage', e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  >
+                    <option value="seedling">Seedling</option>
+                    <option value="vegetative">Vegetative</option>
+                    <option value="flowering">Flowering</option>
+                    <option value="harvest">Harvest</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Advanced Toggle */}
-              <button
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                <Settings className="w-4 h-4" />
-                {showAdvanced ? 'Hide' : 'Show'} Advanced Options
-                <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-              </button>
-
               {/* Advanced Options */}
-              <AnimatePresence>
-                {showAdvanced && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-4 pt-4 border-t border-gray-800"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">Growing Medium</label>
-                        <select
-                          value={formData.medium}
-                          onChange={(e) => handleInputChange('medium', e.target.value)}
-                          className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white text-sm"
-                        >
-                          <option value="soil">Soil</option>
-                          <option value="hydroponic">Hydroponic</option>
-                          <option value="coco">Coco Coir</option>
-                          <option value="aeroponic">Aeroponic</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">Urgency</label>
-                        <select
-                          value={formData.urgency}
-                          onChange={(e) => handleInputChange('urgency', e.target.value)}
-                          className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white text-sm"
-                        >
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
-                          <option value="critical">Critical</option>
-                        </select>
-                      </div>
+              {showAdvanced && (
+                <div className="space-y-4 pt-4 border-t border-gray-700">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Growing Medium</label>
+                      <select
+                        value={formData.medium}
+                        onChange={(e) => handleInputChange('medium', e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      >
+                        <option value="soil">Soil</option>
+                        <option value="hydroponic">Hydroponic</option>
+                        <option value="coco">Coco Coir</option>
+                        <option value="aeroponic">Aeroponic</option>
+                      </select>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Focus Area</label>
+                      <select
+                        value={formData.pestDiseaseFocus}
+                        onChange={(e) => handleInputChange('pestDiseaseFocus', e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      >
+                        <option value="general">General Health</option>
+                        <option value="pests">Pests</option>
+                        <option value="diseases">Diseases</option>
+                        <option value="nutrients">Nutrients</option>
+                        <option value="environmental">Environmental</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Urgency</label>
+                      <select
+                        value={formData.urgency}
+                        onChange={(e) => handleInputChange('urgency', e.target.value as any)}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Additional Notes</label>
+                    <textarea
+                      placeholder="Any additional information that might help with the analysis..."
+                      value={formData.additionalNotes}
+                      onChange={(e) => handleInputChange('additionalNotes', e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+              <div className="flex gap-4 pt-4">
+                <button
                   onClick={handleAnalysis}
-                  disabled={isAnalyzing || !formData.strain}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 disabled:text-gray-400 text-white py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                  disabled={isAnalyzing}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 >
                   {isAnalyzing ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Analyzing...
                     </>
                   ) : (
                     <>
-                      <Brain className="w-5 h-5" />
+                      <Brain className="w-4 h-4" />
                       Analyze Plant
                     </>
                   )}
-                </motion.button>
+                </button>
 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={resetForm}
-                  className="px-5 py-3.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors border border-gray-700"
+                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
                 >
                   Reset
-                </motion.button>
+                </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Results Section */}
         <div className="space-y-6">
           {/* Selected Image Analysis */}
-          <AnimatePresence mode="wait">
-            {selectedImage && (
-              <motion.div
-                key={selectedImage.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-[#181b21] rounded-2xl border border-gray-800 overflow-hidden"
-              >
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white flex items-center">
-                      <Activity className="w-5 h-5 mr-2 text-emerald-400" />
-                      Results
-                    </h3>
-                    <StatusPill status={selectedImage.status} />
-                  </div>
+          {selectedImage && (
+            <div className="bg-[#181b21] rounded-xl border border-gray-800 overflow-hidden">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <Activity className="w-5 h-5 mr-2 text-emerald-400" />
+                  Analysis Results
+                </h3>
 
-                  <div className="space-y-4">
-                    {/* Health Score Ring */}
+                <div className="space-y-4">
+                  {/* Status and Health Score */}
+                  <div className="flex items-center justify-between">
+                    <StatusPill status={selectedImage.status} />
                     {selectedImage.analysis && (
-                      <div className="flex justify-center py-4">
-                        <div className="text-center">
-                          <HealthScoreRing score={selectedImage.analysis.healthScore} size="lg" />
-                          <p className="text-xs text-gray-400 mt-2">Health Score</p>
+                      <div className="text-right">
+                        <div className={`text-2xl font-bold ${
+                          selectedImage.analysis.healthScore > 70 ? "text-emerald-400" :
+                          selectedImage.analysis.healthScore > 40 ? "text-amber-400" : "text-red-400"
+                        }`}>
+                          {selectedImage.analysis.healthScore}%
                         </div>
+                        <div className="text-xs text-gray-500">Health Score</div>
                       </div>
                     )}
+                  </div>
 
-                    {/* Basic Info */}
-                    <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                      <span className="text-sm text-gray-400">Strain</span>
-                      <span className="text-sm font-medium text-white">{selectedImage.strain}</span>
+                  {/* Basic Info */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Strain:</span>
+                      <span className="text-white">{selectedImage.strain}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                      <span className="text-sm text-gray-400">Batch</span>
-                      <span className="text-xs font-mono text-gray-300">{selectedImage.batchId.slice(0, 12)}...</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Batch:</span>
+                      <span className="text-white">{selectedImage.batchId}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                      <span className="text-sm text-gray-400">Time</span>
-                      <span className="text-sm text-white">{selectedImage.timestamp}</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Time:</span>
+                      <span className="text-white">{selectedImage.timestamp}</span>
                     </div>
+                  </div>
 
-                    {/* Analysis Details */}
-                    {selectedImage.analysis && (
-                      <div className="space-y-4 pt-2">
-                        {/* Diagnosis */}
-                        <div className="bg-gray-800/50 rounded-xl p-4">
-                          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Diagnosis</h4>
-                          <p className="text-white font-medium">{selectedImage.analysis.diagnosis}</p>
-                          {selectedImage.analysis.confidence && (
-                            <div className="mt-2">
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-gray-500">Confidence</span>
-                                <span className="text-emerald-400 font-medium">{selectedImage.analysis.confidence}%</span>
-                              </div>
-                              <div className="w-full bg-gray-700 rounded-full h-2">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${selectedImage.analysis.confidence}%` }}
-                                  transition={{ duration: 1, delay: 0.3 }}
-                                  className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-2 rounded-full"
-                                />
-                              </div>
+                  {/* Detailed Analysis */}
+                  {selectedImage.analysis && (
+                    <div className="space-y-4">
+                      {/* Diagnosis */}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-1">Diagnosis</h4>
+                        <p className="text-white font-medium">{selectedImage.analysis.diagnosis}</p>
+                        {selectedImage.analysis.confidence && (
+                          <div className="flex items-center mt-1">
+                            <span className="text-xs text-gray-500">Confidence:</span>
+                            <div className="flex-1 mx-2 bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                                style={{ width: `${selectedImage.analysis.confidence}%` }}
+                              />
                             </div>
-                          )}
-                        </div>
+                            <span className="text-xs text-gray-400">{selectedImage.analysis.confidence}%</span>
+                          </div>
+                        )}
+                      </div>
 
-                        {/* Recommendations */}
-                        {selectedImage.analysis.recommendations?.immediate && (
-                          <div className="space-y-2">
-                            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Immediate Actions</h4>
+                      {/* Urgency */}
+                      {selectedImage.analysis.urgency && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-400 mb-1">Urgency</h4>
+                          <UrgencyIndicator urgency={selectedImage.analysis.urgency} />
+                        </div>
+                      )}
+
+                      {/* Purple Strain Analysis */}
+                      {selectedImage.analysis.purpleAnalysis && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-400 mb-2">Purple Analysis</h4>
+                          <div className="bg-purple-900/20 rounded-lg p-3 border border-purple-500/30">
+                            <p className="text-xs text-purple-300">
+                              {selectedImage.analysis.purpleAnalysis.analysis}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Key Findings */}
+                      {selectedImage.analysis.symptomsMatched && selectedImage.analysis.symptomsMatched.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-400 mb-2">Symptoms Identified</h4>
+                          <div className="space-y-1">
+                            {selectedImage.analysis.symptomsMatched.slice(0, 3).map((symptom, i) => (
+                              <div key={i} className="flex items-start text-xs text-gray-300">
+                                <span className="mr-2 text-emerald-500">•</span>
+                                {symptom}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Immediate Recommendations */}
+                      {selectedImage.analysis.recommendations?.immediate && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-400 mb-2">Immediate Actions</h4>
+                          <div className="space-y-1">
                             {selectedImage.analysis.recommendations.immediate.slice(0, 3).map((rec, i) => (
-                              <div key={i} className="flex items-start gap-2 text-sm text-gray-300 bg-red-900/20 rounded-lg p-3 border border-red-500/20">
-                                <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                              <div key={i} className="flex items-start text-xs text-gray-300">
+                                <span className="mr-2 text-red-500">•</span>
                                 {rec}
                               </div>
                             ))}
                           </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="flex gap-2 pt-4">
-                          <button className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5">
-                            <FileText className="w-4 h-4" />
-                            Report
-                          </button>
-                          <button
-                            onClick={handleAnalysis}
-                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5"
-                          >
-                            <RefreshCw className="w-4 h-4" />
-                            Re-analyze
-                          </button>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Processing State */}
-                    {selectedImage.status === 'Processing' && (
-                      <div className="flex flex-col items-center justify-center py-8">
-                        <div className="relative">
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                            className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Leaf className="w-6 h-6 text-emerald-400" />
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-400 mt-4">Analyzing plant health...</p>
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-4 border-t border-gray-700">
+                        <button className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          Report
+                        </button>
+                        <button
+                          onClick={handleAnalysis}
+                          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Re-analyze
+                        </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {selectedImage.status === 'Processing' && (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-2" />
+                      <span className="text-sm text-gray-400">Analyzing plant health...</span>
+                    </div>
+                  )}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Analysis History */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[#181b21] rounded-2xl border border-gray-800 p-6"
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">Recent Scans</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                <span className="text-sm text-gray-400">Total Scans</span>
-                <span className="text-sm font-bold text-white">{images.length}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                <span className="text-sm text-gray-400">Healthy</span>
-                <span className="text-sm font-bold text-emerald-400">
+            </div>
+          )}
+
+          {/* Quick Stats */}
+          <div className="bg-[#181b21] rounded-xl border border-gray-800 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Analysis History</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">Total Scans</span>
+                <span className="text-sm font-medium text-white">{images.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">Healthy Plants</span>
+                <span className="text-sm font-medium text-emerald-400">
                   {images.filter(img => img.status === 'Healthy').length}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-800">
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-400">Need Attention</span>
-                <span className="text-sm font-bold text-orange-400">
+                <span className="text-sm font-medium text-orange-400">
                   {images.filter(img => img.status === 'Warning' || img.status === 'Critical').length}
                 </span>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
-      {/* Recent Scans Grid */}
-      <AnimatePresence>
-        {images.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-8"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Analysis History</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className={viewMode === 'grid'
-              ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
-              : "space-y-3"
-            }>
-              {images.map((image, index) => (
-                <motion.div
-                  key={image.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ scale: viewMode === 'grid' ? 1.03 : 1.01 }}
-                  onClick={() => setSelectedId(image.id)}
-                  className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all ${
-                    selectedId === image.id
-                      ? 'border-emerald-500 ring-2 ring-emerald-500/30'
-                      : 'border-gray-800 hover:border-gray-600'
-                  } bg-[#181b21]`}
-                >
-                  {viewMode === 'grid' ? (
-                    <>
-                      <img src={image.url} alt="Plant" className="w-full aspect-square object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                      <div className="absolute inset-0 p-3 flex flex-col justify-between">
-                        <div className="flex justify-between items-start">
-                          <span className="text-xs font-mono text-gray-300 bg-black/50 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                            {image.timestamp}
-                          </span>
-                          {selectedId === image.id && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="w-3 h-3 bg-emerald-500 rounded-full"
-                            />
-                          )}
-                        </div>
-                        <div className="text-center">
-                          <StatusPill status={image.status} />
-                        </div>
+      {/* Recent Scans */}
+      {images.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-white mb-4">Recent Scans</h2>
+          <div className={viewMode === 'grid' ?
+            "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" :
+            "space-y-3"
+          }>
+            {images.map((image) => (
+              <motion.div
+                key={image.id}
+                whileHover={{ scale: viewMode === 'grid' ? 1.02 : 1.01 }}
+                onClick={() => setSelectedId(image.id)}
+                className={`relative ${
+                  viewMode === 'grid' ? 'aspect-square' : 'flex items-center gap-4'
+                } rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+                  selectedId === image.id
+                    ? 'border-emerald-500 ring-2 ring-emerald-500/20'
+                    : 'border-gray-800 hover:border-gray-600'
+                } bg-[#181b21]`}
+              >
+                {viewMode === 'grid' ? (
+                  <>
+                    <img src={image.url} alt="Plant" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-between p-3">
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs font-mono text-gray-300 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                          {image.timestamp}
+                        </span>
+                        {selectedId === image.id && (
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                        )}
                       </div>
-                      {image.status === 'Processing' && (
-                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-sm">
-                          <Loader2 className="w-6 h-6 text-emerald-400 animate-spin" />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <img src={image.url} alt="Plant" className="w-20 h-20 rounded-lg object-cover" />
-                      <div className="flex-1 flex items-center justify-between p-3">
-                        <div>
-                          <p className="text-sm font-medium text-white">{image.strain}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{image.timestamp}</p>
-                        </div>
+                      <div className="flex justify-center">
                         <StatusPill status={image.status} />
                       </div>
-                      {selectedId === image.id && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-emerald-500 rounded-full" />
-                      )}
-                    </>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    </div>
+                    {image.status === 'Processing' && (
+                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mb-1" />
+                        <span className="text-xs font-medium text-white">Processing</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <img src={image.url} alt="Plant" className="w-16 h-16 rounded-lg object-cover" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-white">{image.strain}</span>
+                        <StatusPill status={image.status} />
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gray-400">{image.timestamp}</span>
+                        <span className="text-xs text-gray-500">•</span>
+                        <span className="text-xs text-gray-400">{image.batchId}</span>
+                      </div>
+                    </div>
+                    {selectedId === image.id && (
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    )}
+                  </>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

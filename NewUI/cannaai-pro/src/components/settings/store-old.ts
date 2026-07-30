@@ -702,5 +702,9 @@ export const useSettingsStore = create<SettingsStore>()(
           activeTab: state.activeTab,
         }),
       }
-    )
+    ),
+    {
+      name: 'cannai-settings-store',
+    }
+  )
 );

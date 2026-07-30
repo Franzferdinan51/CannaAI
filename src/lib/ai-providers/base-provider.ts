@@ -181,6 +181,18 @@ export abstract class BaseProvider {
     return { ...this.metrics };
   }
 
+  /** Record the result of a lightweight availability probe. */
+  setAvailability(available: boolean, latency: number): void {
+    this.health.lastCheck = new Date();
+    this.health.latency = latency;
+    this.health.status = available ? 'healthy' : 'unhealthy';
+    if (available) {
+      this.health.consecutiveFailures = 0;
+      this.circuitBreaker.failures = 0;
+      this.circuitBreaker.state = 'closed';
+    }
+  }
+
   /**
    * Reset metrics
    */
