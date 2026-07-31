@@ -3,11 +3,38 @@
  * Auto-detects available models and allows selection
  */
 
-const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234/v1';
-const LM_STUDIO_API_KEY = process.env.LM_STUDIO_API_KEY || '';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL || 'http://localhost:1234/v1';
+
+export function getLMStudioApiKey(): string {
+  if (process.env.LM_STUDIO_API_KEY) return process.env.LM_STUDIO_API_KEY;
+  if (process.env.LM_API_TOKEN) return process.env.LM_API_TOKEN;
+  try {
+    const configPath = path.join(process.env.HOME || '', '.lmstudio', 'mcp.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const findToken = (value: unknown): string | undefined => {
+      if (!value || typeof value !== 'object') return undefined;
+      if (Array.isArray(value)) {
+        for (const item of value) { const found = findToken(item); if (found) return found; }
+        return undefined;
+      }
+      const record = value as Record<string, unknown>;
+      if (typeof record.LM_API_TOKEN === 'string' && record.LM_API_TOKEN.trim()) return record.LM_API_TOKEN.trim();
+      for (const child of Object.values(record)) { const found = findToken(child); if (found) return found; }
+      return undefined;
+    };
+    return findToken(config) || '';
+  } catch {
+    return '';
+  }
+}
+
+const LM_STUDIO_API_KEY = getLMStudioApiKey();
 
 // Default models (can be overridden)
-const LM_STUDIO_VISION_MODEL = process.env.LM_STUDIO_VISION_MODEL || 'qwen/qwen3.5-9b';
+const LM_STUDIO_VISION_MODEL = process.env.LM_STUDIO_VISION_MODEL || 'nvidia-nemotron-3-nano-omni-30b-a3b-reasoning';
 const LM_STUDIO_TEXT_MODEL = process.env.LM_STUDIO_TEXT_MODEL || 'qwen/qwen3.5-27b';
 
 // Cache available models

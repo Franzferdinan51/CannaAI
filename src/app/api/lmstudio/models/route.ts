@@ -5,6 +5,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { existsSync, readFileSync } from 'fs';
 import dotenv from 'dotenv';
+import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 
 const execAsync = promisify(exec);
 dotenv.config({ path: path.join(process.cwd(), '.env.local') });
@@ -16,7 +17,7 @@ function getRemoteLMStudioConfig(urlOverride?: string): { baseUrl: string; apiKe
     fileUrl = envText.match(/^LM_STUDIO_(?:URL|BASE_URL)\s*=\s*["']?([^"'\n]+)["']?/m)?.[1]?.trim() || '';
   } catch { /* optional local env file */ }
   const configuredUrl = process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || fileUrl;
-  const configuredKey = process.env.LM_STUDIO_API_KEY;
+  const configuredKey = process.env.LM_STUDIO_API_KEY || getLMStudioApiKey();
   const configPath = process.env.OPENCLAW_CONFIG_PATH ||
     (process.env.HOME ? path.join(process.env.HOME, '.openclaw', 'openclaw.json') : '');
 
@@ -26,7 +27,7 @@ function getRemoteLMStudioConfig(urlOverride?: string): { baseUrl: string; apiKe
       const provider = config?.models?.providers?.lmstudio;
       return {
         baseUrl: (urlOverride || configuredUrl || provider?.baseUrl || 'http://localhost:1234').replace(/\/v1\/?$/, '').replace(/\/$/, ''),
-        apiKey: configuredKey || provider?.apiKey
+      apiKey: configuredKey || provider?.apiKey
       };
     }
   } catch (error) {
@@ -51,7 +52,7 @@ async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
     const payload = await response.json();
     return (payload.models || []).map((model: any) => {
       const loaded = Array.isArray(model.loaded_instances) && model.loaded_instances.length > 0;
-      const input = Array.isArray(model.capabilities?.vision) && model.capabilities.vision ? ['text', 'image'] : ['text'];
+      const input = model.capabilities?.vision === true ? ['text', 'image'] : ['text'];
       return {
         id: model.key || model.id,
         name: model.display_name || model.name || model.key || model.id,
@@ -550,7 +551,7 @@ export async function GET(request: NextRequest) {
 
     const result = {
       status: 'success',
-      lmStudioRunning,
+    lmStudioRunning: false,
       models: uniqueModels,
       summary: {
         total: uniqueModels.length,

@@ -397,7 +397,10 @@ export async function POST(request: NextRequest) {
 
     // Enhanced AI provider detection with detailed logging
     const providerDetection = await detectAvailableProviders();
-    const primaryProvider = providerDetection.lmstudio
+    const imageProviderOverride = imageBase64ForAI && process.env.CANNAAI_IMAGE_PROVIDER;
+    const primaryProvider = imageProviderOverride === 'openclaw' && providerDetection.openclaw
+      ? { isAvailable: true, provider: 'openclaw', reason: 'Configured image provider: OpenClaw/MiniMax M3' }
+      : providerDetection.lmstudio
       ? { isAvailable: true, provider: 'lmstudio', reason: 'LM Studio is available' }
       : providerDetection.openclaw
         ? { isAvailable: true, provider: 'openclaw', reason: 'OpenClaw Gateway is running' }
@@ -470,7 +473,7 @@ export async function POST(request: NextRequest) {
         aiResult = await executeWithOpenClaw({
           prompt: prompt,
           image: imageBase64ForAI,
-          model: process.env.OPENCLAW_MODEL || 'qwen3.5-plus'
+          model: process.env.OPENCLAW_MODEL || 'minimax-portal/MiniMax-M3'
         });
 
         // A gateway can return HTTP success with an empty/unsupported vision

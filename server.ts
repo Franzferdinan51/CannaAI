@@ -195,11 +195,18 @@ async function createCustomServer() {
     // Add connection limiting
     let connectionCount = 0;
     io.engine.on('connection', (socket) => {
+      // The development Pixel/browser clients reconnect aggressively while
+      // hot reloads and tunnels change. Limiting raw Engine.IO connections
+      // here causes an endless reconnect storm and starves API requests.
+      if (dev) return;
       connectionCount++;
 
       if (connectionCount > securityConfig.maxConnections) {
         console.warn(`⚠️  Connection limit exceeded: ${connectionCount}/${securityConfig.maxConnections}`);
-        socket.disconnect(true);
+        // `io.engine` exposes a raw Engine.IO socket, not a Socket.IO socket.
+        // Calling disconnect() here caused an unhandled rejection on every
+        // excess connection and destabilized long-running analysis requests.
+        socket.close();
         return;
       }
 
