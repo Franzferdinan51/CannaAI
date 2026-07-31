@@ -473,14 +473,47 @@ export async function POST(request: NextRequest) {
           model: process.env.OPENCLAW_MODEL || 'qwen3.5-plus'
         });
 
-        if (!aiResult.success) {
-          console.log('⚠️ OpenClaw failed, trying fallback...');
-          aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
-            primaryProvider: 'bailian',
-            timeout: 90000,
-            maxRetries: 2,
-            requireVision: !!imageBase64ForAI
-          });
+        // A gateway can return HTTP success with an empty/unsupported vision
+        // response. Treat that as a failure so image analysis reaches a real
+        // vision provider instead of generating a misleading fallback report.
+        const hasUsableResult = (candidate: any) => {
+          if (typeof candidate === 'string') return candidate.trim().length > 0;
+          return candidate && typeof candidate === 'object' && Object.keys(candidate).length > 0;
+        };
+
+        if (!aiResult.success || !hasUsableResult(aiResult.result)) {
+          console.log('⚠️ OpenClaw returned no usable content, trying vision fallback...');
+
+          if (imageBase64ForAI) {
+            const visionFallbacks = [
+              () => executeWithBailian({
+                prompt,
+                image: imageBase64ForAI,
+                model: process.env.QWEN_MODEL
+              }),
+              () => executeWithOpenRouter({
+                prompt,
+                image: imageBase64ForAI,
+                requireVision: true
+              })
+            ];
+
+            for (const fallback of visionFallbacks) {
+              const candidate = await fallback();
+              if (candidate.success && hasUsableResult(candidate.result)) {
+                aiResult = candidate;
+                break;
+              }
+            }
+          }
+
+          if (!aiResult.success || !hasUsableResult(aiResult.result)) {
+            console.log('⚠️ Vision fallbacks unavailable, trying configured provider chain...');
+            aiResult = await executeAIWithFallback(
+              [{ role: 'user', content: prompt }],
+              { image: imageBase64ForAI || undefined }
+            );
+          }
         }
       } else if (primaryProvider.provider === 'bailian') {
         // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint) - VISION CAPABLE

@@ -95,6 +95,13 @@ export async function executeAIWithFallback(
     try {
       console.log(`Trying ${provider.name}...`);
       const result = await provider.fn();
+      const content = result?.result;
+      const hasContent = typeof content === 'string'
+        ? content.trim().length > 0
+        : Boolean(content && typeof content === 'object' && Object.keys(content).length > 0);
+      if (result?.success === false || !hasContent) {
+        throw new Error(result?.error || `${provider.name} returned an empty response`);
+      }
       console.log(`${provider.name} succeeded`);
       return result;
     } catch (error: any) {

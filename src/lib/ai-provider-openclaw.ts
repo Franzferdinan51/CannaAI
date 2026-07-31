@@ -26,6 +26,11 @@ const OPENCLAW_REQUEST_TIMEOUT_MS = parseInt(process.env.OPENCLAW_TIMEOUT_MS || 
 
 type OpenClawEndpoint = 'direct' | 'openai';
 
+function hasUsableContent(value: unknown): boolean {
+  if (typeof value === 'string') return value.trim().length > 0;
+  return Boolean(value && typeof value === 'object' && Object.keys(value as object).length > 0);
+}
+
 let preferredOpenClawEndpoint: OpenClawEndpoint =
   process.env.OPENCLAW_PREFERRED_ENDPOINT === 'openai' ? 'openai' : 'direct';
 
@@ -127,9 +132,19 @@ export async function executeWithOpenClaw(params: {
         temperature,
         maxTokens
       });
+      const content = response.choices[0]?.message.content;
+      if (!hasUsableContent(content)) {
+        return {
+          success: false,
+          error: 'OpenClaw returned an empty response',
+          provider: 'openclaw',
+          model: response.metadata?.modelUsed || model,
+          endpoint: 'openclaw-agent-cli'
+        };
+      }
       return {
         success: true,
-        result: response.choices[0]?.message.content,
+        result: content,
         provider: 'openclaw',
         model: response.metadata?.modelUsed || model,
         endpoint: 'openclaw-agent-cli',
@@ -171,11 +186,15 @@ export async function executeWithOpenClaw(params: {
           }
 
           const result = await directResponse.json();
+          const content = result.response || result.message || result.content;
+          if (!hasUsableContent(content)) {
+            throw new Error('OpenClaw direct API returned an empty response');
+          }
           preferredOpenClawEndpoint = 'direct';
 
           return {
             success: true,
-            result: result.response || result.message || result.content,
+            result: content,
             provider: 'openclaw',
             model,
             endpoint: 'api/chat',
@@ -213,11 +232,15 @@ export async function executeWithOpenClaw(params: {
         }
 
         const result = await response.json();
+        const content = result.choices?.[0]?.message?.content;
+        if (!hasUsableContent(content)) {
+          throw new Error('OpenClaw OpenAI API returned an empty response');
+        }
         preferredOpenClawEndpoint = 'openai';
 
         return {
           success: true,
-          result: result.choices?.[0]?.message?.content,
+          result: content,
           provider: 'openclaw',
           model,
           endpoint: 'v1/chat/completions',
