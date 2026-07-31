@@ -57,9 +57,10 @@ const config: Config = {
     }
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
     '^@/tests/(.*)$': '<rootDir>/tests/$1',
-    '^@/tests/utils/(.*)$': '<rootDir>/tests/utils/$1'
+    '^@/tests/utils/(.*)$': '<rootDir>/tests/utils/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@agentclientprotocol/sdk$': '<rootDir>/tests/mocks/agentclientprotocol-sdk.ts'
   },
   moduleDirectories: ['node_modules', '<rootDir>'],
   transform: {

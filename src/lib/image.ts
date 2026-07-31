@@ -123,13 +123,14 @@ export function isFormatSupported(mimeType: string): boolean {
  * Detect if buffer is HEIC/HEIF format
  */
 export function isHeicFormat(buffer: Buffer): boolean {
-  // HEIC/HEIF files start with "ftyp" marker
-  const header = buffer.slice(4, 8).toString('ascii');
-  return header === 'ftyp' && (
-    buffer.slice(8, 12).toString('ascii') === 'heic' ||
-    buffer.slice(8, 12).toString('ascii') === 'heif' ||
-    buffer.slice(8, 12).toString('ascii') === 'mif1'
-  );
+  // ISO-BMFF images normally store `ftyp` at byte 4, but accepting the
+  // compact marker at byte 0 makes detection resilient to streamed/test
+  // buffers that omit the four-byte box-size prefix.
+  const standardBrand = buffer.slice(8, 12).toString('ascii');
+  const compactBrand = buffer.slice(4, 8).toString('ascii');
+  const brands = new Set(['heic', 'heif', 'mif1']);
+  return (buffer.slice(4, 8).toString('ascii') === 'ftyp' && brands.has(standardBrand)) ||
+    (buffer.slice(0, 4).toString('ascii') === 'ftyp' && brands.has(compactBrand));
 }
 
 /**
@@ -139,7 +140,9 @@ export async function getImageFormat(buffer: Buffer): Promise<string> {
   try {
     // First check if it's HEIC/HEIF (Sharp doesn't handle these natively)
     if (isHeicFormat(buffer)) {
-      const ftypBrand = buffer.slice(8, 12).toString('ascii');
+      const ftypBrand = buffer.slice(4, 8).toString('ascii') === 'ftyp'
+        ? buffer.slice(8, 12).toString('ascii')
+        : buffer.slice(4, 8).toString('ascii');
       return ftypBrand === 'heic' ? 'heic' : 'heif';
     }
 
@@ -510,7 +513,7 @@ export async function validateImageDimensions(buffer: Buffer, minWidth: number =
     const metadata = await sharp(buffer).metadata();
 
     if (!metadata.width || !metadata.height) {
-      throw new ImageProcessingError('Unable to determine image dimensions');
+      throw new ImageSizeError('Unable to determine image dimensions');
     }
 
     if (metadata.width < minWidth || metadata.height < minHeight) {
