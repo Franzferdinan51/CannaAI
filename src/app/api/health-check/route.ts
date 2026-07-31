@@ -37,11 +37,9 @@ async function checkLMStudio() {
 
 async function checkOpenClaw() {
   try {
-    const res = await fetch(`${process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:18789'}/health`, {
-      signal: AbortSignal.timeout(3000),
-    });
-    if (res.ok) return { status: 'ok' };
-    return { status: 'http_error', code: res.status };
+    const { checkOpenClaw: check } = await import('@/lib/ai-provider-openclaw');
+    const result = await check();
+    return result.isAvailable ? { status: 'ok', transport: 'acp' } : { status: 'unreachable', transport: 'acp' };
   } catch (e) {
     return { status: 'unreachable', error: String(e).slice(0, 80) };
   }

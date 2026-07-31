@@ -13,7 +13,7 @@ type Session = { provider: AuthProvider; command: string; args: string[]; starte
 
 function commandPath(command: string): string {
   // LaunchAgents have a minimal PATH. These are the only binaries we invoke.
-  return command === 'openclaw' ? (process.env.OPENCLAW_BIN || '/Users/duckets/.npm-global/bin/openclaw') :
+  return command === 'openclaw' ? (process.env.OPENCLAW_BIN || '/opt/homebrew/bin/openclaw') :
     (process.env.HERMES_BIN || '/Users/duckets/.local/bin/hermes');
 }
 
@@ -93,15 +93,15 @@ export async function providerAuthStatus(provider: AuthProvider) {
     const authenticated = profiles.some((item: any) => item?.provider === target && item?.type === 'oauth');
     return { provider, authenticated, connected: authenticated, source: 'openclaw-auth', summary: authenticated ? `${target} OAuth profile is available` : `No ${target} OAuth profile found`, rawStatus: redact(output) };
   }
-  const target = provider === 'nous' ? ['portal', 'info'] : ['auth', 'status', provider === 'hermes' ? 'openai-codex' : provider];
-  const output = await run(commandPath('hermes'), target);
-  // `hermes auth status <provider>` intentionally emits a compact line such
-  // as `openai-codex: logged in`, while `hermes status` uses the dashboard
-  // table format. Accept both forms.
-  const authenticated = provider === 'nous'
-    ? /Auth:\s+(?!not logged in)|Nous Portal[^\n]*(logged in|authenticated|✓)/i.test(output)
-    : /openai-codex[^\n]*(logged in|authenticated|oauth|✓)|OpenAI Codex\s+✓/i.test(output);
-  return { provider, authenticated, connected: authenticated, source: 'hermes', summary: authenticated ? 'Hermes OAuth profile is available' : 'No matching Hermes OAuth profile found', rawStatus: redact(output) };
+  // Hermes' proxy is the supported integration surface for external apps. Its
+  // status command reflects the actual upstream OAuth adapters (Nous/xAI),
+  // whereas `hermes auth status openai-codex` only describes one credential
+  // entry and can report a false negative for the proxy.
+  const output = await run(commandPath('hermes'), ['proxy', 'status']);
+  const target = provider === 'nous' ? 'nous' : provider === 'xai' ? 'xai' : undefined;
+  const targetLine = target ? new RegExp(`\\[${target}\\][^\\n]*(ready|logged in|authenticated|✓)`, 'i') : null;
+  const authenticated = targetLine ? targetLine.test(output) : /\[[^\]]+\][^\n]*(ready|logged in|authenticated|✓)/i.test(output);
+  return { provider, authenticated, connected: authenticated, source: 'hermes-proxy', summary: authenticated ? 'Hermes proxy has an authenticated upstream' : 'No authenticated Hermes proxy upstream found', rawStatus: redact(output) };
 }
 
 export async function providerAuthLog(provider: AuthProvider) {

@@ -64,8 +64,9 @@ export function getProviderConfig(provider: string) {
       };
     case 'openclaw':
       return {
-        baseUrl: process.env.OPENCLAW_BASE_URL || 'http://localhost:18789',
-        apiKey: process.env.OPENCLAW_API_KEY || '',
+        baseUrl: 'openclaw://gateway/acp',
+        transport: 'acp',
+        managedAuth: true,
       };
     case 'bailian':
       return {

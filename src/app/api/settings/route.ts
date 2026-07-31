@@ -60,13 +60,15 @@ const defaultSettings = {
   openclaw: {
     apiKey: '',
     model: process.env.OPENCLAW_MODEL || '',
-    baseUrl: process.env.OPENCLAW_GATEWAY_URL || 'openclaw://local',
+    baseUrl: 'openclaw://gateway/acp',
+    transport: 'acp',
     managedAuth: true
   },
   hermes: {
     apiKey: '',
     model: process.env.HERMES_MODEL || '',
-    baseUrl: 'hermes://local',
+    baseUrl: `hermes://proxy:${process.env.HERMES_PROXY_PORT || '8645'}/v1`,
+    transport: 'hermes-proxy',
     managedAuth: true
   },
   anthropic: {

@@ -9,9 +9,9 @@ stages through whichever connected provider is healthy.
 
 Reference: [OpenClaw](https://github.com/openclaw/openclaw), [model providers](https://docs.openclaw.ai/concepts/model-providers), and [Gateway RPC](https://docs.openclaw.ai/reference/rpc).
 
-OpenClaw is invoked through its supported CLI so its current
-gateway routing, OAuth sessions, model selection, and provider credentials stay
-inside OpenClaw. CannaAI never stores or displays those credentials.
+OpenClaw is connected through its supported ACP bridge, backed by the
+authenticated Gateway WebSocket. CannaAI never treats OpenClaw as a generic
+HTTP model server and never stores or displays its credentials.
 
 The Settings page now launches the native flows directly:
 
@@ -24,6 +24,11 @@ After completing the browser login, use **Check** in Settings. CannaAI reads
 the OpenClaw auth profile store; it does not treat an installed CLI as proof of
 authentication. OpenAI uses OpenClaw's current `openai` provider id;
 `openai-codex` is legacy. Grok uses `xai`.
+
+The CannaAI transport identifier is `openclaw://gateway/acp`. The actual
+Gateway WebSocket URL and token are resolved from OpenClaw's own configuration
+(`OPENCLAW_ACP_URL` and `OPENCLAW_GATEWAY_TOKEN` can override them for a
+managed deployment).
 
 Optional environment variables:
 
@@ -41,9 +46,16 @@ OpenClaw session.
 
 Reference: [Hermes Agent](https://github.com/NousResearch/hermes-agent), [Nous Portal/Tool Gateway](https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-gateway), and the native `hermes serve`/`hermes proxy` commands.
 
-Hermes is invoked through its supported one-shot CLI (`hermes -z`) and uses the
-provider configured in Hermes. CannaAI does not attempt to reproduce Hermes'
-OAuth or provider credential store.
+Hermes is connected through its supported credential-attaching local proxy,
+not through a guessed remote base URL. CannaAI starts or reuses:
+
+```bash
+hermes proxy start --provider nous --host 127.0.0.1 --port 8645
+```
+
+The CannaAI base URL is `http://127.0.0.1:8645/v1`; the bearer value is only a
+placeholder because Hermes attaches the real OAuth credentials. CannaAI does
+not reproduce Hermes' OAuth or credential store.
 
 Hermes has two distinct connection paths. `hermes portal login` is the native
 Nous Portal OAuth flow. Existing pooled credentials (including OpenAI Codex,
@@ -57,18 +69,19 @@ hermes auth status openai-codex
 hermes auth status xai-oauth
 ```
 
-The CannaAI Hermes bridge uses Hermes' supported one-shot interface
-(`hermes -z ... --cli`) and never copies credentials into CannaAI. The UI
-reports native CLI/credential status rather than treating installation as
-proof of authentication.
+The Settings page reports `hermes proxy status`, so it reflects whether the
+selected upstream adapter is actually ready rather than merely checking that
+the Hermes executable is installed.
 
 ## Transport contract
 
-OpenClaw is connected through its supported Gateway CLI bridge
-(`openclaw infer model run --gateway --json`), which uses the running Gateway's
-WebSocket/RPC transport and current model routing. Hermes is connected through
-its supported one-shot CLI; its `hermes serve`/`hermes proxy` endpoints are
-optional external integrations, not required for CannaAI's local bridge.
+OpenClaw uses ACP over the running Gateway WebSocket. Hermes uses its local
+OAuth proxy over HTTP. These are different transports by design:
+
+```text
+CannaAI ── ACP/stdio ──> openclaw acp ── authenticated Gateway WebSocket ──> active OpenClaw model
+CannaAI ── HTTP /v1 ───> hermes proxy ── OAuth adapter ──> Nous/xAI upstream
+```
 
 ```text
 HERMES_AGENT_COMMAND=hermes

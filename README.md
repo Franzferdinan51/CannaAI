@@ -55,14 +55,24 @@ npm run start
 
 CannaAI integrates with OpenClaw for AI agent control:
 
-### HTTP Bridge (Port 18790)
-```bash
-# Start bridge
-cd openclaw-bridge && npm start
+### Native Gateway / ACP transport
 
-# Test
-curl http://localhost:18790/health
+OpenClaw is not an OpenAI-compatible HTTP server. CannaAI connects through
+OpenClaw's supported ACP bridge, which is backed by the authenticated Gateway
+WebSocket. The Gateway owns routing, OAuth profiles, model selection, and
+permissions; CannaAI never copies those credentials.
+
+```bash
+# Verify the configured Gateway
+openclaw gateway status --json
+
+# The equivalent CannaAI transport identifier is:
+# openclaw://gateway/acp
 ```
+
+Do not start the legacy `openclaw-bridge` or point CannaAI at an invented
+`/api/chat`/`/v1/chat/completions` URL. The old bridge is retained only as a
+historical reference.
 
 ### Native Skill
 ```bash
@@ -172,7 +182,10 @@ Copy `.env.example` to `.env` and configure:
 
 ```bash
 DATABASE_URL="postgresql://..."
-OPENCLAW_GATEWAY_URL="http://localhost:18789"
+OPENCLAW_ACP_URL="" # optional; defaults to the Gateway configured in OpenClaw
+OPENCLAW_AGENT_ID="main"
+HERMES_PROXY_PORT="8645"
+HERMES_PROXY_PROVIDER="nous"
 LM_STUDIO_URL="http://<YOUR_WINDOWS_IP>:1234"
 ```
 

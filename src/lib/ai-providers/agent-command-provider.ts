@@ -1,34 +1,56 @@
+import { spawn, type ChildProcess } from 'node:child_process';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { Readable, Writable } from 'node:stream';
+import { pathToFileURL } from 'node:url';
+import { readFile, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { ClientSideConnection, PROTOCOL_VERSION, ndJsonStream } from '@agentclientprotocol/sdk';
 import { BaseProvider, AIRequest, AIResponse } from './base-provider';
 
 const execFileAsync = promisify(execFile);
+type AgentCommandProviderName = 'openclaw' | 'hermes';
 
-export type AgentCommandProviderName = 'openclaw' | 'hermes';
+const children = new Map<string, ChildProcess>();
+
+function commandPath(provider: AgentCommandProviderName, configured?: string): string {
+  if (configured) return configured;
+  return provider === 'openclaw' ? '/opt/homebrew/bin/openclaw' : '/Users/duckets/.local/bin/hermes';
+}
+
+function contentFromParts(parts: string[]): string {
+  return parts.join('').trim();
+}
 
 /**
- * Provider for agents that own their own auth/model routing.
- *
- * OpenClaw and Hermes intentionally run through their supported CLIs here:
- * their current gateways are session/RPC services, not stable REST model APIs.
- * This keeps OAuth and provider credentials inside the agent that owns them.
+ * Connects to the agents through their supported integration surfaces.
+ * OpenClaw owns the Gateway WebSocket and exposes ACP over stdio; Hermes owns
+ * OAuth and exposes its credential-attaching OpenAI-compatible proxy locally.
  */
 export class AgentCommandProvider extends BaseProvider {
-  private readonly command: string;
-  private readonly commandArgs: string[];
   private readonly provider: AgentCommandProviderName;
+  private readonly command: string;
+  private readonly model: string;
+  private readonly proxyPort: number;
+  private readonly proxyProvider: string;
 
   constructor(provider: AgentCommandProviderName, config: any = {}) {
     super({
       name: provider,
-      baseUrl: config.baseUrl || `${provider}://local`,
+      baseUrl: provider === 'openclaw'
+        // OpenClaw is not an OpenAI-compatible HTTP server. Its supported
+        // app-facing transport is ACP, backed by the authenticated Gateway.
+        // Keep this as a URI describing the transport, never a fake URL.
+        ? 'openclaw://gateway/acp'
+        : `http://127.0.0.1:${Number(process.env.HERMES_PROXY_PORT || config.proxyPort || 8645)}/v1`,
       model: config.model || '',
       timeout: config.timeout || 120000,
       maxRetries: 1,
       retryDelay: 500,
       capabilities: {
         text: true,
-        vision: false,
+        vision: provider === 'openclaw',
         streaming: false,
         functionCalling: false,
         jsonMode: false,
@@ -41,17 +63,23 @@ export class AgentCommandProvider extends BaseProvider {
       pricing: { input: 0, output: 0, currency: 'USD', ...config.pricing }
     });
     this.provider = provider;
-    this.command = config.command || provider;
-    this.commandArgs = Array.isArray(config.commandArgs) ? config.commandArgs : [];
+    this.command = commandPath(provider, config.command);
+    this.model = config.model || '';
+    this.proxyPort = Number(process.env.HERMES_PROXY_PORT || config.proxyPort || 8645);
+    // An explicit provider wins. Otherwise select the first authenticated
+    // Hermes proxy adapter at runtime instead of assuming Nous is logged in.
+    this.proxyProvider = process.env.HERMES_PROXY_PROVIDER || config.proxyProvider || '';
   }
 
   async isAvailable(): Promise<boolean> {
     try {
-      await execFileAsync(this.command, [...this.commandArgs, '--version'], {
-        timeout: 5000,
-        maxBuffer: 1024 * 1024
-      });
-      return true;
+      if (this.provider === 'openclaw') {
+        const { stdout } = await execFileAsync(this.command, ['gateway', 'status', '--json'], { timeout: 8000, maxBuffer: 2 * 1024 * 1024 });
+        const parsed = JSON.parse(stdout);
+        return parsed?.rpc?.ok === true || parsed?.gateway?.service?.runtime?.status === 'running';
+      }
+      const response = await fetch(`http://127.0.0.1:${this.proxyPort}/health`, { signal: AbortSignal.timeout(1500) });
+      return response.ok;
     } catch {
       return false;
     }
@@ -59,42 +87,28 @@ export class AgentCommandProvider extends BaseProvider {
 
   async execute(request: AIRequest): Promise<AIResponse> {
     const startedAt = Date.now();
-    const prompt = request.messages
-      .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
-      .join('\n\n');
-    const args = [...this.commandArgs];
-
-    if (this.provider === 'openclaw') {
-      args.push('infer', 'model', 'run', '--gateway', '--json', '--thinking', 'off', '--prompt', prompt);
-      if (request.model || this.config.model) args.push('--model', request.model || this.config.model);
-    } else {
-      if (request.model || this.config.model) args.push('-m', request.model || this.config.model);
-      args.push('-z', prompt, '--cli');
-    }
-
     try {
-      const { stdout } = await execFileAsync(this.command, args, {
-        timeout: this.config.timeout,
-        maxBuffer: 8 * 1024 * 1024,
-        env: { ...process.env }
-      });
-      const content = this.extractContent(stdout);
-      if (!content) throw new Error(`${this.provider} returned an empty response.`);
+      const result = this.provider === 'openclaw'
+        ? (request.messages.some((message) => Boolean(message.image))
+          ? await this.executeOpenClawAcp(request)
+          : await this.executeOpenClawCli(request))
+        : await this.executeHermesProxy(request);
       const latency = Date.now() - startedAt;
+      if (!result.content) throw new Error(`${this.provider} returned an empty response.`);
       this.updateHealth(true, latency);
-      this.recordMetrics(latency, 0, 0, 0, true);
+      this.recordMetrics(latency, result.usage?.prompt_tokens || 0, result.usage?.completion_tokens || 0, 0, true);
       return {
         id: `${this.provider}_${Date.now()}`,
         object: 'chat.completion',
         created: Math.floor(Date.now() / 1000),
-        model: request.model || this.config.model || 'agent-default',
-        choices: [{ index: 0, message: { role: 'assistant', content }, finishReason: 'stop' }],
-        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0, cost: 0 },
-        metadata: {
-          provider: this.provider,
-          latency,
-          modelUsed: request.model || this.config.model || 'agent-default'
-        }
+        model: result.model || request.model || this.model || 'agent-default',
+        choices: [{ index: 0, message: { role: 'assistant', content: result.content }, finishReason: 'stop' }],
+        usage: result.usage ? {
+          promptTokens: result.usage.prompt_tokens || 0,
+          completionTokens: result.usage.completion_tokens || 0,
+          totalTokens: result.usage.total_tokens || 0
+        } : undefined,
+        metadata: { provider: this.provider, latency, modelUsed: result.model || request.model || this.model || 'agent-default' }
       };
     } catch (error) {
       const latency = Date.now() - startedAt;
@@ -104,15 +118,135 @@ export class AgentCommandProvider extends BaseProvider {
     }
   }
 
-  private extractContent(stdout: string): string {
-    const text = stdout.trim();
-    if (!text) return '';
-    if (this.provider !== 'openclaw') return text;
-    try {
-      const parsed = JSON.parse(text);
-      return String(parsed.reply || parsed.response || parsed.content || parsed.result?.reply || parsed.outputs?.[0]?.text || '').trim();
-    } catch {
-      return text;
+  private async executeHermesProxy(request: AIRequest): Promise<{ content: string; model?: string; usage?: any }> {
+    await this.ensureHermesProxy();
+    const messages = request.messages.map((message) => {
+      if (!message.image) return { role: message.role, content: message.content };
+      const image = message.image.startsWith('data:image/') ? message.image : `data:image/jpeg;base64,${message.image}`;
+      return { role: message.role, content: [{ type: 'text', text: message.content }, { type: 'image_url', image_url: { url: image } }] };
+    });
+    const model = await this.resolveHermesModel(request.model || this.model);
+    const response = await fetch(`http://127.0.0.1:${this.proxyPort}/v1/chat/completions`, {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer cannaai-managed-by-hermes' },
+      body: JSON.stringify({ model, messages, temperature: request.temperature, max_tokens: request.maxTokens || 2048 }),
+      signal: AbortSignal.timeout(this.config.timeout)
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(`Hermes proxy error ${response.status}: ${body?.error?.message || response.statusText}`);
+    return { content: String(body?.choices?.[0]?.message?.content || '').trim(), model: body.model, usage: body.usage };
+  }
+
+  private async resolveHermesModel(requested?: string): Promise<string> {
+    if (requested && requested !== 'auto') return requested;
+    const response = await fetch(`http://127.0.0.1:${this.proxyPort}/v1/models`, { signal: AbortSignal.timeout(5000) });
+    const body = await response.json().catch(() => ({}));
+    const model = body?.data?.find((item: any) => typeof item?.id === 'string' && !/imagine|video/i.test(item.id))?.id;
+    if (!model) throw new Error('Hermes proxy returned no text-capable models');
+    return model;
+  }
+
+  private async executeOpenClawCli(request: AIRequest): Promise<{ content: string; model?: string; usage?: any }> {
+    const prompt = request.messages.map((message) => `${message.role.toUpperCase()}: ${message.content}`).join('\n\n');
+    const args = ['agent', '--json', '--agent', process.env.OPENCLAW_AGENT_ID || 'main', '--session-key', `cannaai:${process.pid}`, '--thinking', 'off', '--timeout', String(Math.ceil(this.config.timeout / 1000)), '--message', prompt];
+    if (request.model || this.model) args.push('--model', request.model || this.model);
+    const { stdout } = await execFileAsync(this.command, args, { timeout: this.config.timeout + 5000, maxBuffer: 12 * 1024 * 1024, env: { ...process.env } });
+    const parsed = JSON.parse(stdout.trim());
+    const payload = parsed?.result?.payloads?.find((item: any) => typeof item?.text === 'string' && item.text.trim());
+    return {
+      content: String(payload?.text || parsed?.result?.text || parsed?.summary || '').trim(),
+      model: parsed?.result?.meta?.agentMeta?.model || request.model || this.model || 'openclaw-agent',
+      usage: parsed?.result?.meta?.agentMeta?.usage
+    };
+  }
+
+  private async ensureHermesProxy(): Promise<void> {
+    if (await this.isAvailable()) return;
+    const provider = await this.resolveHermesProxyProvider();
+    const key = `${this.command}:${this.proxyPort}:${provider}`;
+    if (!children.has(key)) {
+      const child = spawn(this.command, ['proxy', 'start', '--provider', provider, '--host', '127.0.0.1', '--port', String(this.proxyPort)], {
+        detached: true, stdio: 'ignore', env: { ...process.env }
+      });
+      child.unref();
+      children.set(key, child);
     }
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline) {
+      if (await this.isAvailable()) return;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    throw new Error(`Hermes proxy is not reachable on 127.0.0.1:${this.proxyPort}; authenticate Hermes first with hermes portal login or connect an upstream with hermes proxy providers.`);
+  }
+
+  private async resolveHermesProxyProvider(): Promise<string> {
+    if (this.proxyProvider) return this.proxyProvider;
+    try {
+      const { stdout } = await execFileAsync(this.command, ['proxy', 'status'], { timeout: 5000, maxBuffer: 1024 * 1024 });
+      if (/\[nous\s*\][^\n]*\bready\b/i.test(stdout)) return 'nous';
+      if (/\[xai\s*\][^\n]*\bready\b/i.test(stdout)) return 'xai';
+    } catch { /* report the normal proxy-auth error below */ }
+    return 'nous';
+  }
+
+  private async executeOpenClawAcp(request: AIRequest): Promise<{ content: string; model?: string; usage?: any }> {
+    const tempFiles: string[] = [];
+    let child: ChildProcess | undefined;
+    try {
+      const prompt: any[] = [];
+      for (const message of request.messages) {
+        prompt.push({ type: 'text', text: `${message.role.toUpperCase()}: ${message.content}` });
+        if (message.image) {
+          const raw = message.image.replace(/^data:image\/[^;]+;base64,/, '');
+          const filePath = path.join(os.tmpdir(), `cannaai-acp-${process.pid}-${Date.now()}.jpg`);
+          await writeFile(filePath, Buffer.from(raw, 'base64'), { mode: 0o600 });
+          tempFiles.push(filePath);
+          prompt.push({ type: 'resource_link', uri: pathToFileURL(filePath).href, name: 'plant-image.jpg', mimeType: 'image/jpeg' });
+        }
+      }
+      child = spawn(this.command, ['acp', ...await this.openClawAcpArgs()], { stdio: ['pipe', 'pipe', 'ignore'], env: { ...process.env, OPENCLAW_HIDE_BANNER: '1', OPENCLAW_SUPPRESS_NOTES: '1' } });
+      if (!child.stdin || !child.stdout) throw new Error('Could not start OpenClaw ACP bridge');
+      const stream = ndJsonStream(Writable.toWeb(child.stdin), Readable.toWeb(child.stdout) as unknown as ReadableStream<Uint8Array>);
+      const parts: string[] = [];
+      const client = new ClientSideConnection(() => ({
+        sessionUpdate: async (notification: any) => {
+          const update = notification?.update;
+          if (update?.sessionUpdate === 'agent_message_chunk' && update.content?.type === 'text') parts.push(update.content.text);
+        },
+        requestPermission: async (params: any) => ({ outcome: { outcome: 'cancelled' } })
+      }), stream);
+      const timeout = <T>(promise: Promise<T>, label: string): Promise<T> => Promise.race([
+        promise,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`OpenClaw ACP ${label} timed out`)), this.config.timeout))
+      ]);
+      await timeout(client.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {}, clientInfo: { name: 'cannaai', version: '1.0.0' } }), 'initialization');
+      const session = await timeout(client.newSession({ cwd: process.cwd(), mcpServers: [] }), 'session creation');
+      const response = await timeout(client.prompt({ sessionId: session.sessionId, prompt }), 'prompt');
+      const content = contentFromParts(parts);
+      if (!content) throw new Error(`OpenClaw ACP completed with stop reason ${response.stopReason} but no message content`);
+      return { content, model: request.model || this.model || 'openclaw-agent' };
+    } finally {
+      // ACP is a one-request child process here; always close it on success,
+      // timeout, or protocol failure so a vision request cannot leak a child.
+      if (child && !child.killed) child.kill('SIGTERM');
+      await Promise.all(tempFiles.map((file) => rm(file, { force: true })));
+    }
+  }
+
+  private async openClawAcpArgs(): Promise<string[]> {
+    const args = ['--session', `cannaai:${process.pid}`];
+    if (process.env.OPENCLAW_ACP_URL) args.push('--url', process.env.OPENCLAW_ACP_URL);
+    try {
+      const configPath = process.env.OPENCLAW_CONFIG_PATH || path.join(process.env.HOME || os.homedir(), '.openclaw', 'openclaw.json');
+      const config = JSON.parse(await readFile(configPath, 'utf8'));
+      if (!process.env.OPENCLAW_ACP_URL) {
+        const port = config?.gateway?.port || 18789;
+        args.push('--url', `ws://127.0.0.1:${port}`);
+      }
+      const token = process.env.OPENCLAW_GATEWAY_TOKEN || config?.gateway?.auth?.token;
+      if (token) args.push('--token', token);
+    } catch {
+      // Let OpenClaw resolve its own configured target if no local config is available.
+    }
+    return args;
   }
 }
