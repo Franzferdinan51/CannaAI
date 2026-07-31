@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { maskSettings, safeMergeSettings } from '@/lib/settings-security';
 import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
+import { providerAuthStatus } from '@/lib/provider-auth';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -493,11 +494,13 @@ export async function POST(request: NextRequest) {
 async function getProviderModels(provider: string) {
   try {
     if (['grok', 'openclaw', 'hermes'].includes(provider)) {
+      const auth = await providerAuthStatus(provider as 'grok' | 'openclaw' | 'hermes');
       const statuses = await getUnifiedAI().refreshProviderHealth();
       const target = provider === 'grok' ? statuses.find((item) => item.name === 'openclaw') : statuses.find((item) => item.name === provider);
+      const authenticated = provider === 'openclaw' ? true : auth.authenticated;
       return {
-        success: Boolean(target?.health.status === 'healthy'),
-        message: target?.health.status === 'healthy' ? `${provider} agent is connected` : `${provider} agent is not available`,
+        success: Boolean(target?.health.status === 'healthy' && authenticated),
+        message: target?.health.status === 'healthy' && authenticated ? `${provider} is connected and authenticated` : `${provider} is not authenticated or unavailable`,
         models: target?.health.status === 'healthy' ? [{
           id: provider === 'grok' ? 'grok-managed-by-openclaw' : `${provider}-active`,
           name: provider === 'grok' ? 'Grok (OpenClaw OAuth)' : `${provider} active model`,
@@ -923,13 +926,14 @@ function determineCapabilities(modelId: string): string[] {
 async function testAIConnection(provider: string) {
   try {
     if (['grok', 'openclaw', 'hermes'].includes(provider)) {
+      const auth = await providerAuthStatus(provider as 'grok' | 'openclaw' | 'hermes');
       const statuses = await getUnifiedAI().refreshProviderHealth();
       const target = provider === 'grok' ? statuses.find((item) => item.name === 'openclaw') : statuses.find((item) => item.name === provider);
-      const healthy = target?.health.status === 'healthy';
+      const healthy = target?.health.status === 'healthy' && (provider === 'openclaw' || auth.authenticated);
       return {
         success: healthy,
-        message: healthy ? `${provider} is connected through its agent bridge` : `${provider} agent is not available`,
-        details: { managedAuth: true, provider: target?.name || provider, status: target?.health.status || 'unhealthy' }
+        message: healthy ? `${provider} is connected through its native agent bridge` : `${provider} needs native OAuth login or is unavailable`,
+        details: { managedAuth: true, authenticated: auth.authenticated, authSource: auth.source, provider: target?.name || provider, status: target?.health.status || 'unhealthy', next: healthy ? undefined : 'Use Connect OAuth in Settings, then Check.' }
       };
     }
     if (provider === 'lm-studio') {

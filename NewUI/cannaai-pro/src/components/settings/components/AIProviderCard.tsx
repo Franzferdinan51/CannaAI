@@ -47,6 +47,7 @@ const AIProviderCard: React.FC = () => {
 
   const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
   const [localConfigs, setLocalConfigs] = useState<Record<string, any>>({});
+  const [authState, setAuthState] = useState<Record<string, { running?: boolean; authenticated?: boolean; message?: string }>>({});
 
   const providers: Array<{
     id: AIProviderType;
@@ -204,6 +205,20 @@ const AIProviderCard: React.FC = () => {
 
   const handleTestConnection = async (providerId: AIProviderType) => {
     await testProviderConnection(providerId);
+  };
+
+  const isOAuthProvider = (providerId: string) => ['openai', 'grok'].includes(providerId);
+  const isAgentConnection = (providerId: string) => ['openclaw', 'hermes'].includes(providerId);
+  const handleOAuth = async (providerId: string, action: 'start' | 'status') => {
+    try {
+      const result = await (await import('../api-client')).settingsAPI.providerAuth(providerId, action);
+      setAuthState((previous) => ({ ...previous, [providerId]: { ...result, message: result.instruction || result.summary } }));
+      if (action === 'status' && result.authenticated) {
+        setLocalConfigs((previous) => ({ ...previous, [providerId]: { ...previous[providerId], connected: true } }));
+      }
+    } catch (error) {
+      setAuthState((previous) => ({ ...previous, [providerId]: { message: error instanceof Error ? error.message : 'OAuth failed' } }));
+    }
   };
 
   const handleLoadModels = async (providerId: AIProviderType) => {
@@ -421,6 +436,23 @@ const AIProviderCard: React.FC = () => {
                             {showApiKey[provider.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
+                      </div>
+                    )}
+
+                    {(isOAuthProvider(provider.id) || isAgentConnection(provider.id)) && (
+                      <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium text-white">{isOAuthProvider(provider.id) ? 'Native OAuth connection' : 'Native agent connection'}</p>
+                            <p className="text-xs text-gray-400">{provider.id === 'grok' ? 'Uses xAI/Grok OAuth through OpenClaw.' : provider.id === 'openai' ? 'Uses OpenAI OAuth through the current OpenClaw provider.' : provider.id === 'openclaw' ? 'Uses the local OpenClaw Gateway and its configured model/auth profiles.' : 'Uses Hermes’ native CLI, pooled credentials, and configured model routing.'}</p>
+                          </div>
+                          <Key className="w-4 h-4 text-purple-300" />
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'start'); }} className="flex-1 px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm">{isOAuthProvider(provider.id) ? 'Connect OAuth' : 'Connect / Check'}</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'status'); }} className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm">Check</button>
+                        </div>
+                        {authState[provider.id]?.message && <p className="text-xs text-gray-300">{authState[provider.id].message}</p>}
                       </div>
                     )}
 

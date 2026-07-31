@@ -35,6 +35,12 @@ class SettingsAPIClient {
     );
   }
 
+  async providerAuth(provider: string, action: 'start' | 'status' | 'log' = 'start'): Promise<any> {
+    const response = await this.api.post('/api/provider-auth', { provider, action });
+    if (!response.data.success) throw new Error(response.data.error || 'OAuth operation failed');
+    return response.data;
+  }
+
   private handleError(error: any): Error {
     if (error.response) {
       // Server responded with error status
