@@ -37,23 +37,28 @@ export class AIProviderUnavailableError extends Error {
 }
 
 // Check all available providers
+// 3-second wall per provider – Node.js AbortSignal.timeout is more reliable than Promise.race with setTimeout
 export async function detectAvailableProviders() {
+  const withSignal = <T>(p: Promise<T>, ms: number) =>
+    p.then(r => ({ r, isAvailable: typeof r === 'boolean' ? r : Boolean((r as any)?.isAvailable) }))
+     .catch(() => ({ r: false as any, isAvailable: false }));
+
   const [lmstudio, openclaw, bailian, openrouter] = await Promise.all([
-    checkLMStudio().catch(() => false),
-    checkOpenClaw().catch(() => false),
-    checkBailian().catch(() => false),
-    checkOpenRouter().catch(() => false),
+    withSignal(Promise.race([checkLMStudio(), AbortSignal.timeout(3000)])),
+    withSignal(Promise.race([checkOpenClaw(), AbortSignal.timeout(3000)])),
+    withSignal(Promise.race([checkBailian(), AbortSignal.timeout(3000)])),
+    withSignal(Promise.race([checkOpenRouter(), AbortSignal.timeout(3000)])),
   ]);
 
   const results = [
-    { provider: 'lmstudio', isAvailable: !!lmstudio, reason: lmstudio ? 'connected' : 'not reachable', data: lmstudio },
-    { provider: 'openclaw', isAvailable: !!openclaw, reason: openclaw ? 'connected' : 'not reachable', data: openclaw },
-    { provider: 'bailian', isAvailable: !!bailian, reason: bailian ? 'connected' : 'not configured', data: bailian },
-    { provider: 'openrouter', isAvailable: !!openrouter, reason: openrouter ? 'connected' : 'not reachable', data: openrouter },
+    { provider: 'lmstudio',  isAvailable: lmstudio.isAvailable,  reason: lmstudio.isAvailable  ? 'connected' : 'not reachable', data: lmstudio.r },
+    { provider: 'openclaw',   isAvailable: openclaw.isAvailable,   reason: openclaw.isAvailable   ? (openclaw.r as any)?.reason   || 'connected' : 'not reachable', data: openclaw.r },
+    { provider: 'bailian',   isAvailable: bailian.isAvailable,   reason: bailian.isAvailable   ? (bailian.r as any)?.reason   || 'connected' : 'not configured', data: bailian.r },
+    { provider: 'openrouter',isAvailable: openrouter.isAvailable, reason: openrouter.isAvailable ? (openrouter.r as any)?.reason || 'connected' : 'not reachable', data: openrouter.r },
   ];
 
   const available = results.filter(r => r.isAvailable);
-  const primary = available[0] || { provider: 'fallback', isAvailable: false, reason: 'no providers available' };
+  const primary  = available[0] || { provider: 'fallback', isAvailable: false, reason: 'no providers available' };
 
   return {
     primary,

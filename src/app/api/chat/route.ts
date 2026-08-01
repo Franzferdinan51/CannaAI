@@ -68,8 +68,24 @@ export async function POST(request: NextRequest) {
 
     console.log('💬 Chat request received, detecting AI providers...');
 
-    // Detect available AI providers
-    const providerDetection = await detectAvailableProviders();
+    // Detect available AI providers (5-second hard cap so the route never hangs)
+    let providerDetection;
+    try {
+      providerDetection = await Promise.race([
+        detectAvailableProviders(),
+        AbortSignal.timeout(5000).then(() => null),
+      ]);
+    } catch {
+      providerDetection = null;
+    }
+    if (!providerDetection) {
+      providerDetection = {
+        primary: { provider: 'fallback', isAvailable: false, reason: 'detection timed out' },
+        all: [],
+        fallback: [],
+        recommendations: ['AI provider detection timed out — try again'],
+      };
+    }
     console.log(`📡 Primary chat provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
 
     // Check if AI providers are available before processing
@@ -321,4 +337,6 @@ export async function GET() {
       { status: 503 }
     );
   }
-}
+}// TEMP DEBUG - REMOVE AFTER
+const _debugStart = Date.now();
+console.log(`[CHAT-DEBUG] Route hit at ${_debugStart}`);
