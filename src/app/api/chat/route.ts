@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { detectAvailableProviders, getProviderConfig, executeAIWithFallback, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
+import { detectAvailableProviders, getProviderConfig, executeChatWithFallback, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { getAgentEvolverClient } from '@/lib/agent-evolver';
 
 // Export configuration for dual-mode compatibility
@@ -131,10 +131,9 @@ export async function POST(request: NextRequest) {
         console.warn('⚠️ AgentEvolver chat failed, using traditional AI providers:', agentEvolverError instanceof Error ? agentEvolverError.message : 'Unknown error');
 
         // Fallback to traditional AI providers
-        const aiResult = await executeAIWithFallback(contextPrompt, undefined, {
-          primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider as 'lm-studio' | 'openrouter',
-          timeout: 45000, // 45 second timeout for chat
-          maxRetries: 1
+        const aiResult = await executeChatWithFallback(contextPrompt, {
+          primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
+          timeout: 45000,
         });
 
         chatResult = aiResult.result;

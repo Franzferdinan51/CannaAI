@@ -45,11 +45,23 @@ export async function detectAvailableProviders() {
     checkOpenRouter().catch(() => false),
   ]);
 
+  const results = [
+    { provider: 'lmstudio', isAvailable: !!lmstudio, reason: lmstudio ? 'connected' : 'not reachable', data: lmstudio },
+    { provider: 'openclaw', isAvailable: !!openclaw, reason: openclaw ? 'connected' : 'not reachable', data: openclaw },
+    { provider: 'bailian', isAvailable: !!bailian, reason: bailian ? 'connected' : 'not configured', data: bailian },
+    { provider: 'openrouter', isAvailable: !!openrouter, reason: openrouter ? 'connected' : 'not reachable', data: openrouter },
+  ];
+
+  const available = results.filter(r => r.isAvailable);
+  const primary = available[0] || { provider: 'fallback', isAvailable: false, reason: 'no providers available' };
+
   return {
-    lmstudio,
-    openclaw,
-    bailian,
-    openrouter,
+    primary,
+    fallback: available.slice(1),
+    all: results,
+    recommendations: primary.isAvailable
+      ? []
+      : ['Configure an AI provider in Settings → AI Configuration'],
   };
 }
 
@@ -121,4 +133,21 @@ export async function executeAIWithFallback(
     setupRequired: true,
     attemptedProviders: attempted,
   });
+}
+
+// Simplified wrapper for chat API calls that passes a string prompt
+export async function executeChatWithFallback(
+  prompt: string,
+  options: { model?: string; image?: string; temperature?: number; primaryProvider?: string } = {}
+) {
+  // Build messages array from prompt
+  const messages = [{ role: 'user' as const, content: prompt }];
+  const result = await executeAIWithFallback(messages, options);
+  return {
+    result: result?.result || result?.content || '',
+    provider: result?.provider || 'unknown',
+    processingTime: result?.processingTime || 0,
+    fallbackReason: result?.fallbackReason || '',
+    ...result,
+  };
 }

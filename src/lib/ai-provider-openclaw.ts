@@ -16,8 +16,23 @@ const provider = () => new AgentCommandProvider('openclaw', {
   timeout: Number(process.env.OPENCLAW_TIMEOUT_MS || 120000)
 });
 
+// Detection timeout – intentionally short so it never blocks API responses
+const DETECT_TIMEOUT_MS = 5000;
+
+function withDetectTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('detect-timeout')), DETECT_TIMEOUT_MS)
+    ),
+  ]).catch(() => fallback) as Promise<T>;
+}
+
 export async function checkOpenClaw(): Promise<ProviderDetectionResult> {
-  const available = await provider().isAvailable();
+  const available = await withDetectTimeout(
+    provider().isAvailable(),
+    false
+  );
   return {
     isAvailable: available,
     provider: 'openclaw',
