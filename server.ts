@@ -44,6 +44,9 @@ const allowedOrigins = process.env.SOCKET_IO_ORIGINS
         // Allow any Tailscale IP (100.x.x.x range) for both ports
         /^http:\/\/100\.\d+\.\d+\.\d+:3000$/,
         /^http:\/\/100\.\d+\.\d+\.\d+:5173$/,
+        /^http:\/\/100\.\d+\.\d+\.\d+:5174$/,
+        /^http:\/\/100\.\d+\.\d+\.\d+:5175$/,
+        /^http:\/\/100\.\d+\.\d+\.\d+:5176$/,
         // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) for both ports
         /^http:\/\/192\.168\.\d+\.\d+:3000$/,
         /^http:\/\/192\.168\.\d+\.\d+:5173$/,

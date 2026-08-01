@@ -35,7 +35,7 @@ const requestTracker = new Map<string, { count: number; resetTime: number }>();
 // Enhanced validation schema with Zod - more flexible for frontend compatibility
 const AnalysisRequestSchema = z.object({
   plantId: z.string().optional(),
-  strain: z.string().min(1).max(100).transform(val => val.trim()),
+  strain: z.string().max(100).transform(val => val?.trim() || undefined).optional(),
   leafSymptoms: z.string().max(1000).transform(val => {
     const trimmed = val.trim();
     return trimmed === '' ? 'No symptoms specified' : trimmed;
