@@ -277,7 +277,7 @@ export async function GET() {
     const providerDetection = await detectAvailableProviders();
 
     // Get configuration for each provider
-    const lmStudioConfig = getProviderConfig('lm-studio');
+    const lmStudioConfig = getProviderConfig('lmstudio');
     const openRouterConfig = getProviderConfig('openrouter');
 
     const settings = {
