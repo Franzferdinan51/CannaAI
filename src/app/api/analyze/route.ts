@@ -9,6 +9,7 @@ import { executeWithLMStudio } from '@/lib/ai-provider-lmstudio';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
 import { executeWithOpenRouter } from '@/lib/ai-provider-openrouter';
+import { executeWithMiniMax } from '@/lib/ai-provider-minimax';
 import { normalizePlantAnalysisResult } from '@/lib/plant-analysis-report-v2';
 import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
 import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
@@ -196,6 +197,21 @@ export async function POST(request: NextRequest) {
         'Retry-After': Math.ceil((rateLimitCheck.resetTime! - Date.now()) / 1000).toString()
       }
     });
+    return addSecurityHeaders(response);
+  }
+
+  // Hard cap on request body size — a 25 MB ceiling protects the process
+  // from accidental multi-megapixel dumps while still allowing typical
+  // 4-8 MP leaf photos that compress to ~2-6 MB of base64.
+  const MAX_BODY_BYTES = 25 * 1024 * 1024; // 25 MB
+  const contentLengthHeader = request.headers.get('content-length');
+  if (contentLengthHeader && Number(contentLengthHeader) > MAX_BODY_BYTES) {
+    const response = NextResponse.json({
+      success: false,
+      error: 'Request body too large',
+      message: `Maximum request size is ${MAX_BODY_BYTES / 1024 / 1024} MB`,
+      maxBytes: MAX_BODY_BYTES,
+    }, { status: 413 });
     return addSecurityHeaders(response);
   }
 
@@ -398,22 +414,26 @@ export async function POST(request: NextRequest) {
     // Enhanced AI provider detection with detailed logging
     const providerDetection = await detectAvailableProviders();
     const imageProviderOverride = imageBase64ForAI && process.env.CANNAAI_IMAGE_PROVIDER;
-    const primaryProvider = imageProviderOverride === 'openclaw' && providerDetection.openclaw
+    const detectedPrimary = providerDetection.primary;
+    const primaryProvider = imageProviderOverride === 'openclaw'
       ? { isAvailable: true, provider: 'openclaw', reason: 'Configured image provider: OpenClaw/MiniMax M3' }
-      : providerDetection.lmstudio
-      ? { isAvailable: true, provider: 'lmstudio', reason: 'LM Studio is available' }
-      : providerDetection.openclaw
-        ? { isAvailable: true, provider: 'openclaw', reason: 'OpenClaw Gateway is running' }
-        : providerDetection.bailian
-          ? { isAvailable: true, provider: 'bailian', reason: 'Alibaba Bailian is available' }
-          : providerDetection.openrouter
-            ? { isAvailable: true, provider: 'openrouter', reason: 'OpenRouter is available' }
-            : { isAvailable: false, provider: 'fallback', reason: 'No AI providers detected' };
+      : detectedPrimary.provider === 'lmstudio'
+        ? { isAvailable: true, provider: 'lmstudio', reason: 'LM Studio is available' }
+        : detectedPrimary.provider === 'openclaw'
+          ? { isAvailable: true, provider: 'openclaw', reason: 'OpenClaw Gateway is running' }
+          : detectedPrimary.provider === 'bailian'
+            ? { isAvailable: true, provider: 'bailian', reason: 'Alibaba Bailian is available' }
+            : detectedPrimary.provider === 'openrouter'
+              ? { isAvailable: true, provider: 'openrouter', reason: 'OpenRouter is available' }
+              : detectedPrimary.provider === 'minimax'
+                ? { isAvailable: true, provider: 'minimax', reason: 'MiniMax API is available' }
+                : { isAvailable: false, provider: 'fallback', reason: 'No AI providers detected' };
 
     console.log(`📡 AI provider detected: ${primaryProvider.provider} (${primaryProvider.reason})`);
 
-    const fallbackProviders = ['lmstudio', 'openclaw', 'bailian', 'openrouter']
-      .filter((name) => name !== primaryProvider.provider && Boolean((providerDetection as any)[name]));
+    const allProviderNames = providerDetection.all.map((r: any) => r.provider);
+    const fallbackProviders = allProviderNames
+      .filter((name: string) => name !== primaryProvider.provider);
     if (fallbackProviders.length > 0) {
       console.log(`🔄 Available fallback providers: ${fallbackProviders.join(', ')}`);
     }
@@ -545,9 +565,27 @@ export async function POST(request: NextRequest) {
             });
           }
         }
+      } else if (primaryProvider.provider === 'minimax') {
+        // PRIMARY: Use MiniMax API directly - VISION CAPABLE
+        console.log('🟠 Using MiniMax as primary provider...');
+        console.log('🟠 primaryProvider.provider =', primaryProvider.provider, '| typeof =', typeof primaryProvider.provider);
+        const minimaxResult = await executeWithMiniMax(
+          [{ role: 'user', content: prompt }],
+          {
+            imageBase64: imageBase64ForAI,
+            plantInfo: { strain, growthStage, leafSymptoms },
+          }
+        );
+        aiResult = {
+          success: true,
+          provider: 'minimax',
+          model: process.env.MINIMAX_MODEL || 'MiniMax-M3',
+          visionUsed: !!imageBase64ForAI,
+          result: minimaxResult,
+        };
       } else {
         // FALLBACK 2: Use standard fallback chain (vision-aware)
-        console.log(`🔄 Using fallback provider: ${primaryProvider.provider}`);
+        console.log(`🔄 Using fallback provider: ${primaryProvider.provider} (typeof: ${typeof primaryProvider.provider})`);
         aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
           primaryProvider: primaryProvider.provider as 'lm-studio' | 'openrouter' | 'bailian',
           timeout: 90000,

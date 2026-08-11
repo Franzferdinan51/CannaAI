@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { detectAvailableProviders } from '@/lib/ai-provider-detection';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -16,11 +17,50 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json({
+  const mem = process.memoryUsage();
+  const health = {
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     service: 'CannaAI Health Check',
-    environment: process.env.NODE_ENV || 'development'
-  });
+    environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || 'unknown',
+    runtime: {
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      pid: process.pid,
+    },
+    memory: {
+      rssMB: Math.round((mem.rss || 0) / 1024 / 1024),
+      heapUsedMB: Math.round((mem.heapUsed || 0) / 1024 / 1024),
+      heapTotalMB: Math.round((mem.heapTotal || 0) / 1024 / 1024),
+      externalMB: Math.round((mem.external || 0) / 1024 / 1024),
+    },
+  } as Record<string, any>;
+
+  // Non-blocking best-effort provider summary — never let probe failures
+  // flip the health endpoint to unhealthy.
+  try {
+    const detected = await Promise.race([
+      detectAvailableProviders(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]);
+    if (detected) {
+      const available = (detected.all || []).filter((p: any) => p.isAvailable).map((p: any) => p.provider);
+      const unavailable = (detected.all || []).filter((p: any) => !p.isAvailable).map((p: any) => p.provider);
+      health.providers = {
+        primary: detected.primary?.provider || null,
+        available,
+        unavailable,
+        count: (detected.all || []).length,
+      };
+    } else {
+      health.providers = { timedOut: true };
+    }
+  } catch (e: any) {
+    health.providers = { error: e?.message || String(e) };
+  }
+
+  return NextResponse.json(health);
 }

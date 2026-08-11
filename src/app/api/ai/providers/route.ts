@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
+import { detectAvailableProviders } from '@/lib/ai-provider-detection';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -13,6 +14,28 @@ export async function GET(request: NextRequest) {
   try {
     const unifiedAI = getUnifiedAI();
     const providerStatus = unifiedAI.getProviderStatus();
+
+    // Also probe the live-detection chain so vision-capable providers we add
+    // outside the unified registry (e.g. MiniMax) surface in the Settings UI.
+    // This is non-fatal: if detection throws we still return the registry view.
+    let liveProviders: Array<{ provider: string; isAvailable: boolean; reason: string }> = [];
+    try {
+      const detected = await detectAvailableProviders();
+      liveProviders = (detected.all || []).map((r: any) => ({
+        provider: r.provider,
+        isAvailable: !!r.isAvailable,
+        reason: r.reason || (r.isAvailable ? 'connected' : 'unavailable'),
+      }));
+    } catch (detectionError) {
+      console.warn('[providers] live detection failed:', detectionError);
+    }
+    const liveByName = new Map(liveProviders.map((p) => [p.provider, p]));
+
+    // Normalize registry names vs. live-detector names so the same provider
+    // doesn't appear twice (the registry uses "lm-studio", the live detector
+    // uses "lmstudio").
+    const alias = (n: string) => (n === 'lm-studio' ? 'lmstudio' : n);
+    const registryNamesAliased = new Set(providerStatus.map((p) => alias(p.name)));
 
     // Group by capabilities
     const capabilities = {
@@ -72,38 +95,89 @@ export async function GET(request: NextRequest) {
 
     const environmentRecommendations = generateEnvironmentRecommendations(environment);
 
-    return NextResponse.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      environment,
-      providers: providerStatus.map(p => ({
+    // Build the merged provider list: registry entries first, then any
+    // live-detected providers not already in the registry (so vision-capable
+    // additions like MiniMax show up in Settings even if they bypass the
+    // unified-ai pool).
+    const liveOnlyProviders = liveProviders
+      .filter((p) => !registryNamesAliased.has(alias(p.provider)))
+      .map((p) => ({
+        name: p.provider,
+        model: p.provider === 'minimax' ? (process.env.MINIMAX_MODEL || 'MiniMax-M3') : '',
+        capabilities: {
+          text: true,
+          vision: p.provider === 'minimax' || p.provider === 'lmstudio' || p.provider === 'openclaw',
+          streaming: false,
+          functionCalling: false,
+          jsonMode: true,
+          maxTokens: p.provider === 'minimax' ? 1024 : 4096,
+          contextWindow: p.provider === 'minimax' ? 8192 : 8192,
+          supportsBatching: false,
+          realtime: false,
+        },
+        health: {
+          status: p.isAvailable ? 'healthy' : 'unhealthy',
+          latency: 0,
+          successRate: p.isAvailable ? 100 : 0,
+          lastError: p.isAvailable ? null : p.reason,
+        },
+        cost: { input: 0, output: 0, currency: 'USD' },
+        metrics: { totalRequests: 0, successfulRequests: 0, failedRequests: 0, averageLatency: 0 },
+      }));
+    const mergedProviders = [...providerStatus, ...liveOnlyProviders];
+
+    const mergedProviderView = (p: any) => {
+      const aliasedName = alias(p.name);
+      const live = liveByName.get(p.name) || liveByName.get(aliasedName);
+      const isHealthy = (live?.isAvailable ?? p.health?.status === 'healthy');
+      const liveReason = live?.reason;
+      return {
         id: p.name,
         name: p.name,
-        type: ['lm-studio', 'openclaw', 'hermes'].includes(p.name) ? 'local' : 'cloud',
+        type: ['lmstudio', 'openclaw', 'hermes'].includes(p.name) ? 'local' : 'cloud',
         models: p.model ? [{ id: p.model, name: p.model, provider: p.name }] : [],
         config: p.capabilities,
-        status: p.health.status === 'healthy' ? 'available' : p.health.status === 'unhealthy' ? 'error' : 'unavailable',
+        status: isHealthy ? 'available' : 'error',
         lastChecked: new Date().toISOString(),
-        healthy: p.health.status === 'healthy',
+        healthy: isHealthy,
+        liveDetection: live
+          ? { available: live.isAvailable, reason: liveReason }
+          : null,
         capabilities: p.capabilities,
         performance: {
-          latency: p.health.latency,
-          successRate: p.health.successRate,
-          throughput: p.metrics.totalRequests
+          latency: p.health?.latency ?? 0,
+          successRate: p.health?.successRate ?? (isHealthy ? 100 : 0),
+          throughput: p.metrics?.totalRequests ?? 0,
         },
         pricing: p.cost,
         setup: {
           hasApiKey: !!getApiKeyStatus(p.name),
-          environmentVars: getEnvironmentVars(p.name)
-        }
-      })),
-      capabilities,
+          environmentVars: getEnvironmentVars(p.name),
+        },
+      };
+    };
+
+    return NextResponse.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      environment,
+      providers: mergedProviders.map(mergedProviderView),
+      capabilities: {
+        text: mergedProviders.filter((p) => p.capabilities.text),
+        vision: mergedProviders.filter((p) => p.capabilities.vision),
+        streaming: mergedProviders.filter((p) => p.capabilities.streaming),
+        functionCalling: mergedProviders.filter((p) => p.capabilities.functionCalling),
+      },
       useCases,
       recommendations: environmentRecommendations,
       setup: {
         guide: getSetupGuide(),
-        environmentVariables: getAllEnvironmentVars()
-      }
+        environmentVariables: getAllEnvironmentVars(),
+      },
+      liveDetection: {
+        primary: liveProviders.find((p) => p.isAvailable)?.provider || null,
+        available: liveProviders.filter((p) => p.isAvailable).map((p) => p.provider),
+      },
     });
 
   } catch (error) {
@@ -130,7 +204,9 @@ function getApiKeyStatus(provider: string): boolean {
     hermes: process.env.HERMES_AGENT_COMMAND || '',
     together: process.env.TOGETHER_API_KEY || '',
     claude: process.env.ANTHROPIC_API_KEY || '',
-    perplexity: process.env.PERPLEXITY_API_KEY || ''
+    perplexity: process.env.PERPLEXITY_API_KEY || '',
+    lmstudio: process.env.LM_STUDIO_URL || '',
+    minimax: process.env.MINIMAX_API_KEY || '',
   };
 
   return !!keys[provider];
@@ -140,13 +216,15 @@ function getEnvironmentVars(provider: string): string[] {
   const vars: Record<string, string[]> = {
     openrouter: ['OPENROUTER_API_KEY', 'OPENROUTER_MODEL'],
     'lm-studio': ['LM_STUDIO_URL', 'LM_STUDIO_MODEL'],
+    lmstudio: ['LM_STUDIO_BASE_URL', 'LM_STUDIO_API_KEY', 'LM_STUDIO_MODEL'],
     gemini: ['GEMINI_API_KEY', 'GEMINI_MODEL'],
     grok: ['XAI_API_KEY', 'XAI_MODEL'],
     openclaw: ['OPENCLAW_AGENT_COMMAND', 'OPENCLAW_MODEL'],
     hermes: ['HERMES_AGENT_COMMAND', 'HERMES_MODEL'],
     together: ['TOGETHER_API_KEY', 'TOGETHER_MODEL'],
     claude: ['ANTHROPIC_API_KEY', 'CLAUDE_MODEL'],
-    perplexity: ['PERPLEXITY_API_KEY', 'PERPLEXITY_MODEL']
+    perplexity: ['PERPLEXITY_API_KEY', 'PERPLEXITY_MODEL'],
+    minimax: ['MINIMAX_API_KEY', 'MINIMAX_BASE_URL', 'MINIMAX_MODEL'],
   };
 
   return vars[provider] || [];

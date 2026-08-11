@@ -11,6 +11,14 @@ import { checkOpenClaw, executeWithOpenClaw } from './ai-provider-openclaw';
 import { checkBailian, executeWithBailian } from './ai-provider-bailian';
 import { checkOpenRouter } from './ai-provider-openrouter';
 import { executeWithLMStudio, checkLMStudio } from './ai-provider-lmstudio';
+import { checkMiniMax, executeWithMiniMax } from './ai-provider-minimax';
+
+// Re-export provider checkers so consumers (tests, /api/providers) can import them from this module
+export { checkLMStudio } from './ai-provider-lmstudio';
+export { checkOpenRouter } from './ai-provider-openrouter';
+export { checkMiniMax } from './ai-provider-minimax';
+export { checkOpenClaw } from './ai-provider-openclaw';
+export { checkBailian } from './ai-provider-bailian';
 
 export const isServerless = process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 export const isDevelopment = process.env.NODE_ENV === 'development';
@@ -39,15 +47,31 @@ export class AIProviderUnavailableError extends Error {
 // Check all available providers
 // 3-second wall per provider – Node.js AbortSignal.timeout is more reliable than Promise.race with setTimeout
 export async function detectAvailableProviders() {
-  const withSignal = <T>(p: Promise<T>, ms: number) =>
-    p.then(r => ({ r, isAvailable: typeof r === 'boolean' ? r : Boolean((r as any)?.isAvailable) }))
-     .catch(() => ({ r: false as any, isAvailable: false }));
+  const withSignal = <T>(p: Promise<T>, ms: number, name: string) =>
+    p.then(r => {
+      // Support both 'isAvailable' (capital I) and 'available' (lowercase) from different providers
+      const isAvail = typeof r === 'boolean' ? r : Boolean((r as any)?.isAvailable ?? (r as any)?.available);
+      console.log(`[withSignal][${name}] resolved isAvailable=${isAvail}`, typeof r === 'object' ? JSON.stringify((r as any)) : r);
+      return { r, isAvailable: isAvail };
+    })
+     .catch((e: any) => {
+      console.log(`[withSignal][${name}] rejected: type=${typeof e}, message=${e?.message}, name=${e?.name}, code=${e?.code}`);
+      return { r: false as any, isAvailable: false };
+    });
 
-  const [lmstudio, openclaw, bailian, openrouter] = await Promise.all([
-    withSignal(Promise.race([checkLMStudio(), AbortSignal.timeout(3000)])),
-    withSignal(Promise.race([checkOpenClaw(), AbortSignal.timeout(3000)])),
-    withSignal(Promise.race([checkBailian(), AbortSignal.timeout(3000)])),
-    withSignal(Promise.race([checkOpenRouter(), AbortSignal.timeout(3000)])),
+  // Run fast checks in parallel with short timeouts
+  // MiniMax and OpenRouter have their OWN internal timeouts (15s) so no AbortSignal race needed
+  const [lmstudio, openclaw, bailian] = await Promise.all([
+    withSignal(Promise.race([checkLMStudio(), AbortSignal.timeout(3000)]), 3000, 'lmstudio'),
+    withSignal(Promise.race([checkOpenClaw(), AbortSignal.timeout(3000)]), 3000, 'openclaw'),
+    withSignal(Promise.race([checkBailian(), AbortSignal.timeout(10000)]), 10000, 'bailian'),
+  ]);
+
+  // Run slow checks (MiniMax, OpenRouter) WITHOUT race timeout - they manage their own
+  // This prevents the race from killing them before they respond
+  const [openrouter, minimax] = await Promise.all([
+    withSignal(checkOpenRouter(), 20000, 'openrouter'),
+    withSignal(checkMiniMax(), 20000, 'minimax'),
   ]);
 
   const results = [
@@ -55,10 +79,14 @@ export async function detectAvailableProviders() {
     { provider: 'openclaw',   isAvailable: openclaw.isAvailable,   reason: openclaw.isAvailable   ? (openclaw.r as any)?.reason   || 'connected' : 'not reachable', data: openclaw.r },
     { provider: 'bailian',   isAvailable: bailian.isAvailable,   reason: bailian.isAvailable   ? (bailian.r as any)?.reason   || 'connected' : 'not configured', data: bailian.r },
     { provider: 'openrouter',isAvailable: openrouter.isAvailable, reason: openrouter.isAvailable ? (openrouter.r as any)?.reason || 'connected' : 'not reachable', data: openrouter.r },
+    { provider: 'minimax',   isAvailable: minimax.isAvailable,   reason: minimax.isAvailable   ? (minimax.r as any)?.reason   || 'connected' : 'not configured', data: minimax.r },
   ];
 
   const available = results.filter(r => r.isAvailable);
   const primary  = available[0] || { provider: 'fallback', isAvailable: false, reason: 'no providers available' };
+
+  console.log('[Detection] Available:', available.map(a => a.provider).join(', ') || 'none');
+  console.log('[Detection] Primary:', primary.provider, 'isAvailable:', primary.isAvailable);
 
   return {
     primary,
@@ -98,6 +126,12 @@ export function getProviderConfig(provider: string) {
         model: process.env.OPENROUTER_MODEL || 'openrouter/auto',
         timeout: parseInt(process.env.OPENROUTER_TIMEOUT || '60000'),
       };
+    case 'minimax':
+      return {
+        baseUrl: process.env.MINIMAX_BASE_URL || 'https://api.minimax.io/v1',
+        apiKey: process.env.MINIMAX_API_KEY || '',
+        model: process.env.MINIMAX_MODEL || 'MiniMax-M3',
+      };
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }
@@ -111,7 +145,18 @@ export async function executeAIWithFallback(
   const providers = [
     { name: 'lmstudio', fn: () => executeWithLMStudio(messages, options) },
     { name: 'openclaw', fn: () => executeWithOpenClaw(messages, options) },
-    { name: 'bailian', fn: () => executeWithBailian(messages, options) },
+    { name: 'minimax', fn: () => executeWithMiniMax(messages, options) },
+    {
+      name: 'bailian',
+      fn: () => executeWithBailian({
+        prompt: Array.isArray(messages)
+          ? messages.map((m: any) => typeof m.content === 'string' ? m.content : '').filter(Boolean).join('\n')
+          : String(messages || ''),
+        image: options?.image,
+        model: options?.model,
+        temperature: options?.temperature,
+      }),
+    },
   ];
 
   const attempted: string[] = [];

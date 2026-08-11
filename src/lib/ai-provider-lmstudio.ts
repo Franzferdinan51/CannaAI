@@ -6,6 +6,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Serverless environments (Netlify, Vercel, AWS Lambda) cannot reach LM Studio on localhost.
+// Re-evaluated per-call so tests can flip the env var mid-suite.
+function isServerlessEnv(): boolean {
+  return Boolean(process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
 const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL || 'http://localhost:1234/v1';
 
 export function getLMStudioApiKey(): string {
@@ -52,15 +58,67 @@ function normalizeImageUrl(image?: string): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
-export async function checkLMStudio(): Promise<boolean> {
+/**
+ * AIProviderResult contract (kept compatible with ai-provider-detection.ts):
+ *   { available: boolean, reason: string, provider?: string, config?: { url: string, ... }, models?: string[] }
+ *
+ * Also exposes `isAvailable` for legacy callers (tests, frontend) that use the older key.
+ */
+export interface LMStudioProviderResult {
+  available: boolean;
+  isAvailable: boolean; // alias for `available` (kept for backward compat)
+  reason: string;
+  provider: 'lm-studio';
+  config?: { url: string; hasApiKey: boolean };
+  models?: string[];
+  error?: string;
+}
+
+export async function checkLMStudio(includeModels = false): Promise<LMStudioProviderResult> {
+  const buildResult = (b: Omit<LMStudioProviderResult, 'isAvailable'>): LMStudioProviderResult =>
+    ({ ...b, isAvailable: b.available });
+
+  if (isServerlessEnv()) {
+    return buildResult({
+      available: false,
+      reason: 'LM Studio not supported in serverless environments',
+      provider: 'lm-studio',
+    });
+  }
+  const url = LM_STUDIO_BASE_URL.replace(/\/v1\/?$/, '');
   try {
-    const response = await fetch(`${LM_STUDIO_BASE_URL}/models`, {
+    const response = await fetch(`${url}/v1/models`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${LM_STUDIO_API_KEY}` },
     });
-    return response.ok;
-  } catch {
-    return false;
+    if (!response.ok) {
+      return buildResult({
+        available: false,
+        reason: `LM Studio responded with HTTP ${response.status}`,
+        provider: 'lm-studio',
+        config: { url, hasApiKey: !!LM_STUDIO_API_KEY },
+        error: `HTTP ${response.status}`,
+      });
+    }
+    const data = await response.json().catch(() => ({} as any));
+    const models: string[] | undefined = includeModels
+      ? Array.isArray(data?.data) ? data.data.map((m: any) => m?.id).filter(Boolean) : undefined
+      : undefined;
+    return buildResult({
+      available: true,
+      reason: 'LM Studio is running',
+      provider: 'lm-studio',
+      config: { url, hasApiKey: !!LM_STUDIO_API_KEY },
+      models,
+    });
+  } catch (err: any) {
+    return buildResult({
+      available: false,
+      reason: `LM Studio not available: ${err?.message || 'connection refused'}`,
+      provider: 'lm-studio',
+      config: { url, hasApiKey: !!LM_STUDIO_API_KEY },
+      error: err?.message,
+    });
   }
 }
 
