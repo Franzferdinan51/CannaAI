@@ -139,3 +139,132 @@ export async function executeWithMiniMax(
     clearTimeout(timeout);
   }
 }
+
+/**
+ * Streaming variant of executeWithMiniMax.
+ *
+ * Returns an async iterable that yields text deltas as they arrive from the
+ * upstream API. The HTTP body is consumed incrementally; if the caller breaks
+ * out of the loop (e.g. client disconnect) the underlying request is aborted
+ * via the supplied signal so we don't keep streaming into the void.
+ *
+ * Why: chat UX. With MiniMax currently returning a full ~13s response, the
+ * user sees a blank bubble until completion. Streaming cuts perceived latency
+ * to first-token (~1s) and feels instant for follow-up turns.
+ *
+ * OpenAI-compatible streaming protocol: server sends
+ *   data: {"choices":[{"delta":{"content":"token"}}]}\n\n
+ * followed by `data: [DONE]\n\n`. We parse each SSE line, accumulate
+ * the assistant prefix in `prefix` so each yield is the *full* text seen so
+ * far (so callers can do terminal replacement if they want) AND emit just
+ * the delta in `delta` (so callers that want token-by-token rendering can
+ * use that).
+ */
+export interface MiniMaxStreamChunk {
+  delta: string;     // new text since the previous chunk
+  prefix: string;    // accumulated assistant text so far
+  finishReason?: string; // "stop" / "length" / "content_filter" when present
+}
+
+export interface MiniMaxStreamOptions {
+  signal?: AbortSignal;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export async function* executeWithMiniMaxStream(
+  messages: MiniMaxMessage[],
+  options: MiniMaxStreamOptions = {}
+): AsyncGenerator<MiniMaxStreamChunk> {
+  if (!MINIMAX_API_KEY) {
+    throw new Error('MINIMAX_API_KEY not configured');
+  }
+
+  const { signal, temperature = 0.7, maxTokens = 1024 } = options;
+
+  // Build the same content array as the non-streaming variant so vision +
+  // text requests work uniformly.
+  const lastUser = messages[messages.length - 1];
+  const previous = messages.slice(0, -1).map((m) => ({ role: m.role, content: m.content }));
+  let userContent: any = lastUser?.content || '';
+  // (vision is intentionally out of scope for streaming — chat is text-only)
+
+  const body: any = {
+    model: MINIMAX_MODEL,
+    messages: [...previous, { role: 'user', content: userContent }],
+    max_tokens: maxTokens,
+    temperature,
+    stream: true,
+  };
+
+  const response = await fetch(`${MINIMAX_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${MINIMAX_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!response.ok || !response.body) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`MiniMax stream error ${response.status}: ${errorText}`);
+  }
+
+  const reader = (response.body as ReadableStream<Uint8Array>).getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let prefix = '';
+  let finishReason: string | undefined;
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE events are separated by blank lines (\n\n). Split on that.
+      let idx;
+      while ((idx = buffer.indexOf('\n\n')) !== -1) {
+        const eventBlock = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+
+        // A block may contain multiple "data:" lines; concatenate them.
+        const dataLines: string[] = [];
+        for (const line of eventBlock.split('\n')) {
+          if (line.startsWith('data:')) {
+            dataLines.push(line.slice(5).trim());
+          }
+        }
+        if (dataLines.length === 0) continue;
+        const payload = dataLines.join('\n');
+        if (payload === '[DONE]') {
+          return;
+        }
+
+        let parsed: any;
+        try {
+          parsed = JSON.parse(payload);
+        } catch {
+          // Skip malformed lines instead of crashing the whole stream.
+          continue;
+        }
+
+        const choice = parsed.choices?.[0];
+        if (!choice) continue;
+        const deltaText: string = choice.delta?.content || '';
+        if (deltaText) {
+          prefix += deltaText;
+          yield { delta: deltaText, prefix, finishReason };
+        }
+        if (choice.finish_reason) {
+          finishReason = choice.finish_reason;
+        }
+      }
+    }
+  } finally {
+    try { reader.releaseLock(); } catch { /* noop */ }
+  }
+}

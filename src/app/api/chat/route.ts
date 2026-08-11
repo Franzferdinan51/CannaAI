@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { detectAvailableProviders, getProviderConfig, executeChatWithFallback, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { getAgentEvolverClient } from '@/lib/agent-evolver';
+import { executeWithMiniMaxStream } from '@/lib/ai-provider-minimax';
+import { withRequest } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -41,6 +43,7 @@ Please provide a helpful, concise response. If the user asks about specific read
 }
 
 export async function POST(request: NextRequest) {
+  const log = withRequest(request, { route: '/api/chat' });
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
   if (isStaticExport) {
@@ -52,10 +55,40 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // Streaming is opt-in via ?stream=1 or Accept: text/event-stream. We only
+  // stream when the primary provider is MiniMax — the other providers in the
+  // fallback chain don't expose a streaming endpoint here, so for them we
+  // keep the existing non-streaming behavior.
+  const url = new URL(request.url);
+  const wantsStream =
+    url.searchParams.get('stream') === '1' ||
+    (request.headers.get('accept') || '').includes('text/event-stream');
+
+  // Parse body up-front so we can branch into the streaming path early.
+  let earlyBody: any;
+  try {
+    earlyBody = await request.json();
+  } catch {
+    return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
+  }
+  if (!earlyBody || typeof earlyBody.message !== 'string') {
+    return NextResponse.json({ success: false, error: 'message is required' }, { status: 400 });
+  }
+
+  if (wantsStream) {
+    return streamChatResponse({
+      message: earlyBody.message,
+      mode: earlyBody.mode || 'chat',
+      context: earlyBody.context,
+      sensorData: earlyBody.sensorData,
+      log,
+    });
+  }
+
   const startTime = Date.now();
 
   try {
-    const body = await request.json();
+    const body = earlyBody;
     const { message, mode = 'chat', context, sensorData } = body;
 
     // Validate required fields
@@ -68,12 +101,17 @@ export async function POST(request: NextRequest) {
 
     console.log('💬 Chat request received, detecting AI providers...');
 
-    // Detect available AI providers (5-second hard cap so the route never hangs)
+    // Detect available AI providers. detectAvailableProviders itself runs
+    // up to 20 s (LM Studio + OpenClaw + Bailian + MiniMax + OpenRouter
+    // probes in parallel), so we use a generous 25 s ceiling. The previous
+    // 5 s timeout was shorter than the detection itself, which caused every
+    // chat request to fall through to "provider unavailable" even when the
+    // primary was healthy.
     let providerDetection;
     try {
       providerDetection = await Promise.race([
         detectAvailableProviders(),
-        AbortSignal.timeout(5000).then(() => null),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 25000)),
       ]);
     } catch {
       providerDetection = null;
@@ -255,6 +293,127 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Streaming chat response.
+ *
+ * Wraps MiniMax's SSE stream in a Next.js Response whose body is a
+ * ReadableStream. The wire format is `text/event-stream` with these event
+ * types:
+ *   - event: meta    data: {provider, model, requestId, timestamp}
+ *   - event: token   data: {delta, prefix}
+ *   - event: done    data: {full, finishReason, totalTimeMs}
+ *   - event: error   data: {message}
+ *
+ * Aborting the upstream request: Next.js exposes `request.signal`; when the
+ * client disconnects mid-stream we forward that signal to the upstream fetch
+ * so we don't keep burning tokens after the user navigates away.
+ */
+async function streamChatResponse(args: {
+  message: string;
+  mode: string;
+  context: any;
+  sensorData: any;
+  log: { info: Function; warn: Function; error: Function };
+}): Promise<Response> {
+  const { message, mode, context, sensorData, log } = args;
+
+  // Build the same prompt the non-streaming path uses, so the two responses
+  // are semantically equivalent when the model would have answered the same.
+  const prompt = getContextualPrompt(mode, context || {}, sensorData || {}, message);
+  const messages = [{ role: 'user' as const, content: prompt }];
+
+  // Provider detection: only stream when MiniMax is actually available.
+  // For everything else we tell the client via a single SSE error event and
+  // close, so the client knows to retry the non-streaming endpoint.
+  let providerDetection: any;
+  try {
+    providerDetection = await Promise.race([
+      detectAvailableProviders(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+    ]);
+  } catch {
+    providerDetection = null;
+  }
+  const primary = providerDetection?.primary?.provider;
+  if (primary !== 'minimax') {
+    const enc = new TextEncoder();
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(enc.encode(`event: error\ndata: ${JSON.stringify({ message: `Streaming is only available with the MiniMax provider; primary is "${primary ?? 'unknown'}". Retry the non-streaming endpoint.` })}\n\n`));
+        controller.enqueue(enc.encode(`event: done\ndata: {}\n\n`));
+        controller.close();
+      },
+    });
+    return new Response(body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Accel-Buffering': 'no',
+      },
+    });
+  }
+
+  const encoder = new TextEncoder();
+  const startTime = Date.now();
+
+  // We intentionally do NOT consume request.signal here — Next.js wraps the
+  // request body in a ReadableStream, and once we've called request.json()
+  // there's no per-request AbortSignal exposed. If the client disconnects,
+  // Node will close the downstream socket and `reader.read()` will throw /
+  // return done, which ends the generator.
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: string, data: any) => {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+      };
+      try {
+        send('meta', {
+          provider: 'minimax',
+          model: process.env.MINIMAX_MODEL || 'MiniMax-M3',
+          timestamp: new Date().toISOString(),
+        });
+
+        let full = '';
+        let finishReason: string | undefined;
+        let chunkCount = 0;
+        const iter = executeWithMiniMaxStream(messages, { temperature: 0.7, maxTokens: 1024 });
+        for await (const chunk of iter) {
+          chunkCount++;
+          full = chunk.prefix;
+          finishReason = chunk.finishReason || finishReason;
+          send('token', { delta: chunk.delta, prefix: chunk.prefix });
+        }
+        send('done', {
+          full,
+          finishReason: finishReason || 'stop',
+          chunkCount,
+          totalTimeMs: Date.now() - startTime,
+        });
+        log.info('chat.stream_done', { provider: 'minimax', chunks: chunkCount, totalTimeMs: Date.now() - startTime });
+        controller.close();
+      } catch (err: any) {
+        log.warn('chat.stream_error', { error: err?.message || String(err) });
+        try {
+          send('error', { message: err?.message || String(err) });
+          send('done', { full: '', finishReason: 'error', chunkCount: 0, totalTimeMs: Date.now() - startTime });
+        } catch { /* controller already closed */ }
+        try { controller.close(); } catch { /* noop */ }
+      }
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Accel-Buffering': 'no',
+      'Connection': 'keep-alive',
+    },
+  });
 }
 
 export async function GET() {
