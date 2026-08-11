@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { detectAvailableProviders } from '@/lib/ai-provider-detection';
+import { getAnalyzeCache } from '@/lib/analyze-cache';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -60,6 +61,13 @@ export async function GET() {
     }
   } catch (e: any) {
     health.providers = { error: e?.message || String(e) };
+  }
+
+  // Cache stats — useful when triaging slow /api/analyze paths.
+  try {
+    health.analyzeCache = getAnalyzeCache().describe();
+  } catch (e: any) {
+    health.analyzeCache = { error: e?.message || String(e) };
   }
 
   return NextResponse.json(health);

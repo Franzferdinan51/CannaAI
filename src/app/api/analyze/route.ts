@@ -13,6 +13,7 @@ import { executeWithMiniMax } from '@/lib/ai-provider-minimax';
 import { normalizePlantAnalysisResult } from '@/lib/plant-analysis-report-v2';
 import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
 import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
+import { getAnalyzeCache } from '@/lib/analyze-cache';
 
 /**
  * Provider Priority Chain:
@@ -411,6 +412,24 @@ export async function POST(request: NextRequest) {
     console.log('🚀 Starting enhanced cannabis plant analysis (V2 Explainable Prompt)...');
     console.log(`📊 Analysis parameters: ${strain}, Stage: ${growthStage}, Urgency: ${urgency}`);
 
+    // Result-cache lookup — same image + same inputs in the last 10 minutes
+    // returns the prior analysis instantly with cached:true so the UI can
+    // show it came from cache. This is the single biggest win for repeat
+    // uploads of the same plant photo from the same mobile device.
+    const analyzeCache = getAnalyzeCache();
+    const cacheKey = analyzeCache.buildKey({
+      imageBase64: imageBase64ForAI,
+      strain, growthStage, medium, leafSymptoms,
+      phLevel, temperature, humidity,
+    });
+    const cached = analyzeCache.get<any>(cacheKey);
+    if (cached) {
+      console.log(`⚡ Analyze cache HIT for key=${cacheKey.slice(0, 16)}...`);
+      const cacheResp = NextResponse.json({ ...cached, cached: true, cacheKey });
+      cacheResp.headers.set('X-Cache', 'HIT');
+      return addSecurityHeaders(cacheResp);
+    }
+
     // Enhanced AI provider detection with detailed logging
     const providerDetection = await detectAvailableProviders();
     const imageProviderOverride = imageBase64ForAI && process.env.CANNAAI_IMAGE_PROVIDER;
@@ -790,6 +809,16 @@ export async function POST(request: NextRequest) {
     response.headers.set('X-RateLimit-Limit', MAX_REQUESTS_PER_WINDOW.toString());
     response.headers.set('X-RateLimit-Remaining', (rateLimitCheck.remaining || 0).toString());
     response.headers.set('X-Analysis-Version', '4.0.0-Enhanced-Comprehensive');
+    response.headers.set('X-Cache', 'MISS');
+
+    // Populate the analyze result cache so a repeat upload of the same image
+    // (e.g. accidental double-tap, network retry) hits the cache instantly.
+    try {
+      const cachePayload = await response.clone().json();
+      analyzeCache.set(cacheKey, cachePayload);
+    } catch (cacheWriteError) {
+      console.warn('Failed to populate analyze cache:', cacheWriteError);
+    }
 
     return response;
 
