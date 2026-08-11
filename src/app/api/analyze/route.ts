@@ -14,6 +14,7 @@ import { normalizePlantAnalysisResult } from '@/lib/plant-analysis-report-v2';
 import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
 import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
 import { getAnalyzeCache } from '@/lib/analyze-cache';
+import { withRequest } from '@/lib/logger';
 
 /**
  * Provider Priority Chain:
@@ -170,6 +171,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const log = withRequest(request, { route: '/api/analyze' });
   // For static export, provide client-side compatibility response
   if (isStaticExport) {
     const response = NextResponse.json({
@@ -424,7 +426,7 @@ export async function POST(request: NextRequest) {
     });
     const cached = analyzeCache.get<any>(cacheKey);
     if (cached) {
-      console.log(`⚡ Analyze cache HIT for key=${cacheKey.slice(0, 16)}...`);
+      log.info('analyze.cache_hit', { cacheKeyPrefix: cacheKey.slice(0, 16) });
       const cacheResp = NextResponse.json({ ...cached, cached: true, cacheKey });
       cacheResp.headers.set('X-Cache', 'HIT');
       return addSecurityHeaders(cacheResp);
@@ -817,8 +819,14 @@ export async function POST(request: NextRequest) {
       const cachePayload = await response.clone().json();
       analyzeCache.set(cacheKey, cachePayload);
     } catch (cacheWriteError) {
-      console.warn('Failed to populate analyze cache:', cacheWriteError);
+      log.warn('analyze.cache_write_failed', { error: String(cacheWriteError) });
     }
+
+    log.info('analyze.success', {
+      provider: usedProvider,
+      processingTimeMs: processingTime,
+      visionUsed: !!imageBase64ForAI,
+    });
 
     return response;
 

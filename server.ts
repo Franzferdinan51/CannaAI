@@ -298,22 +298,59 @@ async function createCustomServer() {
     });
 
     // Graceful shutdown handling
+    let shuttingDown = false;
     const gracefulShutdown = (signal: string) => {
+      if (shuttingDown) {
+        console.log(`🛑 Already shutting down (received ${signal} again). Forcing exit.`);
+        process.exit(1);
+      }
+      shuttingDown = true;
       console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+
+      // Stop accepting new HTTP connections; existing connections finish.
+      // closeAllConnections() is needed in newer Node to drop keep-alive
+      // sockets that would otherwise hold the shutdown open.
+      try {
+        if (typeof (server as any).closeAllConnections === 'function') {
+          (server as any).closeAllConnections();
+        }
+      } catch (e) {
+        console.warn('closeAllConnections failed (continuing):', e);
+      }
+
+      let httpClosed = false;
+      let ioClosed = false;
+      const maybeExit = () => {
+        if (httpClosed && ioClosed) {
+          // Drain Prisma so SQLite WAL is flushed before the process dies.
+          try {
+            const { prisma } = require('./src/lib/prisma');
+            prisma.$disconnect()
+              .catch((e: any) => console.warn('Prisma disconnect failed:', e?.message))
+              .finally(() => process.exit(0));
+          } catch {
+            process.exit(0);
+          }
+        }
+      };
 
       server.close(() => {
         console.log('✅ HTTP server closed');
-        io.close(() => {
-          console.log('✅ Socket.IO server closed');
-          process.exit(0);
-        });
+        httpClosed = true;
+        maybeExit();
       });
 
-      // Force shutdown after 10 seconds
+      io.close(() => {
+        console.log('✅ Socket.IO server closed');
+        ioClosed = true;
+        maybeExit();
+      });
+
+      // Force shutdown after 10 seconds — refuse to hang forever
       setTimeout(() => {
-        console.error('❌ Forced shutdown after timeout');
+        console.error('❌ Forced shutdown after 10s timeout');
         process.exit(1);
-      }, 10000);
+      }, 10000).unref();
     };
 
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
