@@ -142,8 +142,12 @@ async function createCustomServer() {
               return callback(null, true);
             }
 
-            // Allow specific port 3000 on any hostname for development flexibility
-            if (origin.match(/^https?:\/\/[\w\.-]+:3000$/)) {
+            // Allow specific port 3000 on any hostname for development flexibility.
+            // Opt-in only — set CANNAAI_ALLOW_DEV_HOST_PORT=1 to enable, since
+            // a regex that accepts "any hostname" plus a known dev port is a
+            // sharp tool and shouldn't be on by default.
+            if (process.env.CANNAAI_ALLOW_DEV_HOST_PORT === '1' &&
+                origin.match(/^https?:\/\/[\w\.-]+:3000$/)) {
               return callback(null, true);
             }
           }
