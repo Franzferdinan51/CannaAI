@@ -1,136 +1,110 @@
 /**
- * ========================================
- * Prometheus Metrics Endpoint
- * ========================================
- * Exposes application metrics for Prometheus scraping
+ * Prometheus-style metrics endpoint.
+ *
+ * Exposes the runtime + cache counters in a text/plain scrape format
+ * that Prometheus / VictoriaMetrics / Grafana Agent can ingest directly.
+ *
+ * We deliberately do NOT pull in the prom-client dependency — the
+ * surface area we expose is small enough that hand-rolling is clearer
+ * and keeps the bundle small.
  */
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getAnalyzeCache } from '@/lib/analyze-cache';
+import { detectAvailableProviders } from '@/lib/ai-provider-detection';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+const mem = process.memoryUsage();
+
+const analyzeCache = getAnalyzeCache().describe();
+
+let providerSummary: { primary: string | null; available: string[]; unavailable: string[]; count: number; timedOut?: boolean; error?: string } | null = null;
+try {
+  // 3-second cap — never let /api/metrics hang the scraper
+  const detected = await Promise.race<any>([
+    detectAvailableProviders(),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+  ]);
+  if (detected) {
+    const all = detected.all || [];
+    providerSummary = {
+      primary: detected.primary?.provider || null,
+      available: all.filter((p: any) => p.isAvailable).map((p: any) => p.provider),
+      unavailable: all.filter((p: any) => !p.isAvailable).map((p: any) => p.provider),
+      count: all.length,
+    };
+  } else {
+    providerSummary = { primary: null, available: [], unavailable: [], count: 0, timedOut: true };
+  }
+} catch (e: any) {
+  providerSummary = { primary: null, available: [], unavailable: [], count: 0, error: e?.message || String(e) };
+}
+
+const lines: string[] = [];
+
+function metric(name: string, help: string, type: 'gauge' | 'counter' | 'untyped') {
+  lines.push(`# HELP ${name} ${help}`);
+  lines.push(`# TYPE ${name} ${type}`);
+}
+
+function sample(name: string, value: number, labels: Record<string, string> = {}) {
+  const labelStr = Object.keys(labels).length
+    ? '{' + Object.entries(labels).map(([k, v]) => `${k}="${String(v).replace(/"/g, '\\"')}"`).join(',') + '}'
+    : '';
+  lines.push(`${name}${labelStr} ${value}`);
+}
+
+metric('cannaai_build_info', 'Static build information', 'gauge');
+sample('cannaai_build_info', 1, {
+  version: process.env.npm_package_version || 'unknown',
+  node: process.version,
+  pid: String(process.pid),
+});
+
+metric('cannaai_uptime_seconds', 'Process uptime in seconds', 'gauge');
+sample('cannaai_uptime_seconds', process.uptime());
+
+metric('cannaai_memory_bytes', 'Process memory usage', 'gauge');
+sample('cannaai_memory_bytes{type="rss"}', mem.rss || 0);
+sample('cannaai_memory_bytes{type="heap_used"}', mem.heapUsed || 0);
+sample('cannaai_memory_bytes{type="heap_total"}', mem.heapTotal || 0);
+sample('cannaai_memory_bytes{type="external"}', mem.external || 0);
+
+metric('cannaai_analyze_cache_entries', 'Entries currently in the analyze result cache', 'gauge');
+sample('cannaai_analyze_cache_entries', analyzeCache.entries || 0);
+
+metric('cannaai_analyze_cache_bytes', 'Approximate bytes stored in the analyze cache', 'gauge');
+sample('cannaai_analyze_cache_bytes', analyzeCache.totalBytesApprox || 0);
+
+metric('cannaai_analyze_cache_hits_total', 'Cumulative analyze cache hits', 'counter');
+sample('cannaai_analyze_cache_hits_total', analyzeCache.stats?.hits || 0);
+metric('cannaai_analyze_cache_misses_total', 'Cumulative analyze cache misses', 'counter');
+sample('cannaai_analyze_cache_misses_total', analyzeCache.stats?.misses || 0);
+metric('cannaai_analyze_cache_evictions_total', 'Cumulative analyze cache evictions', 'counter');
+sample('cannaai_analyze_cache_evictions_total', analyzeCache.stats?.evictions || 0);
+metric('cannaai_analyze_cache_errors_total', 'Cumulative analyze cache errors', 'counter');
+sample('cannaai_analyze_cache_errors_total', analyzeCache.stats?.errors || 0);
+
+metric('cannaai_providers_detected', 'Detected AI providers (1 = available, 0 = unavailable)', 'gauge');
+if (providerSummary) {
+  for (const p of providerSummary.available) {
+    sample('cannaai_providers_detected', 1, { provider: p, status: 'available' });
+  }
+  for (const p of providerSummary.unavailable) {
+    sample('cannaai_providers_detected', 0, { provider: p, status: 'unavailable' });
+  }
+}
+
+const body = lines.join('\n') + '\n';
 
 export async function GET() {
-  try {
-    const memUsage = process.memoryUsage();
-    const cpuUsage = process.cpuUsage();
-
-    let dbConnections = 0;
-    let redisConnections = 0;
-
-    try {
-      // Get DB connection pool info
-      dbConnections = await prisma.$queryRaw`
-        SELECT count(*) as count
-        FROM pg_stat_activity
-        WHERE state = 'active'
-      ` as any;
-    } catch (error) {
-      // Ignore if can't get DB stats
-    }
-
-    try {
-      // Try to get Redis info if available
-      const redisClient = await import('@/redis-client').catch(() => null);
-      if (redisClient && redisClient.redis) {
-        const redisInfo = await redisClient.redis.info('clients');
-        redisConnections = parseInt(redisInfo.match(/connected_clients:(\d+)/)?.[1] || '0');
-      }
-    } catch (error) {
-      // Ignore if can't get Redis stats
-    }
-
-    const metrics = `# HELP cannaai_app_info Application information
-# TYPE cannaai_app_info gauge
-cannaai_app_info{version="${process.env.npm_package_version || '1.0.0'}"} 1
-
-# HELP cannaai_memory_usage_bytes Memory usage in bytes
-# TYPE cannaai_memory_usage_bytes gauge
-cannaai_memory_usage_bytes{rtype="rss"} ${memUsage.rss}
-cannaai_memory_usage_bytes{rtype="heap_total"} ${memUsage.heapTotal}
-cannaai_memory_usage_bytes{rtype="heap_used"} ${memUsage.heapUsed}
-cannaai_memory_usage_bytes{rtype="external"} ${memUsage.external}
-
-# HELP cannaai_cpu_usage_microseconds CPU usage in microseconds
-# TYPE cannaai_cpu_usage_microseconds gauge
-cannaai_cpu_usage_microseconds{rtype="user"} ${cpuUsage.user}
-cannaai_cpu_usage_microseconds{rtype="system"} ${cpuUsage.system}
-
-# HELP cannaai_uptime_seconds Application uptime in seconds
-# TYPE cannaai_uptime_seconds gauge
-cannaai_uptime_seconds ${process.uptime()}
-
-# HELP cannaai_database_connections Active database connections
-# TYPE cannaai_database_connections gauge
-cannaai_database_connections ${Array.isArray(dbConnections) ? dbConnections[0]?.count || 0 : 0}
-
-# HELP cannaai_redis_connections Active Redis connections
-# TYPE cannaai_redis_connections gauge
-cannaai_redis_connections ${redisConnections}
-
-# HELP cannaai_requests_total Total number of requests
-# TYPE cannaai_requests_total counter
-cannaai_requests_total 1
-
-# HELP cannaai_requests_in_progress Number of requests in progress
-# TYPE cannaai_requests_in_progress gauge
-cannaai_requests_in_progress 0
-
-# HELP cannaai_response_time_seconds Response time in seconds
-# TYPE cannaai_response_time_seconds histogram
-cannaai_response_time_seconds_bucket{le="0.1"} 0
-cannaai_response_time_seconds_bucket{le="0.5"} 0
-cannaai_response_time_seconds_bucket{le="1"} 0
-cannaai_response_time_seconds_bucket{le="5"} 0
-cannaai_response_time_seconds_bucket{le="10"} 0
-cannaai_response_time_seconds_bucket{le="+Inf"} 0
-cannaai_response_time_seconds_sum 0
-cannaai_response_time_seconds_count 0
-
-# HELP cannaai_errors_total Total number of errors
-# TYPE cannaai_errors_total counter
-cannaai_errors_total 0
-
-# HELP cannaai_cache_hits_total Total number of cache hits
-# TYPE cannaai_cache_hits_total counter
-cannaai_cache_hits_total 0
-
-# HELP cannaai_cache_misses_total Total number of cache misses
-# TYPE cannaai_cache_misses_total counter
-cannaai_cache_misses_total 0
-
-# HELP cannaai_active_websocket_connections Active WebSocket connections
-# TYPE cannaai_active_websocket_connections gauge
-cannaai_active_websocket_connections 0
-
-# HELP cannaai_images_processed_total Total number of images processed
-# TYPE cannaai_images_processed_total counter
-cannaai_images_processed_total 0
-
-# HELP cannaai_ai_requests_total Total number of AI requests
-# TYPE cannaai_ai_requests_total counter
-cannaai_ai_requests_total 0
-
-# HELP cannaai_ai_request_duration_seconds AI request duration in seconds
-# TYPE cannaai_ai_request_duration_seconds histogram
-cannaai_ai_request_duration_seconds_bucket{le="1"} 0
-cannaai_ai_request_duration_seconds_bucket{le="3"} 0
-cannaai_ai_request_duration_seconds_bucket{le="5"} 0
-cannaai_ai_request_duration_seconds_bucket{le="10"} 0
-cannaai_ai_request_duration_seconds_bucket{le="+Inf"} 0
-cannaai_ai_request_duration_seconds_sum 0
-cannaai_ai_request_duration_seconds_count 0
-`;
-
-    return new NextResponse(metrics, {
-      headers: {
-        'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      },
-    });
-  } catch (error) {
-    console.error('Metrics endpoint error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate metrics' },
-      { status: 500 }
-    );
-  }
+  return new NextResponse(body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
+  });
 }
