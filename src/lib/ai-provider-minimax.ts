@@ -254,13 +254,22 @@ export async function* executeWithMiniMaxStream(
 
         const choice = parsed.choices?.[0];
         if (!choice) continue;
+        // Capture finish_reason BEFORE yielding so the chunk that contains
+        // the last delta also carries the reason. The upstream API can send
+        // {content: "", finish_reason: "stop"} as a final marker chunk,
+        // which we also surface so callers can confirm a clean stop vs a
+        // length truncation.
+        if (choice.finish_reason) {
+          finishReason = choice.finish_reason;
+        }
         const deltaText: string = choice.delta?.content || '';
         if (deltaText) {
           prefix += deltaText;
           yield { delta: deltaText, prefix, finishReason };
-        }
-        if (choice.finish_reason) {
-          finishReason = choice.finish_reason;
+        } else if (choice.finish_reason) {
+          // Empty-delta final marker — yield the prefix + reason so the
+          // caller's last value reflects a definitive end.
+          yield { delta: '', prefix, finishReason };
         }
       }
     }
