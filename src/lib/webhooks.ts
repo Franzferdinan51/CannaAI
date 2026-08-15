@@ -480,6 +480,8 @@ export async function getWebhookStatistics(webhookId: string) {
 
 // Background worker to process webhook retries
 let webhookWorkerRunning = false;
+const WEBHOOK_WORKER_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+let webhookWorkerLastErrorAt = 0;
 
 export function startWebhookWorker(): void {
   if (webhookWorkerRunning) {
@@ -490,12 +492,28 @@ export function startWebhookWorker(): void {
   webhookWorkerRunning = true;
   console.log('[WEBHOOK-WORKER] Starting background worker');
 
-  // Process pending deliveries every 30 seconds
+  // Process pending deliveries every 30 seconds, with a 5-minute cooldown
+  // after a P1008 (SQLite socket timeout) so a slow database does not spam
+  // the log every tick. Real (non-timeout) errors still surface on every tick.
   setInterval(async () => {
     try {
       await processPendingWebhookDeliveries();
-    } catch (error) {
-      console.error('[WEBHOOK-WORKER] Error processing deliveries:', error);
+      webhookWorkerLastErrorAt = 0;
+    } catch (error: any) {
+      const isTimeout =
+        error?.code === 'P1008' ||
+        error?.code === 'P2034' ||
+        /Socket timeout/i.test(String(error?.message ?? ''));
+      const now = Date.now();
+      if (isTimeout && now - webhookWorkerLastErrorAt < WEBHOOK_WORKER_COOLDOWN_MS) {
+        return; // suppressed during cooldown
+      }
+      webhookWorkerLastErrorAt = now;
+      if (isTimeout) {
+        console.warn('[WEBHOOK-WORKER] SQLite timeout, backing off for 5 minutes');
+      } else {
+        console.error('[WEBHOOK-WORKER] Error processing deliveries:', error);
+      }
     }
   }, 30000);
 }
