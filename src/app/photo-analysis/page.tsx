@@ -187,6 +187,14 @@ export default function PhotoAnalysisPage() {
     return 'text-red-400';
   };
 
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/20 text-slate-100">
       {/* Header */}
@@ -483,6 +491,52 @@ export default function PhotoAnalysisPage() {
                       </p>
                     )}
                   </div>
+
+                  {result.imageInfo && (
+                    <div className="p-3 bg-slate-950/50 border border-slate-800 rounded-lg space-y-1">
+                      <p className="text-xs font-semibold text-slate-300 uppercase tracking-wide mb-2">Image Info</p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                        {result.imageInfo.format && (
+                          <span className="text-slate-400">Format:</span>
+                        )}
+                        {result.imageInfo.format && (
+                          <span className="text-slate-200 font-medium">{result.imageInfo.format}</span>
+                        )}
+                        {result.imageInfo.dimensions && (
+                          <span className="text-slate-400">Dimensions:</span>
+                        )}
+                        {result.imageInfo.dimensions && (
+                          <span className="text-slate-200 font-medium">{result.imageInfo.dimensions}</span>
+                        )}
+                        {result.imageInfo.megapixels && (
+                          <span className="text-slate-400">Megapixels:</span>
+                        )}
+                        {result.imageInfo.megapixels && (
+                          <span className="text-slate-200 font-medium">{result.imageInfo.megapixels} MP</span>
+                        )}
+                        {result.imageInfo.originalSize != null && (
+                          <span className="text-slate-400">Original size:</span>
+                        )}
+                        {result.imageInfo.originalSize != null && (
+                          <span className="text-slate-200 font-medium">{formatBytes(result.imageInfo.originalSize)}</span>
+                        )}
+                        {result.imageInfo.compressedSize != null && (
+                          <span className="text-slate-400">Compressed size:</span>
+                        )}
+                        {result.imageInfo.compressedSize != null && (
+                          <span className="text-slate-200 font-medium">{formatBytes(result.imageInfo.compressedSize)}</span>
+                        )}
+                        {result.imageInfo.originalSize != null && result.imageInfo.compressedSize != null && result.imageInfo.originalSize > 0 && (
+                          <>
+                            <span className="text-slate-400">Savings:</span>
+                            <span className="text-emerald-400 font-medium">
+                              {Math.round((1 - result.imageInfo.compressedSize / result.imageInfo.originalSize) * 100)}% smaller
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {result.analysis?.identifiedIssues && result.analysis.identifiedIssues.length > 0 && (
                     <div className="space-y-2">
