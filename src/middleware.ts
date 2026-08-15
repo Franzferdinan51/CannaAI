@@ -17,13 +17,33 @@ export function middleware(request: NextRequest) {
 
   const securedResponse = applySecurityHeaders(request, response, headersConfig);
 
-  // The Vite UI is intentionally hosted on a sibling port (and the Pixel
-  // reaches it through Tailscale). Expose the JSON API to those clients.
-  // Authentication is handled by the individual routes; these APIs do not
-  // use browser credentials, so a wildcard is safe here and avoids brittle
-  // per-device origin lists.
+  // CORS: harden to prevent arbitrary-origin leakage.
+  // - ALLOWED_ORIGINS (comma-separated): explicit allowlist, used in any env.
+  // - No allowlist + development: only localhost numeric ports are permitted.
+  // - Production without allowlist: no origin is echoed (safest default).
   if (isApi) {
-    securedResponse.headers.set('Access-Control-Allow-Origin', '*');
+    const allowedListRaw = process.env.ALLOWED_ORIGINS ?? '';
+    const allowedList = allowedListRaw.trim();
+
+    const requestOrigin = request.headers.get('origin') ?? '';
+    const devPorts = /^http:\/\/localhost:\d+$/;
+
+    let allowedOrigin: string | null = null;
+
+    if (allowedList) {
+      const whitelist = allowedList.split(',').map((o) => o.trim());
+      if (whitelist.includes(requestOrigin)) {
+        allowedOrigin = requestOrigin;
+      }
+    } else if (process.env.NODE_ENV === 'development' && devPorts.test(requestOrigin)) {
+      allowedOrigin = requestOrigin;
+    }
+    // else: allowedOrigin stays null — no Access-Control-Allow-Origin emitted
+
+    if (allowedOrigin) {
+      securedResponse.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+      securedResponse.headers.set('Vary', 'Origin');
+    }
     securedResponse.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     securedResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   }
