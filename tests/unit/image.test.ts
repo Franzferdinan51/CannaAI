@@ -230,6 +230,71 @@ describe('Image Processing Library', () => {
     });
   });
 
+  /**
+   * Multi-megabyte data URI regression tests — mirror the approach proven in
+   * base64.ts (d61048b).  The previous image.ts implementation used the same
+   * vulnerable regex /^data:(.+?);base64,(.+)$/ which causes stack overflow
+   * when parsing multi-MB camera images for /api/trichome-analysis and
+   * /api/live-vision.  These tests verify the indexOf/slice fix handles such
+   * inputs without regex backtracking.
+   */
+  describe('base64ToBuffer multi-MB regression (image.ts)', () => {
+    test('parses a 1 MB data URI without stack overflow', () => {
+      const oneMB = 1024 * 1024;
+      const base64Data = Buffer.alloc(oneMB).toString('base64');
+      const dataUri = `data:image/jpeg;base64,${base64Data}`;
+
+      const start = Date.now();
+      const { buffer, mimeType } = base64ToBuffer(dataUri);
+      const elapsed = Date.now() - start;
+
+      expect(mimeType).toBe('image/jpeg');
+      expect(buffer.length).toBe(oneMB);
+      expect(elapsed).toBeLessThan(5000);
+    });
+
+    test('parses a 5 MB data URI without stack overflow', () => {
+      const fiveMB = 5 * 1024 * 1024;
+      const base64Data = Buffer.alloc(fiveMB).toString('base64');
+      const dataUri = `data:image/jpeg;base64,${base64Data}`;
+
+      const start = Date.now();
+      const { buffer, mimeType } = base64ToBuffer(dataUri);
+      const elapsed = Date.now() - start;
+
+      expect(mimeType).toBe('image/jpeg');
+      expect(buffer.length).toBe(fiveMB);
+      expect(elapsed).toBeLessThan(10000);
+    });
+
+    test('preserves exact byte content after decode (non-zero data)', () => {
+      // Repeating pattern that is NOT all zeros to verify correct decode
+      const payload = 'AQID'.repeat(256 * 256); // ~256 KB of meaningful bytes
+      const dataUri = `data:image/png;base64,${payload}`;
+      const { buffer, mimeType } = base64ToBuffer(dataUri);
+
+      expect(mimeType).toBe('image/png');
+      expect(buffer.length).toBe(256 * 256 * 3);
+
+      const expected = Buffer.from('AQID'.repeat(256 * 256), 'base64');
+      expect(buffer.equals(expected)).toBe(true);
+    });
+
+    test('throws ImageProcessingError for non-string input', () => {
+      expect(() => (base64ToBuffer as any)(null)).toThrow(ImageProcessingError);
+      expect(() => (base64ToBuffer as any)(undefined)).toThrow(ImageProcessingError);
+    });
+
+    test('throws ImageProcessingError for missing data: prefix', () => {
+      expect(() => base64ToBuffer('image/jpeg;base64,dGVzdA==')).toThrow(ImageProcessingError);
+    });
+
+    test('throws ImageProcessingError for malformed separator', () => {
+      expect(() => base64ToBuffer('data:image/jpeg')).toThrow(ImageProcessingError);
+      expect(() => base64ToBuffer('data:image/jpeg;base64')).toThrow(ImageProcessingError);
+    });
+  });
+
   describe('Image Processing', () => {
     test('should process image with default options', async () => {
       const mockProcessedBuffer = Buffer.from('processed-image');

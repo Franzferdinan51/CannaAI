@@ -187,20 +187,40 @@ export function bufferToBase64(buffer: Buffer, mimeType: string): string {
 
 /**
  * Convert base64 data URL to buffer
+ *
+ * Uses indexOf + slice instead of regex to avoid catastrophic backtracking
+ * on multi-megabyte camera-image data URIs (same root cause as d61048b in base64.ts).
  */
 export function base64ToBuffer(base64DataUrl: string): { buffer: Buffer; mimeType: string } {
   try {
-    const matches = base64DataUrl.match(/^data:(.+?);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
+    // Do not use a regex over the complete data URI: large camera images can
+    // exceed the JavaScript regex engine's stack/argument limits.
+    if (typeof base64DataUrl !== 'string' || !base64DataUrl.startsWith('data:')) {
       throw new ImageProcessingError('Invalid base64 data URL format');
     }
 
-    const mimeType = matches[1];
-    const base64Data = matches[2];
+    const separator = ';base64,';
+    const separatorIndex = base64DataUrl.indexOf(separator);
+    if (separatorIndex <= 'data:'.length) {
+      throw new ImageProcessingError('Invalid base64 data URL format');
+    }
+
+    const mimeType = base64DataUrl.slice('data:'.length, separatorIndex);
+    const base64Data = base64DataUrl.slice(separatorIndex + separator.length);
+    if (!mimeType || !base64Data) {
+      throw new ImageProcessingError('Invalid base64 data URL format');
+    }
+
     const buffer = Buffer.from(base64Data, 'base64');
+    if (buffer.length === 0) {
+      throw new ImageProcessingError('Decoded image data is empty');
+    }
 
     return { buffer, mimeType };
   } catch (error) {
+    if (error instanceof ImageProcessingError) {
+      throw error;
+    }
     throw new ImageProcessingError('Failed to parse base64 data URL', error as Error);
   }
 }
