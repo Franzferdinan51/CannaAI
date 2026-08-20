@@ -1,52 +1,78 @@
 /**
  * LM Studio AI Provider - Dynamic Model Selection
- * Auto-detects available models and allows selection
+ * Auto-detects available models and allows runtime selection.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Serverless environments (Netlify, Vercel, AWS Lambda) cannot reach LM Studio on localhost.
-// Re-evaluated per-call so tests can flip the env var mid-suite.
 function isServerlessEnv(): boolean {
   return Boolean(process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 }
 
-const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL || 'http://localhost:1234/v1';
+function normalizeBaseUrl(value?: string): string {
+  return (value || 'http://localhost:1234')
+    .trim()
+    .replace(/\/v1\/?$/, '')
+    .replace(/\/$/, '');
+}
+
+function getLMStudioBaseUrl(): string {
+  return normalizeBaseUrl(process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL);
+}
 
 export function getLMStudioApiKey(): string {
   if (process.env.LM_STUDIO_API_KEY) return process.env.LM_STUDIO_API_KEY;
   if (process.env.LM_API_TOKEN) return process.env.LM_API_TOKEN;
+
   try {
     const configPath = path.join(process.env.HOME || '', '.lmstudio', 'mcp.json');
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     const findToken = (value: unknown): string | undefined => {
       if (!value || typeof value !== 'object') return undefined;
       if (Array.isArray(value)) {
-        for (const item of value) { const found = findToken(item); if (found) return found; }
+        for (const item of value) {
+          const found = findToken(item);
+          if (found) return found;
+        }
         return undefined;
       }
+
       const record = value as Record<string, unknown>;
-      if (typeof record.LM_API_TOKEN === 'string' && record.LM_API_TOKEN.trim()) return record.LM_API_TOKEN.trim();
-      for (const child of Object.values(record)) { const found = findToken(child); if (found) return found; }
+      if (typeof record.LM_API_TOKEN === 'string' && record.LM_API_TOKEN.trim()) {
+        return record.LM_API_TOKEN.trim();
+      }
+      for (const child of Object.values(record)) {
+        const found = findToken(child);
+        if (found) return found;
+      }
       return undefined;
     };
+
     return findToken(config) || '';
   } catch {
     return '';
   }
 }
 
-const LM_STUDIO_API_KEY = getLMStudioApiKey();
+// Runtime-selected values are intentionally mutable. The previous adapter
+// captured environment variables at module import, so changing a model in the
+// Settings UI had no effect until the whole process restarted.
+export let LM_STUDIO_VISION_MODEL = process.env.LM_STUDIO_VISION_MODEL || process.env.LM_STUDIO_MODEL || '';
+export let LM_STUDIO_TEXT_MODEL = process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL || '';
 
-// Default models (can be overridden)
-const LM_STUDIO_VISION_MODEL = process.env.LM_STUDIO_VISION_MODEL || 'nvidia-nemotron-3-nano-omni-30b-a3b-reasoning';
-const LM_STUDIO_TEXT_MODEL = process.env.LM_STUDIO_TEXT_MODEL || 'qwen/qwen3.5-27b';
-
-// Cache available models
 let availableModelsCache: string[] | null = null;
 let cacheTime = 0;
-const CACHE_TTL = 60000; // 1 minute
+let cacheBaseUrl = '';
+const CACHE_TTL = 60000;
+
+function getHeaders(includeJson = false): Record<string, string> {
+  const apiKey = getLMStudioApiKey();
+  return {
+    ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+    ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+  };
+}
 
 function normalizeImageUrl(image?: string): string | undefined {
   if (!image) return undefined;
@@ -54,19 +80,29 @@ function normalizeImageUrl(image?: string): string | undefined {
   if (!value) return undefined;
   if (value.startsWith('data:image/')) return value;
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
-  // Treat raw base64 from the CannaAI pipeline as PNG unless already wrapped.
   return `data:image/png;base64,${value}`;
 }
 
-/**
- * AIProviderResult contract (kept compatible with ai-provider-detection.ts):
- *   { available: boolean, reason: string, provider?: string, config?: { url: string, ... }, models?: string[] }
- *
- * Also exposes `isAvailable` for legacy callers (tests, frontend) that use the older key.
- */
+function isEmbeddingModel(id: string): boolean {
+  const value = id.toLowerCase();
+  return value.includes('embedding') || value.includes('embed-') || value.endsWith('-embed');
+}
+
+function looksLikeVisionModel(id: string): boolean {
+  const value = id.toLowerCase();
+  return (
+    value.includes('vision') ||
+    value.includes('vl') ||
+    value.includes('llava') ||
+    value.includes('omni') ||
+    value.includes('multimodal') ||
+    value.includes('mmproj')
+  );
+}
+
 export interface LMStudioProviderResult {
   available: boolean;
-  isAvailable: boolean; // alias for `available` (kept for backward compat)
+  isAvailable: boolean;
   reason: string;
   provider: 'lm-studio';
   config?: { url: string; hasApiKey: boolean };
@@ -75,8 +111,10 @@ export interface LMStudioProviderResult {
 }
 
 export async function checkLMStudio(includeModels = false): Promise<LMStudioProviderResult> {
-  const buildResult = (b: Omit<LMStudioProviderResult, 'isAvailable'>): LMStudioProviderResult =>
-    ({ ...b, isAvailable: b.available });
+  const buildResult = (result: Omit<LMStudioProviderResult, 'isAvailable'>): LMStudioProviderResult => ({
+    ...result,
+    isAvailable: result.available,
+  });
 
   if (isServerlessEnv()) {
     return buildResult({
@@ -85,134 +123,231 @@ export async function checkLMStudio(includeModels = false): Promise<LMStudioProv
       provider: 'lm-studio',
     });
   }
-  const url = LM_STUDIO_BASE_URL.replace(/\/v1\/?$/, '');
+
+  const url = getLMStudioBaseUrl();
   try {
     const response = await fetch(`${url}/v1/models`, {
       method: 'GET',
-      headers: { 'Authorization': `Bearer ${LM_STUDIO_API_KEY}` },
+      headers: getHeaders(),
+      signal: AbortSignal.timeout(3000),
     });
+
     if (!response.ok) {
       return buildResult({
         available: false,
         reason: `LM Studio responded with HTTP ${response.status}`,
         provider: 'lm-studio',
-        config: { url, hasApiKey: !!LM_STUDIO_API_KEY },
+        config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
         error: `HTTP ${response.status}`,
       });
     }
+
     const data = await response.json().catch(() => ({} as any));
-    const models: string[] | undefined = includeModels
-      ? Array.isArray(data?.data) ? data.data.map((m: any) => m?.id).filter(Boolean) : undefined
-      : undefined;
+    const models = Array.isArray(data?.data)
+      ? data.data
+        .map((model: any) => model?.id)
+        .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
+      : [];
+
     return buildResult({
       available: true,
-      reason: 'LM Studio is running',
+      reason: models.length > 0 ? `LM Studio is running with ${models.length} model(s)` : 'LM Studio is running',
       provider: 'lm-studio',
-      config: { url, hasApiKey: !!LM_STUDIO_API_KEY },
-      models,
+      config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
+      models: includeModels ? models : undefined,
     });
-  } catch (err: any) {
+  } catch (error: any) {
     return buildResult({
       available: false,
-      reason: `LM Studio not available: ${err?.message || 'connection refused'}`,
+      reason: `LM Studio not available: ${error?.message || 'connection refused'}`,
       provider: 'lm-studio',
-      config: { url, hasApiKey: !!LM_STUDIO_API_KEY },
-      error: err?.message,
+      config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
+      error: error?.message,
     });
   }
 }
 
 export async function getAvailableModels(forceRefresh = false): Promise<string[]> {
   const now = Date.now();
-  
-  // Return cache if valid
-  if (!forceRefresh && availableModelsCache && (now - cacheTime) < CACHE_TTL) {
+  const baseUrl = getLMStudioBaseUrl();
+
+  if (
+    !forceRefresh &&
+    availableModelsCache &&
+    cacheBaseUrl === baseUrl &&
+    (now - cacheTime) < CACHE_TTL
+  ) {
     return availableModelsCache;
   }
 
   try {
-    const response = await fetch(`${LM_STUDIO_BASE_URL}/models`, {
+    const response = await fetch(`${baseUrl}/v1/models`, {
       method: 'GET',
-      headers: { 'Authorization': `Bearer ${LM_STUDIO_API_KEY}` },
+      headers: getHeaders(),
+      signal: AbortSignal.timeout(5000),
     });
-    
     if (!response.ok) return [];
-    
+
     const data = await response.json();
-    availableModelsCache = data.data?.map((m: any) => m.id) || [];
-    cacheTime = now;
-    return availableModelsCache;
+    const models = Array.isArray(data?.data)
+      ? data.data
+        .map((model: any) => model?.id)
+        .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
+        .filter(id => !isEmbeddingModel(id))
+      : [];
+
+    // Do not cache an empty transient response. A model may be loading or LM
+    // Studio may be switching JIT state, and an empty minute-long cache made
+    // that look like a persistent failure.
+    if (models.length > 0) {
+      availableModelsCache = models;
+      cacheTime = now;
+      cacheBaseUrl = baseUrl;
+    } else {
+      availableModelsCache = null;
+      cacheTime = 0;
+      cacheBaseUrl = '';
+    }
+
+    return models;
   } catch {
     return [];
   }
 }
 
-// All models can potentially do vision - let caller decide
+async function getNativeVisionModelIds(): Promise<string[]> {
+  const baseUrl = getLMStudioBaseUrl();
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/models`, {
+      method: 'GET',
+      headers: getHeaders(),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    if (!Array.isArray(data?.models)) return [];
+
+    const ids = new Set<string>();
+    for (const model of data.models) {
+      if (model?.type === 'embedding' || model?.capabilities?.vision !== true) continue;
+      if (typeof model?.key === 'string' && model.key) ids.add(model.key);
+      if (typeof model?.id === 'string' && model.id) ids.add(model.id);
+      if (Array.isArray(model?.loaded_instances)) {
+        for (const instance of model.loaded_instances) {
+          if (typeof instance?.id === 'string' && instance.id) ids.add(instance.id);
+        }
+      }
+    }
+    return Array.from(ids);
+  } catch {
+    return [];
+  }
+}
+
 export async function getVisionModels(): Promise<string[]> {
   const models = await getAvailableModels();
-  // Most local models support vision - filter only embeddings
-  return models.filter(id => !id.includes('embedding'));
+  if (models.length === 0) return [];
+
+  const nativeVision = new Set(await getNativeVisionModelIds());
+  const explicitMatches = models.filter(id => nativeVision.has(id));
+  if (explicitMatches.length > 0) return explicitMatches;
+
+  // Native capability metadata is unavailable on some older LM Studio builds.
+  // Fall back to conservative model-name hints rather than claiming every
+  // local text model is vision-capable.
+  return models.filter(looksLikeVisionModel);
 }
 
 export async function getTextModels(): Promise<string[]> {
-  const models = await getAvailableModels();
-  return models.filter(id => !id.includes('embedding'));
+  return getAvailableModels();
+}
+
+function getConfiguredModel(type: 'vision' | 'text'): string {
+  if (type === 'vision') {
+    return process.env.LM_STUDIO_VISION_MODEL || process.env.LM_STUDIO_MODEL || LM_STUDIO_VISION_MODEL || '';
+  }
+  return process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL || LM_STUDIO_TEXT_MODEL || '';
+}
+
+async function resolveModel(type: 'vision' | 'text', explicitModel?: string): Promise<string> {
+  if (explicitModel?.trim()) return explicitModel.trim();
+
+  const configured = getConfiguredModel(type).trim();
+  const available = await getAvailableModels();
+
+  if (configured) {
+    // If model discovery temporarily fails, preserve an explicit user choice
+    // and let the completion endpoint produce the authoritative error.
+    if (available.length === 0 || available.includes(configured)) return configured;
+  }
+
+  if (type === 'vision') {
+    const visionModels = await getVisionModels();
+    if (visionModels.length > 0) return visionModels[0];
+  }
+
+  if (available.length > 0) return available[0];
+  if (configured) return configured;
+
+  throw new Error(
+    'LM Studio is reachable but no chat model is available. Download/load a model or configure LM_STUDIO_MODEL.',
+  );
 }
 
 export async function executeWithLMStudio(
   messages: any[],
-  options: { 
-    model?: string; 
-    image?: string; 
+  options: {
+    model?: string;
+    image?: string;
     temperature?: number;
     useVision?: boolean;
-  } = {}
+  } = {},
 ) {
-  // Determine which model to use
-  let model: string;
-  
-  if (options.model) {
-    // Specific model requested
-    model = options.model;
-  } else if (options.image && options.useVision !== false) {
-    // Image provided - use vision model
-    model = LM_STUDIO_VISION_MODEL;
-  } else {
-    // Text model
-    model = LM_STUDIO_TEXT_MODEL;
-  }
+  const wantsVision = Boolean(options.image) && options.useVision !== false;
+  const model = await resolveModel(wantsVision ? 'vision' : 'text', options.model);
 
   let formattedMessages = messages;
-  
-  // Add image to message if using vision model
   const normalizedImage = normalizeImageUrl(options.image);
 
   if (normalizedImage && options.useVision !== false) {
-    formattedMessages = messages.map((msg: any) => {
-      if (msg.role === 'user') {
+    // Attach the image only to the last user turn. The previous implementation
+    // duplicated the same image into every historical user message, which can
+    // rapidly inflate context and confuse multimodal local models.
+    let imageAttached = false;
+    formattedMessages = [...messages].reverse().map((message: any) => {
+      if (!imageAttached && message?.role === 'user') {
+        imageAttached = true;
+        const text = typeof message.content === 'string'
+          ? message.content
+          : Array.isArray(message.content)
+            ? message.content
+              .filter((part: any) => part?.type === 'text')
+              .map((part: any) => part?.text || '')
+              .join('\n')
+            : String(message.content || '');
         return {
           role: 'user',
           content: [
-            { type: 'text', text: msg.content },
+            { type: 'text', text },
             { type: 'image_url', image_url: { url: normalizedImage } },
           ],
         };
       }
-      return msg;
-    });
+      return message;
+    }).reverse();
   }
 
-  const response = await fetch(`${LM_STUDIO_BASE_URL}/chat/completions`, {
+  const response = await fetch(`${getLMStudioBaseUrl()}/v1/chat/completions`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${LM_STUDIO_API_KEY}`,
-    },
+    headers: getHeaders(true),
     body: JSON.stringify({
       model,
       messages: formattedMessages,
       temperature: options.temperature ?? 0.7,
+      stream: false,
     }),
+    signal: AbortSignal.timeout(parseInt(process.env.LM_STUDIO_TIMEOUT || '120000', 10)),
   });
 
   if (!response.ok) {
@@ -221,26 +356,31 @@ export async function executeWithLMStudio(
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || '';
+  const content = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || '';
+  return typeof content === 'string' ? content : String(content || '');
 }
 
-// Get current configured models
 export function getConfiguredModels() {
   return {
-    vision: LM_STUDIO_VISION_MODEL,
-    text: LM_STUDIO_TEXT_MODEL,
+    vision: getConfiguredModel('vision'),
+    text: getConfiguredModel('text'),
   };
 }
 
-// Change model via API (runtime configurable)
 export function setModel(type: 'vision' | 'text', model: string) {
+  const normalized = model.trim();
   if (type === 'vision') {
-    process.env.LM_STUDIO_VISION_MODEL = model;
+    LM_STUDIO_VISION_MODEL = normalized;
+    process.env.LM_STUDIO_VISION_MODEL = normalized;
   } else {
-    process.env.LM_STUDIO_TEXT_MODEL = model;
+    LM_STUDIO_TEXT_MODEL = normalized;
+    process.env.LM_STUDIO_TEXT_MODEL = normalized;
+    // Keep the generic model setting synchronized for older callers that only
+    // know about LM_STUDIO_MODEL.
+    process.env.LM_STUDIO_MODEL = normalized;
   }
-  // Clear cache to force refresh
-  availableModelsCache = null;
-}
 
-export { LM_STUDIO_VISION_MODEL, LM_STUDIO_TEXT_MODEL };
+  availableModelsCache = null;
+  cacheTime = 0;
+  cacheBaseUrl = '';
+}
