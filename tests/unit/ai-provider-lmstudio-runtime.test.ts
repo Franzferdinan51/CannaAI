@@ -14,6 +14,8 @@ describe('legacy LM Studio runtime configuration', () => {
     delete process.env.LM_STUDIO_MODEL;
     delete process.env.LM_STUDIO_TEXT_MODEL;
     delete process.env.LM_STUDIO_VISION_MODEL;
+    setModel('text', '');
+    setModel('vision', '');
   });
 
   test('setModel changes the model used by the next request without a process restart', async () => {
