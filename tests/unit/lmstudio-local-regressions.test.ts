@@ -122,22 +122,29 @@ describe('LM Studio local-model regressions', () => {
   });
 
   test('LM Studio is available with a downloaded JIT-loadable chat model even when no instance is preloaded', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        models: [
-          {
-            key: 'qwen/qwen3.5-9b',
-            type: 'llm',
-            loaded_instances: [],
-            capabilities: {
-              vision: false,
-              trained_for_tool_use: true,
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          models: [
+            {
+              key: 'qwen/qwen3.5-9b',
+              type: 'llm',
+              loaded_instances: [],
+              capabilities: {
+                vision: false,
+                trained_for_tool_use: true,
+              },
             },
-          },
-        ],
-      }),
-    } as Response);
+          ],
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{ id: 'qwen/qwen3.5-9b', object: 'model' }],
+        }),
+      } as Response);
 
     const provider = new LMStudioProvider({
       url: 'http://localhost:1234',
@@ -146,6 +153,10 @@ describe('LM Studio local-model regressions', () => {
     });
 
     await expect(provider.isAvailable()).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:1234/v1/models',
+      expect.objectContaining({ method: 'GET' }),
+    );
     fetchMock.mockRestore();
   });
 
