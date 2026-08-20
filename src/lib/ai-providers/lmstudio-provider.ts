@@ -1,83 +1,129 @@
 /**
  * LM Studio Provider Implementation
- * Local AI inference with no API costs
+ * Local AI inference with no API costs.
  */
 
 import { BaseProvider, AIRequest, AIResponse } from './base-provider';
 
+interface LMStudioNativeModel {
+  key?: string;
+  id?: string;
+  type?: string;
+  loaded_instances?: Array<{ id?: string }>;
+  capabilities?: {
+    vision?: boolean;
+    trained_for_tool_use?: boolean;
+  };
+}
+
+interface ResolvedLMStudioModel {
+  id: string;
+  nativeModel?: LMStudioNativeModel;
+  loaded: boolean;
+}
+
+function normalizeImageUrl(image?: string): string | undefined {
+  if (!image) return undefined;
+  const value = String(image).trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:image/')) return value;
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `data:image/png;base64,${value}`;
+}
+
 export class LMStudioProvider extends BaseProvider {
   constructor(config: any) {
+    const rawBaseUrl = config.baseUrl || config.url || 'http://localhost:1234';
     super({
       name: 'lm-studio',
-      // Both LM Studio's native endpoint and CannaAI's historic setting may
-      // include /v1. Provider methods append /v1 themselves.
-      baseUrl: (config.url || 'http://localhost:1234').replace(/\/v1\/?$/, ''),
-      timeout: 120000, // Longer timeout for local inference
+      // CannaAI historically accepted both http://host:1234 and
+      // http://host:1234/v1. Provider methods append the endpoint version.
+      baseUrl: rawBaseUrl.replace(/\/v1\/?$/, '').replace(/\/$/, ''),
+      timeout: 120000,
       maxRetries: 1,
       retryDelay: 1000,
       ...config,
       capabilities: {
         text: true,
-        vision: false, // Most local models don't support vision
-        streaming: true,
+        // LM Studio's OpenAI-compatible endpoint supports image content for
+        // multimodal models. Capability is model-dependent, but the provider
+        // itself must remain eligible so a selected vision model can be used.
+        vision: true,
+        // execute() currently returns a completed JSON response rather than an
+        // SSE iterator, so do not advertise streaming until that path exists.
+        streaming: false,
         functionCalling: false,
         jsonMode: true,
         maxTokens: 4096,
         contextWindow: 8192,
         supportsBatching: false,
         realtime: false,
-        ...config.capabilities
+        ...config.capabilities,
       },
       pricing: {
-        input: 0, // Free
+        input: 0,
         output: 0,
         currency: 'USD',
-        ...config.pricing
-      }
+        ...config.pricing,
+      },
     });
+
+    // `...config` above may contain a baseUrl with /v1. Normalize the final
+    // value as well so callers can use either historical setting shape.
+    this.config.baseUrl = (this.config.baseUrl || rawBaseUrl)
+      .replace(/\/v1\/?$/, '')
+      .replace(/\/$/, '');
   }
 
   async isAvailable(): Promise<boolean> {
     try {
-      // Check if serverless (LM Studio won't work)
       if (process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
         return false;
       }
 
-      return Boolean(await this.getLoadedModel());
-    } catch (error) {
+      return Boolean(await this.resolveAvailableModel());
+    } catch {
       return false;
     }
   }
 
   async execute(request: AIRequest): Promise<AIResponse> {
     const startTime = Date.now();
-    const loadedModel = request.model || await this.getLoadedModel();
-    if (!loadedModel) {
-      throw new Error('LM Studio is reachable, but no chat model is loaded. Load a model in LM Studio and retry.');
+
+    // Resolve against both LM Studio's native model catalog and OpenAI model
+    // list. The latter is important for JIT mode: a downloaded model can be
+    // runnable even when there is no preloaded instance yet.
+    const resolvedModel = await this.resolveAvailableModel(request.model);
+    const selectedModel = resolvedModel?.id || request.model || this.config.model;
+    if (!selectedModel) {
+      throw new Error(
+        'LM Studio is reachable, but no runnable chat model was found. Download or load a model in LM Studio and retry.',
+      );
     }
-    const normalizedRequest = this.normalizeRequest({ ...request, model: loadedModel });
+
+    const normalizedRequest = this.normalizeRequest({ ...request, model: selectedModel });
 
     try {
       const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(this.config.apiKey && { 'Authorization': `Bearer ${this.config.apiKey}` })
-        },
+        headers: this.getHeaders(true),
         body: JSON.stringify(normalizedRequest),
-        signal: AbortSignal.timeout(this.config.timeout)
+        signal: AbortSignal.timeout(this.config.timeout),
       });
 
       const latency = Date.now() - startTime;
 
       if (!response.ok) {
-        throw new Error(`LM Studio API error: ${response.status} ${response.statusText}`);
+        const details = await response.text().catch(() => '');
+        throw new Error(
+          `LM Studio API error: ${response.status} ${response.statusText}${details ? ` - ${details}` : ''}`,
+        );
       }
 
       const data = await response.json();
 
-      // Handle models that use reasoning_content instead of content
+      // Some reasoning models expose their usable answer through
+      // reasoning_content. Preserve compatibility with those local models.
       if (!data.choices?.[0]?.message?.content && data.choices?.[0]?.message?.reasoning_content) {
         data.choices[0].message.content = data.choices[0].message.reasoning_content;
       }
@@ -89,8 +135,8 @@ export class LMStudioProvider extends BaseProvider {
         latency,
         aiResponse.usage?.promptTokens || 0,
         aiResponse.usage?.completionTokens || 0,
-        0, // No cost for local inference
-        true
+        0,
+        true,
       );
 
       return aiResponse;
@@ -102,38 +148,151 @@ export class LMStudioProvider extends BaseProvider {
     }
   }
 
-  /**
-   * LM Studio's OpenAI list includes installed models. Its native endpoint
-   * identifies the model instance actually loaded and ready to answer.
-   */
-  private async getLoadedModel(): Promise<string | undefined> {
-    const response = await fetch(`${this.config.baseUrl}/api/v1/models`, {
-      method: 'GET',
-      headers: {
-        ...(this.config.apiKey && { 'Authorization': `Bearer ${this.config.apiKey}` })
-      },
-      signal: AbortSignal.timeout(5000)
-    });
-    if (!response.ok) return undefined;
+  private getHeaders(includeJson = false): Record<string, string> {
+    return {
+      ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+      ...(this.config.apiKey ? { Authorization: `Bearer ${this.config.apiKey}` } : {}),
+    };
+  }
 
-    const payload = await response.json();
-    const instance = payload?.models
-      ?.flatMap((model: any) => Array.isArray(model?.loaded_instances) ? model.loaded_instances : [])
-      ?.find((candidate: any) => typeof candidate?.id === 'string' && candidate.id.trim());
-    return instance?.id;
+  private async getNativeModels(): Promise<LMStudioNativeModel[]> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/models`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) return [];
+
+      const payload = await response.json();
+      if (!Array.isArray(payload?.models)) return [];
+      return payload.models.filter((model: LMStudioNativeModel) => model?.type !== 'embedding');
+    } catch {
+      // Older LM Studio releases may not expose the native v1 endpoint. The
+      // OpenAI-compatible /v1/models endpoint below is sufficient as fallback.
+      return [];
+    }
+  }
+
+  private async getOpenAIModelIds(): Promise<string[]> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/v1/models`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) return [];
+
+      const payload = await response.json();
+      if (!Array.isArray(payload?.data)) return [];
+
+      return payload.data
+        .map((model: any) => model?.id)
+        .filter((id: unknown): id is string => (
+          typeof id === 'string' &&
+          id.trim().length > 0 &&
+          !id.toLowerCase().includes('embedding')
+        ));
+    } catch {
+      return [];
+    }
+  }
+
+  private findNativeModel(models: LMStudioNativeModel[], id: string): LMStudioNativeModel | undefined {
+    return models.find(model => {
+      if (model.key === id || model.id === id) return true;
+      return model.loaded_instances?.some(instance => instance?.id === id) || false;
+    });
+  }
+
+  /**
+   * Resolve a model that the OpenAI-compatible endpoint can actually use.
+   *
+   * - Preloaded instances are preferred when available.
+   * - /v1/models is used as the runnable/JIT model source of truth.
+   * - A configured/requested model wins when it is present in that list.
+   */
+  private async resolveAvailableModel(requestedModel?: string): Promise<ResolvedLMStudioModel | undefined> {
+    const [nativeModels, openAIModelIds] = await Promise.all([
+      this.getNativeModels(),
+      this.getOpenAIModelIds(),
+    ]);
+
+    const preferredModel = requestedModel || this.config.model || undefined;
+
+    // Explicit/configured model that LM Studio currently advertises as
+    // runnable (including JIT-loadable models).
+    if (preferredModel && openAIModelIds.includes(preferredModel)) {
+      return {
+        id: preferredModel,
+        nativeModel: this.findNativeModel(nativeModels, preferredModel),
+        loaded: Boolean(
+          this.findNativeModel(nativeModels, preferredModel)?.loaded_instances?.some(instance => instance?.id),
+        ),
+      };
+    }
+
+    // A configured model may name the native catalog key while the OpenAI API
+    // advertises a loaded instance id. Resolve that alias before falling back.
+    if (preferredModel) {
+      const nativePreferred = this.findNativeModel(nativeModels, preferredModel);
+      const loadedId = nativePreferred?.loaded_instances?.find(instance => instance?.id)?.id;
+      if (loadedId && openAIModelIds.includes(loadedId)) {
+        return { id: loadedId, nativeModel: nativePreferred, loaded: true };
+      }
+    }
+
+    // Prefer an already-loaded model to avoid unnecessary JIT churn.
+    for (const model of nativeModels) {
+      const loadedId = model.loaded_instances?.find(instance => instance?.id)?.id;
+      if (loadedId && (openAIModelIds.length === 0 || openAIModelIds.includes(loadedId))) {
+        return { id: loadedId, nativeModel: model, loaded: true };
+      }
+    }
+
+    // JIT mode: /v1/models advertises downloaded models that can be loaded on
+    // first inference even though native loaded_instances is empty.
+    const jitId = openAIModelIds[0];
+    if (jitId) {
+      return {
+        id: jitId,
+        nativeModel: this.findNativeModel(nativeModels, jitId),
+        loaded: false,
+      };
+    }
+
+    return undefined;
   }
 
   protected normalizeRequest(request: AIRequest): any {
+    const messages = request.messages.map(message => {
+      const image = normalizeImageUrl(message.image);
+      if (image) {
+        return {
+          role: message.role,
+          content: [
+            { type: 'text', text: message.content },
+            { type: 'image_url', image_url: { url: image } },
+          ],
+        };
+      }
+
+      return {
+        role: message.role,
+        content: message.content,
+      };
+    });
+
     return {
       model: request.model || this.config.model,
-      messages: request.messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })),
+      messages,
       temperature: request.temperature ?? this.config.temperature ?? 0.3,
       max_tokens: request.maxTokens ?? this.config.maxTokens ?? 2000,
-      stream: request.stream ?? this.config.stream ?? false,
-      ...(request.responseFormat && { response_format: request.responseFormat })
+      // This provider consumes a JSON completion response. Streaming requests
+      // must use a dedicated SSE path rather than asking response.json() to
+      // parse an event stream.
+      stream: false,
+      ...(request.responseFormat && { response_format: request.responseFormat }),
     };
   }
 
@@ -151,24 +310,24 @@ export class LMStudioProvider extends BaseProvider {
           index: 0,
           message: {
             role: choice?.message?.role || 'assistant',
-            content: choice?.message?.content || ''
+            content: choice?.message?.content || '',
           },
-          finishReason: choice?.finish_reason || 'stop'
-        }
+          finishReason: choice?.finish_reason || 'stop',
+        },
       ],
       usage: {
         promptTokens: usage?.prompt_tokens || 0,
         completionTokens: usage?.completion_tokens || 0,
         totalTokens: usage?.total_tokens || 0,
-        cost: 0 // Free local inference
+        cost: 0,
       },
       metadata: {
         provider: 'lm-studio',
         latency: metadata.latency,
         modelUsed: response.model || this.config.model,
         cached: metadata.cached || false,
-        batched: metadata.batched || false
-      }
+        batched: metadata.batched || false,
+      },
     };
   }
 }
