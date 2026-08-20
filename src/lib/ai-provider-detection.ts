@@ -111,6 +111,24 @@ function getPromptFromMessages(messages: any[]): string {
     .join('\n');
 }
 
+function providerRecommendations(provider: string, isAvailable: boolean): string[] {
+  if (isAvailable) return [];
+  switch (provider) {
+    case 'lmstudio':
+      return ['Start LM Studio, enable its local server, and make sure at least one chat model is downloaded or loaded'];
+    case 'openclaw':
+      return ['Start or reconnect the OpenClaw gateway'];
+    case 'bailian':
+      return ['Configure BAILIAN_API_KEY if Bailian should be used'];
+    case 'openrouter':
+      return ['Configure OPENROUTER_API_KEY if OpenRouter should be used'];
+    case 'minimax':
+      return ['Configure MINIMAX_API_KEY if MiniMax should be used'];
+    default:
+      return [];
+  }
+}
+
 // Check all available providers.
 export async function detectAvailableProviders() {
   const runCheck = async <T>(promise: Promise<T>, ms: number, name: string) => {
@@ -144,39 +162,49 @@ export async function detectAvailableProviders() {
       provider: 'lmstudio',
       isAvailable: lmstudio.isAvailable,
       reason: lmstudio.isAvailable ? (lmstudio.r as any)?.reason || 'connected' : (lmstudio.r as any)?.reason || 'not reachable',
+      recommendations: providerRecommendations('lmstudio', lmstudio.isAvailable),
       data: lmstudio.r,
     },
     {
       provider: 'openclaw',
       isAvailable: openclaw.isAvailable,
       reason: openclaw.isAvailable ? (openclaw.r as any)?.reason || 'connected' : (openclaw.r as any)?.reason || 'not reachable',
+      recommendations: providerRecommendations('openclaw', openclaw.isAvailable),
       data: openclaw.r,
     },
     {
       provider: 'bailian',
       isAvailable: bailian.isAvailable,
       reason: bailian.isAvailable ? (bailian.r as any)?.reason || 'connected' : (bailian.r as any)?.reason || 'not configured',
+      recommendations: providerRecommendations('bailian', bailian.isAvailable),
       data: bailian.r,
     },
     {
       provider: 'openrouter',
       isAvailable: openrouter.isAvailable,
       reason: openrouter.isAvailable ? (openrouter.r as any)?.reason || 'connected' : (openrouter.r as any)?.reason || 'not reachable',
+      recommendations: providerRecommendations('openrouter', openrouter.isAvailable),
       data: openrouter.r,
     },
     {
       provider: 'minimax',
       isAvailable: minimax.isAvailable,
       reason: minimax.isAvailable ? (minimax.r as any)?.reason || 'connected' : (minimax.r as any)?.reason || 'not configured',
+      recommendations: providerRecommendations('minimax', minimax.isAvailable),
       data: minimax.r,
     },
   ];
 
   const available = results.filter(result => result.isAvailable);
+  const unavailableRecommendations = results.flatMap(result => result.recommendations);
   const primary = available[0] || {
     provider: 'fallback',
     isAvailable: false,
     reason: 'no providers available',
+    recommendations: unavailableRecommendations.length > 0
+      ? unavailableRecommendations
+      : ['Configure an AI provider in Settings → AI Configuration'],
+    data: false,
   };
 
   console.log('[Detection] Available:', available.map(item => item.provider).join(', ') || 'none');
@@ -184,24 +212,33 @@ export async function detectAvailableProviders() {
 
   return {
     primary,
-    fallback: available.slice(1),
+    // Keep all non-primary providers here, not only the available ones. The
+    // chat/status APIs use this collection for both available and unavailable
+    // diagnostics.
+    fallback: results.filter(result => result.provider !== primary.provider),
     all: results,
     recommendations: primary.isAvailable
       ? []
-      : ['Configure an AI provider in Settings → AI Configuration'],
+      : primary.recommendations,
   };
 }
 
 // Get provider config.
 export function getProviderConfig(provider: string) {
   switch (normalizeProviderName(provider)) {
-    case 'lmstudio':
+    case 'lmstudio': {
+      const rawUrl = process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL || 'http://localhost:1234';
+      const url = rawUrl.replace(/\/v1\/?$/, '').replace(/\/$/, '');
       return {
-        baseUrl: process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL || 'http://localhost:1234/v1',
+        // Keep both names because older API routes consume `url`, while the
+        // newer provider manager consumes `baseUrl`.
+        url,
+        baseUrl: url,
         apiKey: process.env.LM_STUDIO_API_KEY || process.env.LM_API_TOKEN || '',
         model: process.env.LM_STUDIO_MODEL || process.env.LM_STUDIO_TEXT_MODEL || '',
         timeout: parseInt(process.env.LM_STUDIO_TIMEOUT || '120000', 10),
       };
+    }
     case 'openclaw':
       return {
         baseUrl: 'openclaw://gateway/acp',
@@ -227,16 +264,32 @@ export function getProviderConfig(provider: string) {
         apiKey: process.env.MINIMAX_API_KEY || '',
         model: process.env.MINIMAX_MODEL || 'MiniMax-M3',
       };
+    case 'fallback':
+      return {
+        type: 'setup-required',
+        setupRequired: true,
+      };
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }
 }
 
 // Execute AI with fallback chain (LOCAL FIRST).
+//
+// The function accepts both the current `(messages, options)` shape and the
+// older `(prompt, image, options)` shape still used by a few legacy callers.
 export async function executeAIWithFallback(
-  messages: any[],
-  options: AIExecutionOptions = {},
+  messagesOrPrompt: any[] | string,
+  imageOrOptions: string | AIExecutionOptions = {},
+  legacyOptions: AIExecutionOptions = {},
 ) {
+  const messages = typeof messagesOrPrompt === 'string'
+    ? [{ role: 'user' as const, content: messagesOrPrompt }]
+    : messagesOrPrompt;
+  const options: AIExecutionOptions = typeof imageOrOptions === 'string'
+    ? { ...legacyOptions, image: imageOrOptions }
+    : { ...imageOrOptions, ...legacyOptions };
+
   const prompt = getPromptFromMessages(messages);
   const providers = [
     {
