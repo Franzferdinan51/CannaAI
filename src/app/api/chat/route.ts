@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { detectAvailableProviders, getProviderConfig, executeChatWithFallback, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { getAgentEvolverClient } from '@/lib/agent-evolver';
 import { executeWithMiniMaxStream } from '@/lib/ai-provider-minimax';
+import { getChatResponseText, shouldUseAgentEvolver } from '@/lib/chat-routing';
 import { withRequest } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
@@ -153,8 +154,14 @@ export async function POST(request: NextRequest) {
       let fallbackUsed = false;
       let fallbackReason = '';
 
-      // Try AgentEvolver enhanced chat first
+      // Try AgentEvolver enhanced chat first for cloud/agent providers. When
+      // LM Studio is primary we deliberately bypass AgentEvolver so a healthy
+      // local model is not silently replaced by a different backend.
       try {
+        if (!shouldUseAgentEvolver(providerDetection.primary.provider)) {
+          throw new Error('LM Studio is primary - using direct local provider');
+        }
+
         const evolverClient = getAgentEvolverClient();
         if (evolverClient && evolverClient.getConfig().enabled) {
           console.log('🤖 Attempting AgentEvolver enhanced chat...');
@@ -182,7 +189,7 @@ export async function POST(request: NextRequest) {
           throw new Error('AgentEvolver client not available - using traditional AI');
         }
       } catch (agentEvolverError) {
-        console.warn('⚠️ AgentEvolver chat failed, using traditional AI providers:', agentEvolverError instanceof Error ? agentEvolverError.message : 'Unknown error');
+        console.warn('⚠️ AgentEvolver chat skipped/failed, using traditional AI providers:', agentEvolverError instanceof Error ? agentEvolverError.message : 'Unknown error');
 
         // Fallback to traditional AI providers
         const aiResult = await executeChatWithFallback(contextPrompt, {
@@ -198,13 +205,14 @@ export async function POST(request: NextRequest) {
       }
 
       const totalTime = Date.now() - startTime;
+      const chatMetadata = chatResult && typeof chatResult === 'object' ? chatResult : {};
 
       return NextResponse.json({
         success: true,
-        response: chatResult.content || typeof chatResult === 'string' ? chatResult : 'Chat response generated successfully',
-        model: chatResult.model || 'unknown',
+        response: getChatResponseText(chatResult),
+        model: chatMetadata.model || 'unknown',
         provider: usedProvider,
-        usage: chatResult.usage,
+        usage: chatMetadata.usage,
         timestamp: new Date().toISOString(),
         processingTime: `${totalTime}ms`,
         mode: mode,
@@ -331,7 +339,7 @@ async function streamChatResponse(args: {
   try {
     providerDetection = await Promise.race([
       detectAvailableProviders(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 25000)),
     ]);
   } catch {
     providerDetection = null;
@@ -496,6 +504,4 @@ export async function GET() {
       { status: 503 }
     );
   }
-}// TEMP DEBUG - REMOVE AFTER
-const _debugStart = Date.now();
-console.log(`[CHAT-DEBUG] Route hit at ${_debugStart}`);
+}
