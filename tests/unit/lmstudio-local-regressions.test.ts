@@ -13,6 +13,7 @@ const mockExecuteWithOpenClaw = jest.fn();
 const mockCheckBailian = jest.fn();
 const mockExecuteWithBailian = jest.fn();
 const mockCheckOpenRouter = jest.fn();
+const mockExecuteWithOpenRouter = jest.fn();
 const mockCheckMiniMax = jest.fn();
 const mockExecuteWithMiniMax = jest.fn();
 
@@ -33,6 +34,7 @@ jest.mock('@/lib/ai-provider-bailian', () => ({
 
 jest.mock('@/lib/ai-provider-openrouter', () => ({
   checkOpenRouter: (...args: unknown[]) => mockCheckOpenRouter(...args),
+  executeWithOpenRouter: (...args: unknown[]) => mockExecuteWithOpenRouter(...args),
 }));
 
 jest.mock('@/lib/ai-provider-minimax', () => ({
@@ -64,6 +66,7 @@ describe('LM Studio local-model regressions', () => {
     mockCheckMiniMax.mockResolvedValue({ available: false, isAvailable: false });
     mockExecuteWithOpenClaw.mockRejectedValue(new Error('OpenClaw unavailable'));
     mockExecuteWithBailian.mockRejectedValue(new Error('Bailian unavailable'));
+    mockExecuteWithOpenRouter.mockRejectedValue(new Error('OpenRouter unavailable'));
     mockExecuteWithMiniMax.mockRejectedValue(new Error('MiniMax unavailable'));
   });
 
@@ -95,6 +98,27 @@ describe('LM Studio local-model regressions', () => {
       content: 'local model answer',
     }));
     expect(mockExecuteWithOpenClaw).not.toHaveBeenCalled();
+  });
+
+  test('fallback honors a requested primary provider instead of always trying LM Studio first', async () => {
+    mockExecuteWithOpenRouter.mockResolvedValue({
+      success: true,
+      provider: 'openrouter',
+      result: 'preferred provider answer',
+    });
+
+    const result = await executeAIWithFallback(
+      [{ role: 'user', content: 'Use my selected provider' }],
+      { primaryProvider: 'openrouter' },
+    );
+
+    expect(result).toEqual(expect.objectContaining({
+      success: true,
+      provider: 'openrouter',
+      result: 'preferred provider answer',
+    }));
+    expect(mockExecuteWithOpenRouter).toHaveBeenCalledTimes(1);
+    expect(mockExecuteWithLMStudio).not.toHaveBeenCalled();
   });
 
   test('LM Studio is available with a downloaded JIT-loadable chat model even when no instance is preloaded', async () => {
