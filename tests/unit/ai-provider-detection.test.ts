@@ -393,6 +393,7 @@ describe('AI Provider Detection', () => {
 
       (fetch as jest.Mock)
         .mockRejectedValueOnce(new Error('LM Studio error'))
+        .mockRejectedValueOnce(new Error('LM Studio IPv4 error'))
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({
@@ -493,17 +494,8 @@ describe('AI Provider Detection', () => {
       process.env.OPENROUTER_API_KEY = 'env-key';
 
       (fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            success: true,
-            settings: {
-              openRouter: {
-                model: 'user-selected-model'
-              }
-            }
-          })
-        })
+        .mockRejectedValueOnce(new Error('LM Studio unavailable on localhost'))
+        .mockRejectedValueOnce(new Error('LM Studio unavailable on IPv4 loopback'))
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({
