@@ -4,6 +4,11 @@ import '@testing-library/jest-dom';
 process.env.NODE_ENV = 'test';
 process.env.LM_STUDIO_URL = 'http://localhost:1234';
 process.env.OPENROUTER_API_KEY = 'test-api-key';
+// Keep every Jest worker pointed at the repository's dedicated SQLite test DB.
+// The previous root-relative path created a new empty database, so integration
+// suites failed before reaching their route assertions.
+// Prisma resolves SQLite URLs relative to prisma/schema.prisma, so this maps
+// to the repository's prisma/test.db file.
 process.env.DATABASE_URL = 'file:./test.db';
 
 // Use Next's real server response implementation in Node-backed integration
