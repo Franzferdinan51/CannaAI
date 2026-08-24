@@ -22,7 +22,7 @@
     "start:backend:win": "set NODE_ENV=production && tsx server.ts",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "typecheck:local-ai": "tsc -p tsconfig.local-ai.json --noEmit",
-    "lint:frontend": "cd NewUI/cannaai-pro && npm run lint || echo 'No lint script found in New UI'",
+    "lint:frontend": "eslint --max-warnings=0 NewUI/cannaai-pro/index.tsx NewUI/cannaai-pro/components/Icons.tsx NewUI/cannaai-pro/src/App.tsx NewUI/cannaai-pro/src/components/Layout.tsx NewUI/cannaai-pro/src/components/dashboard/Dashboard.tsx NewUI/cannaai-pro/src/components/scanner/Scanner.tsx NewUI/cannaai-pro/src/components/plants/PlantsSimple.tsx NewUI/cannaai-pro/src/components/sensors/index.tsx NewUI/cannaai-pro/src/components/reports/ReportsSimple.tsx NewUI/cannaai-pro/src/components/chat/Chat.tsx NewUI/cannaai-pro/src/components/settings/Settings.tsx NewUI/cannaai-pro/src/components/automation/AutomationSimple.tsx NewUI/cannaai-pro/src/components/advisors/LocalMoaAdvisors.tsx NewUI/cannaai-pro/src/contexts/SocketContext.tsx NewUI/cannaai-pro/src/lib/socket.ts",
     "lint:backend": "next lint",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",

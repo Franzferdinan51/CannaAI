@@ -257,7 +257,7 @@ A: Yes. Photos are processed securely and not shared. With LM Studio, everything
 
 **Need more help?**
 - Full User Guide: [docs/photo-analysis/user-guide.md](../photo-analysis/user-guide.md)
-- FAQ: [docs/knowledge-base/faq.md](../knowledge-base/faq.md)
+- FAQ: [FAQ and troubleshooting](../knowledge-base/faq-troubleshooting.md)
 - Support: support@cultivaipro.com
 
 **Want to learn more?**

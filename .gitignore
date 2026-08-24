@@ -31,6 +31,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+/.npm-cache/
+/*.log
+/*.err
+/curl_test_output.txt
+/test-results.json
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -57,5 +62,16 @@ server.log
 # backup files
 *.zip
 *.tar.gz
-*.7zsrc/mcp-server/node_modules/
+*.7z
+*.backup
+*.bak
+*.orig
+**/__pycache__/
+*.py[cod]
+
+# Local SQLite databases (the schema and migrations are the source of truth)
+/prisma/db/*.db
+/prisma/db/*.db-*
+
+src/mcp-server/node_modules/
 src/mcp-server/dist/

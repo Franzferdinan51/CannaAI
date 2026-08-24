@@ -259,4 +259,4 @@ If you encounter issues with the Netlify deployment:
 4. Check OpenRouter service status
 5. Enable debug logging for detailed information
 
-For more help, refer to the [CannaAI documentation](README.md) or create an issue in the repository.
+For more help, refer to the [CannaAI documentation](../../README.md) or create an issue in the repository.

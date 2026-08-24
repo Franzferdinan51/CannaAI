@@ -1,20 +1,40 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# CannaAI active frontend
 
-# Run and deploy your AI Studio app
+This directory contains the maintained CannaAI React/Vite frontend. It connects to the root Next.js API server and is the application launched by the root `dev`, `build`, and `start` commands.
 
-This contains everything you need to run your app locally.
+## Development
 
-View your app in AI Studio: https://ai.studio/apps/drive/1banPIvUyF7TiUETjfsXbZjaYHdoMrxd6
+From the repository root:
 
-## Run Locally
+```bash
+npm install
+cd NewUI/cannaai-pro
+npm install
+npm run dev
+```
 
-**Prerequisites:**  Node.js
+Run the backend separately with `npm run dev:backend` from the repository root. The frontend uses port `5173` and the backend uses port `3000` by default.
 
+## Quality gates
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm run typecheck
+npm run build
+npm run preview
+```
+
+The active typecheck follows the application entry point through `src/App.tsx`; historical components not imported by the active app remain preserved under version control but are not part of this gate.
+
+## Configuration
+
+Set `VITE_API_URL` when the backend is not available at the default local address. See the repository [environment example](../../.env.example) for backend/provider configuration. Local AI inference is configured in the CannaAI Settings screen and is health-checked through the backend.
+
+## Active areas
+
+- Dashboard and plant overview
+- Photo scanner and vision analysis
+- Local-AI chat and provider settings
+- Sensors and real-time Socket.IO updates
+- Reports, automation, and cultivation tools
+
+For backend, provider, agent, and deployment documentation, start with the repository [documentation index](../../docs/README.md).
