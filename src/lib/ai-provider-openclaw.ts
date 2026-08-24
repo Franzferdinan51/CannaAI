@@ -20,7 +20,7 @@ const provider = () => new AgentCommandProvider('openclaw', {
 // `openclaw gateway status --json` may take several seconds while the
 // authenticated gateway performs its local RPC handshake. Five seconds
 // produced false negatives even though agent execution was healthy.
-const DETECT_TIMEOUT_MS = 10000;
+const DETECT_TIMEOUT_MS = 20000;
 
 function withDetectTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
   return Promise.race([

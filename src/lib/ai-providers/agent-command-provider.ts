@@ -82,7 +82,10 @@ export class AgentCommandProvider extends BaseProvider {
   async isAvailable(): Promise<boolean> {
     try {
       if (this.provider === 'openclaw') {
-        const { stdout } = await execFileAsync(this.command, ['gateway', 'status', '--json'], { timeout: 8000, maxBuffer: 2 * 1024 * 1024 });
+        // The gateway status RPC can take 10–12 seconds while the authenticated
+        // local gateway completes its handshake. Keep this bounded, but do not
+        // turn a healthy slow handshake into a false unavailable state.
+        const { stdout } = await execFileAsync(this.command, ['gateway', 'status', '--json'], { timeout: 15000, maxBuffer: 2 * 1024 * 1024 });
         const parsed = JSON.parse(stdout);
         return parsed?.rpc?.ok === true || parsed?.gateway?.service?.runtime?.status === 'running';
       }

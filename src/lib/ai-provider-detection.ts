@@ -155,7 +155,7 @@ export async function detectAvailableProviders() {
     runCheck(checkLMStudio(), 3000, 'lmstudio'),
     // OpenClaw's ACP/gateway status check includes a local RPC handshake and
     // can legitimately take longer than an HTTP health probe.
-    runCheck(checkOpenClaw(), 10000, 'openclaw'),
+    runCheck(checkOpenClaw(), 20000, 'openclaw'),
     runCheck(checkBailian(), 10000, 'bailian'),
     runCheck(checkOpenRouter(), 20000, 'openrouter'),
     runCheck(checkMiniMax(), 20000, 'minimax'),
