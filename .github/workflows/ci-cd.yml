@@ -1,7 +1,4 @@
-# GitHub Actions CI/CD Pipeline
-# Fixed: Node 22, realistic tests, optional security
-
-name: CI/CD Pipeline
+name: CI/CD
 
 on:
   push:
@@ -10,122 +7,82 @@ on:
     branches: [master, develop]
 
 env:
-  NODE_VERSION: '22'
+  NODE_VERSION: '22.x'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # ========================================
-  # Lint and TypeScript
-  # ========================================
-  lint:
-    name: Lint and Type Check
+  checks:
+    name: Lint, typecheck, and tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci && cd NewUI/cannaai-pro && npm ci
-
-      - name: Run ESLint (backend only)
-        run: npm run lint:backend || true
-
-      - name: TypeScript check
-        run: npx tsc --noEmit || true
-
-  # ========================================
-  # Unit Tests
-  # ========================================
-  test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci && cd NewUI/cannaai-pro && npm ci
-
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install root dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate
+      - name: Run lint
+        run: npm run lint
       - name: Run unit tests
-        run: npm run test:unit || true
-
+        run: npm run test:unit -- --ci
       - name: Run integration tests
-        run: npm run test:integration || true
+        run: npm run test:integration -- --ci
 
-  # ========================================
-  # Build
-  # ========================================
   build:
-    name: Build
+    name: Build applications
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: checks
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci && cd NewUI/cannaai-pro && npm ci
-
-      - name: Build frontend
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install root dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate
+      - name: Install static UI dependencies
+        run: npm ci --prefix NewUI/cannaai-pro
+      - name: Build static UI
         run: npm run build:frontend
-        continue-on-error: true
-
-      - name: Build backend
+      - name: Build root server
         run: npm run build:backend
-        continue-on-error: true
 
-  # ========================================
-  # Docker Build & Push (master only)
-  # ========================================
   docker:
-    name: Docker Build & Push
+    name: Build container
     runs-on: ubuntu-latest
-    needs: [build]
-    if: github.ref == 'refs/heads/master'
-    outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
+      - id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
+            type=sha,prefix=sha-
+            type=raw,value=latest
+      - uses: docker/build-push-action@v6
         with:
           context: .
-          push: false
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
