@@ -1,9 +1,15 @@
 import { AIProviderResult, AIExecuteOptions } from './ai-provider-detection';
 
-const MINIMAX_BASE_URL = process.env.MINIMAX_BASE_URL || 'https://api.minimax.io/v1';
-const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY || '';
-const MINIMAX_MODEL = process.env.MINIMAX_MODEL || 'MiniMax-M3';
-const MINIMAX_TIMEOUT_MS = parseInt(process.env.MINIMAX_TIMEOUT_MS || '60000');
+const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io/v1';
+const MINIMAX_DEFAULT_MODEL = 'MiniMax-M3';
+
+const getMiniMaxBaseUrl = () => process.env.MINIMAX_BASE_URL || MINIMAX_DEFAULT_BASE_URL;
+const getMiniMaxApiKey = () => process.env.MINIMAX_API_KEY || '';
+const getMiniMaxModel = () => process.env.MINIMAX_MODEL || MINIMAX_DEFAULT_MODEL;
+const getMiniMaxTimeoutMs = () => {
+  const value = Number.parseInt(process.env.MINIMAX_TIMEOUT_MS || '60000', 10);
+  return Number.isFinite(value) && value > 0 ? value : 60000;
+};
 
 export interface MiniMaxMessage {
   role: 'user' | 'assistant' | 'system';
@@ -11,8 +17,10 @@ export interface MiniMaxMessage {
 }
 
 export async function checkMiniMax(): Promise<AIProviderResult> {
-  console.log('[MiniMax] Checking... KEY=', MINIMAX_API_KEY ? 'SET' : 'MISSING', 'URL=', MINIMAX_BASE_URL);
-  if (!MINIMAX_API_KEY) {
+  const apiKey = getMiniMaxApiKey();
+  const baseUrl = getMiniMaxBaseUrl();
+  console.log('[MiniMax] Checking... KEY=', apiKey ? 'SET' : 'MISSING', 'URL=', baseUrl);
+  if (!apiKey) {
     console.log('[MiniMax] Not configured - no API key');
     return { available: false, reason: 'MINIMAX_API_KEY not configured' };
   }
@@ -23,9 +31,9 @@ export async function checkMiniMax(): Promise<AIProviderResult> {
     const timeout = setTimeout(() => controller.abort(), 15000);
     console.log('[MiniMax] Fetch started, waiting for response...');
 
-    const response = await fetch(`${MINIMAX_BASE_URL}/models`, {
+    const response = await fetch(`${baseUrl}/models`, {
       headers: {
-        'Authorization': `Bearer ${MINIMAX_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       signal: controller.signal,
@@ -52,7 +60,7 @@ export async function executeWithMiniMax(
   messages: MiniMaxMessage[],
   options: AIExecuteOptions
 ): Promise<{ content: string; provider: string }> {
-  if (!MINIMAX_API_KEY) {
+  if (!getMiniMaxApiKey()) {
     throw new Error('MINIMAX_API_KEY not configured');
   }
 
@@ -88,7 +96,7 @@ export async function executeWithMiniMax(
   }
 
   const body: any = {
-    model: MINIMAX_MODEL,
+    model: getMiniMaxModel(),
     messages: [
       ...(messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))),
       { role: 'user', content },
@@ -98,7 +106,7 @@ export async function executeWithMiniMax(
   };
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), MINIMAX_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), getMiniMaxTimeoutMs());
 
   try {
     // Log first 100 and last 50 chars of the base64 in the body
@@ -114,10 +122,10 @@ export async function executeWithMiniMax(
       }
     }
 
-    const response = await fetch(`${MINIMAX_BASE_URL}/chat/completions`, {
+    const response = await fetch(`${getMiniMaxBaseUrl()}/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${MINIMAX_API_KEY}`,
+        'Authorization': `Bearer ${getMiniMaxApiKey()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -176,7 +184,7 @@ export async function* executeWithMiniMaxStream(
   messages: MiniMaxMessage[],
   options: MiniMaxStreamOptions = {}
 ): AsyncGenerator<MiniMaxStreamChunk> {
-  if (!MINIMAX_API_KEY) {
+  if (!getMiniMaxApiKey()) {
     throw new Error('MINIMAX_API_KEY not configured');
   }
 
@@ -190,17 +198,17 @@ export async function* executeWithMiniMaxStream(
   // (vision is intentionally out of scope for streaming — chat is text-only)
 
   const body: any = {
-    model: MINIMAX_MODEL,
+    model: getMiniMaxModel(),
     messages: [...previous, { role: 'user', content: userContent }],
     max_tokens: maxTokens,
     temperature,
     stream: true,
   };
 
-  const response = await fetch(`${MINIMAX_BASE_URL}/chat/completions`, {
+  const response = await fetch(`${getMiniMaxBaseUrl()}/chat/completions`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${MINIMAX_API_KEY}`,
+      'Authorization': `Bearer ${getMiniMaxApiKey()}`,
       'Content-Type': 'application/json',
       'Accept': 'text/event-stream',
     },

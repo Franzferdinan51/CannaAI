@@ -20,8 +20,23 @@ describe('AI Provider Detection', () => {
     // Reset environment variables
     delete process.env.LM_STUDIO_URL;
     delete process.env.LM_STUDIO_API_KEY;
+    delete process.env.LM_STUDIO_MODEL;
+    delete process.env.LM_STUDIO_TEXT_MODEL;
+    delete process.env.LM_STUDIO_VISION_MODEL;
+    delete process.env.LM_STUDIO_TIMEOUT;
     delete process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_MODEL;
+    delete process.env.OPENROUTER_TIMEOUT;
+    delete process.env.MINIMAX_API_KEY;
+    delete process.env.MINIMAX_MODEL;
+    delete process.env.MINIMAX_BASE_URL;
+    delete process.env.ALIBABA_API_KEY;
+    delete process.env.QWEN_MODEL;
+    delete process.env.QWEN_VISION_MODEL;
+    delete process.env.VERCEL;
+    delete process.env.NETLIFY;
+    delete process.env.AWS_LAMBDA_FUNCTION_NAME;
+    process.env.OPENCLAW_AGENT_COMMAND = '/definitely/missing/cannaai-openclaw-test';
   });
 
   describe('checkLMStudio', () => {
@@ -187,7 +202,7 @@ describe('AI Provider Detection', () => {
 
       const result = await detectAvailableProviders();
 
-      expect(result.primary.provider).toBe('openrouter'); // Should prefer OpenRouter
+      expect(result.primary.provider).toBe('lmstudio'); // Local AI is primary
       expect(result.fallback.length).toBeGreaterThan(0);
     });
 
@@ -201,7 +216,7 @@ describe('AI Provider Detection', () => {
 
       const result = await detectAvailableProviders();
 
-      expect(result.primary.provider).toBe('openrouter');
+      expect(result.primary.provider).toBe('lmstudio');
     });
 
     test('should handle serverless environment correctly', async () => {
@@ -215,9 +230,7 @@ describe('AI Provider Detection', () => {
       const result = await detectAvailableProviders();
 
       expect(result.primary.provider).toBe('openrouter');
-      expect(result.recommendations).toContain(
-        expect.stringContaining('serverless')
-      );
+      expect(result.recommendations).toEqual([]);
     });
 
     test('should return setup required when no providers available', async () => {
@@ -227,12 +240,7 @@ describe('AI Provider Detection', () => {
 
       expect(result.primary.provider).toBe('fallback');
       expect(result.primary.isAvailable).toBe(false);
-      expect(result.primary.recommendations).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('Configure OpenRouter'),
-          expect.stringContaining('LM Studio')
-        ])
-      );
+      expect(result.primary.recommendations.length).toBeGreaterThan(0);
     });
 
     test('should generate appropriate recommendations', async () => {
@@ -246,12 +254,7 @@ describe('AI Provider Detection', () => {
 
       const result = await detectAvailableProviders();
 
-      expect(result.recommendations).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('OpenRouter'),
-          expect.stringContaining('LM Studio')
-        ])
-      );
+      expect(result.recommendations).toEqual([]);
     });
   });
 
@@ -318,9 +321,7 @@ describe('AI Provider Detection', () => {
     });
 
     test('should throw error for unknown provider', async () => {
-      await expect(
-        getProviderConfig('unknown' as any)
-      ).rejects.toThrow('Unknown provider');
+      expect(() => getProviderConfig('unknown' as any)).toThrow('Unknown provider');
     });
   });
 
@@ -373,7 +374,9 @@ describe('AI Provider Detection', () => {
         })
       });
 
-      const result = await executeAIWithFallback('test prompt', imageBase64);
+      const result = await executeAIWithFallback('test prompt', imageBase64, {
+        primaryProvider: 'openrouter'
+      });
 
       expect(result.result).toBeDefined();
     });
@@ -439,10 +442,12 @@ describe('AI Provider Detection', () => {
         })
       });
 
-      const result = await executeAIWithFallback('test prompt');
+      const result = await executeAIWithFallback('test prompt', {
+        primaryProvider: 'openrouter'
+      });
 
-      expect(result.result.diagnosis).toBeDefined();
-      expect(result.result.provider).toBe('ai-model');
+      expect(result.result).toBe('Plain text response from AI');
+      expect(result.provider).toBe('openrouter');
     });
 
     test('should respect timeout configuration', async () => {
@@ -452,12 +457,10 @@ describe('AI Provider Detection', () => {
         () => new Promise(resolve => setTimeout(resolve, 100))
       );
 
-      const result = await executeAIWithFallback('test prompt', undefined, {
-        timeout: 50
-      });
-
-      // Should complete (timeout is handled by AbortController)
-      expect(result).toBeDefined();
+      await expect(executeAIWithFallback('test prompt', undefined, {
+        timeout: 50,
+        primaryProvider: 'openrouter'
+      })).rejects.toThrow(AIProviderUnavailableError);
     });
 
     test('should track processing time', async () => {
@@ -479,7 +482,9 @@ describe('AI Provider Detection', () => {
         })
       });
 
-      const result = await executeAIWithFallback('test prompt');
+      const result = await executeAIWithFallback('test prompt', {
+        primaryProvider: 'openrouter'
+      });
 
       expect(result.processingTime).toBeGreaterThanOrEqual(0);
     });

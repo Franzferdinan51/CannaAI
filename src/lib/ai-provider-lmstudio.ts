@@ -33,6 +33,19 @@ function createTimeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
+async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<Response>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`LM Studio request timed out after ${timeoutMs}ms`)), timeoutMs);
+      timer.unref?.();
+    });
+    return await Promise.race([fetch(input, init), timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 export function getLMStudioApiKey(): string {
   if (process.env.LM_STUDIO_API_KEY) return process.env.LM_STUDIO_API_KEY;
   if (process.env.LM_API_TOKEN) return process.env.LM_API_TOKEN;
@@ -141,16 +154,20 @@ export async function checkLMStudio(includeModels = false): Promise<LMStudioProv
       available: false,
       reason: 'LM Studio not supported in serverless environments',
       provider: 'lm-studio',
+      config: {
+        url: getLMStudioBaseUrl(),
+        hasApiKey: Boolean(getLMStudioApiKey()),
+      },
     });
   }
 
   const url = getLMStudioBaseUrl();
   try {
-    const response = await fetch(`${url}/v1/models`, {
+    const response = await fetchWithTimeout(`${url}/v1/models`, {
       method: 'GET',
       headers: getHeaders(),
       signal: createTimeoutSignal(3000),
-    });
+    }, 3000);
 
     if (!response.ok) {
       return buildResult({

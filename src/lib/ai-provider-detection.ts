@@ -259,7 +259,7 @@ export function getProviderConfig(provider: string) {
       return {
         baseUrl: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
         apiKey: process.env.OPENROUTER_API_KEY || '',
-        model: process.env.OPENROUTER_MODEL || 'openrouter/auto',
+        model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free',
         timeout: parseInt(process.env.OPENROUTER_TIMEOUT || '60000', 10),
       };
     case 'minimax':
@@ -344,7 +344,9 @@ export async function executeAIWithFallback(
     const startedAt = Date.now();
     try {
       console.log(`Trying ${provider.name}...`);
-      const rawResult: any = await provider.fn();
+      const rawResult: any = options.timeout && options.timeout > 0
+        ? await withTimeout(provider.fn(), options.timeout, provider.name)
+        : await provider.fn();
       const content = typeof rawResult === 'string'
         ? rawResult
         : rawResult?.result ?? rawResult?.content ?? rawResult?.response;
@@ -364,7 +366,7 @@ export async function executeAIWithFallback(
           provider: provider.name,
           result: rawResult,
           content: rawResult,
-          processingTime: Date.now() - startedAt,
+          processingTime: Math.max(1, Date.now() - startedAt),
         };
       }
 
@@ -374,7 +376,7 @@ export async function executeAIWithFallback(
         provider: rawResult?.provider || provider.name,
         result: content,
         content: rawResult?.content ?? content,
-        processingTime: rawResult?.processingTime ?? (Date.now() - startedAt),
+        processingTime: rawResult?.processingTime ?? Math.max(1, Date.now() - startedAt),
       };
     } catch (error: any) {
       console.log(`${provider.name} failed: ${error?.message || error}`);

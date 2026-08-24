@@ -19,8 +19,31 @@
 import { ProviderDetectionResult } from './ai-provider-detection';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
-const OPENROUTER_TIMEOUT_MS = parseInt(process.env.OPENROUTER_TIMEOUT || '60000');
+
+function getOpenRouterApiKey(): string {
+  return process.env.OPENROUTER_API_KEY || '';
+}
+
+function getOpenRouterTimeoutMs(): number {
+  const configured = Number.parseInt(process.env.OPENROUTER_TIMEOUT || '60000', 10);
+  return Number.isFinite(configured) && configured > 0 ? configured : 60000;
+}
+
+function getOpenRouterModel(): string {
+  return process.env.OPENROUTER_MODEL || TEXT_MODELS[0].id;
+}
+
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const timeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof timeout === 'function') return timeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  return controller.signal;
+}
 
 // Vision-capable models prioritized by cost-effectiveness for plant analysis
 export const VISION_MODELS = [
@@ -83,7 +106,9 @@ export const TEXT_MODELS = [
  * Check if OpenRouter is available
  */
 export async function checkOpenRouter(): Promise<ProviderDetectionResult> {
-  if (!OPENROUTER_API_KEY) {
+  const apiKey = getOpenRouterApiKey();
+  const timeoutMs = getOpenRouterTimeoutMs();
+  if (!apiKey) {
     return {
       isAvailable: false,
       provider: 'openrouter',
@@ -91,7 +116,8 @@ export async function checkOpenRouter(): Promise<ProviderDetectionResult> {
       config: {
         type: 'openrouter',
         baseUrl: OPENROUTER_BASE_URL,
-        models: VISION_MODELS.map(m => m.id)
+        models: VISION_MODELS.map(m => m.id),
+        model: getOpenRouterModel()
       },
       recommendations: [
         'Set OPENROUTER_API_KEY in .env.local',
@@ -110,7 +136,7 @@ export async function checkOpenRouter(): Promise<ProviderDetectionResult> {
       method: 'GET',
       signal: controller.signal,
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3000',
         'X-Title': 'CannaAI Pro'
       }
@@ -127,14 +153,15 @@ export async function checkOpenRouter(): Promise<ProviderDetectionResult> {
       return {
         isAvailable: true,
         provider: 'openrouter',
-        reason: `OpenRouter API accessible, ${availableVisionModels.length} vision models available`,
+        reason: `OpenRouter API is accessible, ${availableVisionModels.length} vision models available`,
         config: {
           type: 'openrouter',
           baseUrl: OPENROUTER_BASE_URL,
-          apiKey: OPENROUTER_API_KEY,
+          apiKey,
+          model: getOpenRouterModel(),
           models: VISION_MODELS.map(m => m.id),
           visionModels: availableVisionModels.map(m => m.id),
-          timeout: OPENROUTER_TIMEOUT_MS
+          timeout: timeoutMs
         },
         recommendations: availableVisionModels.length > 0
           ? ['OpenRouter ready for vision-based plant analysis']
@@ -152,7 +179,8 @@ export async function checkOpenRouter(): Promise<ProviderDetectionResult> {
       config: {
         type: 'openrouter',
         baseUrl: OPENROUTER_BASE_URL,
-        models: VISION_MODELS.map(m => m.id)
+        models: VISION_MODELS.map(m => m.id),
+        model: getOpenRouterModel()
       },
       recommendations: [
         'Check API key validity at openrouter.ai',
@@ -230,7 +258,7 @@ export async function executeWithOpenRouter(params: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'Authorization': `Bearer ${getOpenRouterApiKey()}`,
         'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3000',
         'X-Title': 'CannaAI Pro'
       },
@@ -240,7 +268,7 @@ export async function executeWithOpenRouter(params: {
         max_tokens: 2048,
         temperature: 0.7
       }),
-      signal: AbortSignal.timeout(OPENROUTER_TIMEOUT_MS)
+      signal: createTimeoutSignal(getOpenRouterTimeoutMs())
     });
 
     if (!response.ok) {
@@ -290,7 +318,7 @@ export function getOpenRouterConfig() {
   return {
     type: 'openrouter',
     baseUrl: OPENROUTER_BASE_URL,
-    apiKey: OPENROUTER_API_KEY,
+    apiKey: getOpenRouterApiKey(),
     models: VISION_MODELS,
     textModels: TEXT_MODELS,
     features: [

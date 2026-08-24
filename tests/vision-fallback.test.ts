@@ -16,10 +16,11 @@ const mockCheckOpenClaw = jest.fn();
 const mockCheckBailian = jest.fn();
 const mockCheckOpenRouter = jest.fn();
 const mockCheckLMStudio = jest.fn();
+const mockDetectAvailableProviders = jest.fn();
 
 // Mock the provider detection module
 jest.mock('@/lib/ai-provider-detection', () => ({
-  detectAvailableProviders: jest.fn(),
+  detectAvailableProviders: mockDetectAvailableProviders,
   executeAIWithFallback: jest.fn(),
   getProviderConfig: jest.fn(),
   AIProviderUnavailableError: class extends Error {}
@@ -33,7 +34,8 @@ jest.mock('@/lib/ai-provider-openclaw', () => ({
 
 jest.mock('@/lib/ai-provider-bailian', () => ({
   checkBailian: () => mockCheckBailian(),
-  executeWithBailian: jest.fn()
+  executeWithBailian: jest.fn(),
+  getBailianConfig: () => ({ visionModel: 'qwen-vl-max-latest' })
 }));
 
 jest.mock('@/lib/ai-provider-openrouter', () => ({
