@@ -224,43 +224,47 @@ export async function getAvailableModels(forceRefresh = false): Promise<string[]
     return availableModelsCache;
   }
 
-  try {
-    const response = await fetch(`${baseUrl}/v1/models`, {
-      method: 'GET',
-      headers: getHeaders(),
-      signal: createTimeoutSignal(5000),
-    });
-    if (!response.ok) return [];
+  for (const endpoint of getLMStudioEndpointCandidates()) {
+    try {
+      const response = await fetch(`${endpoint}/v1/models`, {
+        method: 'GET',
+        headers: getHeaders(),
+        signal: createTimeoutSignal(5000),
+      });
+      if (!response.ok) continue;
 
-    const data = await response.json();
-    const models = Array.isArray(data?.data)
-      ? data.data
-        .map((model: any) => model?.id)
-        .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
-        .filter(id => !isEmbeddingModel(id))
-      : [];
+      const data = await response.json();
+      const models = Array.isArray(data?.data)
+        ? data.data
+          .map((model: any) => model?.id)
+          .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
+          .filter(id => !isEmbeddingModel(id))
+        : [];
 
-    // Do not cache an empty transient response. A model may be loading or LM
-    // Studio may be switching JIT state, and an empty minute-long cache made
-    // that look like a persistent failure.
-    if (models.length > 0) {
-      availableModelsCache = models;
-      cacheTime = now;
-      cacheBaseUrl = baseUrl;
-    } else {
-      availableModelsCache = null;
-      cacheTime = 0;
-      cacheBaseUrl = '';
+      // Do not cache an empty transient response. A model may be loading or
+      // LM Studio may be switching JIT state, and an empty minute-long cache
+      // made that look like a persistent failure. Keep the endpoint that
+      // actually answered so inference follows the same working socket.
+      if (models.length > 0) {
+        availableModelsCache = models;
+        cacheTime = now;
+        cacheBaseUrl = endpoint;
+        return models;
+      }
+    } catch {
+      // Try the next loopback candidate. localhost and 127.0.0.1 can resolve
+      // to different stacks on macOS.
     }
-
-    return models;
-  } catch {
-    return [];
   }
+
+  availableModelsCache = null;
+  cacheTime = 0;
+  cacheBaseUrl = '';
+  return [];
 }
 
 async function getNativeVisionModelIds(): Promise<string[]> {
-  const baseUrl = getLMStudioBaseUrl();
+  const baseUrl = cacheBaseUrl || getLMStudioBaseUrl();
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
       method: 'GET',
@@ -382,7 +386,7 @@ export async function executeWithLMStudio(
     }).reverse();
   }
 
-  const response = await fetch(`${getLMStudioBaseUrl()}/v1/chat/completions`, {
+  const response = await fetch(`${cacheBaseUrl || getLMStudioBaseUrl()}/v1/chat/completions`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify({

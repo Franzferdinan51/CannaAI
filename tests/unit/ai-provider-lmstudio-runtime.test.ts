@@ -57,4 +57,27 @@ describe('legacy LM Studio runtime configuration', () => {
     const body = JSON.parse(String((completionCall[1] as RequestInit).body));
     expect(body.model).toBe('my-local-model');
   });
+
+  test('uses the loopback endpoint that answered model discovery for inference', async () => {
+    process.env.LM_STUDIO_MODEL = 'ornith-1.5-35b-a3b';
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockRejectedValueOnce(new Error('connect ECONNREFUSED ::1:1234'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'ornith-1.5-35b-a3b' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'ornith-1.5-35b-a3b',
+          choices: [{ message: { content: 'ipv4 local answer' } }],
+        }),
+      } as Response);
+
+    await expect(executeWithLMStudio([{ role: 'user', content: 'hello' }]))
+      .resolves.toBe('ipv4 local answer');
+
+    expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
+    expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
+  });
 });
