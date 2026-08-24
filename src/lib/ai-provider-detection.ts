@@ -241,7 +241,7 @@ export function getProviderConfig(provider: string) {
         // using the provider manager behave exactly like direct local calls.
         apiKey: getLMStudioApiKey(),
         model: process.env.LM_STUDIO_MODEL || process.env.LM_STUDIO_TEXT_MODEL || '',
-        timeout: parseInt(process.env.LM_STUDIO_TIMEOUT || '120000', 10),
+        timeout: parseInt(process.env.LM_STUDIO_TIMEOUT || '300000', 10),
       };
     }
     case 'openclaw':

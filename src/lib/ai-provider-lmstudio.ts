@@ -384,7 +384,10 @@ export async function executeWithLMStudio(
       temperature: options.temperature ?? 0.7,
       stream: false,
     }),
-    signal: createTimeoutSignal(parseInt(process.env.LM_STUDIO_TIMEOUT || '120000', 10)),
+    // Large local vision models (including 35B MoE models) can legitimately
+    // need several minutes on CPU/shared-memory hardware. Keep this bounded,
+    // but do not abort a healthy inference at the two-minute mark.
+    signal: createTimeoutSignal(parseInt(process.env.LM_STUDIO_TIMEOUT || '300000', 10)),
   });
 
   if (!response.ok) {
