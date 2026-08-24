@@ -1,7 +1,13 @@
-// server.ts - Next.js Standalone + Socket.IO
-import * as dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
-dotenv.config(); // fallback to .env
+// server.ts - Next.js + Socket.IO custom server
+// Node 20.12+ provides process.loadEnvFile, which avoids relying on a
+// transitive dotenv dependency during clean production installs.
+const loadEnvFile = (process as NodeJS.Process & {
+  loadEnvFile?: (path?: string) => void;
+}).loadEnvFile;
+if (loadEnvFile) {
+  try { loadEnvFile.call(process, '.env.local'); } catch { /* optional */ }
+  try { loadEnvFile.call(process, '.env'); } catch { /* optional */ }
+}
 import { setupSocket } from '@/lib/socket';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -60,7 +66,7 @@ const allowedOrigins = process.env.SOCKET_IO_ORIGINS
       ] // Development origins including remote access
     : []; // Production requires explicit configuration
 
-const enableSocketAuth = process.env.SOCKET_IO_AUTH === 'true';
+const enableSocketAuth = !dev || process.env.SOCKET_IO_AUTH === 'true';
 
 // Security configuration
 const securityConfig = {
@@ -70,7 +76,7 @@ const securityConfig = {
   pingTimeout: 20000,
   pingInterval: 25000,
   maxHttpBufferSize: 1e6, // 1MB
-  transports: ['websocket', 'polling'] as const,
+  transports: ['websocket', 'polling'] as Array<'websocket' | 'polling'>,
 };
 
 // Validate configuration
@@ -84,6 +90,9 @@ function validateConfig() {
   }
 
   if (enableSocketAuth) {
+    if (!process.env.SOCKET_IO_TOKEN && !process.env.CANNAAI_API_TOKEN) {
+      throw new Error('Socket authentication is required but SOCKET_IO_TOKEN or CANNAAI_API_TOKEN is not configured');
+    }
     console.log('🔐 Socket.IO authentication enabled');
   } else {
     console.log('⚠️  Socket.IO authentication disabled (development mode)');

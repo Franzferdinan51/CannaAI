@@ -172,16 +172,18 @@ const TOOLS: ToolDef[] = [
         temperature: { type: ['string', 'number'], description: 'Ambient temperature in °F' },
         humidity: { type: ['string', 'number'], description: 'Relative humidity %' },
         phLevel: { type: ['string', 'number'], description: 'pH reading if known' },
-        // Image is intentionally left to the REST endpoint; MCP text-only
-        // callsites that want vision should use the /api/analyze endpoint
-        // directly with a multipart or JSON base64 payload.
+        plantImage: {
+          type: 'string',
+          description: 'Optional bounded image data URL or raw base64 image for vision analysis (max 12 MB encoded).',
+          maxLength: 12 * 1024 * 1024,
+        },
       },
       required: ['strain', 'leafSymptoms'],
       additionalProperties: false,
     },
     endpoint: '/api/analyze',
     method: 'POST',
-    bodyFromArgs: ['strain', 'growthStage', 'medium', 'leafSymptoms', 'temperature', 'humidity', 'phLevel'],
+    bodyFromArgs: ['strain', 'growthStage', 'medium', 'leafSymptoms', 'temperature', 'humidity', 'phLevel', 'plantImage'],
   },
   {
     name: 'get_chat_response',
@@ -364,6 +366,13 @@ async function callTool(name: string, args: Record<string, any>): Promise<{ cont
         isError: true,
       };
     }
+  }
+
+  if (name === 'analyze_plant' && typeof args.plantImage === 'string' && args.plantImage.length > 12 * 1024 * 1024) {
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ error: 'plantImage exceeds the 12 MB encoded limit', tool: name }) }],
+      isError: true,
+    };
   }
 
   try {

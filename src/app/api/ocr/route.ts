@@ -50,12 +50,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[OCR API] Error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'OCR failed'
+        error: 'OCR processing failed'
       },
       { status: 500 }
     );

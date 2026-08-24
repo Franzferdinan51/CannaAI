@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error('[STORAGE GET] Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Storage operation failed' },
       { status: 500 }
     );
   }
@@ -90,10 +90,10 @@ export async function POST(req: NextRequest) {
       id: document.id
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[STORAGE POST] Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Storage operation failed' },
       { status: 500 }
     );
   }
@@ -131,7 +131,7 @@ export async function DELETE(req: NextRequest) {
   } catch (error: any) {
     console.error('[STORAGE DELETE] Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Storage operation failed' },
       { status: 500 }
     );
   }

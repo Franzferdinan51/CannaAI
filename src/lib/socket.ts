@@ -1,9 +1,19 @@
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 type SocketOptions = {
   enableAuth?: boolean;
   securityConfig?: any;
 };
+
+function getSocketToken(socket: Socket): string | null {
+  const authToken = (socket.handshake.auth as { token?: unknown } | undefined)?.token;
+  const header = socket.handshake.headers.authorization;
+  const headerToken = typeof header === 'string' && header.startsWith('Bearer ')
+    ? header.slice('Bearer '.length)
+    : header;
+  const token = typeof authToken === 'string' ? authToken : headerToken;
+  return typeof token === 'string' && token.length > 0 ? token : null;
+}
 
 export const setupSocket = (io: Server, options: SocketOptions = {}) => {
   io.on('connection', (socket) => {
@@ -11,8 +21,9 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
 
     // Basic optional auth (token in query or header)
     if (options.enableAuth) {
-      const token = (socket.handshake.auth as any)?.token || socket.handshake.headers['authorization'];
-      if (!token) {
+      const token = getSocketToken(socket);
+      const expected = process.env.SOCKET_IO_TOKEN || process.env.CANNAAI_API_TOKEN;
+      if (!token || !expected || token !== expected) {
         socket.disconnect(true);
         return;
       }

@@ -53,12 +53,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[PDF API] Error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'PDF processing failed'
+        error: 'PDF processing failed'
       },
       { status: 500 }
     );

@@ -248,7 +248,11 @@ export async function POST(request: NextRequest) {
       body = AnalysisRequestSchema.parse(rawBody);
     } catch (validationError) {
       console.error('❌ Validation failed:', validationError);
-      console.error('❌ Raw body data:', JSON.stringify(rawBody, null, 2));
+      console.error('❌ Request summary:', {
+        fields: Object.keys(rawBody),
+        hasImage: Boolean(rawBody.plantImage),
+        imageBytes: typeof rawBody.plantImage === 'string' ? rawBody.plantImage.length : 0,
+      });
 
       // Enhanced error details for debugging
       let errorMessage = 'Invalid request format';

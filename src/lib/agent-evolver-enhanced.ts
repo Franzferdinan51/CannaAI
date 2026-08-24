@@ -272,14 +272,14 @@ Provide harvest window prediction and post-harvest recommendations.`,
 
         // Trigger evolution if feedback is below threshold
         if (avgFeedback < 0.7) {
-            this.optimizePrompt(templateId, feedback);
+            this.optimizeTemplatePrompt(templateId, feedback);
         }
     }
 
     /**
      * Optimize prompt based on feedback
      */
-    private optimizePrompt(templateId: string, feedback: any): void {
+    private optimizeTemplatePrompt(templateId: string, feedback: any): void {
         const template = this.promptTemplates.find(t => t.id === templateId);
         if (!template) return;
 

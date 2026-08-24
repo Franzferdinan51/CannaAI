@@ -22,6 +22,33 @@ export function middleware(request: NextRequest) {
   // - No allowlist + development: only localhost numeric ports are permitted.
   // - Production without allowlist: no origin is echoed (safest default).
   if (isApi) {
+    const publicApiPaths = new Set(['/api/health', '/api/health-check', '/api/version']);
+    const requireApiToken = process.env.CANNAAI_REQUIRE_AUTH === 'true'
+      || (process.env.NODE_ENV === 'production' && Boolean(process.env.CANNAAI_API_TOKEN));
+
+    if (requireApiToken && !publicApiPaths.has(request.nextUrl.pathname)) {
+      const configuredToken = process.env.CANNAAI_API_TOKEN;
+      const authorization = request.headers.get('authorization') ?? '';
+      const bearerToken = authorization.startsWith('Bearer ')
+        ? authorization.slice('Bearer '.length)
+        : '';
+      const suppliedToken = request.headers.get('x-cannaai-api-token') ?? bearerToken;
+
+      if (!configuredToken) {
+        return NextResponse.json(
+          { success: false, error: 'API authentication is not configured', code: 'AUTH_MISCONFIGURED' },
+          { status: 503 }
+        );
+      }
+
+      if (suppliedToken !== configuredToken) {
+        return NextResponse.json(
+          { success: false, error: 'Authentication required', code: 'UNAUTHORIZED' },
+          { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } }
+        );
+      }
+    }
+
     const allowedListRaw = process.env.ALLOWED_ORIGINS ?? '';
     const allowedList = allowedListRaw.trim();
 
