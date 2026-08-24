@@ -341,22 +341,25 @@ export const createSampleImage = {
 };
 
 // Test Plant Data
+let testPlantCounter = 0;
+let testStrainCounter = 0;
+
 export const createTestPlant = (overrides: any = {}) => ({
-  id: 'test-plant-id',
+  id: `test-plant-${++testPlantCounter}`,
   name: 'Test Plant',
-  strainId: 'test-strain-id',
+  strainId: null,
   stage: 'flowering',
   health: { score: 85, status: 'healthy' },
   age: 45,
   plantedDate: new Date(),
-  locationId: 'test-room-id',
+  locationId: null,
   isActive: true,
   ...overrides
 });
 
 // Test Strain Data
 export const createTestStrain = (overrides: any = {}) => ({
-  id: 'test-strain-id',
+  id: `test-strain-${++testStrainCounter}`,
   name: 'Test Strain',
   type: 'indica',
   lineage: 'GDP x OG Kush',

@@ -1,3 +1,5 @@
+/** @jest-environment node */
+
 const mockDetectAvailableProviders = jest.fn();
 const mockExecuteAIWithFallback = jest.fn();
 const mockExecuteWithOpenClaw = jest.fn();
@@ -56,10 +58,11 @@ jest.mock('@/lib/prisma', () => ({
   prisma: mockPrisma
 }));
 
-jest.mock('@/lib/image', () => {
-  const actual = jest.requireActual('@/lib/image');
+jest.mock('@/lib/image-simple', () => {
+  const actual = jest.requireActual('@/lib/image-simple');
   return {
     ...actual,
+    getImageMetadata: jest.fn().mockResolvedValue({ width: 3024, height: 4032, format: 'jpeg' }),
     processImageForVisionModel: mockProcessImageForVisionModel
   };
 });

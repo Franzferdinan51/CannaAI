@@ -292,10 +292,18 @@ export function createAPIResponse<T>(
 // Helper for error responses
 export function createAPIError(
   message: string,
-  code: string = 'UNKNOWN_ERROR',
-  status: number = 500,
+  code: string | number = 'UNKNOWN_ERROR',
+  status: number | string = 500,
   details?: any
 ): NextResponse {
+  // Preserve compatibility with older route handlers that passed
+  // createAPIError(message, status[, details]).
+  if (typeof code === 'number') {
+    details = typeof status === 'string' ? status : details;
+    status = code;
+    code = 'HTTP_ERROR';
+  }
+  const responseStatus = typeof status === 'number' ? status : 500;
   return NextResponse.json({
     success: false,
     error: {
@@ -308,5 +316,5 @@ export function createAPIError(
       requestId: crypto.randomUUID(),
       version: '1.0.0'
     }
-  }, { status });
+  }, { status: responseStatus });
 }

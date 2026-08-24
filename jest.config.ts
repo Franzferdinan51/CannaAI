@@ -14,7 +14,11 @@ const config: Config = {
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/dist/',
-    '<rootDir>/coverage/'
+    '<rootDir>/coverage/',
+    '<rootDir>/tests/e2e/',
+    '<rootDir>/tests/visual/',
+    '<rootDir>/tests/performance/',
+    '<rootDir>/tests/security/'
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

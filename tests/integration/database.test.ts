@@ -1,3 +1,5 @@
+/** @jest-environment node */
+
 /**
  * Integration Tests for Database Operations
  */
@@ -299,7 +301,7 @@ describe('Database Operations', () => {
 
       const analyses = await testPrisma.plantAnalysis.findMany({
         where: { plantId: plant.id },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'asc' }
       });
 
       expect(analyses).toHaveLength(3);

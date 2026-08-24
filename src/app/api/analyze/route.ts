@@ -452,7 +452,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`📡 AI provider detected: ${primaryProvider.provider} (${primaryProvider.reason})`);
 
-    const allProviderNames = providerDetection.all.map((r: any) => r.provider);
+    const allProviderNames = (providerDetection.all ?? []).map((r: any) => r.provider);
     const fallbackProviders = allProviderNames
       .filter((name: string) => name !== primaryProvider.provider);
     if (fallbackProviders.length > 0) {
@@ -816,8 +816,13 @@ export async function POST(request: NextRequest) {
     // Populate the analyze result cache so a repeat upload of the same image
     // (e.g. accidental double-tap, network retry) hits the cache instantly.
     try {
-      const cachePayload = await response.clone().json();
-      analyzeCache.set(cacheKey, cachePayload);
+      // Some lightweight test/adapter responses do not implement clone().
+      // Production NextResponse does; skip cache population for those
+      // adapters while preserving the primary response path.
+      if (typeof response.clone === 'function') {
+        const cachePayload = await response.clone().json();
+        analyzeCache.set(cacheKey, cachePayload);
+      }
     } catch (cacheWriteError) {
       log.warn('analyze.cache_write_failed', { error: String(cacheWriteError) });
     }

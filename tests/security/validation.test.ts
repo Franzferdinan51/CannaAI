@@ -62,8 +62,10 @@ test.describe('Photo analysis security and validation', () => {
     await openAnalysis(page);
     await page.locator('input[name="plantImage"]').setInputFiles(tinyPng);
     await page.getByTestId('submit-analysis').click();
-    await expect(page.getByTestId('error-message')).toContainText('Invalid image format');
-    await expect(page.getByTestId('error-message')).not.toContainText(' at ');
+    // The UI should expose the server's safe validation message verbatim;
+    // asserting the complete text also prevents stack traces from being
+    // appended to or concatenated with the user-facing error.
+    await expect(page.getByTestId('error-message')).toHaveText('Invalid image format');
   });
 
   test('rejects malformed image data at the API boundary', async ({ request }) => {

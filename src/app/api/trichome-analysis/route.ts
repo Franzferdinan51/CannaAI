@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withSecurity, createAPIResponse, createAPIError } from '@/lib/security';
-import { base64ToBuffer, processImageForVisionModel } from '@/lib/image';
+import { base64ToBuffer } from '@/lib/image';
+import { getImageMetadata, processImageForVisionModel } from '@/lib/image-simple';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import crypto from 'crypto';
 
@@ -93,22 +94,16 @@ export async function POST(request: NextRequest) {
       const { imageData, deviceInfo, analysisOptions = {} } = body as TrichomeAnalysisRequest;
 
       if (!imageData) {
-        return NextResponse.json(
-          createAPIError('Image data is required for trichome analysis', 400)
-        );
+        return createAPIError('Image data is required for trichome analysis', 400);
       }
 
       if (!deviceInfo || !deviceInfo.deviceId) {
-        return NextResponse.json(
-          createAPIError('Device information is required', 400)
-        );
+        return createAPIError('Device information is required', 400);
       }
 
       // Validate that this is suitable for trichome analysis
       if (deviceInfo.mode !== 'microscope' && deviceInfo.mode !== 'mobile') {
-        return NextResponse.json(
-          createAPIError('Trichome analysis requires microscope or mobile phone camera with high magnification', 400)
-        );
+        return createAPIError('Trichome analysis requires microscope or mobile phone camera with high magnification', 400);
       }
 
       // Process image with trichome-specific optimizations
@@ -116,9 +111,9 @@ export async function POST(request: NextRequest) {
       try {
         const { buffer } = base64ToBuffer(imageData);
 
-        // Get original metadata before processing
-        const sharp = await import('sharp');
-        const originalMetadata = await sharp.default(buffer).metadata();
+        // Read metadata through the server-safe image helper. It uses Sharp
+        // when available and has a deterministic header fallback otherwise.
+        const originalMetadata = await getImageMetadata(buffer);
         const originalMegapixels = (originalMetadata.width || 0) * (originalMetadata.height || 0) / 1000000;
 
         console.log(`🔬 Processing trichome image: ${originalMetadata.width}x${originalMetadata.height}, ${originalMegapixels.toFixed(1)}MP`);
@@ -138,9 +133,7 @@ export async function POST(request: NextRequest) {
         console.log(`✅ Trichome image processed: ${processedImageInfo.metadata.width}x${processedImageInfo.metadata.height}, Quality: 95%`);
       } catch (imageError) {
         console.error('Trichome image processing error:', imageError);
-        return NextResponse.json(
-          createAPIError(`Image processing failed: ${imageError.message}`, 400)
-        );
+        return createAPIError(`Image processing failed: ${imageError.message}`, 400);
       }
 
       // Perform AI trichome analysis
@@ -189,12 +182,12 @@ export async function POST(request: NextRequest) {
       } else if (error.message?.includes('rate limit')) {
         errorMessage = 'Analysis rate limit exceeded. Please wait before trying again.';
         statusCode = 429;
+      } else if (error instanceof AIProviderUnavailableError) {
+        errorMessage = 'No AI provider is available for trichome analysis. Configure LM Studio or another provider and try again.';
+        statusCode = 503;
       }
 
-      return NextResponse.json(
-        createAPIError(errorMessage, statusCode, error.message),
-        { status: statusCode }
-      );
+      return createAPIError(errorMessage, statusCode, error.message);
     }
   });
 }
@@ -708,10 +701,7 @@ export async function GET(request: NextRequest) {
 
     } catch (error: any) {
       console.error('Trichome capabilities error:', error);
-      return NextResponse.json(
-        createAPIError('Failed to get trichome analysis capabilities', 500, error.message),
-        { status: 500 }
-      );
+      return createAPIError('Failed to get trichome analysis capabilities', 500, error.message);
     }
   });
 }

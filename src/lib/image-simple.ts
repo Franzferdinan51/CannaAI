@@ -57,7 +57,12 @@ export async function processImageForVisionModel(
   const sharpPackage = await getSharp();
   if (sharpPackage) {
     try {
-      const sharp = sharpPackage.default;
+      const sharpCandidate = sharpPackage.default as unknown;
+      const sharp = typeof sharpCandidate === 'function'
+        ? sharpCandidate
+        : typeof (sharpCandidate as { default?: unknown })?.default === 'function'
+          ? (sharpCandidate as { default: typeof import('sharp') }).default
+          : (sharpPackage as unknown as typeof import('sharp'));
       console.log('[image-simple] Using sharp. Input size:', originalSize);
 
       // First produce the processed JPEG buffer
@@ -139,7 +144,12 @@ export async function getImageMetadata(buffer: Buffer): Promise<{ width: number;
   const sharpPackage = await getSharp();
   if (sharpPackage) {
     try {
-      const sharp = sharpPackage.default;
+      const sharpCandidate = sharpPackage.default as unknown;
+      const sharp = typeof sharpCandidate === 'function'
+        ? sharpCandidate
+        : typeof (sharpCandidate as { default?: unknown })?.default === 'function'
+          ? (sharpCandidate as { default: typeof import('sharp') }).default
+          : (sharpPackage as unknown as typeof import('sharp'));
       const meta = await sharp(buffer).metadata();
       return {
         width: meta.width || 0,

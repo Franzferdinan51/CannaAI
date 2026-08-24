@@ -6,11 +6,10 @@ process.env.LM_STUDIO_URL = 'http://localhost:1234';
 process.env.OPENROUTER_API_KEY = 'test-api-key';
 process.env.DATABASE_URL = 'file:./test.db';
 
-// Mock Next.js modules
-jest.mock('next/server', () => ({
-  NextRequest: jest.fn(),
-  NextResponse: jest.fn()
-}));
+// Use Next's real server response implementation in Node-backed integration
+// tests. A constructor-only mock breaks route handlers that call
+// `NextResponse.json()` and hides real HTTP behavior.
+jest.mock('next/server', () => jest.requireActual('next/server'));
 
 // Mock Prisma
 jest.mock('@/lib/prisma', () => ({

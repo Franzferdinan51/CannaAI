@@ -1,10 +1,33 @@
+/** @jest-environment node */
+
+// Keep this integration suite deterministic when a developer happens to have
+// LM Studio/OpenClaw running locally. Provider routing itself is covered by
+// the provider tests; this suite supplies the AI HTTP response explicitly.
+jest.mock('@/lib/ai-provider-detection', () => {
+  const actual = jest.requireActual('@/lib/ai-provider-detection');
+  return {
+    ...actual,
+    detectAvailableProviders: jest.fn(async () => process.env.OPENROUTER_API_KEY
+      ? {
+          primary: { provider: 'openrouter', isAvailable: true, reason: 'test provider' },
+          all: []
+        }
+      : {
+          primary: { provider: 'fallback', isAvailable: false, reason: 'No test provider configured' },
+          all: []
+        }),
+  };
+});
+
 /**
  * Integration Tests for /api/trichome-analysis Endpoint
  */
 
 import { createMockRequest, createMockResponse } from './test-helpers';
-import handler from '@/app/api/trichome-analysis/route';
+import { GET, POST } from '@/app/api/trichome-analysis/route';
 import { setupTestDb, teardownTestDb, createValidImageDataUrl } from '@/tests/utils/test-utils';
+
+const handler = (request: any) => request.method === 'GET' ? GET(request) : POST(request);
 
 // Mock fetch for AI provider calls
 global.fetch = jest.fn();
@@ -20,7 +43,29 @@ describe('/api/trichome-analysis Integration Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (require('@/lib/ai-provider-detection').detectAvailableProviders as jest.Mock).mockImplementation(
+      async () => process.env.OPENROUTER_API_KEY
+        ? {
+            primary: { provider: 'openrouter', isAvailable: true, reason: 'test provider' },
+            all: []
+          }
+        : {
+            primary: { provider: 'fallback', isAvailable: false, reason: 'No test provider configured' },
+            all: []
+          }
+    );
     process.env.OPENROUTER_API_KEY = 'test-api-key';
+    delete process.env.BUILD_MODE;
+    (fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify({
+          overallMaturity: { stage: 'cloudy', percentage: 60, confidence: 0.8 },
+          trichomeDistribution: { clear: 20, cloudy: 60, amber: 20, density: 'medium' },
+          harvestReadiness: { ready: false, recommendation: 'Continue monitoring' }
+        }) } }]
+      })
+    });
   });
 
   describe('GET /api/trichome-analysis', () => {
@@ -262,7 +307,7 @@ describe('/api/trichome-analysis Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('Image data is required');
+      expect(data.error.message).toContain('Image data is required');
     });
 
     test('should reject request without device info', async () => {
@@ -276,7 +321,7 @@ describe('/api/trichome-analysis Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('Device information is required');
+      expect(data.error.message).toContain('Device information is required');
     });
 
     test('should reject request with invalid device mode', async () => {
@@ -297,7 +342,7 @@ describe('/api/trichome-analysis Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('high magnification');
+      expect(data.error.message).toContain('high magnification');
     });
 
     test('should handle image processing errors', async () => {

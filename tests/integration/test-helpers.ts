@@ -15,7 +15,7 @@ export function createMockRequest(
   options: MockRequestOptions = {}
 ) {
   const {
-    headers = {},
+    headers = { 'content-type': 'application/json' },
     parseJson = true
   } = options;
 
@@ -24,6 +24,7 @@ export function createMockRequest(
     url: path,
     headers: new Map(Object.entries(headers)),
     json: async () => body,
+    text: async () => JSON.stringify(body ?? {}),
     body: body,
     ip: '127.0.0.1'
   };
