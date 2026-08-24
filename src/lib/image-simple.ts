@@ -26,6 +26,23 @@ export interface ProcessedImageResult {
 // the safe no-op fallback. Dynamic import also keeps this module browser-safe.
 let sharpModule: typeof import('sharp') | null | undefined;
 
+type SharpFactory = (input: Buffer) => {
+  resize: (...args: any[]) => any;
+  jpeg: (...args: any[]) => any;
+  png: (...args: any[]) => any;
+  toBuffer: () => Promise<Buffer>;
+  metadata?: () => Promise<{ width?: number; height?: number; format?: string }>;
+};
+
+function resolveSharpFactory(moduleValue: unknown): SharpFactory | null {
+  const candidates = [
+    moduleValue,
+    (moduleValue as { default?: unknown } | null)?.default,
+    ((moduleValue as { default?: { default?: unknown } } | null)?.default)?.default,
+  ];
+  return candidates.find((candidate): candidate is SharpFactory => typeof candidate === 'function') ?? null;
+}
+
 async function getSharp(): Promise<typeof import('sharp') | null> {
   if (sharpModule !== undefined) return sharpModule;
   try {
@@ -57,12 +74,8 @@ export async function processImageForVisionModel(
   const sharpPackage = await getSharp();
   if (sharpPackage) {
     try {
-      const sharpCandidate = sharpPackage.default as unknown;
-      const sharp = typeof sharpCandidate === 'function'
-        ? sharpCandidate
-        : typeof (sharpCandidate as { default?: unknown })?.default === 'function'
-          ? (sharpCandidate as { default: typeof import('sharp') }).default
-          : (sharpPackage as unknown as typeof import('sharp'));
+      const sharp = resolveSharpFactory(sharpPackage);
+      if (!sharp) throw new Error('sharp module did not expose a callable factory');
       console.log('[image-simple] Using sharp. Input size:', originalSize);
 
       // First produce the processed JPEG buffer
@@ -144,12 +157,8 @@ export async function getImageMetadata(buffer: Buffer): Promise<{ width: number;
   const sharpPackage = await getSharp();
   if (sharpPackage) {
     try {
-      const sharpCandidate = sharpPackage.default as unknown;
-      const sharp = typeof sharpCandidate === 'function'
-        ? sharpCandidate
-        : typeof (sharpCandidate as { default?: unknown })?.default === 'function'
-          ? (sharpCandidate as { default: typeof import('sharp') }).default
-          : (sharpPackage as unknown as typeof import('sharp'));
+      const sharp = resolveSharpFactory(sharpPackage);
+      if (!sharp) throw new Error('sharp module did not expose a callable factory');
       const meta = await sharp(buffer).metadata();
       return {
         width: meta.width || 0,

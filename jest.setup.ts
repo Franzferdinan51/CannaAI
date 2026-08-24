@@ -48,7 +48,6 @@ jest.mock('@/lib/prisma', () => ({
 
 // Mock Sharp
 jest.mock('sharp', () => {
-  const mockSharp = jest.fn(() => mockSharpInstance);
   const mockSharpInstance = {
     resize: jest.fn(() => mockSharpInstance),
     jpeg: jest.fn(() => mockSharpInstance),
@@ -57,9 +56,13 @@ jest.mock('sharp', () => {
     avif: jest.fn(() => mockSharpInstance),
     rotate: jest.fn(() => mockSharpInstance),
     flatten: jest.fn(() => mockSharpInstance),
-    toBuffer: jest.fn(),
+    // Keep the optional sharp mock compatible with image-simple's real async
+    // pipeline so integration tests exercise route behavior without a native
+    // image codec and without falling into the production fallback path.
+    toBuffer: jest.fn().mockResolvedValue(Buffer.from([0xFF, 0xD8, 0xFF, 0xE0])),
     metadata: jest.fn()
   };
+  const mockSharp = jest.fn(() => mockSharpInstance);
   return mockSharp;
 });
 
