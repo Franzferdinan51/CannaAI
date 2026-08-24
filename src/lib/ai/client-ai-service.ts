@@ -1,5 +1,7 @@
 'use client'
 
+import { safeLocalStorage } from '@/lib/safe-local-storage';
+
 // Guard against SSR
 if (typeof window === 'undefined') {
   // @ts-ignore
@@ -9,14 +11,6 @@ if (typeof window === 'undefined') {
     removeItem: () => {},
   };
 }
-
-
-// Safe localStorage wrapper for SSR compatibility
-const safeLocalStorage = {
-  getItem: (key: string) => { try { return globalThis.localStorage.getItem(key); } catch { return null; } },
-  setItem: (key: string, value: string) => { try { globalThis.localStorage.setItem(key, value); } catch {} },
-  removeItem: (key: string) => { try { globalThis.localStorage.removeItem(key); } catch {} },
-};
 
 
 // Client-side AI service for static hosting compatibility
@@ -42,18 +36,18 @@ interface AIMessage {
 
 interface AIResponse {
   success: boolean;
-  response: string;
+  response?: string;
   model?: string;
   provider?: string;
   error?: string;
   fallbackUsed?: boolean;
 }
 
-class ClientAIService {
+export class ClientAIService {
   private config: AIConfig;
 
-  constructor() {
-    this.config = this.loadConfig();
+  constructor(config?: Partial<AIConfig>) {
+    this.config = { ...this.loadConfig(), ...config } as AIConfig;
   }
 
   private loadConfig(): AIConfig {
@@ -93,7 +87,32 @@ class ClientAIService {
     }
   }
 
-  async generateResponse(messages: AIMessage[], mode: string = 'chat', context?: any): Promise<AIResponse> {
+  async testConnection(): Promise<boolean> {
+    try {
+      if (this.config.provider === 'fallback') return true;
+      if (this.config.provider === 'lm-studio') {
+        const response = await fetch(`${this.config.lmStudio.url.replace(/\/$/, '')}/v1/models`, {
+          headers: this.config.lmStudio.apiKey
+            ? { Authorization: `Bearer ${this.config.lmStudio.apiKey}` }
+            : undefined
+        });
+        return response.ok;
+      }
+      const response = await fetch(`${this.config.openRouter.baseUrl.replace(/\/$/, '')}/models`, {
+        headers: this.config.openRouter.apiKey
+          ? { Authorization: `Bearer ${this.config.openRouter.apiKey}` }
+          : undefined
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async generateResponse(messages: AIMessage[] | string, mode: string = 'chat', context?: any): Promise<AIResponse> {
+    if (typeof messages === 'string') {
+      messages = [{ role: 'user', content: messages }];
+    }
     const userMessage = messages[messages.length - 1]?.content || '';
 
     // Try the configured provider first
@@ -108,6 +127,7 @@ class ClientAIService {
         if (!this.config.fallbackEnabled) {
           return {
             success: false,
+            response: '',
             error: `Provider ${this.config.provider} failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
             fallbackUsed: false
           };
@@ -122,13 +142,14 @@ class ClientAIService {
 
     return {
       success: false,
+      response: '',
       error: 'No AI provider available',
       fallbackUsed: false
     };
   }
 
   private async callProvider(message: string, mode: string, context?: any): Promise<AIResponse> {
-    const basePrompt = this.getContextualPrompt(mode, context, message);
+    const basePrompt = this.getContextualPrompt(mode, message, context);
 
     if (this.config.provider === 'openrouter') {
       return await this.callOpenRouter(basePrompt, context);
@@ -255,7 +276,7 @@ class ClientAIService {
     };
   }
 
-  private getContextualPrompt(mode: string, context?: any, message: string): string {
+  private getContextualPrompt(mode: string, message: string, context?: any): string {
     const baseContext = `Current page context: ${context?.title || 'CannaAI Pro'} (${context?.page || 'unknown'})
 Page description: ${context?.description || 'Cannabis cultivation management system'}
 

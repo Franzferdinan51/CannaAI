@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatSidebar } from '@/components/chat/ChatSidebar';
+import { safeLocalStorage } from '@/lib/safe-local-storage';
 import {
   Bot,
   MessageSquare,
@@ -191,6 +192,8 @@ export function CannaAIAssistantSidebar({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
+
+    return undefined;
   }, [isDraggingWidth]);
 
   // Handle collapse toggle

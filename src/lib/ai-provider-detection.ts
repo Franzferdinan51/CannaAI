@@ -25,6 +25,7 @@ export interface ProviderDetectionResult {
 export interface AIExecutionOptions {
   model?: string;
   image?: string;
+  requireVision?: boolean;
   temperature?: number;
   primaryProvider?: string;
   timeout?: number;
@@ -298,7 +299,10 @@ export async function executeAIWithFallback(
   const providers = [
     {
       name: 'lmstudio',
-      fn: () => executeWithLMStudio(messages, options),
+      fn: () => executeWithLMStudio(messages, {
+        ...options,
+        useVision: options.requireVision ?? Boolean(options.image),
+      }),
     },
     {
       name: 'openclaw',

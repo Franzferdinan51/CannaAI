@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Settings, Zap, Globe, Key, Save, Check, X, AlertCircle } from 'lucide-react';
+import { safeLocalStorage } from '@/lib/safe-local-storage';
 
 interface AIConfig {
   provider: 'lm-studio' | 'openrouter' | 'fallback';

@@ -22,19 +22,18 @@ export interface ProcessedImageResult {
   compressionRatio: number;
 }
 
-// Track if sharp is available
-let sharpAvailable: boolean | null = null;
+// Keep sharp optional so environments without its native binary can still use
+// the safe no-op fallback. Dynamic import also keeps this module browser-safe.
+let sharpModule: typeof import('sharp') | null | undefined;
 
-function isSharpAvailable(): boolean {
-  if (sharpAvailable === null) {
-    try {
-      require('sharp');
-      sharpAvailable = true;
-    } catch {
-      sharpAvailable = false;
-    }
+async function getSharp(): Promise<typeof import('sharp') | null> {
+  if (sharpModule !== undefined) return sharpModule;
+  try {
+    sharpModule = await import('sharp');
+  } catch {
+    sharpModule = null;
   }
-  return sharpAvailable;
+  return sharpModule;
 }
 
 /**
@@ -55,9 +54,10 @@ export async function processImageForVisionModel(
   const originalSize = inputBuffer.length;
 
   // Use sharp if available (macOS/Linux)
-  if (isSharpAvailable()) {
+  const sharpPackage = await getSharp();
+  if (sharpPackage) {
     try {
-      const sharp = require('sharp');
+      const sharp = sharpPackage.default;
       console.log('[image-simple] Using sharp. Input size:', originalSize);
 
       // First produce the processed JPEG buffer
@@ -136,9 +136,10 @@ export async function processImageForVisionModel(
  * Get image metadata using sharp
  */
 export async function getImageMetadata(buffer: Buffer): Promise<{ width: number; height: number; format: string }> {
-  if (isSharpAvailable()) {
+  const sharpPackage = await getSharp();
+  if (sharpPackage) {
     try {
-      const sharp = require('sharp');
+      const sharp = sharpPackage.default;
       const meta = await sharp(buffer).metadata();
       return {
         width: meta.width || 0,

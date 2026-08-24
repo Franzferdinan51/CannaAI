@@ -28,7 +28,7 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
-import { createClientAIService } from '@/lib/ai/client-ai-service';
+import { ClientAIService } from '@/lib/ai/client-ai-service';
 import AIConfigManager from '@/components/ai/config/ai-config-manager';
 
 interface Message {
@@ -94,7 +94,7 @@ export default function FloatingAIAssistant({
   // Initialize AI service when config changes
   useEffect(() => {
     if (aiConfig) {
-      const service = createClientAIService(aiConfig);
+      const service = new ClientAIService(aiConfig);
       setAIService(service);
 
       // Test connection
@@ -183,6 +183,8 @@ export default function FloatingAIAssistant({
         document.removeEventListener('touchcancel', handleEnd);
       };
     }
+
+    return undefined;
   }, [isDragging, dragStart]);
 
   // Send message to AI
@@ -205,12 +207,16 @@ export default function FloatingAIAssistant({
         throw new Error('AI service not configured. Please set up your AI configuration.');
       }
 
-      const response = await aiService.generateResponse(input.trim(), context);
+      const response = await aiService.generateResponse(
+        [{ role: 'user', content: input.trim() }],
+        'chat',
+        context
+      );
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: response.content,
+        content: response.response || '',
         timestamp: new Date(),
         context: {
           model: response.model,

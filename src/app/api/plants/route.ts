@@ -2,8 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 
+function databaseSetupRequired(error: unknown): boolean {
+  return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'P2021');
+}
+
+function databaseSetupResponse() {
+  return NextResponse.json({
+    success: false,
+    error: 'Database schema is not initialized. Run `npm run db:push` and try again.',
+    setupRequired: true
+  }, { status: 503 });
+}
+
 export async function GET(request: Request) {
-  await ensureSeedData();
+  try {
+    await ensureSeedData();
+  } catch (error) {
+    if (databaseSetupRequired(error)) return databaseSetupResponse();
+    throw error;
+  }
 
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1', 10);
@@ -55,7 +72,12 @@ export async function GET(request: Request) {
 export async function POST(request: NextRequest) {
   const formData = await request.formData().catch(() => null);
   const body = formData ? Object.fromEntries(formData.entries()) : await request.json().catch(() => ({}));
-  await ensureSeedData();
+  try {
+    await ensureSeedData();
+  } catch (error) {
+    if (databaseSetupRequired(error)) return databaseSetupResponse();
+    throw error;
+  }
   const plant = await prisma.plant.create({
     data: {
       name: String(body.name || 'New Plant'),

@@ -1,5 +1,5 @@
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { quickActions } from '../constants/quick-actions';
 import { QuickAction } from '../types/assistant';

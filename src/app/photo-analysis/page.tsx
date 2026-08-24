@@ -23,7 +23,6 @@ import {
   Droplets,
   Thermometer,
   Bug,
-  Virus,
   Zap,
   Wrench,
   Settings
@@ -311,6 +310,8 @@ export default function PhotoAnalysisPage() {
                         </Button>
                         <Input
                           id="file-upload"
+                          name="plantImage"
+                          data-testid="plant-image-input"
                           type="file"
                           accept="image/*"
                           className="hidden"
@@ -367,6 +368,8 @@ export default function PhotoAnalysisPage() {
                   <div className="space-y-2">
                     <Label className="text-slate-300">Strain</Label>
                     <Input
+                      name="strain"
+                      maxLength={100}
                       className="bg-slate-950 border-slate-700"
                       placeholder="e.g., Blue Dream"
                       value={form.strain}
@@ -378,6 +381,8 @@ export default function PhotoAnalysisPage() {
                 <div className="space-y-2">
                   <Label className="text-slate-300">Symptoms</Label>
                   <Textarea
+                    name="leafSymptoms"
+                    maxLength={1000}
                     className="bg-slate-950 border-slate-700 min-h-[100px]"
                     placeholder="Describe visible issues, stress, pests, etc."
                     value={form.symptoms}
@@ -427,6 +432,8 @@ export default function PhotoAnalysisPage() {
                 <div className="space-y-2">
                   <Label className="text-slate-300">Additional Notes</Label>
                   <Textarea
+                    name="additionalNotes"
+                    maxLength={2000}
                     className="bg-slate-950 border-slate-700 min-h-[80px]"
                     placeholder="Anything else the AI should know..."
                     value={form.notes}
@@ -435,6 +442,7 @@ export default function PhotoAnalysisPage() {
                 </div>
 
                 <Button
+                  data-testid="submit-analysis"
                   className="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-semibold py-6 text-lg shadow-lg shadow-emerald-500/20"
                   onClick={handleSubmit}
                   disabled={isSubmitting || !imageData}
@@ -453,7 +461,7 @@ export default function PhotoAnalysisPage() {
                 </Button>
 
                 {error && (
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
+                  <div data-testid="error-message" role="alert" className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-red-400">{error}</p>
                   </div>
@@ -466,7 +474,7 @@ export default function PhotoAnalysisPage() {
           <div className="space-y-6">
             {/* Analysis Result */}
             {result && (
-              <Card className="bg-slate-900/50 backdrop-blur-sm border-slate-800 sticky top-24">
+              <Card data-testid="analysis-results" className="bg-slate-900/50 backdrop-blur-sm border-slate-800 sticky top-24">
                 <CardHeader className="border-b border-slate-800">
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
@@ -482,7 +490,7 @@ export default function PhotoAnalysisPage() {
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                   <div>
-                    <p className="text-lg font-semibold text-slate-200 mb-1">
+                    <p data-testid="diagnosis-title" className="text-lg font-semibold text-slate-200 mb-1">
                       {result.analysis?.diagnosis || 'Analysis Complete'}
                     </p>
                     {result.analysis?.confidence && (

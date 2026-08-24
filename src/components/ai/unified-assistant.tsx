@@ -2650,7 +2650,7 @@ export default function UnifiedAIAssistant({
                       onClick={triggerImageUpload}
                       title="Upload plant photo"
                     >
-                      <Image className="h-4 w-4" />
+                      <Image className="h-4 w-4" aria-hidden="true" />
                     </Button>
                     <input
                       type="file"

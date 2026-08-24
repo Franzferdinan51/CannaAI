@@ -323,7 +323,11 @@ async function streamChatResponse(args: {
   mode: string;
   context: any;
   sensorData: any;
-  log: { info: Function; warn: Function; error: Function };
+  log: {
+    info: (...values: unknown[]) => void;
+    warn: (...values: unknown[]) => void;
+    error: (...values: unknown[]) => void;
+  };
 }): Promise<Response> {
   const { message, mode, context, sensorData, log } = args;
 

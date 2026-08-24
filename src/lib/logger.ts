@@ -79,7 +79,6 @@ class RotatingFileSink implements Sink {
       this.stream = fs.createWriteStream(file, { flags: 'a' });
       this.stream.on('error', (e) => {
         // If logging itself breaks, fall back silently — never crash the app.
-        // eslint-disable-next-line no-console
         console.warn('[logger] file sink error:', e?.message);
         this.stream = null;
       });

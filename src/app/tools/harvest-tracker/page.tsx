@@ -317,7 +317,7 @@ export default function HarvestTracker() {
                   <h4 className="font-medium mb-2">Average Yield per Plant</h4>
                   <p className="text-3xl font-bold text-green-500">
                     {stats.completedBatches > 0
-                      ? Math.round(stats.totalYield / stats.completedBatches / batches.find(b => b.status === 'completed')?.plantCount! || 0)
+                      ? Math.round(stats.totalYield / stats.completedBatches / (batches.find(b => b.status === 'completed')?.plantCount ?? 1))
                       : 0}g
                   </p>
                 </div>

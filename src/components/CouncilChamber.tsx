@@ -18,7 +18,6 @@ import {
   Zap,
   FileText,
   BarChart3,
-  Memory,
   Sparkles,
   ChevronDown,
   ChevronRight
@@ -163,7 +162,7 @@ export function CouncilChamber({ apiKey }: CouncilChamberProps) {
           { id: 'prediction' as const, icon: TrendingUp, label: 'Prediction Market' },
           { id: 'swarm' as const, icon: Code, label: 'Swarm Coding' },
           { id: 'arguments' as const, icon: GitBranch, label: 'Arguments' },
-          { id: 'memory' as const, icon: Memory, label: 'Memory' },
+          { id: 'memory' as const, icon: Brain, label: 'Memory' },
           { id: 'search' as const, icon: Search, label: 'Search' }
         ].map(tab => (
           <button

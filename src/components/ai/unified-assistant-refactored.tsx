@@ -20,6 +20,7 @@ import {
   Sun,
   Eye,
   Camera,
+  Minimize2,
   AlertCircle,
   CheckCircle,
   Brain,
@@ -361,7 +362,7 @@ export default function UnifiedAIAssistant({
                           className="bg-slate-700 text-slate-200 hover:bg-slate-600"
                           onClick={() => fileInputRef.current?.click()}
                         >
-                          <Image className="h-4 w-4" />
+                          <Image className="h-4 w-4" aria-hidden="true" />
                         </Button>
                         <input
                           type="file"
@@ -411,4 +412,3 @@ export default function UnifiedAIAssistant({
 
 // All the helper functions from the original file would be organized here
 // or extracted to separate utility files
-
