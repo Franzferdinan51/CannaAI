@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, { params }: Params) {
+  const { id } = await params;
   await ensureSeedData();
   const analyses = await prisma.plantAnalysis.findMany({
-    where: { plantId: params.id },
+    where: { plantId: id },
     orderBy: { createdAt: 'desc' },
     take: 20
   });
@@ -21,7 +22,7 @@ export async function GET(_: Request, { params }: Params) {
     data: [
       {
         id: `analysis_${Date.now()}`,
-        plantId: params.id,
+        plantId: id,
         diagnosis: 'Healthy',
         urgency: 'LOW',
         confidence: 0.9,

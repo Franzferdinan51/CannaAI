@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   try {
     const preference = await prisma.notificationPreference.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!preference) {
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function PUT(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   try {
     const body = await request.json();
 
@@ -57,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 
     const preference = await prisma.notificationPreference.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(body.userId !== undefined && { userId: body.userId }),
         ...(body.type !== undefined && { type: body.type }),
@@ -98,9 +100,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   try {
     await prisma.notificationPreference.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({

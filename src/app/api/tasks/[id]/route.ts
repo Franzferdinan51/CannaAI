@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   const updates = await request.json().catch(() => ({}));
   const updated = await prisma.task.update({
-    where: { id: params.id },
+    where: { id },
     data: { ...updates, updatedAt: new Date() }
   }).catch(() => null);
   if (!updated) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });

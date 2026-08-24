@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   const body = await request.json().catch(() => ({}));
   return NextResponse.json({
     success: true,
     data: {
       result: {
         id: `analysis_${Date.now()}`,
-        plantId: params.id,
+        plantId: id,
         diagnosis: 'Healthy',
         urgency: 'LOW',
         confidence: 0.9,

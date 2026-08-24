@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, { params }: Params) {
+  const { id } = await params;
   await ensureSeedData();
 
   // First get the plant to determine its location/sensor
   const plant = await prisma.plant.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { room: true }
   });
 
@@ -33,19 +34,20 @@ export async function GET(_: Request, { params }: Params) {
   return NextResponse.json({
     success: true,
     data: {
-      plantId: params.id,
+      plantId: id,
       environment: { lastUpdated: sensor?.timestamp?.toISOString?.() }
     }
   });
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   const body = await request.json().catch(() => ({}));
   await ensureSeedData();
 
   // Get the plant to determine its location
   const plant = await prisma.plant.findUnique({
-    where: { id: params.id }
+    where: { id }
   });
 
   if (!plant) {
@@ -78,5 +80,5 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
   });
 
-  return NextResponse.json({ success: true, data: { plantId: params.id, environment: body } });
+  return NextResponse.json({ success: true, data: { plantId: id, environment: body } });
 }

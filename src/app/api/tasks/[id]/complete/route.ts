@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
+  const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const updated = await prisma.task.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       status: 'completed',
       notes: body.notes,

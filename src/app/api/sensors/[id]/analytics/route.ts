@@ -2,14 +2,15 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
+  const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const timeframe = body.timeframe || '24h';
   await ensureSeedData();
   const readings = await prisma.sensorReading.findMany({
-    where: { sensorId: params.id },
+    where: { sensorId: id },
     orderBy: { timestamp: 'desc' },
     take: 100
   });
@@ -19,7 +20,7 @@ export async function POST(request: Request, { params }: Params) {
   return NextResponse.json({
     success: true,
     data: {
-      sensorId: params.id,
+      sensorId: id,
       timeframe,
       averages: { reading: avg },
       trends: [],

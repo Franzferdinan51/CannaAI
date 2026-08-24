@@ -6,11 +6,12 @@ import {
   sendWebhookTest
 } from '@/lib/webhooks';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   try {
-    const webhook = await getWebhookSubscription(params.id);
+    const webhook = await getWebhookSubscription(id);
 
     // Don't return the secret
     const { secret, ...webhookResponse } = webhook;
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function PUT(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   try {
     const body = await request.json();
 
@@ -81,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       }
     }
 
-    const webhook = await updateWebhookSubscription(params.id, body);
+    const webhook = await updateWebhookSubscription(id, body);
 
     // Don't return the secret
     const { secret, ...webhookResponse } = webhook;
@@ -109,8 +111,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   try {
-    await deleteWebhookSubscription(params.id);
+    await deleteWebhookSubscription(id);
 
     return NextResponse.json({
       success: true,

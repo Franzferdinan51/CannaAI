@@ -2,20 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, { params }: Params) {
+  const { id } = await params;
   await ensureSeedData();
-  const actions = await prisma.action.findMany({ where: { plantId: params.id } });
+  const actions = await prisma.action.findMany({ where: { plantId: id } });
   return NextResponse.json({ success: true, data: actions });
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const { id } = await params;
   const body = await request.json().catch(() => ({}));
   await ensureSeedData();
   const action = await prisma.action.create({
     data: {
-      plantId: params.id,
+      plantId: id,
       type: body.type || 'action',
       description: body.description || '',
       status: body.status || 'pending',
