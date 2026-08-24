@@ -153,7 +153,9 @@ export async function detectAvailableProviders() {
   // rails; provider implementations may also abort their own fetch calls.
   const [lmstudio, openclaw, bailian, openrouter, minimax] = await Promise.all([
     runCheck(checkLMStudio(), 3000, 'lmstudio'),
-    runCheck(checkOpenClaw(), 3000, 'openclaw'),
+    // OpenClaw's ACP/gateway status check includes a local RPC handshake and
+    // can legitimately take longer than an HTTP health probe.
+    runCheck(checkOpenClaw(), 10000, 'openclaw'),
     runCheck(checkBailian(), 10000, 'bailian'),
     runCheck(checkOpenRouter(), 20000, 'openrouter'),
     runCheck(checkMiniMax(), 20000, 'minimax'),
