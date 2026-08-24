@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
       temperature = 0.7,
       maxTokens = 512,
       modelId,
+      model,
+      messages: requestedMessages,
       stream = false
     } = body;
 
@@ -59,46 +61,50 @@ export async function POST(request: NextRequest) {
 
     // Get available models from LM Studio to find the requested model
     const modelsData = await healthResponse.json();
-    const availableModels = modelsData.data || [];
+    const availableModels = Array.isArray(modelsData.data)
+      ? modelsData.data.filter((entry: any) => {
+        const id = String(entry?.id || '').toLowerCase();
+        return id && !id.includes('embedding') && !id.includes('embed-') && !id.endsWith('-embed');
+      })
+      : [];
 
-    // Find the model or use the first available one
-    let selectedModel = modelId;
+    // Accept both the legacy `modelId` field and the OpenAI-compatible `model`
+    // field used by the main chat client. Never auto-select an embedding model.
+    let selectedModel = modelId || model;
     if (!selectedModel && availableModels.length > 0) {
       selectedModel = availableModels[0].id;
     }
 
-    // Prepare the request for LM Studio
-    const messages = [];
+    // Preserve an already-normalized OpenAI-compatible message list. This is
+    // important for vision requests, which carry image_url content alongside
+    // their text and must not be flattened into a prompt-only request.
+    const messages = Array.isArray(requestedMessages)
+      ? requestedMessages
+      : [];
 
-    if (systemPrompt) {
+    if (messages.length === 0 && systemPrompt) {
       messages.push({
         role: 'system',
         content: systemPrompt
       });
     }
 
-    const userMessage = {
-      role: 'user',
-      content: prompt
-    };
+    if (messages.length === 0) {
+      const userMessage: any = {
+        role: 'user',
+        content: prompt || ''
+      };
 
-    // Add image if provided (for vision models)
-    if (image) {
-      userMessage.content = [
-        {
-          type: 'text',
-          text: prompt
-        },
-        {
-          type: 'image_url',
-          image_url: {
-            url: image
-          }
-        }
-      ];
+      // Add image if provided (for vision models)
+      if (image) {
+        userMessage.content = [
+          { type: 'text', text: prompt || '' },
+          { type: 'image_url', image_url: { url: image } }
+        ];
+      }
+
+      messages.push(userMessage);
     }
-
-    messages.push(userMessage);
 
     // Prepare LM Studio request payload
     const lmStudioPayload = {
@@ -157,7 +163,7 @@ export async function POST(request: NextRequest) {
       usage: result.usage,
       timestamp: new Date().toISOString(),
       provider: 'lmstudio-local',
-      finishReason: result.choices[0].finish_reason
+      finishReason: result.choices?.[0]?.finish_reason || 'stop'
     };
 
     console.log('LM Studio response received:', {

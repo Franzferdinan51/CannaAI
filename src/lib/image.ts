@@ -438,6 +438,9 @@ export async function autoOrientImage(inputBuffer: Buffer): Promise<Buffer> {
   try {
     return await sharp(inputBuffer).rotate().toBuffer();
   } catch (error) {
+    if (error instanceof ImageProcessingError) {
+      throw error;
+    }
     throw new ImageProcessingError('Failed to auto-orient image', error as Error);
   }
 }
@@ -454,6 +457,9 @@ export async function removeAlphaChannel(
       .flatten({ background })
       .toBuffer();
   } catch (error) {
+    if (error instanceof ImageProcessingError) {
+      throw error;
+    }
     throw new ImageProcessingError('Failed to remove alpha channel', error as Error);
   }
 }

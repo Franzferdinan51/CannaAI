@@ -31,6 +31,34 @@ import {
 import { createSampleImage, createValidImageDataUrl } from '@/tests/utils/test-utils';
 
 describe('Image Processing Library', () => {
+  beforeEach(() => {
+    // Each test customizes the global Sharp mock differently. Restore a
+    // complete, realistic pipeline before every test so one mock cannot leak
+    // into the next test and hide regressions in upload processing.
+    const sharp = require('sharp');
+    const instance = {
+      resize: jest.fn().mockReturnThis(),
+      jpeg: jest.fn().mockReturnThis(),
+      png: jest.fn().mockReturnThis(),
+      webp: jest.fn().mockReturnThis(),
+      avif: jest.fn().mockReturnThis(),
+      rotate: jest.fn().mockReturnThis(),
+      flatten: jest.fn().mockReturnThis(),
+      toBuffer: jest.fn().mockResolvedValue(Buffer.from('processed-image')),
+      metadata: jest.fn().mockResolvedValue({
+        format: 'jpeg',
+        width: 100,
+        height: 100,
+        channels: 3
+      })
+    };
+    sharp.mockReset();
+    sharp.mockReturnValue(instance);
+
+    const heicConvert = require('heic-convert');
+    heicConvert.convert = jest.fn().mockResolvedValue(Buffer.from('converted-jpeg-data'));
+  });
+
   describe('Format Support', () => {
     test('should correctly identify supported formats', () => {
       expect(isFormatSupported('image/jpeg')).toBe(true);
@@ -95,7 +123,7 @@ describe('Image Processing Library', () => {
         format: 'JPEG',
         quality: 90
       });
-      expect(result).toBe('converted-jpeg-data');
+      expect(result).toEqual(Buffer.from('converted-jpeg-data'));
     });
 
     test('should throw HeicConversionError when conversion fails', async () => {
@@ -439,7 +467,7 @@ describe('Image Processing Library', () => {
       const result = await autoOrientImage(createSampleImage.tiny);
 
       expect(instance.rotate).toHaveBeenCalled();
-      expect(result).toBe('oriented');
+      expect(result).toEqual(Buffer.from('oriented'));
     });
 
     test('should remove alpha channel', async () => {
@@ -455,7 +483,7 @@ describe('Image Processing Library', () => {
       expect(instance.flatten).toHaveBeenCalledWith({
         background: { r: 255, g: 255, b: 255 }
       });
-      expect(result).toBe('flattened');
+      expect(result).toEqual(Buffer.from('flattened'));
     });
 
     test('should convert image format', async () => {
@@ -580,6 +608,7 @@ describe('Image Processing Library', () => {
       sharp.mockReturnValue({
         resize: jest.fn().mockReturnThis(),
         jpeg: jest.fn().mockReturnThis(),
+        rotate: jest.fn().mockReturnThis(),
         toBuffer: jest.fn().mockResolvedValue(Buffer.from('processed')),
         metadata: jest.fn().mockResolvedValue(mockMetadata)
       });
@@ -604,6 +633,7 @@ describe('Image Processing Library', () => {
       const instance = {
         resize: jest.fn().mockReturnThis(),
         jpeg: jest.fn().mockReturnThis(),
+        rotate: jest.fn().mockReturnThis(),
         toBuffer: jest.fn().mockResolvedValue(Buffer.from('processed')),
         metadata: jest.fn().mockResolvedValue(mockMetadata)
       };
@@ -617,12 +647,12 @@ describe('Image Processing Library', () => {
 
     test('should reject unsupported formats', async () => {
       await expect(
-        handleImageUpload(Buffer.from('invalid'), { format: 'SVG' as any } as any)
+        handleImageUpload('data:image/svg;base64,PHN2Zy8+')
       ).rejects.toThrow(UnsupportedFormatError);
     });
 
     test('should validate size during upload', async () => {
-      const largeImage = createValidImageDataUrl('jpeg');
+      const largeImage = `data:image/jpeg;base64,${Buffer.alloc(2 * 1024).toString('base64')}`;
 
       await expect(
         handleImageUpload(largeImage, {}, 0.001) // 1KB limit

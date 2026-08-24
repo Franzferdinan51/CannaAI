@@ -335,8 +335,8 @@ export const createSampleImage = {
 
   // HEIC format mock
   heic: Buffer.from(
-    'AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAAhtZGF0AAAA',
-    'base64'
+    'ftypheic',
+    'ascii'
   )
 };
 

@@ -8,7 +8,7 @@
 import { checkOpenClaw, executeWithOpenClaw } from './ai-provider-openclaw';
 import { checkBailian, executeWithBailian } from './ai-provider-bailian';
 import { checkOpenRouter, executeWithOpenRouter } from './ai-provider-openrouter';
-import { executeWithLMStudio, checkLMStudio } from './ai-provider-lmstudio';
+import { executeWithLMStudio, checkLMStudio, getLMStudioApiKey } from './ai-provider-lmstudio';
 import { checkMiniMax, executeWithMiniMax } from './ai-provider-minimax';
 
 export interface ProviderDetectionResult {
@@ -235,7 +235,10 @@ export function getProviderConfig(provider: string) {
         // newer provider manager consumes `baseUrl`.
         url,
         baseUrl: url,
-        apiKey: process.env.LM_STUDIO_API_KEY || process.env.LM_API_TOKEN || '',
+        // LM Studio stores its local server token in ~/.lmstudio when
+        // authentication is enabled. Reuse the adapter's resolver so routes
+        // using the provider manager behave exactly like direct local calls.
+        apiKey: getLMStudioApiKey(),
         model: process.env.LM_STUDIO_MODEL || process.env.LM_STUDIO_TEXT_MODEL || '',
         timeout: parseInt(process.env.LM_STUDIO_TIMEOUT || '120000', 10),
       };

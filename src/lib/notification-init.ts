@@ -34,14 +34,18 @@ export class NotificationSystem {
       console.log('[NOTIFICATION-SYSTEM] Socket.IO instance set');
     }
 
-    // Start background workers
-    this.startWorkers();
+    // Do not start database-backed workers until the schema is available. A
+    // fresh checkout commonly starts before `prisma db push`/migrations have
+    // been run; starting them first creates a repeating stream of P2021
+    // errors and wastes connections while the app is otherwise usable.
+    let databaseReady = true;
 
     // Create default notification templates (graceful - tables may not exist yet)
     try {
       await this.createDefaultTemplates();
     } catch (error: any) {
       if (error.code === 'P2021') {
+        databaseReady = false;
         console.log('[NOTIFICATION-SYSTEM] Skipping template creation - tables not created yet. Run: npm run db:push');
       } else {
         console.error('[NOTIFICATION-SYSTEM] Error creating templates:', error.message);
@@ -49,14 +53,23 @@ export class NotificationSystem {
     }
 
     // Create default notification preferences (graceful - tables may not exist yet)
-    try {
-      await this.createDefaultPreferences();
-    } catch (error: any) {
-      if (error.code === 'P2021') {
-        console.log('[NOTIFICATION-SYSTEM] Skipping preferences creation - tables not created yet. Run: npm run db:push');
-      } else {
-        console.error('[NOTIFICATION-SYSTEM] Error creating preferences:', error.message);
+    if (databaseReady) {
+      try {
+        await this.createDefaultPreferences();
+      } catch (error: any) {
+        if (error.code === 'P2021') {
+          databaseReady = false;
+          console.log('[NOTIFICATION-SYSTEM] Skipping preferences creation - tables not created yet. Run: npm run db:push');
+        } else {
+          console.error('[NOTIFICATION-SYSTEM] Error creating preferences:', error.message);
+        }
       }
+    }
+
+    if (databaseReady) {
+      this.startWorkers();
+    } else {
+      console.log('[NOTIFICATION-SYSTEM] Background workers disabled until the database schema is initialized');
     }
 
     this.initialized = true;
@@ -134,6 +147,9 @@ export class NotificationSystem {
         });
         console.log(`[NOTIFICATION-SYSTEM] Template created: ${template.name}`);
       } catch (error) {
+        if ((error as any)?.code === 'P2021') {
+          throw error;
+        }
         console.error(`[NOTIFICATION-SYSTEM] Error creating template ${template.name}:`, error);
       }
     }
@@ -181,6 +197,9 @@ export class NotificationSystem {
           console.log(`[NOTIFICATION-SYSTEM] Default preference created: ${type}`);
         }
       } catch (error) {
+        if ((error as any)?.code === 'P2021') {
+          throw error;
+        }
         console.error(`[NOTIFICATION-SYSTEM] Error creating preference for ${type}:`, error);
       }
     }
