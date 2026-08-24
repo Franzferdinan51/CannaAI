@@ -542,7 +542,10 @@ export default function PhotoAnalysisPage() {
                           <>
                             <span className="text-slate-400">Savings:</span>
                             <span className="text-emerald-400 font-medium">
-                              {Math.round((1 - result.imageInfo.compressedSize / result.imageInfo.originalSize) * 100)}% smaller
+                              {(() => {
+                                const change = Math.round((1 - result.imageInfo.compressedSize / result.imageInfo.originalSize) * 100);
+                                return change >= 0 ? `${change}% smaller` : `${Math.abs(change)}% larger`;
+                              })()}
                             </span>
                           </>
                         )}

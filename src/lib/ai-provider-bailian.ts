@@ -18,6 +18,18 @@ const BAILIAN_TIMEOUT_MS = parseInt(process.env.BAILIAN_TIMEOUT_MS || '120000');
 // Vision-capable model for plant image analysis (qwen3.5-plus supports vision)
 const BAILIAN_VISION_MODEL = process.env.QWEN_VISION_MODEL || 'qwen3.5-plus';
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const nativeTimeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof nativeTimeout === 'function') return nativeTimeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  return controller.signal;
+}
+
 /**
  * Check if Alibaba Bailian (Qwen) is available
  */
@@ -79,6 +91,10 @@ export async function executeWithBailian(params: {
   usage?: any;
 }> {
   try {
+    if (!BAILIAN_API_KEY) {
+      throw new Error('ALIBABA_API_KEY not configured');
+    }
+
     const {
       image,
       prompt,
@@ -128,7 +144,7 @@ export async function executeWithBailian(params: {
         max_tokens: maxTokens,
         temperature
       }),
-      signal: AbortSignal.timeout(timeoutMs)
+      signal: createTimeoutSignal(timeoutMs)
     });
 
     if (!response.ok) {

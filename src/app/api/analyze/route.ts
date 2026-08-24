@@ -389,7 +389,7 @@ export async function POST(request: NextRequest) {
         console.log(`🖼️ Ultra-high resolution image processed:`);
         console.log('   Original: ' + formatFileSize(originalSize) + ' (' + metadata.width + 'x' + metadata.height + ', ' + originalMegapixels.toFixed(1) + 'MP)');
         console.log('   Processed: ' + formatFileSize(processedImage.compressedSize) + ' (' + processedImage.metadata.width + 'x' + processedImage.metadata.height + ')');
-        console.log(`   Compression: ${compressionEfficiency.toFixed(1)}% reduction, Quality preserved: ${processingOptions.quality}%`);
+        console.log(`   Size change: ${compressionEfficiency >= 0 ? `${compressionEfficiency.toFixed(1)}% reduction` : `${Math.abs(compressionEfficiency).toFixed(1)}% increase`}, Quality preserved: ${processingOptions.quality}%`);
 
         processedImageInfo = {
           originalSize: processedImage.originalSize,
