@@ -1,0 +1,50 @@
+import { AgentCommandProvider } from '@/lib/ai-providers/agent-command-provider';
+
+describe('AgentCommandProvider Hermes proxy resilience', () => {
+  const originalProvider = process.env.HERMES_PROXY_PROVIDER;
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    if (originalProvider === undefined) delete process.env.HERMES_PROXY_PROVIDER;
+    else process.env.HERMES_PROXY_PROVIDER = originalProvider;
+  });
+
+  test('falls back from an unavailable Nous model to authenticated xAI', async () => {
+    delete process.env.HERMES_PROXY_PROVIDER;
+    const fetchMock = jest.spyOn(global, 'fetch');
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const port = url.includes(':8646') ? 8646 : 8645;
+
+      if (url.endsWith('/health')) return { ok: true, status: 200, json: async () => ({ status: 'ok' }) } as Response;
+      if (url.endsWith('/v1/models')) {
+        return { ok: true, status: 200, json: async () => ({ data: port === 8645
+          ? [{ id: 'paid/model', pricing: { prompt: '0.00001', completion: '0.00001' } }]
+          : [{ id: 'grok-4.20-0309-non-reasoning' }] }) } as Response;
+      }
+      if (url.endsWith('/v1/chat/completions')) {
+        const body = JSON.parse(String(init?.body));
+        if (port === 8645) {
+          return { ok: false, status: 404, statusText: 'Not Found', json: async () => ({ message: `Model '${body.model}' requires available credits` }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({
+          model: body.model,
+          choices: [{ message: { content: 'HERMES_XAI_FALLBACK_OK' } }]
+        }) } as Response;
+      }
+      return { ok: false, status: 404, statusText: 'Not Found', json: async () => ({}) } as Response;
+    });
+
+    const provider = new AgentCommandProvider('hermes', { timeout: 1000 });
+    jest.spyOn(provider as any, 'ensureHermesProxy').mockResolvedValue(undefined);
+    const response = await provider.execute({
+      messages: [{ role: 'user', content: 'Analyze this plant.' }],
+      model: 'auto'
+    });
+
+    expect(response.choices[0].message.content).toBe('HERMES_XAI_FALLBACK_OK');
+    expect(response.metadata?.modelUsed).toBe('grok-4.20-0309-non-reasoning');
+    expect(fetchMock.mock.calls.some(([input]) => String(input).includes(':8645'))).toBe(true);
+    expect(fetchMock.mock.calls.some(([input]) => String(input).includes(':8646'))).toBe(true);
+  });
+});

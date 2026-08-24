@@ -225,9 +225,25 @@ export async function POST(request: NextRequest) {
     try {
       rawBody = await request.json();
 
-      // Pre-sanitization for security
-      if (rawBody.plantImage && !rawBody.plantImage.startsWith('data:image/')) {
-        throw new Error('Invalid image format. Only base64 image data is allowed.');
+      // Accept the documented `image` alias and normalize it to the UI field
+      // before Zod parsing, otherwise unknown keys are stripped silently.
+      if (!rawBody.plantImage && rawBody.image) {
+        rawBody.plantImage = rawBody.image;
+      }
+
+      // Camera agents commonly send raw base64 while the browser sends a data
+      // URL. Normalize both forms before validation so vision is not silently
+      // downgraded to text-only analysis.
+      if (rawBody.plantImage) {
+        let value = String(rawBody.plantImage);
+        const isDataUrl = value.startsWith('data:image/');
+        const isRawBase64 = /^[A-Za-z0-9+/]+={0,2}$/.test(value);
+        if (!isDataUrl && !isRawBase64) {
+          throw new Error('Invalid image format. Use a data URL or raw base64 image data.');
+        }
+        if (isRawBase64) {
+          rawBody.plantImage = `data:image/jpeg;base64,${value}`;
+        }
       }
 
       body = AnalysisRequestSchema.parse(rawBody);

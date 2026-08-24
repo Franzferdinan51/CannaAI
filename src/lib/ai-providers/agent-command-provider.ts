@@ -14,6 +14,14 @@ type AgentCommandProviderName = 'openclaw' | 'hermes';
 
 const children = new Map<string, ChildProcess>();
 
+function timeoutSignal(milliseconds: number): AbortSignal {
+  const nativeTimeout = (AbortSignal as typeof AbortSignal & { timeout?: (ms: number) => AbortSignal }).timeout;
+  if (nativeTimeout) return nativeTimeout(milliseconds);
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(new Error(`Request timed out after ${milliseconds}ms`)), milliseconds).unref?.();
+  return controller.signal;
+}
+
 function commandPath(provider: AgentCommandProviderName, configured?: string): string {
   if (configured) return configured;
   return provider === 'openclaw' ? '/opt/homebrew/bin/openclaw' : '/Users/duckets/.local/bin/hermes';
@@ -78,8 +86,10 @@ export class AgentCommandProvider extends BaseProvider {
         const parsed = JSON.parse(stdout);
         return parsed?.rpc?.ok === true || parsed?.gateway?.service?.runtime?.status === 'running';
       }
-      const response = await fetch(`http://127.0.0.1:${this.proxyPort}/health`, { signal: AbortSignal.timeout(1500) });
-      return response.ok;
+      for (const provider of this.hermesProxyCandidates()) {
+        if (await this.isHermesProxyAvailable(this.hermesProxyPort(provider))) return true;
+      }
+      return false;
     } catch {
       return false;
     }
@@ -119,28 +129,51 @@ export class AgentCommandProvider extends BaseProvider {
   }
 
   private async executeHermesProxy(request: AIRequest): Promise<{ content: string; model?: string; usage?: any }> {
-    await this.ensureHermesProxy();
     const messages = request.messages.map((message) => {
       if (!message.image) return { role: message.role, content: message.content };
       const image = message.image.startsWith('data:image/') ? message.image : `data:image/jpeg;base64,${message.image}`;
       return { role: message.role, content: [{ type: 'text', text: message.content }, { type: 'image_url', image_url: { url: image } }] };
     });
-    const model = await this.resolveHermesModel(request.model || this.model);
-    const response = await fetch(`http://127.0.0.1:${this.proxyPort}/v1/chat/completions`, {
-      method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer cannaai-managed-by-hermes' },
-      body: JSON.stringify({ model, messages, temperature: request.temperature, max_tokens: request.maxTokens || 2048 }),
-      signal: AbortSignal.timeout(this.config.timeout)
-    });
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(`Hermes proxy error ${response.status}: ${body?.error?.message || response.statusText}`);
-    return { content: String(body?.choices?.[0]?.message?.content || '').trim(), model: body.model, usage: body.usage };
+    const errors: string[] = [];
+    for (const provider of this.hermesProxyCandidates()) {
+      const port = this.hermesProxyPort(provider);
+      try {
+        await this.ensureHermesProxy(provider, port);
+        const model = await this.resolveHermesModel(request.model || this.model, port);
+        const response = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
+          method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer cannaai-managed-by-hermes' },
+          body: JSON.stringify({ model, messages, temperature: request.temperature, max_tokens: request.maxTokens || 2048 }),
+          signal: timeoutSignal(this.config.timeout)
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(`Hermes ${provider} proxy error ${response.status}: ${body?.error?.message || body?.message || response.statusText}`);
+        }
+        const content = String(body?.choices?.[0]?.message?.content || '').trim();
+        if (!content) throw new Error(`Hermes ${provider} returned an empty response`);
+        return { content, model: body.model || model, usage: body.usage };
+      } catch (error: any) {
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push(message);
+        if (!this.shouldTryHermesFallback(message)) throw error;
+      }
+    }
+    throw new Error(`All Hermes proxy providers failed: ${errors.join(' | ')}`);
   }
 
-  private async resolveHermesModel(requested?: string): Promise<string> {
+  private async resolveHermesModel(requested: string | undefined, port: number): Promise<string> {
     if (requested && requested !== 'auto') return requested;
-    const response = await fetch(`http://127.0.0.1:${this.proxyPort}/v1/models`, { signal: AbortSignal.timeout(5000) });
+    const response = await fetch(`http://127.0.0.1:${port}/v1/models`, { signal: timeoutSignal(5000) });
     const body = await response.json().catch(() => ({}));
-    const model = body?.data?.find((item: any) => typeof item?.id === 'string' && !/imagine|video/i.test(item.id))?.id;
+    const models = Array.isArray(body?.data)
+      ? body.data.filter((item: any) => typeof item?.id === 'string' && !/imagine|video|embed/i.test(item.id))
+      : [];
+    const freeModel = models.find((item: any) => {
+      const prompt = Number(item?.pricing?.prompt);
+      const completion = Number(item?.pricing?.completion);
+      return (Number.isFinite(prompt) && prompt === 0) || (Number.isFinite(completion) && completion === 0) || /:free$/i.test(item.id);
+    });
+    const model = (freeModel || models[0])?.id;
     if (!model) throw new Error('Hermes proxy returned no text-capable models');
     return model;
   }
@@ -159,12 +192,11 @@ export class AgentCommandProvider extends BaseProvider {
     };
   }
 
-  private async ensureHermesProxy(): Promise<void> {
-    if (await this.isAvailable()) return;
-    const provider = await this.resolveHermesProxyProvider();
-    const key = `${this.command}:${this.proxyPort}:${provider}`;
+  private async ensureHermesProxy(provider: string, port: number): Promise<void> {
+    if (await this.isHermesProxyAvailable(port)) return;
+    const key = `${this.command}:${port}:${provider}`;
     if (!children.has(key)) {
-      const child = spawn(this.command, ['proxy', 'start', '--provider', provider, '--host', '127.0.0.1', '--port', String(this.proxyPort)], {
+      const child = spawn(this.command, ['proxy', 'start', '--provider', provider, '--host', '127.0.0.1', '--port', String(port)], {
         detached: true, stdio: 'ignore', env: { ...process.env }
       });
       child.unref();
@@ -172,10 +204,33 @@ export class AgentCommandProvider extends BaseProvider {
     }
     const deadline = Date.now() + 15000;
     while (Date.now() < deadline) {
-      if (await this.isAvailable()) return;
+      if (await this.isHermesProxyAvailable(port)) return;
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    throw new Error(`Hermes proxy is not reachable on 127.0.0.1:${this.proxyPort}; authenticate Hermes first with hermes portal login or connect an upstream with hermes proxy providers.`);
+    throw new Error(`Hermes ${provider} proxy is not reachable on 127.0.0.1:${port}; authenticate Hermes first with hermes portal login or connect an upstream with hermes proxy providers.`);
+  }
+
+  private hermesProxyCandidates(): string[] {
+    if (this.proxyProvider) return [this.proxyProvider];
+    return ['nous', 'xai'];
+  }
+
+  private hermesProxyPort(provider: string): number {
+    if (this.proxyProvider || provider === 'nous') return this.proxyPort;
+    return Number(process.env.HERMES_XAI_PROXY_PORT || this.proxyPort + 1);
+  }
+
+  private async isHermesProxyAvailable(port: number): Promise<boolean> {
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/health`, { signal: timeoutSignal(1500) });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  private shouldTryHermesFallback(message: string): boolean {
+    return /(?:no usable credits|requires available credits|credit|not found|unauthorized|forbidden|empty response|capacity|rate limit|\b429\b|\b5\d\d\b|not reachable)/i.test(message);
   }
 
   private async resolveHermesProxyProvider(): Promise<string> {
