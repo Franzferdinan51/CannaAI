@@ -52,8 +52,8 @@ import {
   FileText
 } from 'lucide-react';
 
-import {
-  SensorAnalytics,
+import type {
+  SensorAnalytics as SensorAnalyticsData,
   SensorData,
   SensorConfig,
   SensorType,
@@ -85,7 +85,7 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
   const [showAnomalies, setShowAnomalies] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(60000); // 1 minute
-  const [analyticsData, setAnalyticsData] = useState<SensorAnalytics[]>([]);
+  const [analyticsData, setAnalyticsData] = useState<SensorAnalyticsData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Generate mock analytics data
@@ -229,7 +229,7 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
                           timeframe === '30d' ? 30 :
                           30;
 
-        const data: SensorAnalytics[] = sensors.map(sensor => {
+        const data: SensorAnalyticsData[] = sensors.map(sensor => {
           const dataPoints = generateMockData(sensor.id, sensor.type, timePoints);
           const values = dataPoints.map(d => d.value);
           const statistics = calculateStatistics(values);
@@ -458,7 +458,7 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <p className="text-gray-500 text-xs">Current</p>
-                      <p className="text-white font-semibold">{stats.current.toFixed(2)}{getUnit(sensor?.type || '')}</p>
+                      <p className="text-white font-semibold">{stats.current.toFixed(2)}{sensor?.type ? getUnit(sensor.type) : ''}</p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-xs">Average</p>
@@ -632,7 +632,7 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-white">
-                          {stats.current.toFixed(2)}{getUnit(sensor?.type || '')}
+                          {stats.current.toFixed(2)}{sensor?.type ? getUnit(sensor.type) : ''}
                         </span>
                       </td>
                       <td className="px-4 py-3">

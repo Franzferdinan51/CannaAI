@@ -211,7 +211,8 @@ const EnhancedScanner: React.FC = () => {
 
         toast.success('Analysis completed successfully!');
       } else {
-        throw new Error(response.error?.message || 'Analysis failed');
+        const errorMessage = typeof response.error === 'string' ? response.error : response.error?.message;
+        throw new Error(errorMessage || 'Analysis failed');
       }
     } catch (error: any) {
       console.error('Analysis failed:', error);

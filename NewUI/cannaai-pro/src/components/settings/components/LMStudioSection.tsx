@@ -312,7 +312,8 @@ const LMStudioSection: React.FC = () => {
           </div>
 
           {/* Models Grid */}
-          <ScrollArea className="h-[600px] rounded-lg">
+          <ScrollArea.Root className="h-[600px] rounded-lg">
+            <ScrollArea.Viewport className="h-full w-full">
             <div className="space-y-4 pr-4">
               {sortedModels.map((model) => (
                 <motion.div
@@ -377,7 +378,8 @@ const LMStudioSection: React.FC = () => {
                 </div>
               )}
             </div>
-          </ScrollArea>
+            </ScrollArea.Viewport>
+          </ScrollArea.Root>
         </div>
       )}
 

@@ -318,6 +318,8 @@ export interface SettingsAPIResponse {
   settings?: Settings;
   error?: string;
   message?: string;
+  agentEvolverSettings?: AgentEvolverSettings;
+  recordId?: string;
 }
 
 export interface TestConnectionResponse {

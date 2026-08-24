@@ -228,7 +228,7 @@ export function compressImage(file: File, maxWidth = 1200, maxHeight = 1200, qua
 /**
  * Convert file to base64
  */
-export function fileToBase64(file: File): Promise<string> {
+export function fileToBase64(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
@@ -308,7 +308,8 @@ export function calculateScannerStats(images: PlantImage[]): ScannerStats {
       healthyPlants: 0,
       plantsNeedingAttention: 0,
       criticalIssues: 0,
-      averageHealthScore: 0
+      averageHealthScore: 0,
+      mostCommonIssues: []
     };
   }
 

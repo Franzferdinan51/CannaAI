@@ -1,4 +1,20 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import type { AnalysisResponse, Strain } from '../types/scanner';
+
+export interface ChatApiResponse {
+  response: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface StrainsApiResponse {
+  strains: Strain[];
+}
+
+export interface CustomStrainApiResponse {
+  strain?: Strain;
+  success?: boolean;
+  error?: { message?: string } | string;
+}
 
 export interface ApiError {
   message: string;
@@ -97,7 +113,7 @@ export const apiClient = new ApiClient();
 // Export individual API methods for specific endpoints
 export const api = {
   // Plant Analysis - Enhanced
-  analyze: (data: any) => apiClient.post('/analyze', data),
+  analyze: (data: any) => apiClient.post<AnalysisResponse>('/analyze', data),
   analyzeSimple: (data: any) => apiClient.post('/analyze-simple', data),
   autoAnalyze: (file: File) => apiClient.upload('/auto-analyze', file),
   trichomeAnalysis: (file: File) => apiClient.upload('/trichome-analysis', file),
@@ -158,13 +174,13 @@ export const api = {
     getCameraDevices: () => apiClient.get('/scanner/camera/devices'),
 
     // Strain management
-    addCustomStrain: (strain: any) => apiClient.post('/scanner/strains', strain),
+    addCustomStrain: (strain: Partial<Strain>) => apiClient.post<CustomStrainApiResponse>('/scanner/strains', strain),
     updateCustomStrain: (id: string, strain: any) => apiClient.put(`/scanner/strains/${id}`, strain),
     deleteCustomStrain: (id: string) => apiClient.delete(`/scanner/strains/${id}`),
   },
 
   // Chat & AI
-  chat: (message: string) => apiClient.post('/chat', { message }),
+  chat: (message: string) => apiClient.post<ChatApiResponse>('/chat', { message }),
   advisors: {
     status: () => apiClient.get('/advisors'),
     run: (data: { task: string; context?: string; provider?: string }) => apiClient.post('/advisors', data),
@@ -177,7 +193,7 @@ export const api = {
 
   // Data Management
   strains: {
-    list: () => apiClient.get('/strains'),
+    list: () => apiClient.get<StrainsApiResponse>('/strains'),
     create: (data: any) => apiClient.post('/strains', data),
     update: (id: string, data: any) => apiClient.put(`/strains/${id}`, data),
     delete: (id: string) => apiClient.delete(`/strains/${id}`),

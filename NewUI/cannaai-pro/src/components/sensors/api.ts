@@ -317,7 +317,7 @@ export const dataAPI = {
   }): Promise<{
     data: Array<{
       timestamp: string;
-      [sensorId: string]: number;
+      [sensorId: string]: number | string;
     }>;
     metadata: {
       sensors: string[];

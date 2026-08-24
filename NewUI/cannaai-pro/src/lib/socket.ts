@@ -7,14 +7,26 @@ export interface SensorData {
   EC: number;
   CO2: number;
   VPD: number;
+  ph?: number;
+  ec?: number;
+  co2?: number;
+  vpd?: number;
+  soilMoisture?: number;
+  lightIntensity?: number;
   roomName: string;
   timestamp: string;
 }
 
 export interface NotificationData {
+  id: string;
   type: 'warning' | 'error' | 'success' | 'info';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
   message: string;
   timestamp: string;
+  sensorId?: string;
+  roomName?: string;
+  acknowledged: boolean;
   data?: any;
 }
 

@@ -236,10 +236,10 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '' }) => 
     switch (sensorType) {
       case 'temperature': return `${Math.round(lastSensorData.temperature)}°F`;
       case 'humidity': return `${Math.round(lastSensorData.humidity)}%`;
-      case 'ph': return lastSensorData.ph.toFixed(2);
-      case 'ec': return lastSensorData.ec.toFixed(2);
-      case 'co2': return `${Math.round(lastSensorData.co2)} ppm`;
-      case 'vpd': return lastSensorData.vpd.toFixed(2);
+      case 'ph': return (lastSensorData.ph ?? lastSensorData.pH).toFixed(2);
+      case 'ec': return (lastSensorData.ec ?? lastSensorData.EC).toFixed(2);
+      case 'co2': return `${Math.round(lastSensorData.co2 ?? lastSensorData.CO2)} ppm`;
+      case 'vpd': return (lastSensorData.vpd ?? lastSensorData.VPD).toFixed(2);
       case 'soil_moisture': return `${Math.round(lastSensorData.soilMoisture || 0)}%`;
       case 'light_intensity': return `${Math.round(lastSensorData.lightIntensity || 0)} PPFD`;
       default: return '--';
@@ -632,7 +632,7 @@ const SensorTableRow: React.FC<SensorTableRowProps> = ({
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {hasAlerts && (
-            <AlertTriangle className="w-4 h-4 text-yellow-400" title="Alerts Active" />
+            <AlertTriangle className="w-4 h-4 text-yellow-400" aria-label="Alerts Active" />
           )}
           <Settings className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
           <Eye className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />

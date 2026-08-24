@@ -119,6 +119,7 @@ export interface Strain {
 export interface AnalysisResponse {
   success: boolean;
   analysis: PlantAnalysis;
+  error?: { message?: string } | string;
   imageInfo?: ImageProcessingInfo;
   metadata: {
     analysisId: string;

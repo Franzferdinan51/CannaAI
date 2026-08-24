@@ -158,8 +158,13 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
 
       const response = await api.scanner.addCustomStrain(newStrain);
       if (response) {
-        const addedStrain = response.strain || newStrain;
-        setStrains(prev => [{ ...addedStrain, id: Date.now().toString() }, ...prev]);
+        const addedStrain: Strain = response.strain || {
+          ...newStrain,
+          id: Date.now().toString(),
+          name: newStrain.name!,
+          type: newStrain.type!
+        };
+        setStrains(prev => [addedStrain, ...prev]);
         onStrainSelect(newStrain.name);
         setShowCustomForm(false);
         resetCustomForm();
