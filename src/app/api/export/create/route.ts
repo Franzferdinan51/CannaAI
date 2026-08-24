@@ -37,13 +37,17 @@ export async function POST(request: NextRequest) {
     const validatedData = ExportRequestSchema.parse(body);
 
     // Parse date range if provided
-    const filters = validatedData.filters;
-    if (filters?.dateRange) {
-      filters.dateRange = {
-        start: new Date(filters.dateRange.start),
-        end: new Date(filters.dateRange.end)
-      };
-    }
+    const filters = validatedData.filters
+      ? {
+          ...validatedData.filters,
+          dateRange: validatedData.filters.dateRange
+            ? {
+                start: new Date(validatedData.filters.dateRange.start),
+                end: new Date(validatedData.filters.dateRange.end)
+              }
+            : undefined
+        }
+      : undefined;
 
     const options: ExportOptions = {
       format: validatedData.format,
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Validation failed',
-        details: error.errors
+        details: error.issues
       }, { status: 400 });
     }
 

@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
     const cacheStats = unifiedAI.getCacheStats();
 
     // Calculate cache savings
-    const cacheSavings = (cacheStats.hitCount / (cacheStats.hitCount + cacheStats.missCount)) * 100;
+    const cacheLookups = cacheStats.hitCount + cacheStats.missCount;
+    const cacheSavings = cacheLookups > 0 ? (cacheStats.hitCount / cacheLookups) * 100 : 0;
     const estimatedCacheSavings = costSummary.total * (cacheSavings / 100);
 
     return NextResponse.json({
@@ -75,7 +76,8 @@ function generateCostRecommendations(summary: any): string[] {
   }
 
   // Find most expensive provider
-  const topProvider = Object.entries(summary.byProvider).sort((a: any, b: any) => b[1] - a[1])[0];
+  const providerCosts = Object.entries(summary.byProvider) as Array<[string, number]>;
+  const topProvider = providerCosts.sort((a, b) => b[1] - a[1])[0];
   if (topProvider && topProvider[1] > summary.total * 0.5) {
     recommendations.push(
       `${topProvider[0]} accounts for ${((topProvider[1] / summary.total) * 100).toFixed(1)}% of costs. Consider load balancing with other providers.`

@@ -220,8 +220,6 @@ export async function sendWebhookTest(webhookId: string): Promise<{
         responseCode: response.status,
         responseBody: responseBody.substring(0, 1000), // Truncate for storage
         attempts: 1,
-        sentAt: new Date(),
-        deliveredAt: response.ok ? new Date() : null,
         errorMessage: response.ok ? null : `HTTP ${response.status}: ${response.statusText}`
       }
     });
@@ -255,7 +253,6 @@ export async function sendWebhookTest(webhookId: string): Promise<{
         status: 'failed',
         attempts: 1,
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        sentAt: new Date()
       }
     });
 
@@ -356,8 +353,6 @@ async function deliverWebhook(
         responseCode: response.status,
         responseBody: responseBody.substring(0, 1000),
         attempts: 1,
-        sentAt: new Date(),
-        deliveredAt: response.ok ? new Date() : null,
         errorMessage: response.ok ? null : `HTTP ${response.status}: ${response.statusText}`
       }
     });
@@ -380,7 +375,6 @@ async function deliverWebhook(
         status: shouldRetry ? 'retry' : 'failed',
         attempts: 1,
         errorMessage,
-        sentAt: new Date(),
         nextRetryAt: shouldRetry ? new Date(Date.now() + 5000) : null // Retry after 5 seconds
       }
     });

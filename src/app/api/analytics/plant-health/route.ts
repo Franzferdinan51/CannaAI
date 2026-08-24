@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { startOfDay, subDays } from 'date-fns';
 
 export async function GET(request: Request) {
@@ -82,6 +83,9 @@ export async function GET(request: Request) {
     }, {} as Record<string, number>);
 
     // Calculate trends over time
+    const plantFilter = plantId
+      ? Prisma.sql`AND plantId = ${plantId}`
+      : Prisma.empty;
     const trendData = await prisma.$queryRaw`
       SELECT
         DATE(timestamp) as date,
@@ -91,7 +95,7 @@ export async function GET(request: Request) {
         COUNT(*) as count
       FROM PlantHealthAnalytics
       WHERE timestamp >= ${startDate} AND timestamp <= ${endDate}
-      ${plantId ? prisma.$unsafe(`AND plantId = '${plantId}'`) : prisma.$unsafe('')}
+      ${plantFilter}
       GROUP BY DATE(timestamp)
       ORDER BY date ASC
     ` as any[];

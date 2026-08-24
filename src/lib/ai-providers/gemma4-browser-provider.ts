@@ -14,9 +14,18 @@ export interface Gemma4ProviderConfig {
   timeout?: number;
 }
 
+type ChromeRuntime = {
+  lastError?: { message?: string };
+  sendMessage: (extensionId: string, message: unknown, callback: (response: any) => void) => void;
+};
+
+function getChromeRuntime(): ChromeRuntime | null {
+  const runtime = (globalThis as any).chrome?.runtime;
+  return runtime && typeof runtime.sendMessage === 'function' ? runtime : null;
+}
+
 export class Gemma4BrowserProvider extends BaseProvider {
   private extensionId = 'gemma4-extension'; // Extension ID in Chrome
-  private messagePort: chrome.runtime.Port | null = null;
   private isConnected = false;
 
   constructor(config: Gemma4ProviderConfig = {}) {
@@ -42,6 +51,7 @@ export class Gemma4BrowserProvider extends BaseProvider {
         output: 0,
         currency: 'USD',
       },
+      retryDelay: 1000,
     };
 
     super(providerConfig);
@@ -96,10 +106,11 @@ export class Gemma4BrowserProvider extends BaseProvider {
   private async sendMessage(message: any): Promise<any> {
     return new Promise((resolve, reject) => {
       // Use chrome.runtime.sendMessage for one-time messages
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage(this.extensionId, message, (response) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
+      const runtime = getChromeRuntime();
+      if (runtime) {
+        runtime.sendMessage(this.extensionId, message, (response) => {
+          if (runtime.lastError) {
+            reject(new Error(runtime.lastError.message || 'Chrome extension request failed'));
           } else {
             resolve(response);
           }
@@ -142,17 +153,31 @@ export class Gemma4BrowserProvider extends BaseProvider {
       this.updateHealth(true, latency);
       this.recordMetrics(latency, response.usage?.totalTokens || 0, 0, 0, true);
 
+      const inputTokens = response.usage?.inputTokens ?? response.usage?.promptTokens ?? 0;
+      const outputTokens = response.usage?.outputTokens ?? response.usage?.completionTokens ?? 0;
+      const totalTokens = response.usage?.totalTokens ?? inputTokens + outputTokens;
+
       return {
-        content: response.content,
+        id: response.id || `gemma4_${Date.now()}`,
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
         model: this.config.model,
-        provider: this.config.name,
-        usage: response.usage || {
-          inputTokens: 0,
-          outputTokens: 0,
-          totalTokens: 0,
+        choices: [{
+          index: 0,
+          message: { role: 'assistant', content: response.content },
+          finishReason: response.finishReason || 'stop',
+        }],
+        usage: {
+          promptTokens: inputTokens,
+          completionTokens: outputTokens,
+          totalTokens,
+          cost: 0,
         },
-        finishReason: response.finishReason || 'stop',
-        latency,
+        metadata: {
+          provider: this.config.name,
+          latency,
+          modelUsed: this.config.model,
+        },
       };
     } catch (error) {
       const latency = Date.now() - startTime;
@@ -172,6 +197,32 @@ export class Gemma4BrowserProvider extends BaseProvider {
     // The extension handles image processing internally
     // Just return the base64 data
     return imageData;
+  }
+
+  protected normalizeResponse(response: any, metadata: any): AIResponse {
+    const content = response?.content || '';
+    return {
+      id: response?.id || `gemma4_${Date.now()}`,
+      object: 'chat.completion',
+      created: Math.floor(Date.now() / 1000),
+      model: response?.model || this.config.model,
+      choices: [{
+        index: 0,
+        message: { role: 'assistant', content },
+        finishReason: response?.finishReason || 'stop',
+      }],
+      usage: {
+        promptTokens: response?.usage?.inputTokens || 0,
+        completionTokens: response?.usage?.outputTokens || 0,
+        totalTokens: response?.usage?.totalTokens || 0,
+        cost: 0,
+      },
+      metadata: {
+        provider: this.config.name,
+        latency: metadata?.latency || 0,
+        modelUsed: response?.model || this.config.model,
+      },
+    };
   }
 
   /**

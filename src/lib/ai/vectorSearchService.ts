@@ -342,7 +342,7 @@ export async function indexCouncilSession(
   const documentIds: string[] = [];
 
   // Index each message
-  messages.forEach((msg, index) => {
+  for (const msg of messages) {
     const metadata: VectorDocument['metadata'] = {
       sessionId,
       personaId: msg.personaId,
@@ -351,9 +351,9 @@ export async function indexCouncilSession(
       tags: [topic, msg.personaName, 'session']
     };
 
-    const id = addDocument(msg.content, metadata);
+    const id = await addDocument(msg.content, metadata);
     documentIds.push(id);
-  });
+  }
 
   // Index session summary
   const summaryMetadata: VectorDocument['metadata'] = {

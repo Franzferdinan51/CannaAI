@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       const sensorIds = await trackPrismaQuery(
         'sensor.findMany.room_filter',
         () => prisma.sensor.findMany({
-          where: { roomId },
+          where: { locationId: roomId },
           select: { id: true },
         })
       );
@@ -68,9 +68,13 @@ export async function GET(request: Request) {
     });
 
     // Get paginated sensor analytics data
+    type SensorAnalyticsWithRoom = Prisma.SensorAnalyticsGetPayload<{
+      include: { sensor: { include: { room: true } } }
+    }>;
+
     const result = await trackPrismaQuery(
       'sensorAnalytics.findMany.paginated',
-      () => paginate(prisma.sensorAnalytics, {
+      () => paginate<SensorAnalyticsWithRoom>(prisma.sensorAnalytics, {
         page,
         limit,
         orderBy,

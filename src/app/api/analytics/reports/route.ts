@@ -130,7 +130,6 @@ export async function GET(request: Request) {
       avgResponseTime: apiStats._avg.responseTime || 0,
       successCount: apiSuccessStats.find(s => s.success)?. _count.success || 0,
       errorCount: apiSuccessStats.find(s => !s.success)?. _count.success || 0,
-      avgResponseTime: apiStats._avg.responseTime || 0,
       successRate: apiStats._count > 0
         ? ((apiSuccessStats.find(s => s.success)?. _count.success || 0) / apiStats._count) * 100
         : 0,

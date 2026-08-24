@@ -254,13 +254,10 @@ class DatabaseValidator {
         max: 1,
         query: prisma.sensorAnalytics.findMany({
           where: {
-            anomalyScore: {
-              not: null,
-              OR: [
-                { anomalyScore: { lt: 0 } },
-                { anomalyScore: { gt: 1 } },
-              ],
-            },
+            OR: [
+              { anomalyScore: { lt: 0 } },
+              { anomalyScore: { gt: 1 } },
+            ],
           },
         }),
       },
@@ -457,17 +454,13 @@ class DatabaseValidator {
     });
 
     // Check for createdAt > updatedAt (shouldn't happen)
-    const invalidTimestamps = await prisma.plant.findMany({
-      where: {
-        AND: [
-          { createdAt: { not: null } },
-          { updatedAt: { not: null } },
-          { createdAt: { gt: prisma.$queryRaw`updatedAt` } },
-        ],
-      },
+    const timestampCandidates = await prisma.plant.findMany({
       select: { id: true, name: true, createdAt: true, updatedAt: true },
       take: 10,
     });
+    const invalidTimestamps = timestampCandidates.filter(
+      plant => plant.createdAt > plant.updatedAt
+    );
 
     results.push({
       table: 'Plant',

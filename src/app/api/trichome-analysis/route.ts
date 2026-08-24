@@ -123,11 +123,7 @@ export async function POST(request: NextRequest) {
           width: Math.min(2048, originalMetadata.width || 2048), // Maintain resolution for trichome detail
           height: Math.min(2048, originalMetadata.height || 2048),
           quality: 95, // Maximum quality for detailed analysis
-          format: 'JPEG',
-          fit: 'inside',
-          withoutEnlargement: true,
-          fastShrinkOnLoad: false, // Better quality for trichomes
-          progressive: false
+          format: 'JPEG'
         });
 
         console.log(`✅ Trichome image processed: ${processedImageInfo.metadata.width}x${processedImageInfo.metadata.height}, Quality: 95%`);
@@ -542,7 +538,10 @@ function enhanceTrichomeAnalysis(analysisResult: any, deviceInfo: any, options: 
 }
 
 // Helper functions
-function assessImageQuality(processedImage: any, deviceInfo: any): string {
+function assessImageQuality(
+  processedImage: any,
+  deviceInfo: any
+): 'excellent' | 'good' | 'fair' | 'poor' {
   const resolution = deviceInfo.resolution.width * deviceInfo.resolution.height;
   const magnification = deviceInfo.magnification || 1;
 
@@ -560,12 +559,12 @@ function determineMagnificationLevel(deviceInfo: any): string {
   return 'Very Low (<100x)';
 }
 
-function assessFocusQuality(imageData: string): string {
+function assessFocusQuality(imageData: string): 'sharp' | 'adequate' | 'blurry' {
   // In a real implementation, this would analyze image sharpness
   return Math.random() > 0.3 ? 'sharp' : 'adequate';
 }
 
-function assessLightingCondition(imageData: string): string {
+function assessLightingCondition(imageData: string): 'optimal' | 'adequate' | 'poor' {
   // In a real implementation, this would analyze lighting
   return Math.random() > 0.4 ? 'optimal' : 'adequate';
 }

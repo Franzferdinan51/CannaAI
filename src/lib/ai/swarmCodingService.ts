@@ -3,7 +3,7 @@
  * Multi-phase code generation pipeline for cultivation automation
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import {
   SwarmPhase,
   SwarmCodingPipeline,
@@ -14,7 +14,7 @@ import {
 const getAiClient = (apiKey: string) => {
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key) throw new Error("API Key not found");
-  return new GoogleGenerativeAI({ apiKey: key });
+  return new GoogleGenerativeAI(key);
 };
 
 /**
@@ -194,7 +194,7 @@ export async function executeSwarmPipeline(
   const pipeline = createSwarmPipeline(task, pipelineType, participantIds);
   const previousOutputs = new Map<string, string>();
 
-  let currentPipeline = { ...pipeline, status: 'running' as const };
+  let currentPipeline: SwarmCodingPipeline = { ...pipeline, status: 'running' };
 
   for (let i = 0; i < pipeline.phases.length; i++) {
     const phase = pipeline.phases[i];
@@ -269,12 +269,12 @@ export async function reviewPipelineResults(
       temperature: 0.5,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
-          overallQuality: { type: "NUMBER" },
-          strengths: { type: "ARRAY", items: { type: "STRING" } },
-          weaknesses: { type: "ARRAY", items: { type: "STRING" } },
-          recommendations: { type: "ARRAY", items: { type: "STRING" } }
+          overallQuality: { type: SchemaType.NUMBER },
+          strengths: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+          weaknesses: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+          recommendations: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
         },
         required: ["overallQuality", "strengths", "weaknesses", "recommendations"]
       }
@@ -315,11 +315,11 @@ export async function suggestAutomationTasks(
       temperature: 0.8,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
           tasks: {
-            type: "ARRAY",
-            items: { type: "STRING" }
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING }
           }
         },
         required: ["tasks"]

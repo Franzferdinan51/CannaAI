@@ -14,7 +14,7 @@ import {
 const getAiClient = (apiKey: string) => {
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key) throw new Error("API Key not found");
-  return new GoogleGenerativeAI({ apiKey: key });
+  return new GoogleGenerativeAI(key);
 };
 
 /**

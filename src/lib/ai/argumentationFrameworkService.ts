@@ -3,7 +3,7 @@
  * Structured debate and argument mapping for cultivation decisions
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import {
   ArgumentClaim,
   CouncilPersona,
@@ -13,7 +13,7 @@ import {
 const getAiClient = (apiKey: string) => {
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key) throw new Error("API Key not found");
-  return new GoogleGenerativeAI({ apiKey: key });
+  return new GoogleGenerativeAI(key);
 };
 
 /**
@@ -31,18 +31,18 @@ export async function extractArguments(
       temperature: 0.6,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
           arguments: {
-            type: "ARRAY",
+            type: SchemaType.ARRAY,
             items: {
-              type: "OBJECT",
+              type: SchemaType.OBJECT,
               properties: {
-                claim: { type: "STRING" },
-                evidence: { type: "ARRAY", items: { type: "STRING" } },
-                conclusion: { type: "STRING" },
-                confidence: { type: "NUMBER" },
-                proposedBy: { type: "STRING" }
+                claim: { type: SchemaType.STRING },
+                evidence: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+                conclusion: { type: SchemaType.STRING },
+                confidence: { type: SchemaType.NUMBER },
+                proposedBy: { type: SchemaType.STRING }
               },
               required: ["claim", "evidence", "conclusion", "confidence", "proposedBy"]
             }
@@ -145,18 +145,18 @@ export async function findCounterArguments(
       temperature: 0.7,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
           counterArguments: {
-            type: "ARRAY",
+            type: SchemaType.ARRAY,
             items: {
-              type: "OBJECT",
+              type: SchemaType.OBJECT,
               properties: {
-                claim: { type: "STRING" },
-                evidence: { type: "ARRAY", items: { type: "STRING" } },
-                conclusion: { type: "STRING" },
-                confidence: { type: "NUMBER" },
-                proposedBy: { type: "STRING" }
+                claim: { type: SchemaType.STRING },
+                evidence: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+                conclusion: { type: SchemaType.STRING },
+                confidence: { type: SchemaType.NUMBER },
+                proposedBy: { type: SchemaType.STRING }
               },
               required: ["claim", "evidence", "conclusion", "confidence", "proposedBy"]
             }
@@ -216,12 +216,12 @@ export async function synthesizeArguments(
       temperature: 0.6,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
-          synthesis: { type: "STRING" },
-          consensusLevel: { type: "STRING", enum: ["strong", "moderate", "weak", "none"] },
-          keyPoints: { type: "ARRAY", items: { type: "STRING" } },
-          recommendations: { type: "ARRAY", items: { type: "STRING" } }
+          synthesis: { type: SchemaType.STRING },
+          consensusLevel: { type: SchemaType.STRING },
+          keyPoints: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+          recommendations: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
         },
         required: ["synthesis", "consensusLevel", "keyPoints", "recommendations"]
       }
@@ -285,7 +285,7 @@ export function buildArgumentMap(
   const nodes = args.map(arg => ({
     id: arg.id,
     claim: arg.claim.substring(0, 100),
-    type: arg.confidence > 0.6 ? 'support' : 'oppose',
+    type: (arg.confidence > 0.6 ? 'support' : 'oppose') as 'support' | 'oppose',
     strength: arg.confidence
   }));
 

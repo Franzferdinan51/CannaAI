@@ -846,12 +846,21 @@ function generateRecommendationRationale(
   const shortTerm: RecommendationDetail[] = [];
   const longTerm: RecommendationDetail[] = [];
 
+  const getRecommendationAction = (recommendation: unknown): string => {
+    if (typeof recommendation === 'string') return recommendation;
+    if (recommendation && typeof recommendation === 'object' && 'action' in recommendation) {
+      const action = (recommendation as { action?: unknown }).action;
+      if (typeof action === 'string') return action;
+    }
+    return 'See details';
+  };
+
   // Process recommendations from analysis
   const recs = analysis.recommendations;
 
   if (recs?.immediate) {
     for (const rec of recs.immediate.slice(0, 3)) {
-      const action = typeof rec === 'string' ? rec : rec.action || 'See details';
+      const action = getRecommendationAction(rec);
       immediate.push({
         action,
         rationale: getRecommendationRationale(action, 'immediate', analysis),
@@ -864,7 +873,7 @@ function generateRecommendationRationale(
 
   if (recs?.shortTerm) {
     for (const rec of recs.shortTerm.slice(0, 3)) {
-      const action = typeof rec === 'string' ? rec : rec.action || 'See details';
+      const action = getRecommendationAction(rec);
       shortTerm.push({
         action,
         rationale: getRecommendationRationale(action, 'shortTerm', analysis),
@@ -877,7 +886,7 @@ function generateRecommendationRationale(
 
   if (recs?.longTerm) {
     for (const rec of recs.longTerm.slice(0, 3)) {
-      const action = typeof rec === 'string' ? rec : rec.action || 'See details';
+      const action = getRecommendationAction(rec);
       longTerm.push({
         action,
         rationale: getRecommendationRationale(action, 'longTerm', analysis),

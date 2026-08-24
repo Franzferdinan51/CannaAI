@@ -24,7 +24,7 @@ export interface ProcessedImageResult {
 
 // Keep sharp optional so environments without its native binary can still use
 // the safe no-op fallback. Dynamic import also keeps this module browser-safe.
-let sharpModule: typeof import('sharp') | null | undefined;
+let sharpModule: unknown | null | undefined;
 
 type SharpFactory = (input: Buffer) => {
   resize: (...args: any[]) => any;
@@ -43,7 +43,7 @@ function resolveSharpFactory(moduleValue: unknown): SharpFactory | null {
   return candidates.find((candidate): candidate is SharpFactory => typeof candidate === 'function') ?? null;
 }
 
-async function getSharp(): Promise<typeof import('sharp') | null> {
+async function getSharp(): Promise<unknown | null> {
   if (sharpModule !== undefined) return sharpModule;
   try {
     sharpModule = await import('sharp');
@@ -107,12 +107,18 @@ export async function processImageForVisionModel(
         const cleanJpeg = await sharp(pngBuf)
           .jpeg({ quality, mozjpeg: false })
           .toBuffer();
+        const cleanMetadata = await sharp(cleanJpeg).metadata?.();
         console.warn('[image-simple] PNG intermediate:', pngBuf.length, '-> clean JPEG:', cleanJpeg.length);
         console.warn('[image-simple] Clean JPEG starts:', cleanJpeg.slice(0, 8).toString('hex'));
         const finalBuf = cleanJpeg;
         return {
           data: finalBuf,
-          metadata: { format: 'jpeg', width: finalBuf.length, height: 0, size: finalBuf.length },
+          metadata: {
+            format: 'jpeg',
+            width: cleanMetadata?.width || 0,
+            height: cleanMetadata?.height || 0,
+            size: finalBuf.length,
+          },
           base64: `data:image/jpeg;base64,${finalBuf.toString('base64')}`,
           originalSize,
           compressedSize: finalBuf.length,
@@ -120,12 +126,14 @@ export async function processImageForVisionModel(
         };
       }
 
+      const processedMetadata = await sharp(processed).metadata?.();
+
       return {
         data: processed,
         metadata: {
           format: 'jpeg',
-          width: processed.length,
-          height: 0,
+          width: processedMetadata?.width || 0,
+          height: processedMetadata?.height || 0,
           size: processed.length,
         },
         base64: `data:image/jpeg;base64,${processed.toString('base64')}`,

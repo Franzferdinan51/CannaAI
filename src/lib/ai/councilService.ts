@@ -3,7 +3,7 @@
  * Multi-agent deliberation system with voting, consensus, and specialized personas
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import {
   CouncilSession,
   CouncilMessage,
@@ -35,7 +35,7 @@ const getAiClient = (apiKey: string) => {
   if (!key) {
     throw new Error("API Key not found");
   }
-  return new GoogleGenerativeAI({ apiKey: key });
+  return new GoogleGenerativeAI(key);
 };
 
 /**
@@ -157,17 +157,17 @@ async function calculateVoting(
       temperature: 0.3,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
           votes: {
-            type: "ARRAY",
+            type: SchemaType.ARRAY,
             items: {
-              type: "OBJECT",
+              type: SchemaType.OBJECT,
               properties: {
-                personaId: { type: "STRING" },
-                vote: { type: "STRING", enum: ["agree", "disagree", "abstain"] },
-                reasoning: { type: "STRING" },
-                confidence: { type: "NUMBER" }
+                personaId: { type: SchemaType.STRING },
+                vote: { type: SchemaType.STRING },
+                reasoning: { type: SchemaType.STRING },
+                confidence: { type: SchemaType.NUMBER }
               },
               required: ["personaId", "vote", "reasoning", "confidence"]
             }
@@ -265,18 +265,18 @@ async function generateArguments(
       temperature: 0.5,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
           arguments: {
-            type: "ARRAY",
+            type: SchemaType.ARRAY,
             items: {
-              type: "OBJECT",
+              type: SchemaType.OBJECT,
               properties: {
-                claim: { type: "STRING" },
-                evidence: { type: "ARRAY", items: { type: "STRING" } },
-                conclusion: { type: "STRING" },
-                confidence: { type: "NUMBER" },
-                proposedBy: { type: "STRING" }
+                claim: { type: SchemaType.STRING },
+                evidence: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+                conclusion: { type: SchemaType.STRING },
+                confidence: { type: SchemaType.NUMBER },
+                proposedBy: { type: SchemaType.STRING }
               },
               required: ["claim", "evidence", "conclusion", "confidence", "proposedBy"]
             }

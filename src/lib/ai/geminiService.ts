@@ -1,60 +1,60 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, Schema } from "@google/generative-ai";
 import { PlantHealthAnalysis } from "../../types/plant-analysis";
 
-const schema = {
-  type: "OBJECT",
+const schema: Schema = {
+  type: SchemaType.OBJECT,
   properties: {
-    summary: { type: "STRING" },
+    summary: { type: SchemaType.STRING },
     entities: {
-      type: "ARRAY",
+      type: SchemaType.ARRAY,
       items: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
-          name: { type: "STRING" },
-          type: { type: "STRING" },
-          role: { type: "STRING" },
-          context: { type: "STRING" },
-          isConfirmed: { type: "BOOLEAN" }
+          name: { type: SchemaType.STRING },
+          type: { type: SchemaType.STRING },
+          role: { type: SchemaType.STRING },
+          context: { type: SchemaType.STRING },
+          isConfirmed: { type: SchemaType.BOOLEAN }
         },
         required: ["name", "type", "role", "context", "isConfirmed"]
       }
     },
-    keyInsights: { type: "ARRAY", items: { type: "STRING" } },
-    sentiment: { type: "STRING" },
-    analysisDate: { type: "STRING" },
-    flaggedIssues: { type: "ARRAY", items: { type: "STRING" } },
-    locations: { type: "ARRAY", items: { type: "STRING" } },
-    recommendations: { type: "ARRAY", items: { type: "STRING" } },
-    visualObjects: { type: "ARRAY", items: { type: "STRING" } },
-    issueType: { type: "STRING" },
-    confidenceScore: { type: "NUMBER" },
+    keyInsights: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+    sentiment: { type: SchemaType.STRING },
+    analysisDate: { type: SchemaType.STRING },
+    flaggedIssues: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+    locations: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+    recommendations: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+    visualObjects: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+    issueType: { type: SchemaType.STRING },
+    confidenceScore: { type: SchemaType.NUMBER },
     timelineEvents: {
-      type: "ARRAY",
+      type: SchemaType.ARRAY,
       items: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
-          date: { type: "STRING" },
-          event: { type: "STRING" }
+          date: { type: SchemaType.STRING },
+          event: { type: SchemaType.STRING }
         },
         required: ["date", "event"]
       }
     },
     strainInfo: {
-      type: "OBJECT",
+      type: SchemaType.OBJECT,
       properties: {
-        strainName: { type: "STRING" },
-        phenotype: { type: "STRING" },
-        stage: { type: "STRING" },
-        floweringDays: { type: "NUMBER" }
+        strainName: { type: SchemaType.STRING },
+        phenotype: { type: SchemaType.STRING },
+        stage: { type: SchemaType.STRING },
+        floweringDays: { type: SchemaType.NUMBER }
       }
     },
     environmentalConditions: {
-      type: "OBJECT",
+      type: SchemaType.OBJECT,
       properties: {
-        temperature: { type: "STRING" },
-        humidity: { type: "STRING" },
-        ph: { type: "STRING" },
-        ec: { type: "STRING" }
+        temperature: { type: SchemaType.STRING },
+        humidity: { type: SchemaType.STRING },
+        ph: { type: SchemaType.STRING },
+        ec: { type: SchemaType.STRING }
       }
     }
   }

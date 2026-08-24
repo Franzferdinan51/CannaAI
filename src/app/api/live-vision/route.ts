@@ -73,10 +73,12 @@ export async function POST(request: NextRequest) {
 
         // Enhanced processing for live vision - prioritize speed and quality
         processedImageInfo = await processImageForVisionModel(buffer, {
-          targetSize: 1024, // Slightly smaller for faster processing
+          width: 1024, // Slightly smaller for faster processing
+          height: 1024,
           quality: 90, // High quality for accurate analysis
           format: 'JPEG',
-          optimizeForSpeed: true // Special flag for live processing
+          fastShrinkOnLoad: true,
+          withoutEnlargement: true
         });
       } catch (imageError) {
         console.error('Image processing error:', imageError);
@@ -109,7 +111,6 @@ export async function POST(request: NextRequest) {
 
       // Perform AI analysis with live vision optimizations
       const analysisResult = await analyzePlantHealth(
-        processedImageInfo.buffer,
         processedImageInfo.base64,
         analysisContext
       );

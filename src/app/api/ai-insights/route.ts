@@ -46,6 +46,30 @@ interface Insight {
   source_readings: number;
 }
 
+type SensorReadingWithData = {
+  value: number | null;
+  data: unknown;
+  timestamp: Date;
+};
+
+function numericReading(reading: SensorReadingWithData, keys: string[]): number | null {
+  const data = reading.data && typeof reading.data === 'object' && !Array.isArray(reading.data)
+    ? reading.data as Record<string, unknown>
+    : {};
+
+  for (const key of keys) {
+    const candidate = data[key];
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate;
+    if (typeof candidate === 'string' && candidate.trim() !== '') {
+      const parsed = Number(candidate);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+
+  if (typeof reading.value === 'number' && Number.isFinite(reading.value)) return reading.value;
+  return null;
+}
+
 function severityScore(current: number, warn: {min:number,max:number}, ideal: {min:number,max:number}): number {
   if (current < warn.min) return Math.max(0, (warn.min - current) / (warn.min - ideal.min));
   if (current > warn.max) return Math.max(0, (current - warn.max) / (ideal.max - warn.max));
@@ -70,7 +94,20 @@ export async function GET(request: Request) {
   const since = new Date(Date.now() - hours * 3600 * 1000);
 
   const readings = await prisma.sensorReading.findMany({
-    where: { timestamp: { gte: since } },
+    where: {
+      timestamp: { gte: since },
+      ...(room !== 'all' ? {
+        sensor: {
+          room: {
+            OR: [
+              { id: room },
+              { name: room },
+              { name: room.replace(/[-_]/g, ' ') }
+            ]
+          }
+        }
+      } : {})
+    },
     orderBy: { timestamp: 'desc' },
     take: 50,
   });
@@ -84,9 +121,16 @@ export async function GET(request: Request) {
   }
 
   const insights: Insight[] = [];
-  const vpds = readings.map((r) => r.vpd ?? r.vpd_daily).filter(Boolean);
-  const temps = readings.map((r) => r.temperature ?? r.temp_avg).filter(Boolean);
-  const hums = readings.map((r) => r.humidity ?? r.humidity_avg).filter(Boolean);
+  const typedReadings = readings as SensorReadingWithData[];
+  const vpds = typedReadings
+    .map((r) => numericReading(r, ['vpd', 'vpd_daily']))
+    .filter((value): value is number => value !== null);
+  const temps = typedReadings
+    .map((r) => numericReading(r, ['temperature', 'temp_avg']))
+    .filter((value): value is number => value !== null);
+  const hums = typedReadings
+    .map((r) => numericReading(r, ['humidity', 'humidity_avg']))
+    .filter((value): value is number => value !== null);
 
   // --- VPD Analysis ---
   if (vpds.length) {

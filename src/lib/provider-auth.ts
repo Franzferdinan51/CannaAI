@@ -98,7 +98,7 @@ export async function providerAuthStatus(provider: AuthProvider) {
   // whereas `hermes auth status openai-codex` only describes one credential
   // entry and can report a false negative for the proxy.
   const output = await run(commandPath('hermes'), ['proxy', 'status']);
-  const target = provider === 'nous' ? 'nous' : provider === 'xai' ? 'xai' : undefined;
+  const target = provider === 'nous' ? 'nous' : undefined;
   const targetLine = target ? new RegExp(`\\[${target}\\][^\\n]*(ready|logged in|authenticated|✓)`, 'i') : null;
   const authenticated = targetLine ? targetLine.test(output) : /\[[^\]]+\][^\n]*(ready|logged in|authenticated|✓)/i.test(output);
   return { provider, authenticated, connected: authenticated, source: 'hermes-proxy', summary: authenticated ? 'Hermes proxy has an authenticated upstream' : 'No authenticated Hermes proxy upstream found', rawStatus: redact(output) };

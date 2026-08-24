@@ -3,7 +3,7 @@
  * Forecasting and superforecasting for cultivation outcomes
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import {
   PredictionMarketItem,
   CouncilPersona,
@@ -18,7 +18,7 @@ const getAiClient = (apiKey: string) => {
   if (!key) {
     throw new Error("API Key not found");
   }
-  return new GoogleGenerativeAI({ apiKey: key });
+  return new GoogleGenerativeAI(key);
 };
 
 /**
@@ -65,7 +65,7 @@ export async function generatePredictions(
 async function generateSinglePrediction(
   persona: CouncilPersona,
   question: string,
-  category: string,
+  category: PredictionMarketItem['category'],
   context: string,
   apiKey: string
 ): Promise<PredictionMarketItem> {
@@ -77,11 +77,11 @@ async function generateSinglePrediction(
       maxOutputTokens: 800,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
-          predictedOutcome: { type: "STRING" },
-          confidence: { type: "NUMBER" },
-          reasoning: { type: "STRING" }
+          predictedOutcome: { type: SchemaType.STRING },
+          confidence: { type: SchemaType.NUMBER },
+          reasoning: { type: SchemaType.STRING }
         },
         required: ["predictedOutcome", "confidence", "reasoning"]
       }
@@ -319,11 +319,11 @@ export async function suggestPredictionQuestions(
       temperature: 0.7,
       responseMimeType: "application/json",
       responseSchema: {
-        type: "OBJECT",
+        type: SchemaType.OBJECT,
         properties: {
           questions: {
-            type: "ARRAY",
-            items: { type: "STRING" }
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING }
           }
         },
         required: ["questions"]

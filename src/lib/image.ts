@@ -48,8 +48,8 @@ export interface ImageProcessingOptions {
   height?: number;
   quality?: number;
   format?: SupportedFormat;
-  fit?: sharp.Fit;
-  position?: sharp.Position;
+  fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
+  position?: string;
   background?: { r: number; g: number; b: number; alpha: number };
   progressive?: boolean;
   withoutEnlargement?: boolean;
@@ -83,14 +83,14 @@ export interface ProcessedImageResult {
 
 // Error classes for better error handling
 export class ImageProcessingError extends Error {
-  constructor(message: string, public cause?: Error) {
+  constructor(message: string, public override cause?: Error) {
     super(message);
     this.name = 'ImageProcessingError';
   }
 }
 
 export class HeicConversionError extends ImageProcessingError {
-  constructor(message: string, public cause?: Error) {
+  constructor(message: string, public override cause?: Error) {
     super(message);
     this.name = 'HeicConversionError';
   }
@@ -291,7 +291,6 @@ export async function processImage(
           progressive,
           compressionLevel: 9,
           adaptiveFiltering: true,
-          forceQuantization: true
         });
         break;
 

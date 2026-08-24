@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Nutrient, Strain, NutrientType, StrainType, UserSettings, NewsArticle, GeneticAnalysis, UsageLog, LineageNode, ProductAlternative, BreedingProject } from '../../types/canopy';
 
 /**
@@ -11,7 +11,7 @@ const getAiClient = (apiKey: string) => {
   if (!key) {
     throw new Error("API Key not found");
   }
-  return new GoogleGenerativeAI({ apiKey: key });
+  return new GoogleGenerativeAI(key);
 };
 
 /**
@@ -47,25 +47,25 @@ export const scanInventoryItem = async (
   if (mode === 'nutrient') {
     prompt = "Analyze this image of a cannabis nutrient bottle. Extract the Name, Brand, NPK ratio (format N-P-K), and likely Type. If NPK is not visible, use '0-0-0'.";
     schema = {
-      type: "OBJECT",
+      type: SchemaType.OBJECT,
       properties: {
-        name: { type: "STRING" },
-        brand: { type: "STRING" },
-        npk: { type: "STRING" },
-        type: { type: "STRING", enum: Object.values(NutrientType) },
+        name: { type: SchemaType.STRING },
+        brand: { type: SchemaType.STRING },
+        npk: { type: SchemaType.STRING },
+        type: { type: SchemaType.STRING, enum: Object.values(NutrientType) },
       },
       required: ["name", "brand", "type"],
     };
   } else {
     prompt = "Analyze this image of a cannabis seed pack. Extract the Strain Name, Breeder, Type (Indica, Sativa, Hybrid), and estimated Flowering Time in weeks (integer). If Auto-flowering, mark isAuto as true.";
     schema = {
-      type: "OBJECT",
+      type: SchemaType.OBJECT,
       properties: {
-        name: { type: "STRING" },
-        breeder: { type: "STRING" },
-        type: { type: "STRING", enum: Object.values(StrainType) },
+        name: { type: SchemaType.STRING },
+        breeder: { type: SchemaType.STRING },
+        type: { type: SchemaType.STRING, enum: Object.values(StrainType) },
         floweringTimeWeeks: { type: "INTEGER" },
-        isAuto: { type: "BOOLEAN" },
+        isAuto: { type: SchemaType.BOOLEAN },
       },
       required: ["name", "breeder", "type"],
     };
@@ -81,12 +81,13 @@ export const scanInventoryItem = async (
     });
 
     const response = await model.generateContent({
-      contents: {
+      contents: [{
+        role: 'user',
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Image } },
           { text: prompt }
         ]
-      }
+      }]
     });
 
     if (response.response.text()) {
@@ -139,7 +140,7 @@ JSON Output Schema:
   try {
     const model = ai.getGenerativeModel({
       model: "gemini-2.5-flash",
-      tools: [{ googleSearch: {} }]
+      tools: [{ googleSearchRetrieval: {} }]
     });
 
     const response = await model.generateContent(prompt);
@@ -204,7 +205,7 @@ Return JSON Array:
       generationConfig: {
         responseMimeType: "application/json",
       },
-      tools: [{ googleSearch: {} }]
+      tools: [{ googleSearchRetrieval: {} }]
     });
 
     const response = await model.generateContent(prompt);
@@ -340,7 +341,7 @@ Output strictly valid JSON.`;
       generationConfig: {
         responseMimeType: "application/json",
       },
-      tools: [{ googleSearch: {} }]
+      tools: [{ googleSearchRetrieval: {} }]
     });
 
     const response = await model.generateContent(prompt);

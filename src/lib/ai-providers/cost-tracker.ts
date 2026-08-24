@@ -38,6 +38,8 @@ export interface BudgetConfig {
 
 export interface CostSummary {
   total: number;
+  totalRequests: number;
+  totalTokens: number;
   byProvider: Record<string, number>;
   byModel: Record<string, number>;
   byType: Record<string, number>;
@@ -93,6 +95,8 @@ export class CostTracker {
     }
 
     const total = filteredRecords.reduce((sum, r) => sum + r.cost, 0);
+    const totalRequests = filteredRecords.length;
+    const totalTokens = filteredRecords.reduce((sum, r) => sum + r.totalTokens, 0);
 
     const byProvider: Record<string, number> = {};
     const byModel: Record<string, number> = {};
@@ -112,6 +116,8 @@ export class CostTracker {
 
     return {
       total,
+      totalRequests,
+      totalTokens,
       byProvider,
       byModel,
       byType,

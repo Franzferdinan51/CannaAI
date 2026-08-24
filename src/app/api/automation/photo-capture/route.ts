@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+function asJsonRecord(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -166,6 +172,7 @@ async function executeCapture(taskId: string) {
     });
 
     if (!task) return;
+    const taskData = asJsonRecord(task.data);
 
     // Update status to running
     await prisma.task.update({
@@ -182,7 +189,7 @@ async function executeCapture(taskId: string) {
     const captureResult = {
       success: true,
       capturedAt: new Date().toISOString(),
-      deviceInfo: task.data.deviceInfo || {},
+      deviceInfo: asJsonRecord(taskData.deviceInfo),
       imageUrl: null, // Would be populated with actual image URL
       message: 'Photo capture completed (simulated)'
     };
@@ -194,15 +201,15 @@ async function executeCapture(taskId: string) {
         status: 'completed',
         completedAt: new Date(),
         data: {
-          ...task.data,
+          ...taskData,
           ...captureResult
         }
       }
     });
 
     // Trigger analysis if image was captured
-    if (task.plantId && task.data.imageData) {
-      await triggerAnalysisAfterCapture(task.plantId, task.data.imageData, task.data);
+    if (task.plantId && typeof taskData.imageData === 'string') {
+      await triggerAnalysisAfterCapture(task.plantId, taskData.imageData, taskData);
     }
 
   } catch (error) {

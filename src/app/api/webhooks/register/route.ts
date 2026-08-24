@@ -23,7 +23,8 @@ function checkRateLimit(clientIP: string, limit: number = 10, windowMs: number =
 
 export async function POST(request: NextRequest) {
   try {
-    const clientIP = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
+    const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || '';
 
     // Check rate limit

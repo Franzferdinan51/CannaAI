@@ -4,7 +4,7 @@
  */
 
 export class ImageProcessingError extends Error {
-  constructor(message: string, public cause?: Error) {
+  constructor(message: string, public override cause?: Error) {
     super(message);
     this.name = 'ImageProcessingError';
   }

@@ -7,7 +7,10 @@ type Params = { params: Promise<{ id: string }> };
 export async function GET(_: Request, { params }: Params) {
   const { id } = await params;
   await ensureSeedData();
-  const sensor = await prisma.sensor.findUnique({ where: { id } });
+  const sensor = await prisma.sensor.findUnique({
+    where: { id },
+    include: { room: true }
+  });
   if (!sensor) return NextResponse.json({ success: false, error: 'Sensor not found' }, { status: 404 });
 
   const readings = await prisma.sensorReading.findMany({

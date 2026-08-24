@@ -18,7 +18,6 @@ import Providers from '@/components/providers';
 
 export const viewport: Viewport = {
   themeColor: '#00ff88',
-  backgroundColor: '#0a0a0a',
 };
 
 export const metadata: Metadata = {

@@ -4,11 +4,9 @@ import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { existsSync, readFileSync } from 'fs';
-import dotenv from 'dotenv';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 
 const execAsync = promisify(exec);
-dotenv.config({ path: path.join(process.cwd(), '.env.local') });
 
 function normalizeLMStudioBaseUrl(value: string): string {
   return value.replace(/\/v1\/?$/, '').replace(/\/$/, '');

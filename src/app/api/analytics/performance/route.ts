@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { startOfDay, subDays } from 'date-fns';
 
 export async function GET(request: Request) {
@@ -97,6 +98,9 @@ export async function GET(request: Request) {
     });
 
     // Get hourly response time trends
+    const endpointFilter = endpoint
+      ? Prisma.sql`AND endpoint = ${endpoint}`
+      : Prisma.empty;
     const trends = await prisma.$queryRaw`
       SELECT
         strftime('%Y-%m-%d %H:00:00', timestamp) as hour,
@@ -106,7 +110,7 @@ export async function GET(request: Request) {
         SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successCount
       FROM APIPerformanceMetrics
       WHERE timestamp >= ${startDate.toISOString()} AND timestamp <= ${endDate.toISOString()}
-      ${endpoint ? prisma.$unsafe(`AND endpoint = '${endpoint}'`) : ''}
+      ${endpointFilter}
       GROUP BY hour, endpoint
       ORDER BY hour ASC
       LIMIT 100

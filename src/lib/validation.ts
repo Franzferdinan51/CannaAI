@@ -197,8 +197,8 @@ export function validateRequestBody<T>(schema: z.ZodSchema<T>, body: unknown): T
   try {
     return schema.parse(body);
   } catch (error) {
-    if (error instanceof z.ZodError && error.errors && Array.isArray(error.errors)) {
-      const details = error.errors.map(err => ({
+    if (error instanceof z.ZodError && Array.isArray(error.issues)) {
+      const details = error.issues.map(err => ({
         field: err.path && Array.isArray(err.path) ? err.path.join('.') : 'unknown',
         message: err.message || 'Unknown validation error',
         code: err.code || 'VALIDATION_ERROR'
@@ -285,4 +285,3 @@ globalForRateLimiter.__rateLimiterCleanupInterval = setInterval(() => {
   apiRateLimiter.cleanup();
   analysisRateLimiter.cleanup();
 }, 300000); // Every 5 minutes
-

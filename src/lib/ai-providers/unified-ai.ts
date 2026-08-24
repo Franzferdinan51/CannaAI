@@ -127,7 +127,13 @@ export class UnifiedAI {
       // Add conversation history if provided
       if (request.conversationId) {
         const history = this.providerManager.getConversationHistory(request.conversationId);
-        request.messages = [...history, ...request.messages];
+        request.messages = [
+          ...history.map(message => ({
+            role: message.role as 'system' | 'user' | 'assistant',
+            content: message.content,
+          })),
+          ...request.messages
+        ];
       }
 
       // Apply prompt version if specified
@@ -145,14 +151,21 @@ export class UnifiedAI {
 
       // Check cache first
       if (this.config.enableCaching && !request.stream) {
-        const cached = this.cacheManager.get(cacheKey.requestHash);
+        const cached = this.cacheManager.get<AIResponse>(cacheKey.requestHash);
         if (cached) {
           return {
             id: `cache_${Date.now()}`,
             content: cached.data.choices[0].message.content,
             provider: cached.data.metadata?.provider || 'cache',
             model: request.model || 'cached',
-            usage: cached.data.usage || { promptTokens: 0, completionTokens: 0, totalTokens: 0, cost: 0 },
+            usage: cached.data.usage
+              ? {
+                  promptTokens: cached.data.usage.promptTokens,
+                  completionTokens: cached.data.usage.completionTokens,
+                  totalTokens: cached.data.usage.totalTokens,
+                  cost: cached.data.usage.cost ?? 0,
+                }
+              : { promptTokens: 0, completionTokens: 0, totalTokens: 0, cost: 0 },
             metadata: {
               latency: Date.now() - startTime,
               cached: true,
@@ -233,7 +246,12 @@ export class UnifiedAI {
         content: response.choices[0].message.content,
         provider: response.metadata.provider,
         model: response.metadata.modelUsed,
-        usage: response.usage!,
+        usage: {
+          promptTokens: response.usage?.promptTokens ?? 0,
+          completionTokens: response.usage?.completionTokens ?? 0,
+          totalTokens: response.usage?.totalTokens ?? 0,
+          cost: response.usage?.cost ?? 0,
+        },
         metadata: {
           latency: response.metadata.latency,
           cached: response.metadata.cached || false,
@@ -352,7 +370,17 @@ export class UnifiedAI {
    * Get cost summary
    */
   getCostSummary() {
-    return this.costTracker.getSummary();
+    const tracked = this.costTracker.getSummary();
+    const providerUsage = this.providerManager.getCostSummary();
+
+    return {
+      ...tracked,
+      // Cost records and provider metrics are maintained by separate layers.
+      // Prefer the provider metrics for usage totals because providers also
+      // record successful requests that have zero monetary cost (LM Studio).
+      totalRequests: providerUsage.totalRequests,
+      totalTokens: providerUsage.totalTokens,
+    };
   }
 
   /**

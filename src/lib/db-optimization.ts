@@ -86,7 +86,7 @@ export async function paginate<T>(
   const totalPages = Math.ceil(total / limit);
 
   return {
-    data,
+      data: data as T[],
     meta: {
       total,
       page,
@@ -94,7 +94,7 @@ export async function paginate<T>(
       totalPages,
       hasNextPage: page < totalPages,
       hasPreviousPage: page > 1,
-      cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+      cursor: data.length > 0 ? (data[data.length - 1] as any).id : undefined,
     },
   };
 }

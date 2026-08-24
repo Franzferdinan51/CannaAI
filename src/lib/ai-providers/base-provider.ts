@@ -74,6 +74,8 @@ export interface AIRequest {
   }>;
   model?: string;
   temperature?: number;
+  topP?: number;
+  topK?: number;
   maxTokens?: number;
   stream?: boolean;
   tools?: any[];
@@ -108,6 +110,7 @@ export interface AIResponse {
     cached?: boolean;
     batched?: boolean;
     modelUsed: string;
+    citations?: string[];
   };
 }
 

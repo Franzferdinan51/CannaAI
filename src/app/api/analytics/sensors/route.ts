@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     } else if (roomId) {
       // Get all sensors in the room
       const sensors = await prisma.sensor.findMany({
-        where: { roomId },
+        where: { locationId: roomId },
         select: { id: true },
       });
       const sensorIds = sensors.map(s => s.id);

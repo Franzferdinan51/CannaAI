@@ -169,7 +169,7 @@ export class ProviderManager {
     this.pool.weights.set('hermes', 0.9);
 
     // Gemma4 Browser Extension - only available in browser with extension installed
-    if (typeof window !== 'undefined' && typeof chrome !== 'undefined') {
+    if (typeof window !== 'undefined' && typeof (globalThis as any).chrome !== 'undefined') {
       try {
         const gemma4Provider = new Gemma4BrowserProvider();
         this.pool.providers.push(gemma4Provider);

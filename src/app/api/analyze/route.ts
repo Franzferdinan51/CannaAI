@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
-dotenv.config();
 import { base64ToBuffer, ImageProcessingError } from '@/lib/base64';
 // processImageForVisionModel is loaded dynamically to avoid sharp/heic-convert crashing on android-arm64 server
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
@@ -76,7 +73,9 @@ function addSecurityHeaders(response: NextResponse) {
 
 // Rate limiting middleware
 function checkRateLimit(request: NextRequest): { allowed: boolean; resetTime?: number; remaining?: number } {
-  const clientIP = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || 'unknown';
   const hashedIP = crypto.createHash('sha256').update(clientIP).digest('hex').substring(0, 16);
   const now = Date.now();
   // Cleanup expired entries to prevent memory leak
@@ -338,7 +337,14 @@ export async function POST(request: NextRequest) {
         const originalMegapixels = (metadata.width || 0) * (metadata.height || 0) / 1000000;
 
         // Adaptive compression based on image size and quality requirements
-        let processingOptions = {
+        let processingOptions: {
+          width?: number;
+          height?: number;
+          quality?: number;
+          format: 'JPEG';
+          withoutEnlargement: boolean;
+          fastShrinkOnLoad: boolean;
+        } = {
           format: 'JPEG' as const,
           withoutEnlargement: true,
           fastShrinkOnLoad: false
