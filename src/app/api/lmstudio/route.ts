@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { isServerless, isDevelopment } from '@/lib/ai-provider-detection';
 
 // Export configuration for dual-mode compatibility
@@ -15,6 +16,14 @@ export const revalidate = false;
 // LM Studio configuration
 const LM_STUDIO_URL = process.env.LM_STUDIO_URL || 'http://localhost:1234';
 const LM_STUDIO_TIMEOUT = parseInt(process.env.LM_STUDIO_TIMEOUT || '30000');
+
+function lmStudioHeaders(includeJson = false): Record<string, string> {
+  const apiKey = getLMStudioApiKey();
+  return {
+    ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+    ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+  };
+}
 
 export async function POST(request: NextRequest) {
   // For static export, provide client-side compatibility response
@@ -77,10 +86,7 @@ export async function POST(request: NextRequest) {
       const healthCheck = await fetch(`${LM_STUDIO_URL}/v1/models`, {
         method: 'GET',
         signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(process.env.LM_STUDIO_API_KEY && { 'Authorization': `Bearer ${process.env.LM_STUDIO_API_KEY}` })
-        }
+        headers: lmStudioHeaders()
       });
 
       clearTimeout(timeoutId);
@@ -157,10 +163,7 @@ export async function POST(request: NextRequest) {
     try {
       const lmStudioResponse = await fetch(`${LM_STUDIO_URL}/v1/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(process.env.LM_STUDIO_API_KEY && { 'Authorization': `Bearer ${process.env.LM_STUDIO_API_KEY}` })
-        },
+        headers: lmStudioHeaders(true),
         body: JSON.stringify({
           model: modelId || 'auto', // Let LM Studio choose the best model
           messages,
@@ -184,7 +187,9 @@ export async function POST(request: NextRequest) {
       // Extract and return the response
       const response = {
         success: true,
-        content: result.choices?.[0]?.message?.content,
+        content: result.choices?.[0]?.message?.content
+          || result.choices?.[0]?.message?.reasoning_content
+          || '',
         model: result.model || modelId || 'unknown',
         usage: result.usage,
         timestamp: new Date().toISOString(),
@@ -285,10 +290,7 @@ export async function GET() {
     const response = await fetch(`${LM_STUDIO_URL}/v1/models`, {
       method: 'GET',
       signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(process.env.LM_STUDIO_API_KEY && { 'Authorization': `Bearer ${process.env.LM_STUDIO_API_KEY}` })
-      }
+      headers: lmStudioHeaders()
     });
 
     clearTimeout(timeoutId);

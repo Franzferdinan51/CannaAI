@@ -1,4 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
+
+const LM_STUDIO_URL = (process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234')
+  .replace(/\/v1\/?$/, '')
+  .replace(/\/$/, '');
+
+function lmStudioHeaders(includeJson = false): Record<string, string> {
+  const apiKey = getLMStudioApiKey();
+  return {
+    ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+    ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+  };
+}
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -29,8 +42,9 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Check if LM Studio is running
-    const healthResponse = await fetch('http://localhost:1234/v1/models', {
-      signal: AbortSignal.timeout(3000)
+    const healthResponse = await fetch(`${LM_STUDIO_URL}/v1/models`, {
+      signal: AbortSignal.timeout(3000),
+      headers: lmStudioHeaders(),
     });
 
     if (!healthResponse.ok) {
@@ -108,11 +122,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Call LM Studio API
-    const lmStudioResponse = await fetch('http://localhost:1234/v1/chat/completions', {
+    const lmStudioResponse = await fetch(`${LM_STUDIO_URL}/v1/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: lmStudioHeaders(true),
       body: JSON.stringify(lmStudioPayload)
     });
 
@@ -136,8 +148,11 @@ export async function POST(request: NextRequest) {
     const result = await lmStudioResponse.json();
 
     // Extract and return the response
+    const message = result.choices?.[0]?.message || {};
     const response = {
-      content: result.choices[0].message.content,
+      // Reasoning-first local models may put the usable answer in
+      // reasoning_content while content is empty.
+      content: message.content || message.reasoning_content || '',
       model: result.model || selectedModel,
       usage: result.usage,
       timestamp: new Date().toISOString(),
@@ -202,8 +217,9 @@ export async function GET() {
 
   // Health check endpoint
   try {
-    const response = await fetch('http://localhost:1234/v1/models', {
-      signal: AbortSignal.timeout(2000)
+    const response = await fetch(`${LM_STUDIO_URL}/v1/models`, {
+      signal: AbortSignal.timeout(2000),
+      headers: lmStudioHeaders(),
     });
 
     if (!response.ok) {

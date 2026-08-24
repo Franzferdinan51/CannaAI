@@ -490,14 +490,17 @@ export async function POST(request: NextRequest) {
       if (primaryProvider.provider === 'lmstudio') {
         // PRIMARY: Use LM Studio locally for vision and text
         console.log('🟣 Using LM Studio as primary provider...');
+        // Let the LM Studio adapter resolve the configured or currently
+        // advertised model. Hard-coding a Qwen id here made healthy local
+        // installs using Ornith (or any other model) fail before inference.
         const lmStudioModel = imageBase64ForAI
-          ? process.env.LM_STUDIO_VISION_MODEL || 'qwen/qwen3.5-9b'
-          : process.env.LM_STUDIO_TEXT_MODEL || 'qwen/qwen3.5-27b';
+          ? process.env.LM_STUDIO_VISION_MODEL || process.env.LM_STUDIO_MODEL
+          : process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL;
         const lmStudioRaw = await executeWithLMStudio(
           [{ role: 'user', content: prompt }],
           {
             image: imageBase64ForAI,
-            model: lmStudioModel,
+            ...(lmStudioModel ? { model: lmStudioModel } : {}),
             temperature: 0.15,
             useVision: !!imageBase64ForAI,
           }
@@ -505,7 +508,7 @@ export async function POST(request: NextRequest) {
         aiResult = {
           success: true,
           provider: 'lmstudio',
-          model: lmStudioModel,
+          model: lmStudioModel || 'lmstudio-auto',
           visionUsed: !!imageBase64ForAI,
           result: lmStudioRaw,
         };
@@ -756,12 +759,9 @@ export async function POST(request: NextRequest) {
       provider: {
         used: usedProvider,
         primary: primaryProvider.provider,
-        available: providerDetection ? [
-          providerDetection.lmstudio ? 'lmstudio' : null,
-          providerDetection.openclaw ? 'openclaw' : null,
-          providerDetection.bailian ? 'bailian' : null,
-          providerDetection.openrouter ? 'openrouter' : null
-        ].filter(Boolean) : [],
+        available: providerDetection?.all
+          ?.filter((provider: any) => provider.isAvailable)
+          .map((provider: any) => provider.provider) || [],
         recommendations: primaryProvider.isAvailable ? [] : ['Check LM Studio is running locally', 'Verify OpenClaw Gateway is online'],
         status: 'ai_analysis'
       },

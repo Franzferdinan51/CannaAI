@@ -12,6 +12,7 @@ import { ClaudeProvider } from './claude-provider';
 import { PerplexityProvider } from './perplexity-provider';
 import { Gemma4BrowserProvider } from './gemma4-browser-provider';
 import { AgentCommandProvider } from './agent-command-provider';
+import { getLMStudioApiKey } from '../ai-provider-lmstudio';
 import { BaseProvider, AIRequest, AIResponse, ProviderHealth } from './base-provider';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -541,7 +542,7 @@ export function shutdownProviderManager(): void {
 
 function resolveLmStudioConfig(): { url: string; apiKey?: string } {
   const configuredUrl = process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL;
-  const configuredApiKey = process.env.LM_STUDIO_API_KEY;
+  const configuredApiKey = process.env.LM_STUDIO_API_KEY || getLMStudioApiKey();
   if (configuredUrl && configuredApiKey) return { url: configuredUrl, apiKey: configuredApiKey };
 
   // CannaAI is often run beside OpenClaw. Reuse its already-configured local

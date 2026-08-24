@@ -194,8 +194,7 @@ function AIProviderSettings({
                           ...settings.aiProviders,
                           [provider.id]: { ...providerSettings, enabled }
                         }
-                      })
-                    }
+                      })}
                   />
                 </div>
               </div>
@@ -215,8 +214,7 @@ function AIProviderSettings({
                           ...settings.aiProviders,
                           [provider.id]: { ...providerSettings, apiKey: e.target.value }
                         }
-                      })
-                    }
+                      })}
                     placeholder={`Enter ${provider.name} API key`}
                     className="flex-1"
                   />
@@ -294,7 +292,7 @@ function AIProviderSettings({
                           ...settings.aiProviders,
                           [provider.id]: { ...providerSettings, temperature: parseFloat(e.target.value) }
                         }
-                      })
+                      })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -310,7 +308,7 @@ function AIProviderSettings({
                           ...settings.aiProviders,
                           [provider.id]: { ...providerSettings, maxTokens: parseInt(e.target.value) }
                         }
-                      })
+                      })}
                   />
                 </div>
               </div>

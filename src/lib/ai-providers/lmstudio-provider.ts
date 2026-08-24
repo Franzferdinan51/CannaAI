@@ -31,6 +31,18 @@ function normalizeImageUrl(image?: string): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const timeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof timeout === 'function') return timeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  return controller.signal;
+}
+
 export class LMStudioProvider extends BaseProvider {
   constructor(config: any) {
     const rawBaseUrl = config.baseUrl || config.url || 'http://localhost:1234';
@@ -108,7 +120,7 @@ export class LMStudioProvider extends BaseProvider {
         method: 'POST',
         headers: this.getHeaders(true),
         body: JSON.stringify(normalizedRequest),
-        signal: AbortSignal.timeout(this.config.timeout),
+        signal: createTimeoutSignal(this.config.timeout),
       });
 
       const latency = Date.now() - startTime;
@@ -160,7 +172,7 @@ export class LMStudioProvider extends BaseProvider {
       const response = await fetch(`${this.config.baseUrl}/api/v1/models`, {
         method: 'GET',
         headers: this.getHeaders(),
-        signal: AbortSignal.timeout(5000),
+        signal: createTimeoutSignal(5000),
       });
       if (!response.ok) return [];
 
@@ -179,7 +191,7 @@ export class LMStudioProvider extends BaseProvider {
       const response = await fetch(`${this.config.baseUrl}/v1/models`, {
         method: 'GET',
         headers: this.getHeaders(),
-        signal: AbortSignal.timeout(5000),
+        signal: createTimeoutSignal(5000),
       });
       if (!response.ok) return [];
 

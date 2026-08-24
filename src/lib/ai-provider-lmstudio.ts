@@ -21,9 +21,29 @@ function getLMStudioBaseUrl(): string {
   return normalizeBaseUrl(process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL);
 }
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const timeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof timeout === 'function') return timeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  return controller.signal;
+}
+
 export function getLMStudioApiKey(): string {
   if (process.env.LM_STUDIO_API_KEY) return process.env.LM_STUDIO_API_KEY;
   if (process.env.LM_API_TOKEN) return process.env.LM_API_TOKEN;
+
+  try {
+    const tokenPath = path.join(process.env.HOME || '', '.lmstudio', 'secrets', 'lm_api_token');
+    const token = fs.readFileSync(tokenPath, 'utf8').trim();
+    if (token) return token;
+  } catch {
+    // LM Studio authentication is optional on older/local server versions.
+  }
 
   try {
     const configPath = path.join(process.env.HOME || '', '.lmstudio', 'mcp.json');
@@ -129,7 +149,7 @@ export async function checkLMStudio(includeModels = false): Promise<LMStudioProv
     const response = await fetch(`${url}/v1/models`, {
       method: 'GET',
       headers: getHeaders(),
-      signal: AbortSignal.timeout(3000),
+      signal: createTimeoutSignal(3000),
     });
 
     if (!response.ok) {
@@ -184,7 +204,7 @@ export async function getAvailableModels(forceRefresh = false): Promise<string[]
     const response = await fetch(`${baseUrl}/v1/models`, {
       method: 'GET',
       headers: getHeaders(),
-      signal: AbortSignal.timeout(5000),
+      signal: createTimeoutSignal(5000),
     });
     if (!response.ok) return [];
 
@@ -221,7 +241,7 @@ async function getNativeVisionModelIds(): Promise<string[]> {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
       method: 'GET',
       headers: getHeaders(),
-      signal: AbortSignal.timeout(5000),
+      signal: createTimeoutSignal(5000),
     });
     if (!response.ok) return [];
 
@@ -347,7 +367,7 @@ export async function executeWithLMStudio(
       temperature: options.temperature ?? 0.7,
       stream: false,
     }),
-    signal: AbortSignal.timeout(parseInt(process.env.LM_STUDIO_TIMEOUT || '120000', 10)),
+    signal: createTimeoutSignal(parseInt(process.env.LM_STUDIO_TIMEOUT || '120000', 10)),
   });
 
   if (!response.ok) {

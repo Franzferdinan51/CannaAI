@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
+
+const lmStudioHeaders = () => {
+  const apiKey = getLMStudioApiKey();
+  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+};
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -24,7 +30,8 @@ export async function GET(request: NextRequest) {
     let lmStudioDirect = null;
     try {
       const response = await fetch('http://localhost:1234/v1/models', {
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(5000),
+        headers: lmStudioHeaders()
       });
 
       if (response.ok) {

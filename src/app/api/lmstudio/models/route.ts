@@ -42,15 +42,23 @@ function getRemoteLMStudioConfig(urlOverride?: string): { baseUrl: string; apiKe
 
 async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
   const { baseUrl, apiKey } = getRemoteLMStudioConfig(urlOverride);
-  try {
-    const response = await fetch(`${baseUrl}/api/v1/models`, {
-      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
-      signal: AbortSignal.timeout(5000)
-    });
-    if (!response.ok) return null;
+  const candidates = Array.from(new Set([
+    baseUrl,
+    ...(urlOverride || process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL
+      ? []
+      : ['http://localhost:1234']),
+  ]));
 
-    const payload = await response.json();
-    return (payload.models || []).map((model: any) => {
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(`${candidate}/api/v1/models`, {
+        headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+        signal: AbortSignal.timeout(5000)
+      });
+      if (!response.ok) continue;
+
+      const payload = await response.json();
+      return (payload.models || []).map((model: any) => {
       const loaded = Array.isArray(model.loaded_instances) && model.loaded_instances.length > 0;
       const input = model.capabilities?.vision === true ? ['text', 'image'] : ['text'];
       return {
@@ -78,10 +86,13 @@ async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
         contextLength: model.max_context_length || 0,
         metadata: { source: 'LM Studio API', publisher: model.publisher, key: model.key, input }
       };
-    });
-  } catch {
-    return null;
+      });
+    } catch {
+      // Try the next configured/local endpoint before falling back to disk scan.
+    }
   }
+
+  return null;
 }
 
 // Export configuration for dual-mode compatibility

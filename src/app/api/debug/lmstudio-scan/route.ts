@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -78,7 +79,8 @@ async function scanDirectory(dirPath: string, depth: number = 0): Promise<any> {
 async function checkLMStudioRunning() {
   try {
     const response = await fetch('http://localhost:1234/v1/models', {
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(3000),
+      headers: getLMStudioApiKey() ? { Authorization: `Bearer ${getLMStudioApiKey()}` } : {}
     });
 
     if (response.ok) {

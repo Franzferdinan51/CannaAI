@@ -28,6 +28,7 @@ export interface AIExecutionOptions {
   temperature?: number;
   primaryProvider?: string;
   timeout?: number;
+  maxRetries?: number;
 }
 
 // Re-export provider checkers so consumers (tests, /api/providers) can import them from this module
