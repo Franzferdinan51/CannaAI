@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { backupManager } from '@/lib/export-import-utils';
+import { backupManager, isOpaqueId } from '@/lib/export-import-utils';
 import { z } from 'zod';
 
 const RestoreSchema = z.object({
@@ -17,9 +17,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { backupId, verifyOnly = false, createBackupBeforeRestore = true } = RestoreSchema.parse(body);
+    if (!isOpaqueId(backupId)) {
+      return NextResponse.json({ success: false, error: 'Invalid backup ID' }, { status: 400 });
+    }
 
     if (verifyOnly) {
-      // Just verify the backup
+      await backupManager.verifyBackup(backupId);
       return NextResponse.json({
         success: true,
         verified: true,
@@ -48,7 +51,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: 'Failed to restore from backup',
-      message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -64,8 +66,11 @@ export async function GET(request: NextRequest) {
         error: 'Backup ID required'
       }, { status: 400 });
     }
+    if (!isOpaqueId(backupId)) {
+      return NextResponse.json({ success: false, error: 'Invalid backup ID' }, { status: 400 });
+    }
 
-    // Verify backup exists and is valid
+    await backupManager.verifyBackup(backupId);
     return NextResponse.json({
       success: true,
       verified: true,
@@ -76,7 +81,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: 'Failed to verify backup',
-      message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

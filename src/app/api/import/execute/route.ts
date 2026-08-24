@@ -4,9 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { importManager, ImportOptions } from '@/lib/export-import-utils';
-import { readFileSync, existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
+import { importManager, ImportOptions, resolveImportFilePath, MAX_IMPORT_FILE_SIZE } from '@/lib/export-import-utils';
+import { readFileSync, existsSync, unlinkSync, statSync } from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,13 +19,22 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const filepath = join(process.cwd(), 'uploads', 'imports', fileId);
+    let filepath: string;
+    try {
+      filepath = resolveImportFilePath(fileId);
+    } catch {
+      return NextResponse.json({ success: false, error: 'Invalid file ID' }, { status: 400 });
+    }
 
     if (!existsSync(filepath)) {
       return NextResponse.json({
         success: false,
         error: 'Uploaded file not found'
       }, { status: 404 });
+    }
+
+    if (statSync(filepath).size > MAX_IMPORT_FILE_SIZE) {
+      return NextResponse.json({ success: false, error: 'Uploaded file is too large' }, { status: 413 });
     }
 
     // Read file
@@ -46,7 +54,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Failed to parse file',
-        message: parseError instanceof Error ? parseError.message : 'Invalid JSON'
       }, { status: 400 });
     }
 
@@ -54,7 +61,7 @@ export async function POST(request: NextRequest) {
     const importOptions: ImportOptions = {
       mergeMode: options?.mergeMode || 'merge',
       validateOnly: false,
-      skipErrors: options?.skipErrors || true,
+      skipErrors: typeof options?.skipErrors === 'boolean' ? options.skipErrors : true,
       defaultValues: options?.defaultValues || {},
       conflictResolution: options?.conflictResolution || 'keep-existing'
     };
@@ -69,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      success: true,
+      success: result.errors === 0,
       imported: result.imported,
       skipped: result.skipped,
       errors: result.errors,
@@ -79,13 +86,12 @@ export async function POST(request: NextRequest) {
         success: result.errors === 0,
         message: `Imported ${result.imported} records, skipped ${result.skipped}, errors ${result.errors}`
       }
-    });
+    }, { status: result.errors > 0 && importOptions.skipErrors === false ? 422 : 200 });
   } catch (error) {
     console.error('Import execution failed:', error);
     return NextResponse.json({
       success: false,
       error: 'Failed to execute import',
-      message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

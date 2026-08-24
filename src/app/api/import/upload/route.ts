@@ -5,15 +5,24 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { basename, join } from 'path';
+import { MAX_IMPORT_FILE_SIZE, resolveImportFilePath } from '@/lib/export-import-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const contentLength = Number(request.headers.get('content-length'));
+    if (Number.isFinite(contentLength) && contentLength > MAX_IMPORT_FILE_SIZE + 1024 * 1024) {
+      return NextResponse.json({
+        success: false,
+        error: 'File exceeds the maximum upload size'
+      }, { status: 413 });
+    }
 
-    if (!file) {
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!(file instanceof File)) {
       return NextResponse.json({
         success: false,
         error: 'No file uploaded'
@@ -37,6 +46,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    if (file.size > MAX_IMPORT_FILE_SIZE) {
+      return NextResponse.json({
+        success: false,
+        error: 'File exceeds the maximum upload size'
+      }, { status: 413 });
+    }
+
     // Create uploads directory if not exists
     const uploadsDir = join(process.cwd(), 'uploads', 'imports');
     if (!existsSync(uploadsDir)) {
@@ -45,19 +61,24 @@ export async function POST(request: NextRequest) {
 
     // Save file with unique name
     const importId = uuidv4();
-    const timestamp = Date.now();
-    const filename = `import_${importId}_${timestamp}_${file.name}`;
-    const filepath = join(uploadsDir, filename);
+    const filename = importId;
+    const filepath = resolveImportFilePath(importId);
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-    writeFileSync(filepath, fileBuffer);
+    if (fileBuffer.length > MAX_IMPORT_FILE_SIZE) {
+      return NextResponse.json({
+        success: false,
+        error: 'File exceeds the maximum upload size'
+      }, { status: 413 });
+    }
+    writeFileSync(filepath, fileBuffer, { flag: 'wx', mode: 0o600 });
 
     return NextResponse.json({
       success: true,
       importId,
       filename,
-      originalName: file.name,
-      size: file.size,
+      originalName: basename(file.name),
+      size: fileBuffer.length,
       type: file.type,
       uploadedAt: new Date().toISOString(),
       message: 'File uploaded successfully'
@@ -67,7 +88,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: 'Failed to upload file',
-      message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

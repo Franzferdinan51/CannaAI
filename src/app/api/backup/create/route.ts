@@ -12,12 +12,11 @@ export async function POST(request: NextRequest) {
     const { includeImages = true, type = 'full' } = body;
 
     // Create backup
-    const backupPath = await backupManager.createFullBackup();
+    const backupId = await backupManager.createFullBackup();
 
     return NextResponse.json({
       success: true,
-      backupId: backupPath,
-      backupPath,
+      backupId,
       type,
       includeImages,
       createdAt: new Date().toISOString(),
@@ -28,7 +27,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: 'Failed to create backup',
-      message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

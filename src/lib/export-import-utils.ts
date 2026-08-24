@@ -10,6 +10,30 @@ import { v4 as uuidv4 } from 'uuid';
 import archiver from 'archiver';
 import sharp from 'sharp';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
+import { createHash } from 'node:crypto';
+
+export const MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024;
+const OPAQUE_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isOpaqueId(value: unknown): value is string {
+  return typeof value === 'string' && OPAQUE_ID_PATTERN.test(value);
+}
+
+export function resolveImportFilePath(importId: string): string {
+  if (!isOpaqueId(importId)) throw new Error('Invalid identifier');
+  const root = join(process.cwd(), 'uploads', 'imports');
+  const target = join(root, importId);
+  if (!target.startsWith(`${root}/`)) throw new Error('Invalid identifier');
+  return target;
+}
+
+export function resolveBackupArtifactPath(backupId: string): string {
+  if (!isOpaqueId(backupId)) throw new Error('Invalid identifier');
+  const root = join(process.cwd(), 'backups');
+  const target = join(root, backupId, 'backup.json');
+  if (!target.startsWith(`${root}/`)) throw new Error('Invalid identifier');
+  return target;
+}
 
 // ==================== TYPES ====================
 
@@ -152,7 +176,7 @@ export class ExportManager {
   /**
    * Gather data from database based on filters
    */
-  private async gatherData(filters?: ExportFilter): Promise<{
+  public async gatherData(filters?: ExportFilter): Promise<{
     analyses: AnalysisRecord[];
     plants: any[];
     strains: any[];
@@ -261,7 +285,7 @@ export class ExportManager {
   /**
    * Format as JSON
    */
-  private formatAsJSON(data: any, options: ExportOptions): string {
+  public formatAsJSON(data: any, options: ExportOptions): string {
     const result: any = {
       exportInfo: {
         version: '1.0.0',
@@ -595,8 +619,9 @@ export class ImportManager {
         result.details.push({
           id: analysis.id,
           action: 'failed',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: 'Import failed'
         });
+        if (options.skipErrors === false) break;
       }
     }
 
@@ -672,36 +697,70 @@ export class BackupManager {
    */
   async createFullBackup(): Promise<string> {
     const backupId = uuidv4();
-    const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
-    const backupDir = join(process.cwd(), 'backups', `${backupId}_${timestamp}`);
+    const backupDir = join(process.cwd(), 'backups', backupId);
 
     if (!existsSync(backupDir)) {
       mkdirSync(backupDir, { recursive: true });
     }
 
-    // Export all data
     const exportManager = new ExportManager();
-    const jobId = await exportManager.createExportJob({
-      format: 'zip',
-      filters: {},
-      includeMetadata: true
-    });
+    const data = await exportManager.gatherData({});
+    const exportPayload = JSON.parse(exportManager.formatAsJSON(data, {
+      format: 'json',
+      includeMetadata: true,
+      customFields: ['plants', 'strains', 'rooms']
+    }));
+    const unsignedArtifact = {
+      format: 'cannaai-backup',
+      version: 1,
+      backupId,
+      createdAt: new Date().toISOString(),
+      data: exportPayload.data
+    };
+    const checksum = createHash('sha256')
+      .update(JSON.stringify(unsignedArtifact))
+      .digest('hex');
+    writeFileSync(join(backupDir, 'backup.json'), JSON.stringify({
+      ...unsignedArtifact,
+      checksum
+    }), { flag: 'wx', mode: 0o600 });
 
-    // Wait for export to complete
-    await this.waitForJobCompletion(jobId);
-
-    return backupDir;
+    return backupId;
   }
 
   /**
    * Restore from backup
    */
-  async restoreFromBackup(backupPath: string): Promise<void> {
-    const data = JSON.parse(readFileSync(backupPath, 'utf-8'));
+  async verifyBackup(backupId: string): Promise<boolean> {
+    const artifactPath = resolveBackupArtifactPath(backupId);
+    const artifact = JSON.parse(readFileSync(artifactPath, 'utf-8'));
+    if (
+      artifact?.format !== 'cannaai-backup' ||
+      artifact?.version !== 1 ||
+      artifact?.backupId !== backupId ||
+      !artifact?.data ||
+      typeof artifact.checksum !== 'string'
+    ) {
+      throw new Error('Invalid backup artifact');
+    }
+
+    const { checksum, ...unsignedArtifact } = artifact;
+    const expectedChecksum = createHash('sha256')
+      .update(JSON.stringify(unsignedArtifact))
+      .digest('hex');
+    if (checksum !== expectedChecksum) throw new Error('Invalid backup artifact');
+    return true;
+  }
+
+  async restoreFromBackup(backupId: string): Promise<void> {
+    await this.verifyBackup(backupId);
+    const data = JSON.parse(readFileSync(resolveBackupArtifactPath(backupId), 'utf-8'));
     const importManager = new ImportManager();
-    await importManager.processImport(data, {
-      mergeMode: 'replace'
+    const result = await importManager.processImport(data, {
+      mergeMode: 'replace',
+      skipErrors: false
     });
+    if (result.errors > 0) throw new Error('Backup restore failed');
   }
 
   /**
