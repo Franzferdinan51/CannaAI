@@ -479,7 +479,10 @@ export function withAgentEvolver(
         await evolver.optimizePrompt(
           JSON.stringify(request),
           { success: false, responseTime: (Date.now() - startTime) / 1000 },
-          { taskType: 'unknown' }
+          // A failed endpoint request is an operational troubleshooting task;
+          // keep this inside the optimizer's supported task taxonomy so a
+          // secondary learning failure cannot mask the original error.
+          { taskType: 'troubleshooting' }
         );
       }
 

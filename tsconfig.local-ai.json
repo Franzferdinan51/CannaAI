@@ -15,7 +15,9 @@
     "src/lib/ai-provider-minimax.ts",
     "src/lib/ai-provider-openrouter.ts",
     "src/lib/ai-providers/base-provider.ts",
-    "src/lib/ai-providers/agent-command-provider.ts"
+    "src/lib/ai-providers/agent-command-provider.ts",
+    "src/app/api/chat/route.ts",
+    "src/app/api/lmstudio/chat/route.ts"
   ],
   "exclude": ["node_modules", ".next"]
 }
