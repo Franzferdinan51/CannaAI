@@ -1,0 +1,67 @@
+/** @jest-environment node */
+
+import { POST } from '@/app/api/lmstudio/chat/route';
+
+function response(body: unknown, init: ResponseInit = {}) {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+    ...init,
+  });
+}
+
+describe('/api/lmstudio/chat local endpoint failover', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('tries the alternate loopback endpoint when localhost is unavailable', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockRejectedValueOnce(new Error('connect ECONNREFUSED ::1:1234'))
+      .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
+      .mockResolvedValueOnce(response({
+        model: 'ornith-1.5-35b-a3b',
+        choices: [{ message: { content: 'healthy local answer' }, finish_reason: 'stop' }],
+      }));
+
+    const result = await POST({
+      json: async () => ({ prompt: 'Inspect this plant', model: 'ornith-1.5-35b-a3b' }),
+    } as any);
+
+    expect(result.status).toBe(200);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      content: 'healthy local answer',
+      provider: 'lmstudio-local',
+    }));
+    expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
+    expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
+  });
+
+  test('attaches a supplied image to the latest user message when messages are provided', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
+      .mockResolvedValueOnce(response({
+        model: 'ornith-1.5-35b-a3b',
+        choices: [{ message: { content: 'vision answer' }, finish_reason: 'stop' }],
+      }));
+    const messages = [{ role: 'user', content: 'Inspect the newest leaf' }];
+
+    const result = await POST({
+      json: async () => ({
+        messages,
+        image: 'data:image/jpeg;base64,abc123',
+        model: 'ornith-1.5-35b-a3b',
+      }),
+    } as any);
+
+    expect(result.status).toBe(200);
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(requestBody.messages).toEqual([{
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Inspect the newest leaf' },
+        { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,abc123' } },
+      ],
+    }]);
+  });
+});

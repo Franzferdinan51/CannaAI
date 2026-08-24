@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = earlyBody;
-    const { message, mode = 'chat', context, sensorData } = body;
+    const { message, image, mode = 'chat', context, sensorData } = body;
 
     // Validate required fields
     if (!message) {
@@ -194,6 +194,7 @@ export async function POST(request: NextRequest) {
         // Fallback to traditional AI providers
         const aiResult = await executeChatWithFallback(contextPrompt, {
           primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
+          image: typeof image === 'string' ? image : undefined,
           timeout: 45000,
         });
 

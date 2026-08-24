@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
-
-const LM_STUDIO_URL = (process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234')
-  .replace(/\/v1\/?$/, '')
-  .replace(/\/$/, '');
+import {
+  getLMStudioApiKey,
+  getLMStudioEndpointCandidates,
+} from '@/lib/ai-provider-lmstudio';
 
 function lmStudioHeaders(includeJson = false): Record<string, string> {
   const apiKey = getLMStudioApiKey();
@@ -11,6 +10,80 @@ function lmStudioHeaders(includeJson = false): Record<string, string> {
     ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
     ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
   };
+}
+
+function normalizeImageUrl(image: unknown): string | undefined {
+  if (typeof image !== 'string') return undefined;
+  const value = image.trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:image/')) return value;
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `data:image/png;base64,${value}`;
+}
+
+function attachImageToLatestUserMessage(messages: any[], image: unknown): any[] {
+  const normalizedImage = normalizeImageUrl(image);
+  if (!normalizedImage) return messages;
+
+  let attached = false;
+  return [...messages].reverse().map((message: any) => {
+    if (attached || message?.role !== 'user') return message;
+    attached = true;
+
+    const text = typeof message.content === 'string'
+      ? message.content
+      : Array.isArray(message.content)
+        ? message.content
+          .filter((part: any) => part?.type === 'text')
+          .map((part: any) => part?.text || '')
+          .join('\n')
+        : String(message.content || '');
+
+    return {
+      ...message,
+      content: [
+        { type: 'text', text },
+        { type: 'image_url', image_url: { url: normalizedImage } },
+      ],
+    };
+  }).reverse();
+}
+
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const timeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof timeout === 'function') return timeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  return controller.signal;
+}
+
+async function discoverLMStudio(): Promise<{
+  baseUrl: string;
+  models: any[];
+} | null> {
+  for (const baseUrl of getLMStudioEndpointCandidates()) {
+    try {
+      const healthResponse = await fetch(`${baseUrl}/v1/models`, {
+        signal: createTimeoutSignal(3000),
+        headers: lmStudioHeaders(),
+      });
+      if (!healthResponse.ok) continue;
+
+      const modelsData = await healthResponse.json().catch(() => ({}));
+      return {
+        baseUrl,
+        models: Array.isArray(modelsData?.data) ? modelsData.data : [],
+      };
+    } catch {
+      // localhost and 127.0.0.1 can resolve to different stacks on macOS;
+      // continue through every local candidate before declaring LM Studio down.
+    }
+  }
+  return null;
 }
 
 // Export configuration for dual-mode compatibility
@@ -43,13 +116,10 @@ export async function POST(request: NextRequest) {
       stream = false
     } = body;
 
-    // Check if LM Studio is running
-    const healthResponse = await fetch(`${LM_STUDIO_URL}/v1/models`, {
-      signal: AbortSignal.timeout(3000),
-      headers: lmStudioHeaders(),
-    });
-
-    if (!healthResponse.ok) {
+    // Check every local loopback candidate. On macOS, localhost may resolve
+    // to IPv6 while LM Studio is listening only on IPv4 (or vice versa).
+    const discovered = await discoverLMStudio();
+    if (!discovered) {
       return NextResponse.json(
         {
           error: 'LM Studio is not running. Please start LM Studio first.',
@@ -60,13 +130,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get available models from LM Studio to find the requested model
-    const modelsData = await healthResponse.json();
-    const availableModels = Array.isArray(modelsData.data)
-      ? modelsData.data.filter((entry: any) => {
+    const availableModels = discovered.models.filter((entry: any) => {
         const id = String(entry?.id || '').toLowerCase();
         return id && !id.includes('embedding') && !id.includes('embed-') && !id.endsWith('-embed');
-      })
-      : [];
+      });
 
     // Accept both the legacy `modelId` field and the OpenAI-compatible `model`
     // field used by the main chat client. Never auto-select an embedding model.
@@ -78,9 +145,13 @@ export async function POST(request: NextRequest) {
     // Preserve an already-normalized OpenAI-compatible message list. This is
     // important for vision requests, which carry image_url content alongside
     // their text and must not be flattened into a prompt-only request.
-    const messages = Array.isArray(requestedMessages)
-      ? requestedMessages
+    let messages = Array.isArray(requestedMessages)
+      ? requestedMessages.map((message: any) => ({ ...message }))
       : [];
+
+    if (messages.length > 0 && image) {
+      messages = attachImageToLatestUserMessage(messages, image);
+    }
 
     if (messages.length === 0 && systemPrompt) {
       messages.push({
@@ -128,7 +199,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Call LM Studio API
-    const lmStudioResponse = await fetch(`${LM_STUDIO_URL}/v1/chat/completions`, {
+    const lmStudioResponse = await fetch(`${discovered.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: lmStudioHeaders(true),
       body: JSON.stringify(lmStudioPayload)
@@ -178,7 +249,7 @@ export async function POST(request: NextRequest) {
     console.error('LM Studio chat API error:', error);
 
     // Handle timeout specifically
-    if (error.name === 'AbortError') {
+    if (error?.name === 'AbortError') {
       return NextResponse.json(
         {
           error: 'LM Studio request timed out. Please try again.',
@@ -189,7 +260,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle connection refused specifically
-    if (error.message.includes('ECONNREFUSED')) {
+    if (error?.message?.includes('ECONNREFUSED')) {
       return NextResponse.json(
         {
           error: 'Could not connect to LM Studio. Make sure LM Studio is running on localhost:1234.',
@@ -223,12 +294,8 @@ export async function GET() {
 
   // Health check endpoint
   try {
-    const response = await fetch(`${LM_STUDIO_URL}/v1/models`, {
-      signal: AbortSignal.timeout(2000),
-      headers: lmStudioHeaders(),
-    });
-
-    if (!response.ok) {
+    const discovered = await discoverLMStudio();
+    if (!discovered) {
       return NextResponse.json({
         status: 'unhealthy',
         error: 'LM Studio is not running',
@@ -237,12 +304,10 @@ export async function GET() {
       }, { status: 503 });
     }
 
-    const models = await response.json();
-
     return NextResponse.json({
       status: 'healthy',
-      models: models.data || [],
-      count: (models.data || []).length,
+      models: discovered.models,
+      count: discovered.models.length,
       timestamp: new Date().toISOString(),
       provider: 'lmstudio-local'
     });

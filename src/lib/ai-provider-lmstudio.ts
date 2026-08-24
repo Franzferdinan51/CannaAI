@@ -21,7 +21,7 @@ function getLMStudioBaseUrl(): string {
   return normalizeBaseUrl(process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL);
 }
 
-function getLMStudioEndpointCandidates(): string[] {
+export function getLMStudioEndpointCandidates(): string[] {
   return Array.from(new Set([
     getLMStudioBaseUrl(),
     'http://127.0.0.1:1234',
