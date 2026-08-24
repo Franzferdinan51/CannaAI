@@ -10,7 +10,11 @@ import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 const execAsync = promisify(exec);
 dotenv.config({ path: path.join(process.cwd(), '.env.local') });
 
-function getRemoteLMStudioConfig(urlOverride?: string): { baseUrl: string; apiKey?: string } {
+function normalizeLMStudioBaseUrl(value: string): string {
+  return value.replace(/\/v1\/?$/, '').replace(/\/$/, '');
+}
+
+function getRemoteLMStudioConfig(urlOverride?: string): { baseUrl: string; apiKey?: string; candidates: string[] } {
   let fileUrl = '';
   try {
     const envText = readFileSync(path.join(process.cwd(), '.env.local'), 'utf8');
@@ -21,33 +25,57 @@ function getRemoteLMStudioConfig(urlOverride?: string): { baseUrl: string; apiKe
   const configPath = process.env.OPENCLAW_CONFIG_PATH ||
     (process.env.HOME ? path.join(process.env.HOME, '.openclaw', 'openclaw.json') : '');
 
+  let providerUrl = '';
   try {
     if (configPath && existsSync(configPath)) {
       const config = JSON.parse(readFileSync(configPath, 'utf8'));
       const provider = config?.models?.providers?.lmstudio;
-      return {
-        baseUrl: (urlOverride || configuredUrl || provider?.baseUrl || 'http://localhost:1234').replace(/\/v1\/?$/, '').replace(/\/$/, ''),
-      apiKey: configuredKey || provider?.apiKey
-      };
+      providerUrl = provider?.baseUrl || '';
+      return buildLMStudioConfig({
+        urlOverride,
+        configuredUrl,
+        fileUrl,
+        providerUrl,
+        apiKey: configuredKey || provider?.apiKey,
+      });
     }
   } catch (error) {
     console.warn('Unable to read LM Studio connection settings:', error);
   }
 
+  return buildLMStudioConfig({ urlOverride, configuredUrl, fileUrl, providerUrl, apiKey: configuredKey });
+}
+
+function buildLMStudioConfig(options: {
+  urlOverride?: string;
+  configuredUrl?: string;
+  fileUrl?: string;
+  providerUrl?: string;
+  apiKey?: string;
+}): { baseUrl: string; apiKey?: string; candidates: string[] } {
+  const sources = options.urlOverride
+    ? [options.urlOverride]
+    : [
+        options.configuredUrl,
+        options.fileUrl,
+        options.providerUrl,
+        'http://127.0.0.1:1234',
+        'http://localhost:1234',
+      ];
+  const candidates = Array.from(new Set(
+    sources
+      .filter((value): value is string => Boolean(value && value.trim()))
+      .map(value => normalizeLMStudioBaseUrl(value.trim())),
+  ));
   return {
-    baseUrl: (urlOverride || configuredUrl || 'http://localhost:1234').replace(/\/v1\/?$/, '').replace(/\/$/, ''),
-    apiKey: configuredKey
+    baseUrl: candidates[0] || 'http://localhost:1234',
+    apiKey: options.apiKey,
+    candidates,
   };
 }
 
 async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
-  const { baseUrl, apiKey } = getRemoteLMStudioConfig(urlOverride);
-  const candidates = Array.from(new Set([
-    baseUrl,
-    ...(urlOverride || process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL
-      ? []
-      : ['http://localhost:1234']),
-  ]));
+  const { apiKey, candidates } = getRemoteLMStudioConfig(urlOverride);
 
   for (const candidate of candidates) {
     try {
