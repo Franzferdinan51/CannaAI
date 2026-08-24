@@ -4,8 +4,7 @@
  */
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-const LM_STUDIO_URL = process.env.LM_STUDIO_URL || 'http://localhost:1234';
+import { checkLMStudio as checkLMStudioProvider } from '@/lib/ai-provider-lmstudio';
 
 async function checkPrisma() {
   try {
@@ -18,18 +17,20 @@ async function checkPrisma() {
 
 async function checkLMStudio() {
   try {
-    const res = await fetch(`${LM_STUDIO_URL}/v1/models`, {
-      signal: AbortSignal.timeout(3000),
-    });
-    if (res.ok) {
-      const data = await res.json();
+    // Use the same endpoint discovery and authentication as analysis/model
+    // selection. A stale launchd LM_STUDIO_URL must not mask the local server
+    // configured in .env.local or the LM Studio default port.
+    const result = await checkLMStudioProvider(true);
+    if (result.available) {
       return {
         status: 'ok',
-        models: (data.data || []).length,
-        modelsLoaded: (data.data || []).filter((m: any) => m.loaded).length,
+        models: result.models?.length || 0,
+        // OpenAI-compatible /v1/models does not expose LM Studio's loaded
+        // state reliably, so do not report the catalog size as loaded count.
+        modelsLoaded: null,
       };
     }
-    return { status: 'http_error', code: res.status };
+    return { status: 'unreachable', error: result.reason };
   } catch (e) {
     return { status: 'unreachable', error: String(e).slice(0, 80) };
   }

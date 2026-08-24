@@ -21,6 +21,14 @@ function getLMStudioBaseUrl(): string {
   return normalizeBaseUrl(process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL);
 }
 
+function getLMStudioEndpointCandidates(): string[] {
+  return Array.from(new Set([
+    getLMStudioBaseUrl(),
+    'http://127.0.0.1:1234',
+    'http://localhost:1234',
+  ].map(normalizeBaseUrl)));
+}
+
 function createTimeoutSignal(timeoutMs: number): AbortSignal {
   const timeout = (AbortSignal as typeof AbortSignal & {
     timeout?: (milliseconds: number) => AbortSignal;
@@ -161,47 +169,46 @@ export async function checkLMStudio(includeModels = false): Promise<LMStudioProv
     });
   }
 
-  const url = getLMStudioBaseUrl();
-  try {
-    const response = await fetchWithTimeout(`${url}/v1/models`, {
-      method: 'GET',
-      headers: getHeaders(),
-      signal: createTimeoutSignal(3000),
-    }, 3000);
+  let lastError = 'connection refused';
+  for (const url of getLMStudioEndpointCandidates()) {
+    try {
+      const response = await fetchWithTimeout(`${url}/v1/models`, {
+        method: 'GET',
+        headers: getHeaders(),
+        signal: createTimeoutSignal(3000),
+      }, 3000);
 
-    if (!response.ok) {
+      if (!response.ok) {
+        lastError = `HTTP ${response.status}`;
+        continue;
+      }
+
+      const data = await response.json().catch(() => ({} as any));
+      const models = Array.isArray(data?.data)
+        ? data.data
+          .map((model: any) => model?.id)
+          .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
+        : [];
+
       return buildResult({
-        available: false,
-        reason: `LM Studio responded with HTTP ${response.status}`,
+        available: true,
+        reason: models.length > 0 ? `LM Studio is running with ${models.length} model(s)` : 'LM Studio is running',
         provider: 'lm-studio',
         config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
-        error: `HTTP ${response.status}`,
+        models: includeModels ? models : undefined,
       });
+    } catch (error: any) {
+      lastError = error?.message || lastError;
     }
-
-    const data = await response.json().catch(() => ({} as any));
-    const models = Array.isArray(data?.data)
-      ? data.data
-        .map((model: any) => model?.id)
-        .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
-      : [];
-
-    return buildResult({
-      available: true,
-      reason: models.length > 0 ? `LM Studio is running with ${models.length} model(s)` : 'LM Studio is running',
-      provider: 'lm-studio',
-      config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
-      models: includeModels ? models : undefined,
-    });
-  } catch (error: any) {
-    return buildResult({
-      available: false,
-      reason: `LM Studio not available: ${error?.message || 'connection refused'}`,
-      provider: 'lm-studio',
-      config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
-      error: error?.message,
-    });
   }
+
+  return buildResult({
+    available: false,
+    reason: `LM Studio not available: ${lastError}`,
+    provider: 'lm-studio',
+    config: { url: getLMStudioBaseUrl(), hasApiKey: Boolean(getLMStudioApiKey()) },
+    error: lastError,
+  });
 }
 
 export async function getAvailableModels(forceRefresh = false): Promise<string[]> {

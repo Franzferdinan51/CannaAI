@@ -45,7 +45,7 @@ import {
   Heart,
   Timer,
   CameraOff,
-  Image,
+  Image as ImageIcon,
   History,
   Pin,
   PinOff,
@@ -2650,7 +2650,7 @@ export default function UnifiedAIAssistant({
                       onClick={triggerImageUpload}
                       title="Upload plant photo"
                     >
-                      <Image className="h-4 w-4" aria-hidden="true" />
+                      <ImageIcon className="h-4 w-4" aria-hidden="true" />
                     </Button>
                     <input
                       type="file"

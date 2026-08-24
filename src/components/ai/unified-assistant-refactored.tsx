@@ -44,7 +44,7 @@ import {
   Heart,
   Timer,
   CameraOff,
-  Image,
+  Image as ImageIcon,
   History,
   Pin,
   PinOff,
@@ -362,7 +362,7 @@ export default function UnifiedAIAssistant({
                           className="bg-slate-700 text-slate-200 hover:bg-slate-600"
                           onClick={() => fileInputRef.current?.click()}
                         >
-                          <Image className="h-4 w-4" aria-hidden="true" />
+                          <ImageIcon className="h-4 w-4" aria-hidden="true" />
                         </Button>
                         <input
                           type="file"
