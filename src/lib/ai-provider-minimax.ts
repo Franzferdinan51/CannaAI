@@ -67,7 +67,12 @@ export async function executeWithMiniMax(
   const { imageBase64, plantInfo } = options;
 
   // Build content array for vision
-  let content: string | Array<{ type: string; text?: string; image?: string }>;
+  let content: string | Array<{
+    type: string;
+    text?: string;
+    image?: string;
+    image_url?: { url: string };
+  }>;
 
   if (imageBase64) {
     // Strip data URL prefix if present (processedImage.base64 may include it)

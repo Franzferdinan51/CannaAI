@@ -307,4 +307,12 @@ export class AgentCommandProvider extends BaseProvider {
     }
     return args;
   }
+
+  protected normalizeRequest(request: AIRequest): AIRequest {
+    return request;
+  }
+
+  protected normalizeResponse(response: any, _metadata: any): AIResponse {
+    return response as AIResponse;
+  }
 }

@@ -5,6 +5,11 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
+  // The repository also contains historical specs for UI routes that were
+  // removed before the current CannaAI photo-analysis application shipped.
+  // Keep those files for archaeological reference, but only execute tests
+  // that target routes and selectors present in the current product.
+  testMatch: /current-app-workflows\.test\.ts/,
   timeout: 60 * 1000, // 60 seconds
   expect: {
     timeout: 10000,

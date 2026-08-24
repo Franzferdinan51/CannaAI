@@ -21,6 +21,7 @@
     "start:win": "concurrently \"npm run start:backend:win\" \"npm run start:frontend\"",
     "start:backend:win": "set NODE_ENV=production && tsx server.ts",
     "lint": "npm run lint:frontend && npm run lint:backend",
+    "typecheck:local-ai": "tsc -p tsconfig.local-ai.json --noEmit",
     "lint:frontend": "cd NewUI/cannaai-pro && npm run lint || echo 'No lint script found in New UI'",
     "lint:backend": "next lint",
     "db:push": "prisma db push",

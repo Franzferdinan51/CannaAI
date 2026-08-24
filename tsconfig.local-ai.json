@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "noImplicitReturns": false,
+    "noImplicitOverride": false,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "ES2022"
+  },
+  "include": [
+    "src/lib/ai-provider-lmstudio.ts",
+    "src/lib/ai-provider-openclaw.ts",
+    "src/lib/ai-provider-detection.ts",
+    "src/lib/ai-provider-minimax.ts",
+    "src/lib/ai-provider-openrouter.ts",
+    "src/lib/ai-providers/base-provider.ts",
+    "src/lib/ai-providers/agent-command-provider.ts"
+  ],
+  "exclude": ["node_modules", ".next"]
+}

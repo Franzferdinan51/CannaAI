@@ -32,6 +32,24 @@ export interface AIExecutionOptions {
   maxRetries?: number;
 }
 
+// Backwards-compatible names used by the MiniMax adapter and older callers.
+// Keep one canonical shape while preventing a stale type alias from breaking
+// the local-provider compilation path.
+export interface AIProviderResult {
+  available: boolean;
+  isAvailable?: boolean;
+  provider?: string;
+  reason: string;
+  config?: Record<string, any>;
+  models?: string[];
+  recommendations?: string[];
+  error?: string;
+}
+export type AIExecuteOptions = AIExecutionOptions & {
+  imageBase64?: string;
+  plantInfo?: Record<string, unknown>;
+};
+
 // Re-export provider checkers so consumers (tests, /api/providers) can import them from this module
 export { checkLMStudio } from './ai-provider-lmstudio';
 export { checkOpenRouter } from './ai-provider-openrouter';

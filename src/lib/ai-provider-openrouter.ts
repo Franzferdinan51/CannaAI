@@ -215,7 +215,7 @@ export async function executeWithOpenRouter(params: {
     if (!selectedModel) {
       if (image && requireVision) {
         // Use best vision model
-        selectedModel = VISION_MODELS.find(m => m.recommended)?.id || VISION_MODELS[0].id;
+        selectedModel = VISION_MODELS.find(m => (m as { recommended?: boolean }).recommended === true)?.id || VISION_MODELS[0].id;
       } else if (image) {
         // Image provided but vision not explicitly required - try vision anyway
         selectedModel = VISION_MODELS[0].id;
@@ -350,7 +350,7 @@ export function getOpenRouterConfig() {
  * Get the best available vision model for plant analysis
  */
 export function getBestVisionModel(): string {
-  return VISION_MODELS.find(m => m.recommended)?.id || VISION_MODELS[0].id;
+  return VISION_MODELS.find(m => (m as { recommended?: boolean }).recommended === true)?.id || VISION_MODELS[0].id;
 }
 
 /**

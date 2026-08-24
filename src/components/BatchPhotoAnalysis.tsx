@@ -145,7 +145,7 @@ export function BatchPhotoAnalysis({ onAnalysisComplete }: BatchPhotoAnalysisPro
   };
 
   return (
-    <Card className="bg-slate-900/50 backdrop-blur-sm border-slate-800">
+    <Card data-testid="batch-photo-analysis" className="bg-slate-900/50 backdrop-blur-sm border-slate-800">
       <CardHeader className="border-b border-slate-800">
         <CardTitle className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-purple-400" />
@@ -183,6 +183,7 @@ export function BatchPhotoAnalysis({ onAnalysisComplete }: BatchPhotoAnalysisPro
                 </span>
               </Button>
               <input
+                data-testid="batch-image-input"
                 type="file"
                 accept="image/*"
                 multiple
@@ -213,6 +214,7 @@ export function BatchPhotoAnalysis({ onAnalysisComplete }: BatchPhotoAnalysisPro
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {images.map((image) => (
                 <div
+                  data-testid="batch-image-card"
                   key={image.id}
                   className="relative group bg-slate-950/50 border border-slate-800 rounded-lg overflow-hidden"
                 >
@@ -225,7 +227,7 @@ export function BatchPhotoAnalysis({ onAnalysisComplete }: BatchPhotoAnalysisPro
                     />
 
                     {/* Status Overlay */}
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <div data-testid={`batch-image-status-${image.status}`} className="absolute inset-0 bg-black/60 flex items-center justify-center">
                       {image.status === 'pending' && (
                         <Layers className="w-8 h-8 text-slate-400" />
                       )}
@@ -290,13 +292,14 @@ export function BatchPhotoAnalysis({ onAnalysisComplete }: BatchPhotoAnalysisPro
                   <span className="text-slate-400">Analyzing images...</span>
                   <span className="text-slate-200">{Math.round(progress)}%</span>
                 </div>
-                <Progress value={progress} className="h-2" />
+                <Progress data-testid="batch-progress" value={progress} className="h-2" />
               </div>
             )}
 
             {/* Analyze Button */}
             {!isAnalyzing && images.length > 0 && (
               <Button
+                data-testid="batch-analyze"
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-6"
                 onClick={analyzeBatch}
                 disabled={images.length === 0}

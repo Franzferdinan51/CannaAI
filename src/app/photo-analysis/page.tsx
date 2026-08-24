@@ -28,6 +28,7 @@ import {
   Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BatchPhotoAnalysis } from '@/components/BatchPhotoAnalysis';
 
 type PlantOption = { id: string; name: string; strain?: string };
 type Analysis = {
@@ -148,9 +149,12 @@ export default function PhotoAnalysisPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
-        throw new Error(data.error || data.details || 'Analysis failed');
+        const message = typeof data.error === 'string'
+          ? data.error
+          : data.error?.message || data.details || `Analysis failed (${res.status})`;
+        throw new Error(message);
       }
       setResult(data);
 
@@ -272,7 +276,7 @@ export default function PhotoAnalysisPage() {
                   {imageData ? (
                     <div className="space-y-4">
                       <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-950">
-                        <img src={imageData} alt="Preview" className="w-full h-full object-contain" />
+                        <img data-testid="image-preview" src={imageData} alt="Preview" className="w-full h-full object-contain" />
                         <Button
                           variant="destructive"
                           size="icon"
@@ -449,7 +453,7 @@ export default function PhotoAnalysisPage() {
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      <Loader2 data-testid="loading-spinner" className="w-5 h-5 mr-2 animate-spin" />
                       Analyzing...
                     </>
                   ) : (
@@ -632,6 +636,10 @@ export default function PhotoAnalysisPage() {
               </Card>
             )}
           </div>
+        </div>
+
+        <div className="mt-6">
+          <BatchPhotoAnalysis />
         </div>
 
         {/* Analysis History Panel */}
