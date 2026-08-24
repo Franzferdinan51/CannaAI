@@ -51,7 +51,7 @@ test.describe('Current CannaAI workflows', () => {
     await expect(page.locator('[data-testid="analysis-results"]')).toBeVisible();
     await expect(page.locator('[data-testid="diagnosis-title"]')).toHaveText('Healthy Plant');
     await page.getByRole('button', { name: /History/ }).click();
-    await expect(page.getByText('Confidence: 95%')).toBeVisible();
+    await expect(page.locator('[data-testid="analysis-results"]').getByText('Confidence: 95%')).toBeVisible();
   });
 
   test('surfaces invalid uploads and provider errors without crashing', async ({ page }) => {
