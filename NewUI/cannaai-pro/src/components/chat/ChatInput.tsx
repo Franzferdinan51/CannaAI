@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 
 import { ChatTemplate, FileAttachment } from './types';
+import { createFileAttachment, fileToDataUrl, validateAttachment } from './attachments';
 
 interface ChatInputProps {
   onSend: (content: string, image?: string, attachments?: FileAttachment[]) => void;
@@ -72,6 +73,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [showFormattingBar, setShowFormattingBar] = useState(false);
@@ -124,13 +126,13 @@ export function ChatInput({
     const attachments: FileAttachment[] = [...attachedFiles];
 
     if (selectedImage) {
-      // Convert base64 image to FileAttachment if needed
       attachments.push({
         id: `image_${Date.now()}`,
         name: 'image.png',
         type: 'image/png',
-        size: 0,
+        size: selectedImageFile?.size ?? 0,
         url: selectedImage,
+        data: selectedImage,
         uploadedAt: new Date(),
         analysis: { isImage: true, analyzed: false }
       });
@@ -141,6 +143,7 @@ export function ChatInput({
     // Reset form
     setInput('');
     setSelectedImage(null);
+    setSelectedImageFile(null);
     setAttachedFiles([]);
     setShowTemplateSelector(false);
     setShowEmojiPicker(false);
@@ -157,7 +160,7 @@ export function ChatInput({
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 100);
-  }, [input, selectedImage, attachedFiles, isLoading, onSend, onTypingStop, typingTimeout]);
+  }, [input, selectedImage, selectedImageFile, attachedFiles, isLoading, onSend, onTypingStop, typingTimeout]);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -228,37 +231,37 @@ export function ChatInput({
   }, []);
 
   const handleImageUpload = useCallback((file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Image size must be less than 10MB');
+    const validation = validateAttachment(file, 'image');
+    if (!validation.valid) {
+      alert(validation.error);
       return;
     }
 
     const reader = new FileReader();
     reader.onloadend = () => {
       setSelectedImage(reader.result as string);
+      setSelectedImageFile(file);
     };
     reader.readAsDataURL(file);
     onImageUpload?.(file);
   }, [onImageUpload]);
 
-  const handleFileUpload = useCallback((file: File) => {
-    if (file.size > 25 * 1024 * 1024) {
-      alert('File size must be less than 25MB');
+  const handleFileUpload = useCallback(async (file: File) => {
+    const validation = validateAttachment(file, 'file');
+    if (!validation.valid) {
+      alert(validation.error);
       return;
     }
 
-    const attachment: FileAttachment = {
-      id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      url: URL.createObjectURL(file),
-      uploadedAt: new Date(),
-      analysis: {
-        isImage: file.type.startsWith('image/'),
-        analyzed: false
-      }
-    };
+    let payload: string;
+    try {
+      payload = await fileToDataUrl(file);
+    } catch {
+      alert('Unable to read this attachment');
+      return;
+    }
+
+    const attachment: FileAttachment = createFileAttachment(file, payload);
 
     setAttachedFiles(prev => [...prev, attachment]);
     onFileUpload?.(file);
@@ -270,6 +273,7 @@ export function ChatInput({
 
   const removeImage = useCallback(() => {
     setSelectedImage(null);
+    setSelectedImageFile(null);
   }, []);
 
   // Drag and drop

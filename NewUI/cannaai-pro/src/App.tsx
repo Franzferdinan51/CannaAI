@@ -8,6 +8,8 @@ class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; error?: Error }
 > {
+  declare state: { hasError: boolean; error?: Error };
+  declare props: { children: React.ReactNode };
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
@@ -73,7 +75,6 @@ const Automation = lazy(() => import('./components/automation/AutomationSimple')
 const Advisors = lazy(() => import('./components/advisors/LocalMoaAdvisors'));
 
 import { SocketProvider } from './contexts/SocketContext';
-import { useSocket } from './lib/socket';
 
 import './index.css';
 
@@ -90,13 +91,6 @@ const queryClient = new QueryClient({
 
 // Socket connection wrapper
 function AppWithSocket() {
-  const { connect } = useSocket();
-
-  React.useEffect(() => {
-    // Connect to socket when app mounts
-    connect();
-  }, [connect]);
-
   return (
     <ErrorBoundary>
       <Router>

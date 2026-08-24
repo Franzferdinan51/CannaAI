@@ -5,18 +5,13 @@
 
 // Bump this whenever the production bundle changes so installed phones do
 // not keep serving a stale route chunk after an app update.
-const CACHE_NAME = 'cannaai-pro-v1.0.1';
-const RUNTIME_CACHE = 'cannaai-runtime-v1.0.1';
+const CACHE_NAME = 'cannaai-pro-v1.0.2';
+const RUNTIME_CACHE = 'cannaai-runtime-v1.0.2';
 
 // Resources to cache on install
 const PRECACHE_RESOURCES = [
   '/',
-  '/index.html',
   '/manifest.json',
-  '/index.css',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
-  '/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -88,7 +83,7 @@ async function networkFirst(request) {
     console.log('[SW] Network failed, trying cache:', request.url);
     const cachedResponse = await caches.match(request);
     if (cachedResponse) return cachedResponse;
-    if (request.mode === 'navigate') return caches.match('/offline.html');
+    if (request.mode === 'navigate') return caches.match('/');
     throw error;
   }
 }

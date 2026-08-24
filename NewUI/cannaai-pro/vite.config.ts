@@ -7,19 +7,20 @@ export default defineConfig(({ mode }) => {
     return {
       server: {
         port: 5174,
-        host: '0.0.0.0',
-        allowedHosts: true,
+        host: '127.0.0.1',
+        allowedHosts: ['localhost', '127.0.0.1'],
       },
       preview: {
-        host: '0.0.0.0',
-        allowedHosts: true,
+        host: '127.0.0.1',
+        allowedHosts: ['localhost', '127.0.0.1'],
       },
       plugins: [
         react(),
       ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'globalThis.__VITE_API_URL__': JSON.stringify(env.VITE_API_URL || ''),
       },
       resolve: {
         alias: {

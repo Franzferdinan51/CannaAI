@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { resolveWebSocketUrl } from '../lib/socket';
+
+export { resolveWebSocketUrl } from '../lib/socket';
 
 interface WebSocketOptions {
   onConnect?: () => void;
@@ -37,42 +40,49 @@ export function useWebSocket(url: string, options: WebSocketOptions = {}): UseWe
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [lastMessage, setLastMessage] = useState<MessageEvent | null>(null);
-  const [reconnectCount, setReconnectCount] = useState(0);
+  const reconnectCountRef = useRef(0);
+  const manuallyDisconnectedRef = useRef(false);
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const callbacksRef = useRef({ onConnect, onDisconnect, onMessage, onError });
+  callbacksRef.current = { onConnect, onDisconnect, onMessage, onError };
+  const optionsRef = useRef({ reconnectAttempts, reconnectInterval, shouldReconnect });
+  optionsRef.current = { reconnectAttempts, reconnectInterval, shouldReconnect };
 
   const connect = useCallback(() => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
+    if (socketRef.current && [WebSocket.CONNECTING, WebSocket.OPEN].includes(socketRef.current.readyState)) {
       return;
     }
 
     setIsConnecting(true);
+    manuallyDisconnectedRef.current = false;
 
     try {
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(resolveWebSocketUrl(url));
       socketRef.current = ws;
 
       ws.onopen = () => {
         setIsConnected(true);
         setIsConnecting(false);
-        setReconnectCount(0);
+        reconnectCountRef.current = 0;
         setSocket(ws);
-        onConnect?.();
+        callbacksRef.current.onConnect?.();
       };
 
       ws.onclose = (event) => {
+        if (socketRef.current !== ws) return;
+        socketRef.current = null;
         setIsConnected(false);
         setIsConnecting(false);
         setSocket(null);
-        onDisconnect?.();
+        callbacksRef.current.onDisconnect?.();
 
-        // Attempt reconnection if enabled and not a clean close
-        if (shouldReconnect && event.code !== 1000 && reconnectCount < reconnectAttempts) {
-          const nextAttempt = reconnectCount + 1;
-          setReconnectCount(nextAttempt);
+        if (!manuallyDisconnectedRef.current && optionsRef.current.shouldReconnect && event.code !== 1000 && reconnectCountRef.current < optionsRef.current.reconnectAttempts) {
+          const nextAttempt = reconnectCountRef.current + 1;
+          reconnectCountRef.current = nextAttempt;
 
-          const delay = reconnectInterval * Math.pow(2, nextAttempt - 1); // Exponential backoff
+          const delay = optionsRef.current.reconnectInterval * Math.pow(2, nextAttempt - 1);
 
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
@@ -82,21 +92,23 @@ export function useWebSocket(url: string, options: WebSocketOptions = {}): UseWe
 
       ws.onmessage = (event) => {
         setLastMessage(event);
-        onMessage?.(event);
+        callbacksRef.current.onMessage?.(event);
       };
 
       ws.onerror = (error) => {
         setIsConnecting(false);
-        onError?.(error);
+        callbacksRef.current.onError?.(error);
       };
 
     } catch (error) {
       setIsConnecting(false);
-      onError?.(error as Event);
+      callbacksRef.current.onError?.(error as Event);
     }
-  }, [url, onConnect, onDisconnect, onMessage, onError, shouldReconnect, reconnectAttempts, reconnectInterval, reconnectCount]);
+  }, [url]);
 
   const disconnect = useCallback(() => {
+    manuallyDisconnectedRef.current = true;
+    reconnectCountRef.current = 0;
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -110,15 +122,12 @@ export function useWebSocket(url: string, options: WebSocketOptions = {}): UseWe
     setSocket(null);
     setIsConnected(false);
     setIsConnecting(false);
-    setReconnectCount(0);
   }, []);
 
   const reconnect = useCallback(() => {
     disconnect();
-    setReconnectCount(0);
-    setTimeout(() => {
-      connect();
-    }, 100);
+    reconnectCountRef.current = 0;
+    connect();
   }, [disconnect, connect]);
 
   const send = useCallback((data: any): boolean => {
@@ -135,12 +144,13 @@ export function useWebSocket(url: string, options: WebSocketOptions = {}): UseWe
     return false;
   }, []);
 
-  // Cleanup on unmount
+  // Connect once for this URL and close it when the consuming component unmounts.
   useEffect(() => {
+    connect();
     return () => {
       disconnect();
     };
-  }, [disconnect]);
+  }, [url]);
 
   return {
     socket,

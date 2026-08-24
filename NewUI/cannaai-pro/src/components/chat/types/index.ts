@@ -197,6 +197,7 @@ export interface FileAttachment {
   type: string;
   size: number;
   url: string;
+  data?: string;
   uploadedAt: Date;
   analysis?: {
     isImage: boolean;

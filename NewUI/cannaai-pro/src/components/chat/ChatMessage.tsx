@@ -38,6 +38,8 @@ import {
 } from 'lucide-react';
 
 import { IChatMessage, ChatMessageMetadata } from './types';
+import { SafeMarkdown } from './markdown';
+import { Badge } from '../ui/badge';
 
 interface ChatMessageProps {
   message: IChatMessage;
@@ -200,15 +202,6 @@ export function ChatMessage({
   const handleAnalyze = () => {
     setShowAnalysis(!showAnalysis);
     onAnalyze?.(message.id);
-  };
-
-  const formatMessageContent = (content: string) => {
-    // Convert markdown-style formatting
-    return content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code class="bg-gray-800 px-1 py-0.5 rounded text-sm">$1</code>')
-      .replace(/\n/g, '<br />');
   };
 
   const renderMessageHeader = () => (
@@ -431,10 +424,7 @@ export function ChatMessage({
 
     return (
       <div className="space-y-3">
-        <div
-          className="whitespace-pre-wrap text-gray-200"
-          dangerouslySetInnerHTML={{ __html: formatMessageContent(message.content) }}
-        />
+        <div className="whitespace-pre-wrap text-gray-200"><SafeMarkdown content={message.content} /></div>
 
         {/* Image Attachment */}
         {message.image && (

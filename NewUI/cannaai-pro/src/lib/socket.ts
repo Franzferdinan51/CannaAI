@@ -1,4 +1,20 @@
 import { io, Socket } from 'socket.io-client';
+import { useCallback, useSyncExternalStore } from 'react';
+
+export function resolveWebSocketUrl(endpoint: string, baseUrl?: string): string {
+  const fallback = typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000';
+  const base = baseUrl || (typeof window !== 'undefined' ? window.location.href : fallback);
+  const resolved = new URL(endpoint, base);
+  if (resolved.protocol === 'http:') resolved.protocol = 'ws:';
+  if (resolved.protocol === 'https:') resolved.protocol = 'wss:';
+  return resolved.toString();
+}
+
+export function getSocketBaseUrl(): string {
+  const configured = (globalThis as typeof globalThis & { __VITE_API_URL__?: string }).__VITE_API_URL__;
+  const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  return configured ? new URL(configured, base).toString().replace(/\/$/, '') : base;
+}
 
 export interface SensorData {
   temperature: number;
@@ -32,70 +48,64 @@ export interface NotificationData {
 
 class SocketService {
   private socket: Socket | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private listeners = new Set<() => void>();
 
   connect() {
-    if (this.socket?.connected) {
-      return this.socket;
-    }
+    if (this.socket) return this.socket;
 
-    const backendUrl = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
-      ? `${window.location.protocol}//${window.location.hostname}:3000`
-      : 'http://localhost:3000');
-    this.socket = io(backendUrl, {
+    this.socket = io(getSocketBaseUrl(), {
       path: '/api/socketio',
       transports: ['websocket', 'polling'],
       timeout: 20000,
-      forceNew: true,
+      forceNew: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
-    this.setupEventListeners();
+    this.setupEventListeners(this.socket);
+    this.notify();
     return this.socket;
   }
 
-  private setupEventListeners() {
-    if (!this.socket) return;
+  private setupEventListeners(socket: Socket) {
 
-    this.socket.on('connect', () => {
+    socket.on('connect', () => {
       console.log('Connected to Socket.IO server');
-      this.reconnectAttempts = 0;
+      this.notify();
     });
 
-    this.socket.on('disconnect', (reason) => {
+    socket.on('disconnect', (reason) => {
       console.log('Disconnected from Socket.IO server:', reason);
-      this.handleReconnect();
+      this.notify();
     });
 
-    this.socket.on('connect_error', (error) => {
+    socket.on('connect_error', (error) => {
       console.error('Socket.IO connection error:', error);
-      this.handleReconnect();
+      this.notify();
     });
 
     // Custom event listeners
-    this.socket.on('sensor-data', (data: SensorData) => {
+    socket.on('sensor-data', (data: SensorData) => {
       this.handleSensorData(data);
     });
 
-    this.socket.on('notification', (data: NotificationData) => {
+    socket.on('notification', (data: NotificationData) => {
       this.handleNotification(data);
     });
 
-    this.socket.on('analysis-complete', (data: any) => {
+    socket.on('analysis-complete', (data: any) => {
       this.handleAnalysisComplete(data);
     });
   }
 
-  private handleReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      const delay = Math.pow(2, this.reconnectAttempts) * 1000; // Exponential backoff
+  private notify() {
+    this.listeners.forEach((listener) => listener());
+  }
 
-      setTimeout(() => {
-        console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-        this.connect();
-      }, delay);
-    }
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private handleSensorData(data: SensorData) {
@@ -118,6 +128,7 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
     }
+    this.notify();
   }
 
   // Emit methods
@@ -164,11 +175,16 @@ export const socketService = new SocketService();
 
 // Hook for using socket in components
 export const useSocket = () => {
-  const connect = () => socketService.connect();
-  const disconnect = () => socketService.disconnect();
-  const emit = (event: string, data: any) => socketService.emit(event, data);
-  const subscribeToSensorData = (roomName: string) => socketService.subscribeToSensorData(roomName);
-  const unsubscribeFromSensorData = (roomName: string) => socketService.unsubscribeFromSensorData(roomName);
+  const connect = useCallback(() => socketService.connect(), []);
+  const disconnect = useCallback(() => socketService.disconnect(), []);
+  const emit = useCallback((event: string, data: any) => socketService.emit(event, data), []);
+  const subscribeToSensorData = useCallback((roomName: string) => socketService.subscribeToSensorData(roomName), []);
+  const unsubscribeFromSensorData = useCallback((roomName: string) => socketService.unsubscribeFromSensorData(roomName), []);
+  useSyncExternalStore(
+    (listener) => socketService.subscribe(listener),
+    () => `${socketService.isConnected}:${socketService.socketId ?? ''}`,
+    () => `${socketService.isConnected}:${socketService.socketId ?? ''}`,
+  );
 
   return {
     connect,
