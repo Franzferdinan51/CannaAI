@@ -94,7 +94,11 @@ const LMStudioSection: React.FC = () => {
     }
   };
 
-  const filteredModels = lmStudioData?.models?.filter((model) => {
+  const uniqueModels = (lmStudioData?.models || []).filter((model, index, models) => (
+    models.findIndex((candidate) => candidate.id === model.id) === index
+  ));
+
+  const filteredModels = uniqueModels.filter((model) => {
     const matchesSearch = model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          model.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          model.filename.toLowerCase().includes(searchQuery.toLowerCase());
@@ -301,7 +305,7 @@ const LMStudioSection: React.FC = () => {
           {/* Sort Options */}
           <div className="flex items-center justify-between mb-4">
             <div className="text-sm text-gray-400">
-              Showing {sortedModels.length} of {lmStudioData.models.length} models
+              Showing {sortedModels.length} of {uniqueModels.length} models
             </div>
             <select
               value={sortBy}
@@ -318,7 +322,11 @@ const LMStudioSection: React.FC = () => {
           <ScrollArea.Root className="h-[600px] rounded-lg">
             <ScrollArea.Viewport className="h-full w-full">
             <div className="space-y-4 pr-4">
-              {sortedModels.map((model) => (
+              {sortedModels.map((model) => {
+                const quantizationLabel = typeof model.quantization === 'string'
+                  ? model.quantization
+                  : (model.quantization as any)?.name || 'Unknown';
+                return (
                 <motion.div
                   key={model.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -345,7 +353,7 @@ const LMStudioSection: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
-                        {model.quantization}
+                        {quantizationLabel}
                       </span>
                     </div>
                   </div>
@@ -369,7 +377,8 @@ const LMStudioSection: React.FC = () => {
                     <div>Modified: {new Date(model.modified).toLocaleDateString()}</div>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
 
               {sortedModels.length === 0 && (
                 <div className="text-center py-12">
