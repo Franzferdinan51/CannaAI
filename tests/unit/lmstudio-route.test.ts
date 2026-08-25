@@ -1,6 +1,6 @@
 /** @jest-environment node */
 
-import { POST } from '@/app/api/lmstudio/route';
+import { GET, POST } from '@/app/api/lmstudio/route';
 
 function response(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
@@ -55,5 +55,19 @@ describe('/api/lmstudio legacy local endpoint', () => {
 
     const requestBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
     expect(requestBody.model).toBe('cultivation-chat-model');
+  });
+
+  test('reports degraded when LM Studio has no runnable chat model', async () => {
+    jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ data: [{ id: 'text-embedding-model' }] }));
+
+    const result = await GET();
+
+    expect(result.status).toBe(503);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      success: false,
+      status: 'degraded',
+      modelCount: 1,
+    }));
   });
 });

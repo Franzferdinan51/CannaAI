@@ -339,14 +339,37 @@ export async function GET() {
     }
 
     const models = await response.json();
-    console.log(`✅ LM Studio healthy with ${models.data?.length || 0} models`);
+    const modelList = Array.isArray(models?.data) ? models.data : [];
+    const chatModels = modelList.filter((model: any) => {
+      const id = String(model?.id || '').toLowerCase();
+      return id && !id.includes('embedding') && !id.includes('embed-') && !id.endsWith('-embed');
+    });
+    console.log(`✅ LM Studio reachable with ${modelList.length} models (${chatModels.length} chat models)`);
+
+    if (chatModels.length === 0) {
+      return NextResponse.json({
+        success: false,
+        status: 'degraded',
+        provider: 'lmstudio-local',
+        error: 'LM Studio is reachable but no runnable chat model is available',
+        message: 'Load a chat model in LM Studio and retry.',
+        models: modelList,
+        modelCount: modelList.length,
+        environment: {
+          isDevelopment,
+          isServerless: false,
+          lmStudioUrl: LM_STUDIO_URL
+        },
+        timestamp: new Date().toISOString()
+      }, { status: 503 });
+    }
 
     return NextResponse.json({
       success: true,
       status: 'healthy',
       provider: 'lmstudio-local',
-      models: models.data || [],
-      modelCount: models.data?.length || 0,
+      models: modelList,
+      modelCount: modelList.length,
       environment: {
         isDevelopment,
         isServerless: false,
