@@ -8,7 +8,6 @@ A comprehensive, production-ready chat system with AI-powered cultivation assist
 - **Multiple AI Providers**: Support for LM Studio (local) and OpenRouter (cloud)
 - **Provider Fallback**: Automatic fallback between providers
 - **Context-Aware**: Integrates with sensor data and cultivation context
-- **AgentEvolver Integration**: Advanced AI learning capabilities
 
 ### 💬 Advanced Chat Features
 - **Rich Message Support**: Text, images, and file attachments

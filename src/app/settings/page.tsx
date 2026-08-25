@@ -6,9 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AIProviderSettings } from '@/components/ai/AIProviderSettings';
 import { LMStudioSettings } from '@/components/lmstudio/LMStudioSettings';
-import { AgentEvolverSettings } from '@/components/ai/AgentEvolverSettings';
 import Link from 'next/link';
-import { Brain, Cpu, ServerCog, Settings2, ChevronLeft } from 'lucide-react';
+import { Brain, ServerCog, Settings2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +19,7 @@ function SettingsContent() {
 
   useEffect(() => {
     const tab = searchParams?.get('tab');
-    if (tab && ['ai', 'lmstudio', 'evolver'].includes(tab)) {
+    if (tab && ['ai', 'lmstudio'].includes(tab)) {
       setDefaultTab(tab);
     }
   }, [searchParams]);
@@ -36,10 +35,6 @@ function SettingsContent() {
           <ServerCog className="w-4 h-4 mr-2" />
           LM Studio
         </TabsTrigger>
-        <TabsTrigger value="evolver" className="data-[state=active]:text-emerald-300">
-          <Cpu className="w-4 h-4 mr-2" />
-          AgentEvolver
-        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="ai" className="space-y-4">
@@ -50,9 +45,6 @@ function SettingsContent() {
         <LMStudioSettings />
       </TabsContent>
 
-      <TabsContent value="evolver" className="space-y-4">
-        <AgentEvolverSettings />
-      </TabsContent>
     </Tabs>
   );
 }
@@ -74,7 +66,7 @@ export default function SettingsPage() {
             <div>
               <h1 className="text-3xl font-bold text-slate-100">Settings</h1>
               <p className="text-slate-400">
-                Configure AI providers, local LM Studio, and AgentEvolver without losing any options.
+                Configure AI providers and local LM Studio without unnecessary background services.
               </p>
             </div>
           </div>

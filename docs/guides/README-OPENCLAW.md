@@ -1,447 +1,85 @@
-# CannaAI - Cannabis Cultivation Management System
+# CannaAI and OpenClaw
 
-🌱 **CultivAI Pro** - An advanced AI-powered cannabis cultivation management system built with Next.js 15, featuring real-time plant health analysis, sensor monitoring, automation controls, and comprehensive cultivation analytics.
+CannaAI and OpenClaw are separate programs. CannaAI owns the cultivation API and dashboard; OpenClaw owns agent identity, Gateway authentication, tool permissions, and model routing.
 
-## 🌟 Features
+## Active transport
 
-### 🤖 AI-Powered Plant Analysis
-- **Smart Symptom Detection**: Advanced analysis of plant health issues including nutrient deficiencies, pests, and diseases
-- **Purple Strain Intelligence**: Accurately distinguishes between genetic purple strains and phosphorus deficiency symptoms
-- **Flexible Input System**: Works with minimal user input - no strain information required
-- **Multi-Model Support**: Integrates 7 AI providers (LM Studio, Google Gemini, Anthropic Claude, Groq, OpenRouter, OpenAI-compatible) with intelligent fallback and AgentEvolver prompt optimization
-- **Trichome Analysis**: Microscopic trichome maturity assessment for precise harvest timing
-- **Live Vision Monitoring**: Real-time webcam/microscope health monitoring with change detection
+CannaAI connects to the authenticated OpenClaw Gateway through ACP. It does not require an OpenAI-compatible bridge and should not be pointed at an invented `/v1/chat/completions` endpoint on the Gateway port.
 
-### 📊 Real-Time Monitoring
-- **Live Sensor Data**: Temperature, humidity, pH, EC, soil moisture, light intensity, CO2 levels
-- **Multi-Room Management**: Monitor and control multiple grow rooms simultaneously
-- **Environmental Alerts**: Real-time notifications for out-of-range conditions
-- **Historical Data Tracking**: Trend analysis and growth progression charts
+Check the local Gateway before troubleshooting CannaAI:
 
-### 🤖 Automation Controls
-- **Smart Watering**: Automated irrigation based on soil moisture thresholds
-- **Climate Control**: Temperature and humidity regulation with customizable ranges
-- **Lighting Schedules**: Vegetative and flowering photoperiod management
-- **Nutrient Dosing**: Precision feeding schedules and EC management
-
-### 📈 Analytics Dashboard
-- **Growth Analytics**: Yield tracking and progression charts
-- **Environmental Metrics**: VPD, DLI, and other advanced measurements
-- **Performance Insights**: AI-powered recommendations for optimization
-- **Historical Comparisons**: Period-over-period analysis
-
-### 🤖 AI Assistant
-- **Cultivation Chat**: Real-time advice from AI cultivation experts
-- **Problem Diagnosis**: Interactive troubleshooting guidance
-- **Optimization Tips**: Personalized recommendations based on current conditions
-- **Multiple AI Models**: Support for 7 AI providers - LM Studio (local), Google Gemini, Anthropic Claude, Groq, OpenRouter, OpenAI-compatible, and custom models
-
-### 🤖 AI Council Chamber (NEW)
-- **Multi-Agent Deliberation**: 8 specialized AI personas debate cultivation topics
-- **14 Session Modes**: Deliberation, Advisory, Prediction, Research, Swarm, Brainstorming, Peer Review, Risk Assessment, and more
-- **Weighted Voting System**: Consensus-driven decision making with expert personas
-- **Prediction Market**: Forecast yields, harvest dates, potency with confidence intervals
-- **Swarm Coding**: Generate automation scripts via multi-phase pipelines (6/12/24 phases)
-- **Argumentation Framework**: Structured debate with claim/evidence/conclusion mapping
-- **Bot-Specific Memory**: Each AI persona remembers for 30 days with automatic expiration
-- **Adaptive Orchestration**: Real-time session optimization based on performance metrics
-- **Vector Search**: Semantic search across all council discussions and memories
-
-### 🗃️ Strain Management
-- **Custom Strain Database**: Add and manage your own strain profiles
-- **Optimal Conditions**: Store and recall strain-specific environmental parameters
-- **Deficiency Tracking**: Monitor common issues per strain
-- **Purple Strain Support**: Special handling for anthocyanin-producing varieties
-
-### 📊 Business Management
-- **Harvest Tracking**: Record wet/dry weights, THC/CBD percentages, quality grades, and yields per plant
-- **Inventory Management**: Track nutrients, equipment, soil/medium with cost tracking and low stock alerts
-- **Clone & Propagation**: Monitor cloning success rates, rooting methods, and batch tracking
-- **Cost Analysis**: Comprehensive expense/revenue tracking with profit margin analysis and cost-per-gram calculations
-- **Financial Analytics**: Real-time profitability metrics, category breakdowns, and ROI analysis
-
-### 🧠 AgentEvolver - Self-Evolving AI System (New UI)
-- **Advanced Dashboard**: New React-based UI for managing agent evolution (Port 8000)
-- **Intelligent Prompt Optimization**: Automatically optimizes AI prompts based on context and task type
-- **Cannabis Domain Expertise**: Built-in knowledge of cannabis cultivation, strains, and symptoms
-- **Continuous Learning**: Tracks performance metrics and evolves strategies over time
-- **FastAPI Backend**: Runs as separate Python server on port 8000
-- **Evolution History**: Stores last 1000 optimization records for analysis
-- **Feedback Mechanism**: Learns from user feedback to improve recommendations
-- **Dual-Mode Operation**: Run standalone or integrated with Next.js server
-
-### 🚀 Deployment & Access
-- **Startup Modes**: Development, production, remote access, AI backend, database reset, and more via startup.bat
-- **Remote Access**: Network-accessible mode (0.0.0.0:3000) with Tailscale and LAN support
-- **Static Hosting**: Full Netlify deployment with client-side AI configuration
-- **Traditional Server**: Custom Node.js server with Socket.IO and full API support
-- **Cross-Platform**: Windows batch scripts and Unix shell scripts for all platforms
-
----
-
-## 🦞 OpenClaw Integration
-
-CannaAI integrates with OpenClaw in **TWO ways**:
-
-1. **HTTP Bridge** - OpenAI-compatible API for any app
-2. **Native Skill** - Full OpenClaw skill with 5 specialized tools
-
-### Architecture
-
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  CannaAI    │────▶│ HTTP Bridge  │────▶│ OpenClaw    │
-│  (Port 3000)│     │ (Port 18790) │     │ Gateway     │
-└─────────────┘     └──────────────┘     │ (Port 18789)│
-                                          └─────────────┘
-                                                │
-                                          ┌─────┴─────┐
-                                          │ Models    │
-                                          │ Qwen/Kimi │
-                                          │ MiniMax   │
-                                          └───────────┘
-```
-
----
-
-## 🚀 Setup Instructions
-
-### Option 1: HTTP Bridge (Recommended for Apps)
-
-**What it does:** Provides OpenAI-compatible API endpoint that routes to OpenClaw Gateway
-
-**Setup:**
 ```bash
-# 1. Install dependencies
-cd ~/Desktop/CannaAI/openclaw-bridge
-npm install
-
-# 2. Start the bridge
-npm start
-
-# 3. Test it
-curl http://localhost:18790/health
-curl http://localhost:18790/v1/models
-```
-
-**Usage:**
-```bash
-# Chat with OpenClaw via CannaAI
-curl -X POST http://localhost:18790/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "qwen3.5-plus",
-    "messages": [{"role": "user", "content": "What is CannaAI?"}]
-  }'
-
-# Analyze plant photo (vision model)
-curl -X POST http://localhost:18790/v1/vision/analyze \
-  -H "Content-Type: application/json" \
-  -d '{
-    "image": "base64_encoded_image_data",
-    "prompt": "Analyze this cannabis plant health"
-  }'
-```
-
-**Endpoints:**
-- `GET /health` - Health check
-- `GET /v1/models` - List available models
-- `POST /v1/chat/completions` - Chat completions (OpenAI format)
-- `POST /v1/vision/analyze` - Image analysis
-
----
-
-### Option 2: Native OpenClaw Skill
-
-**What it does:** Installs CannaAI as a native OpenClaw skill with 5 tools
-
-**Setup:**
-```bash
-# 1. Link the skill to OpenClaw
-ln -sf ~/Desktop/CannaAI/openclaw-skill ~/.openclaw/skills/cannaai
-
-# 2. Verify installation
+openclaw gateway status --json
 openclaw skills list | grep cannaai
-
-# 3. Test the skill
-openclaw agent --message "Check my grow room conditions"
-openclaw agent --message "Analyze this plant photo" --file plant.jpg
 ```
 
-**Available Tools:**
+The configured agent profile defaults to `main` and can be changed with `OPENCLAW_AGENT_ID`. Set `OPENCLAW_ACP_URL` only when the local OpenClaw installation exposes ACP at a non-default endpoint. CannaAI also supports `OPENCLAW_MODEL` as the requested model hint.
 
-| Tool | Description | Example |
-|------|-------------|---------|
-| `analyze_plant` | Analyze plant health from photo | `"What's wrong with this plant?"` |
-| `get_environment` | Get grow room conditions | `"Check temperature and humidity"` |
-| `get_strain_info` | Get strain-specific advice | `"Optimal conditions for GDP"` |
-| `track_growth` | Log growth progress | `"Day 45 of flower, looking good"` |
-| `predict_harvest` | Estimate harvest readiness | `"When should I harvest?"` |
+## Install the CannaAI skill
 
-**Usage Examples:**
+From a CannaAI checkout:
+
 ```bash
-# Plant analysis
-openclaw agent --message "Analyze this plant for nutrient deficiencies" \
-  --file sick-plant.jpg
-
-# Environmental check
-openclaw agent --message "What's the current VPD in my grow room?"
-
-# Strain advice
-openclaw agent --message "What humidity should Grand Daddy Purple have in week 6 of flower?"
-
-# Harvest prediction
-openclaw agent --message "I'm on day 63 of flower, when should I harvest?"
+ln -sf "$PWD/openclaw-skill" ~/.openclaw/skills/cannaai
+openclaw skills list | grep cannaai
 ```
 
----
+The skill lets an OpenClaw agent use CannaAI’s cultivation operations. The agent can ask for room conditions, strain information, growth tracking, and harvest guidance. For a phone-camera workflow, the agent may capture an image and submit it to CannaAI’s `/api/analyze` route.
 
-### Option 3: Direct API Access
+## Direct CannaAI API
 
-**What it does:** Use CannaAI's built-in API directly
+The agent-facing plant-analysis contract is documented in [`../developer/api/agent-analysis-contract.md`](../developer/api/agent-analysis-contract.md). A minimal image request is:
 
-**Endpoints:**
 ```bash
-# Health check
-curl http://localhost:3000/api/health
-
-# Get sensor data
-curl http://localhost:3000/api/sensors
-
-# List rooms
-curl http://localhost:3000/api/rooms
-
-# Analyze plant (requires image)
 curl -X POST http://localhost:3000/api/analyze \
-  -H "Content-Type: application/json" \
+  -H 'Content-Type: application/json' \
   -d '{
-    "image": "base64_data",
+    "image": "data:image/jpeg;base64,<base64-image>",
     "analysisType": "plant_health",
-    "strain": "Cannabis",
     "growthStage": "flowering"
   }'
 ```
 
----
+`image` and `plantImage` accept a data URL or raw base64. Optional context includes `plantId`, `roomId`, `strain`, `growthStage`, and environmental readings. The response includes diagnosis, severity, confidence, health score, provider metadata, and the versioned agent-analysis contract.
 
-## 🔧 Configuration
-
-### CannaAI Provider Settings
-
-Edit `~/Desktop/CannaAI/.env`:
+Useful routes:
 
 ```bash
-# PRIMARY: OpenClaw Gateway (routes to all models)
-AI_PROVIDER="openclaw"
-OPENCLAW_GATEWAY_URL="http://localhost:18790"
-OPENCLAW_MODEL="qwen3.5-plus"
-OPENCLAW_API_KEY="openclaw-local"
-
-# FALLBACK: Alibaba Qwen (Singapore endpoint)
-BAILIAN_API_KEY="sk-0a5ffe492bfe4222b8964b685554aa00"
-QWEN_MODEL="qwen-vl-max-latest"
-QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+curl http://localhost:3000/api/health-check
+curl http://localhost:3000/api/openclaw/status
+curl http://localhost:3000/api/ai/providers
 ```
 
-### OpenClaw Gateway Requirements
+## Provider behavior
 
-Make sure OpenClaw Gateway is running:
-```bash
-# Check status
-openclaw gateway status
+OpenClaw is one provider among the local-first options. LM Studio is the default local provider when available. Hermes is a separate provider with its own API server or proxy. CannaAI reports provider availability independently and falls back only when the selected provider cannot complete the request.
 
-# Start if needed
-openclaw gateway start
+For photo analysis, set an explicit provider when needed:
 
-# Check health
-openclaw gateway health
+```dotenv
+CANNAAI_IMAGE_PROVIDER="openclaw"
 ```
 
----
+If the photo must be handled by a local LM Studio vision model, leave the override unset and configure `LM_STUDIO_BASE_URL`, `LM_STUDIO_VISION_MODEL`, and `LM_STUDIO_TEXT_MODEL`.
 
-## 📊 Model Routing
+## Remote phone access
 
-OpenClaw automatically routes to the best available model:
+For a phone or remote agent, expose the CannaAI server through a trusted HTTPS or Tailscale address. In production, set explicit allowed origins and authentication tokens:
 
-| Requested Model | Routes To | Cost | Vision |
-|----------------|-----------|------|--------|
-| `qwen3.5-plus` | Alibaba Qwen 3.5 Plus | FREE quota | ✅ |
-| `kimi-k2.5` | NVIDIA Kimi K2.5 | FREE | ✅ |
-| `minimax-m2.5` | MiniMax M2.5 | FREE | ❌ |
-| `qwen-vl-max` | Alibaba Qwen-VL-Max | FREE quota | ✅ |
-| `glm-4.5` | Z.AI GLM-4.5 | FREE quota | ❌ |
-
----
-
-## 🧪 Testing
-
-### Test HTTP Bridge
-```bash
-# Health check
-curl http://localhost:18790/health
-
-# List models
-curl http://localhost:18790/v1/models
-
-# Chat test
-curl -X POST http://localhost:18790/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model":"qwen3.5-plus","messages":[{"role":"user","content":"Hello!"}]}'
+```dotenv
+SOCKET_IO_ORIGINS="https://your-cannaai-host.example"
+CANNAAI_API_TOKEN="use-a-long-random-token"
+SOCKET_IO_TOKEN="use-a-long-random-token"
 ```
 
-### Test Native Skill
-```bash
-# List skills
-openclaw skills list | grep cannaai
+Do not expose a development server or OpenClaw credentials directly to the public internet. The phone agent should call CannaAI’s authenticated API; it should not connect to OpenClaw’s Gateway port as if it were a public application API.
 
-# Test plant analysis
-openclaw agent --message "What is CannaAI?"
+## Troubleshooting
 
-# Test with image
-openclaw agent --message "Analyze this plant" --file test.jpg
-```
+1. Check `openclaw gateway status --json` and confirm the Gateway is running.
+2. Check `curl http://localhost:3000/api/health-check` and inspect the `openclaw` component.
+3. Check `curl http://localhost:3000/api/ai/providers` for the selected provider and discovered models.
+4. Confirm the CannaAI process can resolve the configured OpenClaw executable and ACP endpoint.
+5. For image failures, confirm the agent submitted a non-empty data URL/base64 payload and that the selected provider supports vision.
 
-### Test CannaAI Direct
-```bash
-# Health check
-curl http://localhost:3000/api/health
-
-# Get sensors
-curl http://localhost:3000/api/sensors
-```
-
----
-
-## 🐛 Troubleshooting
-
-### HTTP Bridge Not Starting
-```bash
-# Check if port is in use
-lsof -ti:18790 | xargs kill -9
-
-# Reinstall dependencies
-cd ~/Desktop/CannaAI/openclaw-bridge
-rm -rf node_modules package-lock.json
-npm install
-npm start
-```
-
-### OpenClaw Skill Not Found
-```bash
-# Verify symlink
-ls -la ~/.openclaw/skills/cannaai
-
-# Recreate if needed
-ln -sf ~/Desktop/CannaAI/openclaw-skill ~/.openclaw/skills/cannaai
-
-# Reload OpenClaw
-openclaw gateway restart
-```
-
-### Provider Fallback Issues
-```bash
-# Check CannaAI config
-cat ~/Desktop/CannaAI/.env | grep -E "AI_PROVIDER|OPENCLAW|BAILIAN"
-
-# Test Alibaba directly
-curl -X GET "https://dashscope-intl.aliyuncs.com/api/v1/models" \
-  -H "Authorization: Bearer sk-0a5ffe492bfe4222b8964b685554aa00"
-```
-
----
-
-## 📚 Additional Resources
-
-- **CannaAI Repo:** https://github.com/Franzferdinan51/CannaAI
-- **OpenClaw Docs:** https://docs.openclaw.ai
-- **OpenClaw Skills:** https://docs.openclaw.ai/skills/overview
-
----
-
-**Status:** ✅ Production Ready  
-**Last Updated:** 2026-02-25
-
----
-
-## 🔗 LM Studio Integration (Updated 2026-02-26)
-
-**Windows Machine IP:** `http://100.116.54.125:1234` (Server rebuilt)
-
-### Available Models (16 Verified Live):
-```bash
-curl http://100.116.54.125:1234/v1/models
-```
-
-```bash
-curl http://100.116.54.125:1234/v1/models
-```
-
-**Current Models:**
-- `jan-v2-vl-high` - Janus VL (High quality vision)
-- `jan-v2-vl-med` - Janus VL (Medium quality vision)
-- `jan-v2-vl-low` - Janus VL (Fast vision)
-
-- `jan-v3-4b-base-instruct` - 4B (Ultra fast)
-
-- `qwen3.5-27b` - 27B dense (Fast responses)
-- `qwen/qwen3-vl-8b` - 8B Vision-language
-- `qwen3-vl-8b-thinking` - 8B Vision (Enhanced reasoning)
-- `qwen3-vl-4b-thinking` - 4B Vision (Fast reasoning)
-- `qwen/qwen3-vl-4b` - 4B Vision-language (Fast)
-- `zai-org/glm-4.7-flash` - GLM Flash (Fast reasoning)
-- `zai-org/glm-4.6v-flash` - GLM Vision Flash
-- `nvidia/nemotron-3-nano` - NVIDIA (Compact)
-- `unsloth/qwen3.5-35b-a3b` - 35B MoE (Balanced)
-- `liquid/lfm2-24b-a2b` - 24B MoE (Liquid AI)
-- `qwen/qwen3.5-35b-a3b` - 35B MoE (Official)
-- `text-embedding-nomic-embed-text-v1.5` - Embeddings
-
-### Usage via HTTP Bridge:
-```bash
-# Use LM Studio model via OpenClaw Bridge
-curl -X POST http://localhost:18790/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model":"qwen3.5-122b-a10b","messages":[{"role":"user","content":"Hello!"}]}'
-```
-
-### Direct LM Studio Access:
-```bash
-# Direct to LM Studio (no OpenClaw routing)
-curl -X POST http://100.116.54.125:1234/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model":"qwen3.5-27b","messages":[{"role":"user","content":"Hello!"}]}'
-```
-
-## Available Models:
-```bash
-curl http://<YOUR_WINDOWS_IP>:1234/v1/models
-```
-
-**Current Models:**
-- `jan-v2-vl-high` - Janus VL (High quality vision)
-- `jan-v2-vl-med` - Janus VL (Medium quality vision)
-- `jan-v2-vl-low` - Janus VL (Fast vision)
-
-- `jan-v3-4b-base-instruct` - 4B (Ultra fast)
-
-- `qwen3.5-27b` - 27B dense (Fast)
-- `qwen3.5-35b-a3b` - 35B MoE (Balanced)
-- `liquid/lfm2-24b-a2b` - 24B MoE (Liquid AI)
-- `text-embedding-nomic-embed-text-v1.5` - Embeddings
-
-### Usage via HTTP Bridge:
-```bash
-# Use LM Studio model via OpenClaw Bridge
-curl -X POST http://localhost:18790/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model":"qwen3.5-122b-a10b","messages":[{"role":"user","content":"Hello!"}]}'
-```
-
-### Direct LM Studio Access:
-```bash
-# Direct to LM Studio (no OpenClaw routing)
-curl -X POST http://<YOUR_WINDOWS_IP>:1234/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model":"qwen3.5-27b","messages":[{"role":"user","content":"Hello!"}]}'
-```
-
+The old `openclaw-bridge/` folder is retained as a legacy reference only. Do not run it on the OpenClaw Gateway port. Agent Evolver and model-conversion tooling are not part of the active application.

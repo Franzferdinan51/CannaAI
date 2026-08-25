@@ -1,328 +1,168 @@
-# CannaAI - Cannabis Cultivation Management System
+# CannaAI
 
-🌱 **AI-Powered Cannabis Cultivation Platform**
+CannaAI is a local-first cannabis cultivation assistant. It combines plant-photo analysis, cultivation chat, room and sensor records, alerts, automation data, and agent integrations in one application.
 
-An advanced cultivation management system with real-time plant health analysis, environmental monitoring, automation controls, and comprehensive analytics.
+The primary AI path is local: CannaAI discovers models from LM Studio and sends text or vision requests through its OpenAI-compatible API. OpenClaw and Hermes are supported as separate agent providers for tool-aware chat and image analysis.
 
----
+## Quick start
 
-## 🚀 Quick Start
+Requirements:
 
-```bash
-# Install dependencies
-npm install
+- Node.js 22 or newer
+- npm 10 or newer
+- LM Studio with a loaded model for local AI (optional for UI-only development)
+- A local SQLite database; no PostgreSQL server is required by the default schema
 
-# Start development
-npm run dev
-
-# Start production
-npm run start
-```
-
-**Access:** http://localhost:3000
-
----
-
-## 🌟 Key Features
-
-### 🤖 AI Plant Analysis
-- Vision-based health diagnosis from photos
-- Pest, disease, and nutrient deficiency detection
-- Trichome maturity assessment
-- Harvest timing predictions
-
-### 📊 Environmental Monitoring
-- Live sensor data (temp, humidity, VPD, CO2)
-- Multi-room management
-- Real-time alerts
-- Historical trends
-
-### 🤖 Automation
-- Smart watering systems
-- Climate control
-- Lighting schedules
-- Nutrient dosing
-
-### 📈 Business Analytics
-- Harvest tracking
-- Inventory management
-- Cost analysis
-- ROI calculations
-
----
-
-## 🦞 OpenClaw Integration
-
-CannaAI integrates with OpenClaw for AI agent control:
-
-### Native Gateway / ACP transport
-
-OpenClaw is not an OpenAI-compatible HTTP server. CannaAI connects through
-OpenClaw's supported ACP bridge, which is backed by the authenticated Gateway
-WebSocket. The Gateway owns routing, OAuth profiles, model selection, and
-permissions; CannaAI never copies those credentials.
+From the repository root:
 
 ```bash
-# Verify the configured Gateway
-openclaw gateway status --json
-
-# The equivalent CannaAI transport identifier is:
-# openclaw://gateway/acp
-```
-
-Do not start the legacy `openclaw-bridge` or point CannaAI at an invented
-`/api/chat`/`/v1/chat/completions` URL. The old bridge is retained only as a
-historical reference.
-
-### Native Skill
-```bash
-# Install skill
-ln -sf ~/Desktop/CannaAI/openclaw-skill ~/.openclaw/skills/cannaai
-
-# Use via OpenClaw
-openclaw agent --message "Check my grow room conditions"
-```
-
-**📖 Full Guide:** [docs/guides/README-OPENCLAW.md](docs/guides/README-OPENCLAW.md)
-
----
-
-## 📁 Project Structure
-
-```
-CannaAI/
-├── src/                    # Source code
-├── openclaw-bridge/        # HTTP Bridge service
-├── openclaw-skill/         # OpenClaw skill
-├── docs/                   # Documentation
-│   ├── guides/             # Implementation guides
-│   ├── developer/          # API specs
-│   └── integrations/       # Third-party integrations
-├── prisma/                 # Database schema
-└── README.md               # This file
-```
-
----
-
-## 📖 Documentation
-
-| Topic | Location |
-|-------|----------|
-| OpenClaw Integration | [docs/guides/README-OPENCLAW.md](docs/guides/README-OPENCLAW.md) |
-| AI Providers | [docs/guides/NEW_AI_PROVIDERS_GUIDE.md](docs/guides/NEW_AI_PROVIDERS_GUIDE.md) |
-| Testing Guide | [docs/guides/TESTING-GUIDE.md](docs/guides/TESTING-GUIDE.md) |
-| Deployment | [docs/guides/DEPLOYMENT_CHECKLIST.md](docs/guides/DEPLOYMENT_CHECKLIST.md) |
-| API Reference | [docs/developer/api/openapi-specification.md](docs/developer/api/openapi-specification.md) |
-| Agent Analysis Contract | [docs/developer/api/agent-analysis-contract.md](docs/developer/api/agent-analysis-contract.md) |
-
-**All Docs:** [docs/](docs/)
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** Next.js 15, React, TypeScript, TailwindCSS
-- **Backend:** Node.js, Express, Socket.IO
-- **Database:** PostgreSQL, Prisma ORM
-- **AI:** OpenClaw, Qwen, Kimi, MiniMax, LM Studio
-- **Monitoring:** Screen scraping for any controller app
-
----
-
-## 📋 Requirements
-
-- Node.js 22+ (or Termux on Android — see Android section below)
-- PostgreSQL 15+
-- npm or pnpm
-- (Optional) OpenClaw Gateway
-
----
-
-## 🦆 Duck CLI Integration
-
-CannaAI is accessible via Duck CLI:
-
-```bash
-# Install (Duck CLI v0.9.0+)
-# CannaAI commands are auto-registered in Duck CLI
-
-# Check system status
-duck cannaai status
-
-# Monitor environment
-duck cannaai monitor
-
-# Analyze plant photo (direct)
-duck cannaai analyze /path/to/plant.jpg
-
-# Analyze with AI Council deliberation (6 cannabis specialists)
-duck cannaai analyze /path/to/plant.jpg --council
-
-# List plants
-duck cannaai plants
-
-# Check alerts
-duck cannaai alerts
-
-# Ask AI Council for grow advice
-duck cannaai council "What nutrients does my flowering plant need?"
-```
-
-**Environment:**
-- `CANNAAI_URL` — CannaAI server (default: http://localhost:3000)
-- `AI_COUNCIL_URL` — AI Council server (default: http://localhost:3006)
-
-**AI Council Cannabis Councilors:** The Cultivator, The Trichome Inspector, The Nutrient Manager, The IPM Specialist, The Cure Master, The Compliance Officer.
-
----
-
-## 🔧 Configuration
-
-Copy `.env.example` to `.env` and configure:
-
-```bash
-DATABASE_URL="postgresql://..."
-OPENCLAW_ACP_URL="" # optional; defaults to the Gateway configured in OpenClaw
-OPENCLAW_AGENT_ID="main"
-HERMES_API_URL="http://127.0.0.1:8642/v1"
-HERMES_API_KEY="change-me-local-dev"
-HERMES_MODEL="hermes-agent"
-# Optional direct native-vision routing for plant photos:
-# CANNAAI_IMAGE_PROVIDER="hermes" # or "openclaw"
-# Optional legacy fallback:
-# HERMES_PROXY_PORT="8645"
-# HERMES_PROXY_PROVIDER="nous"
-LM_STUDIO_URL="http://<YOUR_WINDOWS_IP>:1234"
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Run tests
-npm test
-
-# Run the dedicated /api/analyze integration suite
-npm run test:integration:analyze
-
-# Explainability regression smoke check
-npm run check:report-quality
-
-# Visual regression tests
-npm run test:visual
-
-# API endpoint tests
-node test-api-endpoint.js
-```
-
----
-
-## 📱 Android / Termux Support
-
-CannaAI runs on Android devices via Termux — no Node.js PC required.
-
-### Android Backend (Python — Zero Node Dependencies) ⭐
-```bash
-cd android_backend
-python3 cannaai_server.py
-# Server starts on port 3000 with full plant analysis
-```
-
-**API Endpoints:**
-- `GET /api/health` — health check
-- `POST /api/analyze` — plant health analysis with vision AI
-- `GET /api/strains` — strain database
-- `GET /api/chat?message=...` — cannabis grow assistant
-
-### Termux-Specific Fixes (Critical for Python Backend)
-
-1. **Use `qwen3.5-0.8b` for vision** — `gemma-4-26b-a4b` hangs on Termux API calls
-2. **Use curl subprocess, NOT urllib** — urllib hangs on Termux when calling LM Studio
-3. **Set TMPDIR to `/data/data/com.termux/files/usr/tmp`** — `/tmp` is a restricted symlink on Android
-
-```python
-# Correct LM Studio call from Termux:
-import subprocess, os
-tmp_dir = os.environ.get('TMPDIR', '/data/data/com.termux/files/usr/tmp')
-req_file = f"{tmp_dir}/req_{os.getpid()}.json"
-subprocess.run(['curl', '-s', '--max-time', '120', '-X', 'POST',
-    f'{LM_STUDIO_URL}/chat/completions',
-    '-H', 'Content-Type: application/json',
-    '-H', f'Authorization: Bearer {API_KEY}',
-    '--data-binary', f'@{req_file}'], capture_output=True, timeout=130)
-```
-
-### Full CannaAI on Termux
-```bash
-# Install Node.js in Termux
-pkg install nodejs
-
-# Install dependencies (esbuild fix for android-arm64)
-pm install @esbuild/android-arm64 --force
-
-# Start server
+npm run setup
+cp .env.example .env.local
+npm run db:generate
 npm run dev
 ```
 
-### Android Compatibility Notes
-- `sharp` image processing is bypassed by default on android-arm64 — uses `image-simple.ts` (pure JS, no native binaries)
-- `heic-convert` is lazy-loaded to avoid Node.js/localStorage compatibility issues
-- Prisma may need `binaryTargets = ["native", "debian-openssl-1.1.x"]` in `prisma/schema.prisma`
-- Use the Python backend (`android_backend/`) for zero-dependency plant monitoring
+The backend is served on `http://localhost:3000`. The Vite application is served on `http://localhost:5173` and talks to the backend through the configured API base URL. `npm run dev` starts both processes.
 
-### ADB Control via OpenClaw
-Connect to your Android device wirelessly via ADB:
-```bash
-# Get wireless ADB IP and port from Developer Options → Wireless Debugging
-adb connect <device-ip>:<port>
-# e.g. adb connect 100.91.33.100:40835
-```
-OpenClaw can then take screenshots, tap, swipe, and interact with the CannaAI web UI directly.
+For a production build:
 
-## 🚢 Deployment
-
-### Docker
-```bash
-docker-compose up -d
-```
-
-### Production
 ```bash
 npm run build
 npm run start
 ```
 
-### Netlify
-See [docs/guides/NETLIFY_ENVIRONMENT_SETUP.md](docs/guides/NETLIFY_ENVIRONMENT_SETUP.md)
+On Windows, `startup.bat` supports the same development, production, and build-only modes. Keep secrets in `.env.local`; never commit them.
 
----
+## Local AI with LM Studio
 
-## 🤝 Contributing
+LM Studio is the default local provider for text and vision. Start its local server, load a model, and configure the OpenAI-compatible base URL:
 
-1. Fork the repo
-2. Create feature branch
-3. Commit changes
-4. Push to branch
-5. Open Pull Request
+```dotenv
+LM_STUDIO_BASE_URL="http://127.0.0.1:1234/v1"
+LM_STUDIO_VISION_MODEL="ornith-1.5-35b-a3b"
+LM_STUDIO_TEXT_MODEL="ornith-1.5-35b-a3b"
+```
 
----
+`LM_STUDIO_URL` is also accepted for compatibility. CannaAI discovers the available models from `/v1/models`; the configured model must actually be loaded in LM Studio. For vision, use a model and projector that support image input. CannaAI accepts data URLs and raw base64 image payloads at `/api/analyze`.
 
-## 📄 License
+Useful checks:
 
-MIT - See LICENSE file
+```bash
+curl http://127.0.0.1:1234/v1/models
+curl http://localhost:3000/api/health-check
+curl http://localhost:3000/api/ai/providers
+```
 
----
+If LM Studio is stopped or no model is loaded, CannaAI reports the provider as unavailable and keeps the rest of the application usable.
 
-## 🔗 Links
+## OpenClaw integration
 
-- **GitHub:** https://github.com/Franzferdinan51/CannaAI
-- **OpenClaw:** https://openclaw.ai
-- **Documentation:** [docs/](docs/)
+CannaAI treats OpenClaw as a separate agent runtime. It uses the authenticated OpenClaw Gateway through the ACP transport; it does not copy OpenClaw credentials or pretend that the Gateway is a generic unauthenticated HTTP API.
 
----
+```bash
+openclaw gateway status --json
+openclaw agent --message "Check my grow room conditions"
+```
 
-![Version](https://img.shields.io/badge/version-0.3.0-brightgreen.svg)
-![Last Updated](https://img.shields.io/badge/last%20updated-April%2021%2C%2026-blue.svg)
+The optional `OPENCLAW_AGENT_ID` selects the agent profile (default `main`). `OPENCLAW_ACP_URL` can explicitly select an ACP endpoint when the local OpenClaw installation requires it. The supported CannaAI skill is in [`openclaw-skill/`](openclaw-skill/); install it with:
 
-**Last Updated:** April 21, 2026
+```bash
+ln -sf "$PWD/openclaw-skill" ~/.openclaw/skills/cannaai
+```
+
+The tracked `openclaw-bridge/` directory is retained as a legacy reference. It is not required by the active CannaAI integration and should not be started on the OpenClaw Gateway port.
+
+See [`docs/guides/README-OPENCLAW.md`](docs/guides/README-OPENCLAW.md) for the agent contract and troubleshooting guidance.
+
+## Hermes integration
+
+Hermes is also a separate agent runtime. CannaAI prefers the authenticated Hermes API server, including native vision-capable chat, and falls back to the legacy Hermes proxy when only that interface is available.
+
+Native API server configuration:
+
+```dotenv
+HERMES_API_URL="http://127.0.0.1:8642/v1"
+HERMES_API_KEY="change-me-local-dev"
+HERMES_MODEL="hermes-agent"
+```
+
+`HERMES_API_SERVER_KEY` is accepted as an alternative key name. For the legacy proxy fallback, configure `HERMES_AGENT_COMMAND` or the Hermes executable on `PATH`; `HERMES_PROXY_PORT` and `HERMES_PROXY_PROVIDER` remain available for compatibility. To route plant-photo analysis explicitly through Hermes:
+
+```dotenv
+CANNAAI_IMAGE_PROVIDER="hermes"
+```
+
+Provider discovery and `/api/health-check` use the same detection logic, so a configured authenticated proxy or API server is represented consistently. Agent Evolver and the old model-conversion tooling are no longer part of the application.
+
+## Phone and remote camera workflow
+
+An OpenClaw or Hermes agent can capture a phone photo and submit it to CannaAI through `/api/analyze`. The request may contain `image` or `plantImage` as a data URL or raw base64, plus optional plant, room, strain, and environmental context.
+
+For a phone outside the development machine, expose CannaAI through a trusted HTTPS/Tailscale address and set explicit origins in production:
+
+```dotenv
+SOCKET_IO_ORIGINS="https://your-cannaai-host.example"
+CANNAAI_API_TOKEN="use-a-long-random-value"
+SOCKET_IO_TOKEN="use-a-long-random-value"
+```
+
+The app uses Socket.IO for live dashboard updates and a WebSocket chat endpoint. Do not expose the development server directly to the public internet.
+
+## Core API routes
+
+- `GET /api/health-check` — database and provider health, with honest unavailable states
+- `GET /api/ai/providers` — provider availability, models, and configuration status
+- `POST /api/analyze` — plant-photo analysis and the agent analysis contract
+- `POST /api/chat` — cultivation chat with provider fallback
+- `GET /api/openclaw/status` — current OpenClaw-backed cultivation data/status
+- `GET /api/lmstudio/models` — discovered LM Studio models
+
+The agent-facing analysis response is documented in [`docs/developer/api/agent-analysis-contract.md`](docs/developer/api/agent-analysis-contract.md).
+
+## Project layout
+
+```text
+src/                     Next.js API routes, providers, UI, and domain logic
+server.ts                Custom Node server and Socket.IO setup
+NewUI/cannaai-pro/       Active Vite/React dashboard
+prisma/                  SQLite schema, migrations, and generated client config
+openclaw-skill/          OpenClaw skill definition and scripts
+openclaw-bridge/         Legacy reference, not required at runtime
+docs/                    Current guides and API documentation
+tests/                   Unit, integration, browser, security, and performance tests
+scripts/                 Health, build, deployment, and quality checks
+legacy/ and docs/archive Historical material; not imported by the active app
+```
+
+## Verification commands
+
+```bash
+npm run lint
+npm run typecheck:frontend
+npm run typecheck:local-ai
+npm run build
+npm test -- --runInBand
+```
+
+Additional suites are available through `npm run test:integration`, `npm run test:e2e`, `npm run test:visual`, `npm run test:security`, and `npm run test:performance`. Live provider checks require the corresponding local service; tests should report those services as unavailable rather than treating that state as a successful connection.
+
+## Documentation
+
+- [OpenClaw integration](docs/guides/README-OPENCLAW.md)
+- [AI integration guide](docs/guides/AI_INTEGRATION_GUIDE.md)
+- [Remote access](docs/guides/REMOTE_ACCESS.md)
+- [Deployment checklist](docs/guides/DEPLOYMENT_CHECKLIST.md)
+- [API specification](docs/developer/api/openapi-specification.md)
+- [Agent analysis contract](docs/developer/api/agent-analysis-contract.md)
+- [All documentation](docs/)
+
+## License
+
+No license file is currently tracked in this repository. Add the project’s intended license before distributing builds outside the project.
+
+## Links
+
+- [GitHub repository](https://github.com/Franzferdinan51/CannaAI)
+- [OpenClaw](https://openclaw.ai)
+- [Hermes Agent](https://github.com/nousresearch/hermes-agent)
+- [LM Studio CLI](https://github.com/lmstudio-ai/lms)

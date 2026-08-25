@@ -262,8 +262,7 @@ export function CannaAIAssistantSidebar({
           processingTime: data.processingTime,
           context: {
             fallback: data.fallback,
-            providerInfo: data.providerInfo,
-            agentEvolver: data.agentEvolver
+            providerInfo: data.providerInfo
           }
         };
         setMessages(prev => [...prev, assistantMessage]);

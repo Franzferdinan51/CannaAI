@@ -56,7 +56,6 @@ import {
   ThumbsDown,
   ThumbsUp
 } from 'lucide-react';
-import { enhancedAgentEvolver } from '@/lib/agent-evolver-enhanced';
 
 // Import from refactored structure
 import {

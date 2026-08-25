@@ -14,7 +14,6 @@ export interface Settings {
   openclaw?: AgentProviderConfig;
   hermes?: AgentProviderConfig;
   anthropic: AnthropicConfig;
-  agentEvolver: AgentEvolverSettings;
   notifications: NotificationSettings;
   units: UnitSettings;
   system: SystemSettings;
@@ -125,77 +124,6 @@ export interface ModelPricing {
   completion?: string;
   request?: string;
   image?: string;
-}
-
-export interface AgentEvolverSettings {
-  enabled: boolean;
-  evolutionLevel: EvolutionLevel;
-  learningRate: number;
-  performanceThreshold: number;
-  autoOptimization: boolean;
-  riskTolerance: RiskTolerance;
-  customPrompts: CustomPrompt[];
-  performanceMetrics: PerformanceMetrics;
-  evolutionHistory: EvolutionRecord[];
-  integrationSettings: AgentIntegrationSettings;
-}
-
-export type EvolutionLevel = 'basic' | 'advanced' | 'expert';
-export type RiskTolerance = 'conservative' | 'moderate' | 'aggressive';
-export type PromptCategory = 'analysis' | 'automation' | 'troubleshooting' | 'optimization' | 'custom';
-
-export interface CustomPrompt {
-  id: string;
-  name: string;
-  description: string;
-  prompt: string;
-  category: PromptCategory;
-  enabled: boolean;
-  createdAt: string;
-  lastUsed: string;
-  successRate: number;
-  variables?: string[];
-  evolutionTarget?: string;
-}
-
-export interface PerformanceMetrics {
-  accuracy: number;
-  responseTime: number;
-  resourceUsage: number;
-  evolutionProgress: number;
-  totalOptimizations: number;
-  successfulEvolutions: number;
-  failedEvolutions: number;
-  averageImprovement: number;
-  totalEvolutions?: number;
-  successRate?: number;
-  activeTemplates?: number;
-  contextDepth?: number;
-}
-
-export interface EvolutionRecord {
-  id: string;
-  timestamp: string;
-  type: EvolutionType;
-  description: string;
-  success: boolean;
-  improvement: number;
-  metadata: Record<string, any>;
-}
-
-export type EvolutionType =
-  | 'optimization'
-  | 'prompt_evolution'
-  | 'parameter_tuning'
-  | 'architecture_change'
-  | 'configuration_change';
-
-export interface AgentIntegrationSettings {
-  aiProviderIntegration: boolean;
-  automationSync: boolean;
-  dataAnalysisIntegration: boolean;
-  realTimeOptimization: boolean;
-  crossAgentLearning: boolean;
 }
 
 export interface NotificationSettings {
@@ -318,7 +246,6 @@ export interface SettingsAPIResponse {
   settings?: Settings;
   error?: string;
   message?: string;
-  agentEvolverSettings?: AgentEvolverSettings;
   recordId?: string;
 }
 
@@ -369,57 +296,6 @@ export interface LMStudioSummary {
   plantAnalysis: number;
 }
 
-// Enhanced AI Evolution Types
-export interface PromptTemplate {
-  id: string;
-  name: string;
-  category: PromptCategory;
-  evolutionTarget: string;
-  variables: string[];
-  basePrompt: string;
-  evolvedPrompt?: string;
-  successRate?: number;
-  lastEvolved?: string;
-}
-
-export interface EvolutionContext {
-  plantData?: PlantData;
-  userPreferences?: UserPreferences;
-  environmentalFactors?: EnvironmentalFactors;
-  historicalData?: HistoricalData;
-}
-
-export interface PlantData {
-  strain: string;
-  symptoms: string[];
-  growthStage: string;
-  healthScore?: number;
-  age?: number;
-}
-
-export interface UserPreferences {
-  riskTolerance: RiskTolerance;
-  focusAreas: string[];
-  preferredResponseStyle: 'concise' | 'detailed' | 'technical';
-}
-
-export interface EnvironmentalFactors {
-  temperature: number;
-  humidity: number;
-  ph: number;
-  ec: number;
-  lightIntensity: number;
-  co2: number;
-  vpd?: number;
-}
-
-export interface HistoricalData {
-  previousAnalyses: number;
-  successRate: number;
-  commonIssues: string[];
-  improvements: string[];
-}
-
 // UI State Types
 export interface SettingsUIState {
   isLoading: boolean;
@@ -436,7 +312,6 @@ export interface SettingsUIState {
 export type SettingsTab =
   | 'ai-providers'
   | 'lm-studio'
-  | 'agent-evolver'
   | 'notifications'
   | 'units'
   | 'system'
@@ -463,12 +338,6 @@ export interface ModelSelectorProps {
   models: AIModel[];
   onModelChange: (modelId: string) => void;
   disabled?: boolean;
-}
-
-export interface EvolutionTabProps {
-  settings: AgentEvolverSettings;
-  onSettingsUpdate: (updates: Partial<AgentEvolverSettings>) => void;
-  isSaving: boolean;
 }
 
 export interface IntegrationCardProps {

@@ -58,19 +58,25 @@ async function checkOpenClaw() {
 }
 
 async function checkHermes() {
-  const configured = Boolean(
-    process.env.HERMES_API_KEY ||
-    process.env.HERMES_API_SERVER_KEY ||
-    process.env.HERMES_AGENT_COMMAND,
-  );
-  if (!configured) return { status: 'unconfigured' as const };
-
   try {
-    const { providerAuthStatus } = await import('@/lib/provider-auth');
-    const result = await providerAuthStatus('hermes');
-    return result.connected
-      ? { status: 'ok' as const, source: result.source }
-      : { status: 'unreachable' as const, source: result.source, error: result.summary };
+    // Use the same detector as provider discovery so an authenticated Hermes
+    // proxy/CLI session is not misreported as unconfigured merely because it
+    // does not use HERMES_API_KEY.
+    const { checkHermes: detectHermes } = await import('@/lib/ai-provider-hermes');
+    const result = await detectHermes();
+    const configured = Boolean(
+      process.env.HERMES_API_KEY ||
+      process.env.HERMES_API_SERVER_KEY ||
+      process.env.HERMES_AGENT_COMMAND ||
+      process.env.HERMES_BIN,
+    );
+    if (result.isAvailable) {
+      const source = result.config?.transport === 'api-server' ? 'hermes-api-server' : 'hermes-proxy';
+      return { status: 'ok' as const, source };
+    }
+    return configured
+      ? { status: 'unreachable' as const, error: result.reason }
+      : { status: 'unconfigured' as const };
   } catch (e) {
     return { status: 'unreachable' as const, error: String(e).slice(0, 80) };
   }

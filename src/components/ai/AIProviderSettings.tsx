@@ -80,14 +80,6 @@ interface Settings {
     model: string;
     baseUrl: string;
   };
-  agentEvolver: {
-    enabled: boolean;
-    evolutionLevel: string;
-    learningRate: number;
-    performanceThreshold: number;
-    autoOptimization: boolean;
-    riskTolerance: string;
-  };
   notifications: {
     enabled: boolean;
     sound: boolean;

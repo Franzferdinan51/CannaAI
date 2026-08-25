@@ -26,17 +26,6 @@ export interface ChatMessageContext {
     primary: string;
     available: string[];
   };
-  agentEvolver?: {
-    enabled: boolean;
-    evolutionMetrics?: any;
-    agentLearning?: any[];
-    selfEvolutionCapabilities?: {
-      selfQuestioning: boolean;
-      selfNavigating: boolean;
-      selfAttributing: boolean;
-      continuousLearning: boolean;
-    };
-  };
 }
 
 export interface ChatMessageMetadata {

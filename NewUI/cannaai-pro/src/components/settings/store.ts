@@ -6,12 +6,9 @@ import {
   AIProviderType,
   AIModel,
   TestConnectionResponse,
-  AgentEvolverSettings,
   SettingsTab,
   SettingsUIState,
-  LMStudioResponse,
-  EvolutionRecord,
-  CustomPrompt
+  LMStudioResponse
 } from './types';
 
 interface SettingsStore extends SettingsUIState {
@@ -38,19 +35,6 @@ interface SettingsStore extends SettingsUIState {
   // LM Studio actions
   loadLMStudioModels: (url?: string) => Promise<void>;
   saveLMStudioUrl: (url: string) => Promise<void>;
-
-  // Agent Evolver actions
-  loadAgentEvolverSettings: () => Promise<void>;
-  updateAgentEvolverSettings: (updates: Partial<AgentEvolverSettings>) => Promise<void>;
-  addEvolutionRecord: (record: Partial<EvolutionRecord>) => Promise<void>;
-  clearEvolutionHistory: () => Promise<void>;
-  resetAgentEvolver: () => Promise<void>;
-
-  // Custom Prompt actions
-  addCustomPrompt: (prompt: Omit<CustomPrompt, 'id' | 'createdAt' | 'lastUsed'>) => Promise<void>;
-  updateCustomPrompt: (id: string, updates: Partial<CustomPrompt>) => Promise<void>;
-  deleteCustomPrompt: (id: string) => Promise<void>;
-  toggleCustomPrompt: (id: string, enabled: boolean) => Promise<void>;
 
   // Utility actions
   exportSettings: (format: 'json' | 'csv') => Promise<void>;
@@ -121,33 +105,6 @@ const createDefaultSettings = (): Settings => ({
     model: 'claude-3-5-sonnet-20241022',
     baseUrl: 'https://ai.gigamind.dev/claude-code',
     connected: false,
-  },
-  agentEvolver: {
-    enabled: false,
-    evolutionLevel: 'basic',
-    learningRate: 0.1,
-    performanceThreshold: 0.8,
-    autoOptimization: false,
-    riskTolerance: 'moderate',
-    customPrompts: [],
-    performanceMetrics: {
-      accuracy: 0.85,
-      responseTime: 2.3,
-      resourceUsage: 0.45,
-      evolutionProgress: 0.0,
-      totalOptimizations: 0,
-      successfulEvolutions: 0,
-      failedEvolutions: 0,
-      averageImprovement: 0.0,
-    },
-    evolutionHistory: [],
-    integrationSettings: {
-      aiProviderIntegration: true,
-      automationSync: false,
-      dataAnalysisIntegration: true,
-      realTimeOptimization: false,
-      crossAgentLearning: false,
-    },
   },
   notifications: {
     enabled: true,
@@ -432,139 +389,6 @@ export const useSettingsStore = create<SettingsStore>()(
             set({
               error: error instanceof Error ? error.message : 'Failed to save LM Studio URL',
               isSaving: false
-            });
-          }
-        },
-
-        // Agent Evolver actions (simplified for now)
-        loadAgentEvolverSettings: async () => {
-          try {
-            const settings = await settingsAPI.getAgentEvolverSettings();
-            const currentSettings = get().settings;
-            if (currentSettings) {
-              set({
-                settings: { ...currentSettings, agentEvolver: settings }
-              });
-            }
-          } catch (error) {
-            console.error('Failed to load Agent Evolver settings:', error);
-          }
-        },
-
-        updateAgentEvolverSettings: async (updates) => {
-          set({ isSaving: true, error: '' });
-          try {
-            await settingsAPI.updateAgentEvolverSettings(updates);
-            const { settings } = get();
-            if (settings) {
-              set({
-                settings: {
-                  ...settings,
-                  agentEvolver: { ...settings.agentEvolver, ...updates }
-                },
-                hasChanges: true,
-                isSaving: false,
-                success: 'Agent Evolver settings updated'
-              });
-            }
-          } catch (error) {
-            set({
-              error: error instanceof Error ? error.message : 'Failed to update Agent Evolver settings',
-              isSaving: false
-            });
-          }
-        },
-
-        // Placeholder implementations for remaining methods
-        addEvolutionRecord: async (record) => {
-          console.log('addEvolutionRecord not implemented yet', record);
-        },
-
-        clearEvolutionHistory: async () => {
-          console.log('clearEvolutionHistory not implemented yet');
-        },
-
-        resetAgentEvolver: async () => {
-          console.log('resetAgentEvolver not implemented yet');
-        },
-
-        addCustomPrompt: async (promptData) => {
-          const newPrompt: CustomPrompt = {
-            ...promptData,
-            id: Date.now().toString(),
-            createdAt: new Date().toISOString(),
-            lastUsed: new Date().toISOString(),
-          };
-
-          const { settings } = get();
-          if (settings) {
-            set({
-              settings: {
-                ...settings,
-                agentEvolver: {
-                  ...settings.agentEvolver,
-                  customPrompts: [...settings.agentEvolver.customPrompts, newPrompt]
-                }
-              },
-              hasChanges: true,
-              success: 'Custom prompt added successfully'
-            });
-          }
-        },
-
-        updateCustomPrompt: async (id, updates) => {
-          const { settings } = get();
-          if (settings) {
-            const updatedPrompts = settings.agentEvolver.customPrompts.map(p =>
-              p.id === id ? { ...p, ...updates } : p
-            );
-            set({
-              settings: {
-                ...settings,
-                agentEvolver: {
-                  ...settings.agentEvolver,
-                  customPrompts: updatedPrompts
-                }
-              },
-              hasChanges: true,
-              success: 'Custom prompt updated successfully'
-            });
-          }
-        },
-
-        deleteCustomPrompt: async (id) => {
-          const { settings } = get();
-          if (settings) {
-            const updatedPrompts = settings.agentEvolver.customPrompts.filter(p => p.id !== id);
-            set({
-              settings: {
-                ...settings,
-                agentEvolver: {
-                  ...settings.agentEvolver,
-                  customPrompts: updatedPrompts
-                }
-              },
-              hasChanges: true,
-              success: 'Custom prompt deleted successfully'
-            });
-          }
-        },
-
-        toggleCustomPrompt: async (id, enabled) => {
-          const { settings } = get();
-          if (settings) {
-            const updatedPrompts = settings.agentEvolver.customPrompts.map(p =>
-              p.id === id ? { ...p, enabled } : p
-            );
-            set({
-              settings: {
-                ...settings,
-                agentEvolver: {
-                  ...settings.agentEvolver,
-                  customPrompts: updatedPrompts
-                }
-              },
-              hasChanges: true
             });
           }
         },

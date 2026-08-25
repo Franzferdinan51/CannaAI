@@ -57,7 +57,6 @@ import {
   ThumbsDown,
   ThumbsUp
 } from 'lucide-react';
-import { enhancedAgentEvolver } from '@/lib/agent-evolver-enhanced';
 
 interface Message {
   id: string;
@@ -1237,44 +1236,6 @@ export default function UnifiedAIAssistant({
 
   const handleFeedback = (message: Message, sentiment: 'up' | 'down') => {
     setFeedbackMap(prev => ({ ...prev, [message.id]: sentiment }));
-
-    const templateByType: Record<string, string> = {
-      analysis: 'plant-analysis',
-      recommendation: 'nutrient-optimization',
-      troubleshoot: 'pest-disease',
-      diagnosis: 'plant-analysis',
-      autonomous: 'plant-analysis',
-      proactive: 'plant-analysis'
-    };
-
-    const templateId = templateByType[message.messageType || ''] || 'plant-analysis';
-
-    try {
-      enhancedAgentEvolver.evolvePromptFromFeedback(
-        templateId,
-        message.content || '',
-        {
-          accuracy: sentiment === 'up' ? 0.9 : 0.4,
-          helpfulness: sentiment === 'up' ? 0.9 : 0.4,
-          userSatisfaction: sentiment === 'up' ? 0.9 : 0.35
-        }
-      );
-    } catch (error) {
-      console.error('Failed to send feedback to evolver', error);
-    }
-
-    // Also notify server-side evolver
-    fetch('/api/agent-feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messageId: message.id,
-        sentiment,
-        mode: message.messageType || chatMode,
-        content: message.content,
-        provider: message.context?.provider
-      })
-    }).catch(err => console.error('Failed to submit feedback server-side', err));
   };
 
   const loadChatHistory = (chatId: string) => {

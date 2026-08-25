@@ -9,11 +9,18 @@ jest.mock('@/lib/ai-provider-lmstudio', () => ({
 jest.mock('@/lib/ai-provider-openclaw', () => ({
   checkOpenClaw: jest.fn(),
 }));
-jest.mock('@/lib/provider-auth', () => ({
-  providerAuthStatus: jest.fn(),
+jest.mock('@/lib/ai-provider-hermes', () => ({
+  checkHermes: jest.fn(),
 }));
 
 import { GET } from '@/app/api/health-check/route';
+import { checkLMStudio } from '@/lib/ai-provider-lmstudio';
+import { checkOpenClaw } from '@/lib/ai-provider-openclaw';
+import { checkHermes } from '@/lib/ai-provider-hermes';
+
+const mockCheckLMStudio = checkLMStudio as jest.Mock;
+const mockCheckOpenClaw = checkOpenClaw as jest.Mock;
+const mockCheckHermes = checkHermes as jest.Mock;
 
 describe('/api/health-check agent coverage', () => {
   const originalEnvironment = { ...process.env };
@@ -23,15 +30,15 @@ describe('/api/health-check agent coverage', () => {
   });
 
   beforeEach(() => {
-    require('@/lib/ai-provider-lmstudio').checkLMStudio.mockResolvedValue({
+    mockCheckLMStudio.mockResolvedValue({
       available: true,
       models: ['ornith-1.5-35b-a3b'],
     });
-    require('@/lib/ai-provider-openclaw').checkOpenClaw.mockResolvedValue({ isAvailable: true });
-    require('@/lib/provider-auth').providerAuthStatus.mockResolvedValue({
-      connected: true,
-      source: 'hermes-api-server',
-      summary: 'Hermes API server is connected and authenticated',
+    mockCheckOpenClaw.mockResolvedValue({ isAvailable: true });
+    mockCheckHermes.mockResolvedValue({
+      isAvailable: false,
+      provider: 'hermes',
+      reason: 'Hermes API server or authenticated proxy is not reachable',
     });
   });
 
@@ -50,6 +57,12 @@ describe('/api/health-check agent coverage', () => {
 
   test('includes authenticated Hermes API-server health when configured', async () => {
     process.env.HERMES_API_KEY = 'test-key';
+    mockCheckHermes.mockResolvedValue({
+      isAvailable: true,
+      provider: 'hermes',
+      reason: 'Hermes API server or authenticated proxy is reachable',
+      config: { transport: 'api-server' },
+    });
 
     const result = await GET();
     const body = await result.json();
@@ -57,5 +70,20 @@ describe('/api/health-check agent coverage', () => {
     expect(result.status).toBe(200);
     expect(body.status).toBe('ok');
     expect(body.components.hermes).toEqual({ status: 'ok', source: 'hermes-api-server' });
+  });
+
+  test('reports an authenticated Hermes proxy even without API-key environment variables', async () => {
+    mockCheckHermes.mockResolvedValue({
+      isAvailable: true,
+      provider: 'hermes',
+      reason: 'Hermes API server or authenticated proxy is reachable',
+      config: { transport: 'legacy-proxy' },
+    });
+
+    const result = await GET();
+    const body = await result.json();
+
+    expect(result.status).toBe(200);
+    expect(body.components.hermes).toEqual({ status: 'ok', source: 'hermes-proxy' });
   });
 });

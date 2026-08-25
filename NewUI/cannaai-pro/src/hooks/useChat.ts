@@ -462,8 +462,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
           processingTime: data.processingTime,
           context: {
             fallback: data.fallback,
-            providerInfo: data.providerInfo,
-            agentEvolver: data.agentEvolver
+            providerInfo: data.providerInfo
           },
           metadata: {
             tokens: data.usage?.total_tokens,

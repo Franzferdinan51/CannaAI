@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { detectAvailableProviders, getProviderConfig, executeChatWithFallback, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
-import { getAgentEvolverClient } from '@/lib/agent-evolver';
 import { executeWithMiniMaxStream } from '@/lib/ai-provider-minimax';
-import { getChatResponseText, shouldUseAgentEvolver } from '@/lib/chat-routing';
+import { getChatResponseText } from '@/lib/chat-routing';
 import { withRequest } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
@@ -147,63 +146,16 @@ export async function POST(request: NextRequest) {
     const contextPrompt = getContextualPrompt(mode, context || {}, sensorData || {}, message);
 
     try {
-      let chatResult;
-      let usedProvider = 'agent-evolver';
-      let evolutionMetrics = null;
-      let agentLearning = [];
-      let fallbackUsed = false;
-      let fallbackReason = '';
-
-      // Try AgentEvolver enhanced chat first for cloud/agent providers. When
-      // LM Studio is primary we deliberately bypass AgentEvolver so a healthy
-      // local model is not silently replaced by a different backend.
-      try {
-        if (!shouldUseAgentEvolver(providerDetection.primary.provider)) {
-          throw new Error('LM Studio is primary - using direct local provider');
-        }
-
-        const evolverClient = getAgentEvolverClient();
-        if (evolverClient && evolverClient.getConfig().enabled) {
-          console.log('🤖 Attempting AgentEvolver enhanced chat...');
-          const agentEvolverResult = await evolverClient.chatWithFallback({
-            message: message,
-            context: { ...context, sensorData },
-            mode: mode
-          });
-
-          if (agentEvolverResult.provider === 'agent-evolver') {
-            chatResult = {
-              content: agentEvolverResult.response,
-              model: 'AgentEvolver-Enhanced'
-            };
-            usedProvider = 'agent-evolver';
-            evolutionMetrics = agentEvolverResult.evolutionMetrics;
-            agentLearning = agentEvolverResult.agentLearning || [];
-            fallbackUsed = agentEvolverResult.fallback?.used || false;
-            fallbackReason = agentEvolverResult.fallback?.reason || '';
-            console.log('🤖 AgentEvolver chat completed successfully');
-          } else {
-            throw new Error('AgentEvolver returned fallback response - using traditional AI');
-          }
-        } else {
-          throw new Error('AgentEvolver client not available - using traditional AI');
-        }
-      } catch (agentEvolverError) {
-        console.warn('⚠️ AgentEvolver chat skipped/failed, using traditional AI providers:', agentEvolverError instanceof Error ? agentEvolverError.message : 'Unknown error');
-
-        // Fallback to traditional AI providers
-        const aiResult = await executeChatWithFallback(contextPrompt, {
-          primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
-          image: typeof image === 'string' ? image : undefined,
-          timeout: 45000,
-        });
-
-        chatResult = aiResult.result;
-        usedProvider = aiResult.provider;
-        fallbackUsed = aiResult.provider === 'fallback';
-        fallbackReason = aiResult.fallbackReason || '';
-        console.log(`✅ Traditional AI chat completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
-      }
+      const aiResult = await executeChatWithFallback(contextPrompt, {
+        primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
+        image: typeof image === 'string' ? image : undefined,
+        timeout: 45000,
+      });
+      const chatResult = aiResult.result;
+      const usedProvider = aiResult.provider;
+      const fallbackUsed = aiResult.provider === 'fallback';
+      const fallbackReason = aiResult.fallbackReason || '';
+      console.log(`✅ Chat completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
 
       const totalTime = Date.now() - startTime;
       const chatMetadata = chatResult && typeof chatResult === 'object' ? chatResult : {};
@@ -230,21 +182,6 @@ export async function POST(request: NextRequest) {
             ...providerDetection.fallback.filter(f => f.isAvailable).map(f => f.provider)
           ].filter(Boolean)
         },
-        // AgentEvolver specific enhancements
-        agentEvolver: usedProvider === 'agent-evolver' ? {
-          enabled: true,
-          evolutionMetrics: evolutionMetrics,
-          agentLearning: agentLearning,
-          selfEvolutionCapabilities: {
-            selfQuestioning: true,
-            selfNavigating: true,
-            selfAttributing: true,
-            continuousLearning: true
-          }
-        } : {
-          enabled: false,
-          reason: fallbackReason || 'AgentEvolver not available'
-        }
       });
 
     } catch (innerError) {

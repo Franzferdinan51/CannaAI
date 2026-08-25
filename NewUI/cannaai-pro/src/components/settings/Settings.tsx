@@ -12,7 +12,6 @@ import {
   Settings as SettingsIcon,
   Bot,
   Cpu,
-  Brain,
   Monitor,
   Cloud,
   Wifi,
@@ -69,10 +68,9 @@ import {
 } from 'lucide-react';
 
 import { useSettingsStore } from './store';
-import { SettingsTab, AIProviderType, ModelCapability, PromptCategory } from './types';
+import { SettingsTab, AIProviderType, ModelCapability } from './types';
 import AIProviderCard from './components/AIProviderCard';
 import LMStudioSection from './components/LMStudioSection';
-import AgentEvolverSection from './components/AgentEvolverSection';
 import NotificationSettings from './components/NotificationSettings';
 import UnitSettings from './components/UnitSettings';
 import SystemSettings from './components/SystemSettings';
@@ -182,12 +180,6 @@ const Settings: React.FC = () => {
       label: 'LM Studio',
       icon: <Monitor className="w-4 h-4" />,
       description: 'Local model management',
-    },
-    {
-      value: 'agent-evolver',
-      label: 'Agent Evolver',
-      icon: <Brain className="w-4 h-4" />,
-      description: 'AI evolution and learning',
     },
     {
       value: 'notifications',
@@ -376,11 +368,6 @@ const Settings: React.FC = () => {
               {/* LM Studio Tab */}
               <Tabs.Content value="lm-studio" className="space-y-6">
                 <LMStudioSection />
-              </Tabs.Content>
-
-              {/* Agent Evolver Tab */}
-              <Tabs.Content value="agent-evolver" className="space-y-6">
-                <AgentEvolverSection />
               </Tabs.Content>
 
               {/* Notifications Tab */}

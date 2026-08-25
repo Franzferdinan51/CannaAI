@@ -14,10 +14,6 @@ jest.mock('@/lib/ai-provider-detection', () => ({
   },
 }));
 
-jest.mock('@/lib/agent-evolver', () => ({
-  getAgentEvolverClient: jest.fn(() => null),
-}));
-
 jest.mock('@/lib/ai-provider-minimax', () => ({
   executeWithMiniMaxStream: jest.fn(),
 }));

@@ -4,7 +4,6 @@ import {
   SettingsAPIResponse,
   TestConnectionResponse,
   GetModelsResponse,
-  AgentEvolverSettings,
   LMStudioResponse,
   LMStudioConfig,
   AIProviderType
@@ -185,104 +184,6 @@ class SettingsAPIClient {
   }
 
   /**
-   * Get Agent Evolver settings
-   */
-  async getAgentEvolverSettings(): Promise<AgentEvolverSettings> {
-    try {
-      const response: AxiosResponse<SettingsAPIResponse> = await this.api.post('/api/settings', {
-        action: 'get_agent_evolver',
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Failed to get Agent Evolver settings');
-      }
-
-      return response.data.agentEvolverSettings!;
-    } catch (error) {
-      console.error('Failed to get Agent Evolver settings:', error);
-      throw error instanceof Error ? error : new Error('Unknown error getting Agent Evolver settings');
-    }
-  }
-
-  /**
-   * Update Agent Evolver settings
-   */
-  async updateAgentEvolverSettings(settings: Partial<AgentEvolverSettings>): Promise<void> {
-    try {
-      const response: AxiosResponse<SettingsAPIResponse> = await this.api.post('/api/settings', {
-        action: 'update_agent_evolver',
-        settings,
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Failed to update Agent Evolver settings');
-      }
-    } catch (error) {
-      console.error('Failed to update Agent Evolver settings:', error);
-      throw error instanceof Error ? error : new Error('Unknown error updating Agent Evolver settings');
-    }
-  }
-
-  /**
-   * Add evolution record
-   */
-  async addEvolutionRecord(record: any): Promise<string> {
-    try {
-      const response: AxiosResponse<SettingsAPIResponse> = await this.api.post('/api/settings', {
-        action: 'add_evolution_record',
-        settings: { record },
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Failed to add evolution record');
-      }
-
-      return response.data.recordId!;
-    } catch (error) {
-      console.error('Failed to add evolution record:', error);
-      throw error instanceof Error ? error : new Error('Unknown error adding evolution record');
-    }
-  }
-
-  /**
-   * Clear evolution history
-   */
-  async clearEvolutionHistory(): Promise<void> {
-    try {
-      const response: AxiosResponse<SettingsAPIResponse> = await this.api.post('/api/settings', {
-        action: 'clear_evolution_history',
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Failed to clear evolution history');
-      }
-    } catch (error) {
-      console.error('Failed to clear evolution history:', error);
-      throw error instanceof Error ? error : new Error('Unknown error clearing evolution history');
-    }
-  }
-
-  /**
-   * Reset Agent Evolver to defaults
-   */
-  async resetAgentEvolver(): Promise<AgentEvolverSettings> {
-    try {
-      const response: AxiosResponse<SettingsAPIResponse> = await this.api.post('/api/settings', {
-        action: 'reset_agent_evolver',
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Failed to reset Agent Evolver');
-      }
-
-      return response.data.agentEvolverSettings!;
-    } catch (error) {
-      console.error('Failed to reset Agent Evolver:', error);
-      throw error instanceof Error ? error : new Error('Unknown error resetting Agent Evolver');
-    }
-  }
-
-  /**
    * Get LM Studio models
    */
   async getLMStudioModels(url?: string): Promise<LMStudioResponse> {
@@ -355,10 +256,6 @@ class SettingsAPIClient {
 
       if (updates.units) {
         promises.push(this.updateUnitSettings(updates.units));
-      }
-
-      if (updates.agentEvolver) {
-        promises.push(this.updateAgentEvolverSettings(updates.agentEvolver));
       }
 
       // Handle provider updates
