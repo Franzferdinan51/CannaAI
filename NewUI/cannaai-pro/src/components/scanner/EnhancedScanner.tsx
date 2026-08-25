@@ -218,7 +218,11 @@ const EnhancedScanner: React.FC = () => {
       console.error('Analysis failed:', error);
       setImages(prev => prev.map(img => {
         if (img.id === newImage.id) {
-          return { ...img, status: 'Critical' };
+          return {
+            ...img,
+            status: 'Error',
+            error: error instanceof Error ? error.message : 'The analysis request failed.',
+          };
         }
         return img;
       }));
@@ -239,6 +243,8 @@ const EnhancedScanner: React.FC = () => {
           return 'bg-orange-900/80 text-orange-300 border-orange-700/50';
         case 'Critical':
           return 'bg-red-900/80 text-red-300 border-red-700/50';
+        case 'Error':
+          return 'bg-purple-900/80 text-purple-300 border-purple-700/50';
         case 'Processing':
           return 'bg-gray-700/80 text-gray-300 border-gray-600/50';
         default:
@@ -720,6 +726,16 @@ const EnhancedScanner: React.FC = () => {
                       <span className="text-sm text-gray-400">Analyzing plant health...</span>
                     </div>
                   )}
+
+                  {selectedImage.status === 'Error' && (
+                    <div className="rounded-lg border border-purple-800/60 bg-purple-950/30 p-4 text-center">
+                      <XCircle className="mx-auto mb-2 h-8 w-8 text-purple-400" />
+                      <p className="text-sm font-medium text-purple-200">Analysis unavailable</p>
+                      <p className="mt-1 text-xs text-purple-300/80">
+                        {selectedImage.error || 'Connect an AI provider and try again.'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -743,6 +759,12 @@ const EnhancedScanner: React.FC = () => {
                 <span className="text-sm text-gray-400">Need Attention</span>
                 <span className="text-sm font-medium text-orange-400">
                   {images.filter(img => img.status === 'Warning' || img.status === 'Critical').length}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">Failed Scans</span>
+                <span className="text-sm font-medium text-purple-400">
+                  {images.filter(img => img.status === 'Error').length}
                 </span>
               </div>
             </div>

@@ -93,10 +93,11 @@ export interface PlantImage {
   id: string;
   url: string;
   timestamp: string;
-  status: 'Processing' | 'Healthy' | 'Warning' | 'Critical';
+  status: 'Processing' | 'Healthy' | 'Warning' | 'Critical' | 'Error';
   batchId?: string;
   strain?: string;
   analysis?: PlantAnalysis;
+  error?: string;
   formData?: AnalysisFormData;
 }
 
