@@ -307,12 +307,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
   // Handle generate report
   const handleGenerateReport = async (reportId: string) => {
     try {
-      const success = await reportsApi.generateReport(reportId);
-      if (success) {
-        // Update report status
-        setReports(reports.map(r =>
-          r.id === reportId ? { ...r, status: 'generating' } : r
-        ));
+      const generated = await reportsApi.generateReport(reportId);
+      if (generated) {
+        setReports(current => current.map(report => report.id === reportId ? generated : report));
       }
     } catch (error) {
       console.error('Failed to generate report:', error);
@@ -555,6 +552,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
           </select>
 
           <button
+            type="button"
+            aria-label={`Sort reports ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+            title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
             className="px-3 py-2 bg-[#1A1D23] border border-gray-700 rounded-lg text-white hover:bg-gray-700 transition-colors"
           >
@@ -564,12 +564,18 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
           {/* View Mode */}
           <div className="flex bg-[#1A1D23] border border-gray-700 rounded-lg">
             <button
+              type="button"
+              aria-label="Switch to report grid view"
+              title="Grid view"
               onClick={() => setViewMode('grid')}
               className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}
             >
               <Grid className="w-4 h-4" />
             </button>
             <button
+              type="button"
+              aria-label="Switch to report list view"
+              title="List view"
               onClick={() => setViewMode('list')}
               className={`px-3 py-2 ${viewMode === 'list' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}
             >
@@ -618,6 +624,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                     </div>
                   </div>
                   <button
+                    type="button"
+                    aria-label={`Export ${report.name}`}
+                    title={`Export ${report.name}`}
                     onClick={() => {
                       setSelectedReport(report);
                       setShowExportModal(true);
@@ -683,12 +692,18 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                     </button>
                   )}
                   <button
+                    type="button"
+                    aria-label={`Duplicate ${report.name}`}
+                    title={`Duplicate ${report.name}`}
                     onClick={() => handleDuplicateReport(report.id)}
                     className="px-3 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors text-xs"
                   >
                     <Copy className="w-3 h-3" />
                   </button>
                   <button
+                    type="button"
+                    aria-label={`Delete ${report.name}`}
+                    title={`Delete ${report.name}`}
                     onClick={() => handleDeleteReport(report.id)}
                     className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs"
                   >
@@ -762,6 +777,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                         <div className="flex items-center gap-2">
                           {report.status === 'completed' && (
                             <button
+                              type="button"
+                              aria-label={`Export ${report.name}`}
+                              title={`Export ${report.name}`}
                               onClick={() => {
                                 setSelectedReport(report);
                                 setShowExportModal(true);
@@ -773,6 +791,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                           )}
                           {(report.status === 'draft' || report.status === 'failed') && (
                             <button
+                              type="button"
+                              aria-label={`Generate ${report.name}`}
+                              title={`Generate ${report.name}`}
                               onClick={() => handleGenerateReport(report.id)}
                               className="p-1 text-blue-400 hover:text-blue-300 transition-colors"
                             >
@@ -780,12 +801,18 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                             </button>
                           )}
                           <button
+                            type="button"
+                            aria-label={`Duplicate ${report.name}`}
+                            title={`Duplicate ${report.name}`}
                             onClick={() => handleDuplicateReport(report.id)}
                             className="p-1 text-gray-400 hover:text-gray-300 transition-colors"
                           >
                             <Copy className="w-4 h-4" />
                           </button>
                           <button
+                            type="button"
+                            aria-label={`Delete ${report.name}`}
+                            title={`Delete ${report.name}`}
                             onClick={() => handleDeleteReport(report.id)}
                             className="p-1 text-red-400 hover:text-red-300 transition-colors"
                           >

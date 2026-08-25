@@ -396,18 +396,27 @@ const SensorMap: React.FC<SensorMapProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              aria-label="Reset sensor map view"
+              title="Reset view"
               onClick={handleResetView}
               className="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700"
             >
               <RotateCw className="w-4 h-4" />
             </button>
             <button
+              type="button"
+              aria-label="Zoom in on sensor map"
+              title="Zoom in"
               onClick={handleZoomIn}
               className="px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
             <button
+              type="button"
+              aria-label="Zoom out on sensor map"
+              title="Zoom out"
               onClick={handleZoomOut}
               className="px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700"
             >

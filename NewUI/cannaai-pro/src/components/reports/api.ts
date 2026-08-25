@@ -119,13 +119,13 @@ export const reportsApi = {
   },
 
   // Generate report
-  async generateReport(id: string, parameters?: ReportParameters): Promise<boolean> {
+  async generateReport(id: string, parameters?: ReportParameters): Promise<Report | null> {
     try {
-      await api.post(`/reports/${id}/generate`, { parameters });
-      return true;
+      const response = await api.post(`/reports/${id}/generate`, { parameters });
+      return normalizeReport(response.data);
     } catch (error) {
       console.error('Failed to generate report:', error);
-      return false;
+      return null;
     }
   },
 
@@ -161,7 +161,7 @@ export const reportsApi = {
   async duplicateReport(id: string, name?: string): Promise<Report | null> {
     try {
       const response = await api.post(`/reports/${id}/duplicate`, { name });
-      return response.data;
+      return normalizeReport(response.data);
     } catch (error) {
       console.error('Failed to duplicate report:', error);
       return null;

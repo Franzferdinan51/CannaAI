@@ -306,12 +306,18 @@ const EnhancedScanner: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
+              type="button"
+              aria-label={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
+              title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
               onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
               className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
             >
               {viewMode === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
             </button>
             <button
+              type="button"
+              aria-label={showAdvanced ? 'Hide advanced scanner settings' : 'Show advanced scanner settings'}
+              title={showAdvanced ? 'Hide advanced scanner settings' : 'Show advanced scanner settings'}
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
             >
