@@ -17,7 +17,8 @@ export default function App() {
   useEffect(() => {
     const fetchPlants = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/plants');
+        const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+        const response = await fetch(`${apiBaseUrl}/api/plants`);
         const data = await response.json();
         
         if (data.success && data.data.plants.length > 0) {
