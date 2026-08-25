@@ -395,6 +395,7 @@ export function ChatInput({
                   <Button
                     size="sm"
                     variant="ghost"
+                    aria-label={`Remove ${file.name}`}
                     onClick={() => removeFile(file.id)}
                     className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                   >
@@ -417,24 +418,24 @@ export function ChatInput({
             className="border-b border-gray-800 p-2"
           >
             <div className="flex items-center gap-1">
-              <Button size="sm" variant="ghost" onClick={() => insertFormatting('**', '**')} className="text-gray-400 hover:text-white">
+              <Button size="sm" variant="ghost" aria-label="Bold text" title="Bold" onClick={() => insertFormatting('**', '**')} className="text-gray-400 hover:text-white">
                 <Bold className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => insertFormatting('*', '*')} className="text-gray-400 hover:text-white">
+              <Button size="sm" variant="ghost" aria-label="Italic text" title="Italic" onClick={() => insertFormatting('*', '*')} className="text-gray-400 hover:text-white">
                 <Italic className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => insertFormatting('`', '`')} className="text-gray-400 hover:text-white">
+              <Button size="sm" variant="ghost" aria-label="Code formatting" title="Code" onClick={() => insertFormatting('`', '`')} className="text-gray-400 hover:text-white">
                 <Code className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => insertFormatting('[', '](url)')} className="text-gray-400 hover:text-white">
+              <Button size="sm" variant="ghost" aria-label="Insert link" title="Link" onClick={() => insertFormatting('[', '](url)')} className="text-gray-400 hover:text-white">
                 <Link className="w-4 h-4" />
               </Button>
               <div className="w-px h-6 bg-gray-700 mx-1" />
-              <Button size="sm" variant="ghost" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-400 hover:text-white">
+              <Button size="sm" variant="ghost" aria-label="Choose emoji" title="Emoji" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-400 hover:text-white">
                 <Smile className="w-4 h-4" />
               </Button>
               {showTemplates && templates.length > 0 && (
-                <Button size="sm" variant="ghost" onClick={() => setShowTemplateSelector(!showTemplateSelector)} className="text-gray-400 hover:text-white">
+                <Button size="sm" variant="ghost" aria-label="Choose chat template" title="Templates" onClick={() => setShowTemplateSelector(!showTemplateSelector)} className="text-gray-400 hover:text-white">
                   <Hash className="w-4 h-4" />
                 </Button>
               )}
@@ -488,6 +489,7 @@ export function ChatInput({
                   key={emoji}
                   variant="ghost"
                   size="sm"
+                  aria-label={`Insert ${emoji}`}
                   onClick={() => insertEmoji(emoji)}
                   className="text-lg hover:bg-gray-800"
                 >
