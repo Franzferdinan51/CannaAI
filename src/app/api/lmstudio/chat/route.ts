@@ -184,10 +184,11 @@ export async function POST(request: NextRequest) {
       };
 
       // Add image if provided (for vision models)
-      if (image) {
+      const normalizedImage = normalizeImageUrl(image);
+      if (normalizedImage) {
         userMessage.content = [
           { type: 'text', text: prompt || '' },
-          { type: 'image_url', image_url: { url: image } }
+          { type: 'image_url', image_url: { url: normalizedImage } }
         ];
       }
 

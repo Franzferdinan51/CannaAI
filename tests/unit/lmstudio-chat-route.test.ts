@@ -10,6 +10,13 @@ function response(body: unknown, init: ResponseInit = {}) {
   });
 }
 
+const modelsResponse = (models: unknown[]) => response({ data: models });
+const completionResponse = (content: string) => response({
+  model: 'ornith-1.5-35b-a3b',
+  choices: [{ message: { content }, finish_reason: 'stop' }],
+});
+const requestWithBody = (body: unknown) => ({ json: async () => body });
+
 describe('/api/lmstudio/chat local endpoint failover', () => {
   afterEach(() => {
     jest.restoreAllMocks();
@@ -63,6 +70,25 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
         { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,abc123' } },
       ],
     }]);
+  });
+
+  test('normalizes raw base64 images when the route creates the user message', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'ornith-1.5-35b-a3b' }]))
+      .mockResolvedValueOnce(completionResponse('vision answer'));
+
+    const response = await POST(requestWithBody({
+      prompt: 'Inspect this plant',
+      image: 'ZmFrZS1pbWFnZQ==',
+      model: 'ornith-1.5-35b-a3b',
+    }) as any);
+
+    expect(response.status).toBe(200);
+    const body = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(body.messages[0].content).toEqual([
+      { type: 'text', text: 'Inspect this plant' },
+      { type: 'image_url', image_url: { url: 'data:image/png;base64,ZmFrZS1pbWFnZQ==' } },
+    ]);
   });
 
   test('returns unavailable when LM Studio advertises no runnable chat model', async () => {

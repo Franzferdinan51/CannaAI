@@ -27,6 +27,15 @@ function lmStudioHeaders(includeJson = false): Record<string, string> {
   };
 }
 
+function normalizeImageUrl(image: unknown): string | undefined {
+  if (typeof image !== 'string') return undefined;
+  const value = image.trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:image/')) return value;
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `data:image/png;base64,${value}`;
+}
+
 export async function POST(request: NextRequest) {
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -144,7 +153,8 @@ export async function POST(request: NextRequest) {
     };
 
     // Add image if provided
-    if (image) {
+    const normalizedImage = normalizeImageUrl(image);
+    if (normalizedImage) {
       userMessage.content = [
         {
           type: 'text',
@@ -153,7 +163,7 @@ export async function POST(request: NextRequest) {
         {
           type: 'image_url',
           image_url: {
-            url: image
+            url: normalizedImage
           }
         }
       ];
