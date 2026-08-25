@@ -283,7 +283,7 @@ export class UnifiedAI {
         performance: version.metadata.performance || {
           averageScore: 0,
           usageCount: 0,
-          successRate: 100
+          successRate: 0
         }
       }
     });
@@ -324,9 +324,7 @@ export class UnifiedAI {
       const perf = version.metadata.performance!;
       perf.usageCount++;
       perf.averageScore = ((perf.averageScore * (perf.usageCount - 1)) + score) / perf.usageCount;
-      if (!success) {
-        perf.successRate = ((perf.successRate * (perf.usageCount - 1)) + 0) / perf.usageCount;
-      }
+      perf.successRate = ((perf.successRate * (perf.usageCount - 1)) + (success ? 100 : 0)) / perf.usageCount;
       this.promptVersions.set(id, version);
     }
   }
@@ -469,8 +467,6 @@ export class UnifiedAI {
           content: version.content
         });
       }
-
-      this.updatePromptVersionPerformance(request.promptVersion!, 0, true); // Mark as used
 
       return { ...request, messages };
     }
