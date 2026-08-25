@@ -130,5 +130,9 @@ describe('analysis explainability contract', () => {
     expect(normalized.likelyCauses[0].cause).toContain('unstructured response');
     expect(normalized.detectedIssues[0].type).toBe('analysis_response');
     expect(normalized.uncertainties.length).toBeGreaterThan(0);
+    expect(normalized.confidence).toBe(0);
+    expect(normalized.healthScore).toBe(0);
+    expect(normalized.prognosis.fullRecoveryExpected).toBeNull();
+    expect(normalized.followUpSchedule.checkAfterDays).toBeNull();
   });
 });

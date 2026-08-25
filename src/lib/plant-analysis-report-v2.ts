@@ -454,7 +454,7 @@ function createFallbackAnalysisFromText(textResponse: string, provider: string):
     diagnosis:
       narrativeSummary ||
       `Follow-up review required because ${provider} returned unstructured analysis text`,
-    confidence: 72,
+    confidence: 0,
     severity: 'moderate',
     symptomsMatched: narrativeSummary ? [narrativeSummary] : ['Review the provider narrative for the primary symptom pattern'],
     causes: [
@@ -463,7 +463,7 @@ function createFallbackAnalysisFromText(textResponse: string, provider: string):
         : 'The provider returned an unstructured response instead of the requested JSON contract'
     ],
     treatment: ['Review the preserved fallback text and confirm the recommended intervention'],
-    healthScore: 70,
+    healthScore: 0,
     strainSpecificAdvice: 'Refer to the preserved raw fallback text for provider-specific context.',
     reasoning: [
       {
@@ -476,7 +476,7 @@ function createFallbackAnalysisFromText(textResponse: string, provider: string):
     likelyCauses: [
       {
         cause: 'The provider returned an unstructured response instead of the requested JSON contract',
-        confidence: 70,
+        confidence: 0,
         evidence: `Provider ${provider} returned text that could not be parsed as JSON.`
       }
     ],
@@ -495,32 +495,32 @@ function createFallbackAnalysisFromText(textResponse: string, provider: string):
     healthScoreBreakdown: [
       {
         category: 'vigor',
-        score: 70,
+        score: 0,
         reason: 'Overall vigor was estimated from fallback text instead of structured signals.'
       },
       {
         category: 'leafCondition',
-        score: 68,
+        score: 0,
         reason: 'Leaf condition details were not returned in a structured format.'
       },
       {
         category: 'pestFree',
-        score: 75,
+        score: 0,
         reason: 'No structured pest finding was returned, so pest status remains uncertain.'
       },
       {
         category: 'environmentOptimal',
-        score: 70,
+        score: 0,
         reason: 'Environmental risks could not be fully parsed from the raw response.'
       },
       {
         category: 'growthStageAppropriate',
-        score: 72,
+        score: 0,
         reason: 'Growth-stage suitability was inferred conservatively from limited structured evidence.'
       },
       {
         category: 'rootHealth',
-        score: 70,
+        score: 0,
         reason: 'Root-zone details were not returned in a structured format.'
       }
     ],
@@ -529,7 +529,7 @@ function createFallbackAnalysisFromText(textResponse: string, provider: string):
         type: 'analysis_response',
         name: 'Unstructured AI response',
         severity: 'moderate',
-        confidence: 70,
+        confidence: 0,
         evidence: [
           `The ${provider} response was not valid JSON.`,
           excerpt || 'No response excerpt available.'
@@ -589,7 +589,7 @@ function createFallbackAnalysisFromText(textResponse: string, provider: string):
     imageAnalysis: {
       hasImage: false,
       visualFindings: ['Fallback text review required'],
-      overallConfidence: 72,
+      overallConfidence: 0,
       imageQuality: {
         resolution: 'unknown',
         focus: 'unknown',
@@ -605,16 +605,16 @@ function createFallbackAnalysisFromText(textResponse: string, provider: string):
       longTerm: ['Use providers and prompts that consistently return valid JSON']
     },
     followUpSchedule: {
-      checkAfterDays: 2,
-      whatToMonitor: ['Symptom spread', 'Leaf color changes', 'Environmental stability'],
-      successIndicators: ['Symptoms stop worsening', 'New growth remains stable'],
-      escalationTriggers: ['Symptoms accelerate', 'A second analysis returns a more severe diagnosis']
+      checkAfterDays: null,
+      whatToMonitor: [],
+      successIndicators: [],
+      escalationTriggers: []
     },
     prognosis: {
       expectedOutcome: 'Outcome depends on manual review of the preserved raw response.',
       timeframe: '24-72 hours for reassessment',
       factorsAffectingOutcome: ['Response quality', 'Environmental stability', 'Speed of intervention'],
-      fullRecoveryExpected: true
+      fullRecoveryExpected: null
     },
     costEstimates: {
       treatmentCost: 'Unknown until the fallback text is reviewed',
