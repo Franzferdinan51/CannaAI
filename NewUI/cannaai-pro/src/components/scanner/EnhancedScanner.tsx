@@ -341,6 +341,8 @@ const EnhancedScanner: React.FC = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
+                    type="button"
+                    aria-label="Upload plant image"
                     onClick={() => fileInputRef.current?.click()}
                     className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-700 rounded-lg hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all"
                   >
@@ -350,6 +352,8 @@ const EnhancedScanner: React.FC = () => {
                   </button>
 
                   <button
+                    type="button"
+                    aria-label="Open camera"
                     onClick={startCamera}
                     className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-700 rounded-lg hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all"
                   >
@@ -381,6 +385,8 @@ const EnhancedScanner: React.FC = () => {
                 </div>
                 <div className="flex justify-center gap-4">
                   <button
+                    type="button"
+                    aria-label="Capture plant photo"
                     onClick={capturePhoto}
                     className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
                   >
@@ -388,6 +394,8 @@ const EnhancedScanner: React.FC = () => {
                     Capture Photo
                   </button>
                   <button
+                    type="button"
+                    aria-label="Cancel camera capture"
                     onClick={stopCamera}
                     className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
                   >
@@ -408,6 +416,8 @@ const EnhancedScanner: React.FC = () => {
                 </div>
                 <div className="flex justify-center gap-4">
                   <button
+                    type="button"
+                    aria-label="Remove selected plant image"
                     onClick={() => setCurrentImage('')}
                     className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
                   >
@@ -415,6 +425,8 @@ const EnhancedScanner: React.FC = () => {
                     Remove Image
                   </button>
                   <button
+                    type="button"
+                    aria-label="Retake plant photo"
                     onClick={startCamera}
                     className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
                   >
@@ -582,8 +594,10 @@ const EnhancedScanner: React.FC = () => {
               {/* Action Buttons */}
               <div className="flex gap-4 pt-4">
                 <button
+                  type="button"
+                  aria-label="Analyze plant"
                   onClick={handleAnalysis}
-                  disabled={isAnalyzing}
+                  disabled={isAnalyzing || !formData.strain || (!formData.leafSymptoms && !currentImage)}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 >
                   {isAnalyzing ? (
@@ -600,6 +614,8 @@ const EnhancedScanner: React.FC = () => {
                 </button>
 
                 <button
+                  type="button"
+                  aria-label="Reset plant analysis form"
                   onClick={resetForm}
                   className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
                 >
@@ -732,6 +748,8 @@ const EnhancedScanner: React.FC = () => {
                           Report
                         </button>
                         <button
+                          type="button"
+                          aria-label="Re-analyze selected plant image"
                           onClick={handleAnalysis}
                           className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
                         >
