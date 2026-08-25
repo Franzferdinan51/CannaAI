@@ -111,7 +111,7 @@ async function executeAutomationRule(ruleId: string, data?: any) {
     ruleId,
     executedAt: new Date().toISOString(),
     results,
-    success: true
+    success: results.every((item: any) => item.result?.success !== false)
   };
 }
 
@@ -238,7 +238,7 @@ async function executeWorkflow(workflowId: string, data?: any) {
     executedAt: new Date().toISOString(),
     stepsExecuted: results.length,
     results,
-    success: true
+    success: results.every((item: any) => item.result?.success !== false)
   };
 }
 
@@ -284,13 +284,14 @@ async function executeBatch(batchId: string) {
           default:
             result = await triggerAnalysis(plantId, batch.config);
         }
-        results.push({ plantId, success: true, result });
+        const actionSucceeded = result?.success !== false && result?.available !== false;
+        results.push({ plantId, success: actionSucceeded, result });
 
         await prisma.analysisBatch.update({
           where: { id: batchId },
-          data: {
-            completedCount: { increment: 1 }
-          }
+          data: actionSucceeded
+            ? { completedCount: { increment: 1 } }
+            : { failedCount: { increment: 1 } }
         });
       } catch (error) {
         console.error(`Batch analysis failed for plant ${plantId}:`, error);
@@ -326,7 +327,7 @@ async function executeBatch(batchId: string) {
       completedCount: batch.completedCount + 1,
       failedCount: batch.failedCount,
       results,
-      success: true
+      success: results.every((item: any) => item.success)
     };
   } catch (error) {
     // Update batch status to failed
@@ -397,21 +398,23 @@ async function triggerAnalysis(plantId: string | null, config?: any) {
 
 async function triggerTrichomeAnalysis(plantId: string, config?: any) {
   return {
-    triggered: true,
+    success: false,
+    available: false,
+    status: 'awaiting_capture',
     plantId,
     type: 'trichome',
-    config,
-    timestamp: new Date().toISOString()
+    message: 'Trichome analysis requires a captured image. Create a photo capture task first.'
   };
 }
 
 async function triggerHealthAnalysis(plantId: string, config?: any) {
   return {
-    triggered: true,
+    success: false,
+    available: false,
+    status: 'awaiting_capture',
     plantId,
     type: 'health',
-    config,
-    timestamp: new Date().toISOString()
+    message: 'Health analysis requires a captured image. Create a photo capture task first.'
   };
 }
 
@@ -472,12 +475,12 @@ async function createTask(plantId: string | null, config: any) {
 }
 
 async function checkAnomalies(plantId: string | null, config: any) {
-  // This would run anomaly detection logic
   return {
-    checked: true,
+    success: false,
+    available: false,
+    checked: false,
     plantId,
-    config,
-    timestamp: new Date().toISOString()
+    message: 'Anomaly detection is unavailable until persisted sensor or analysis data is provided.'
   };
 }
 

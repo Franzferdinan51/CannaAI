@@ -36,6 +36,7 @@ describe('/api/automation/run', () => {
     await expect(response.json()).resolves.toEqual(expect.objectContaining({
       success: true,
       data: expect.objectContaining({
+        success: false,
         results: [expect.objectContaining({
           result: expect.objectContaining({
             success: false,
