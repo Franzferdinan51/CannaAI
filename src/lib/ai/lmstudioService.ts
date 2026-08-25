@@ -251,7 +251,7 @@ export async function analyzeWithLMStudio(
       recommendations: parsed.recommendations || [],
       visualObjects: parsed.visualObjects || [],
       issueType: parsed.issueType || "Unknown",
-      confidenceScore: parsed.confidenceScore || 50,
+      confidenceScore: typeof parsed.confidenceScore === 'number' ? parsed.confidenceScore : 0,
       timelineEvents: parsed.timelineEvents || [],
       provider: 'lmstudio',
       timestamp: new Date().toISOString(),

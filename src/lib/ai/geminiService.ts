@@ -199,13 +199,9 @@ export async function analyzePlantHealth(
     throw finalError;
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
-    return {
-      summary: "Analysis failed or returned invalid JSON.",
-      entities: [],
-      keyInsights: [],
-      sentiment: "unknown",
-      flaggedIssues: []
-    };
+    // Provider failures must remain failures. Returning an empty analysis here
+    // makes swarm consensus treat an error as real model evidence.
+    throw error instanceof Error ? error : new Error('Gemini analysis failed');
   }
 }
 
