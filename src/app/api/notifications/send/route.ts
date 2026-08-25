@@ -80,15 +80,26 @@ export async function POST(request: NextRequest) {
       result = await sendNotification(notificationData);
     }
 
+    const resultGroups = Array.isArray(result) ? result : [result];
+    const deliveries = resultGroups.flatMap((group: any) => group?.deliveries || []);
+    const deliverySuccess = resultGroups.length > 0 && deliveries.length > 0 && deliveries.every((delivery: any) => delivery.success);
+    const status = deliverySuccess ? 200 : 207;
+
     return NextResponse.json({
-      success: true,
+      success: deliverySuccess,
+      partial: !deliverySuccess,
       data: result,
       meta: {
         timestamp: new Date().toISOString(),
         clientIP,
-        userAgent
+        userAgent,
+        deliveryCount: deliveries.length,
+        failedChannels: deliveries.filter((delivery: any) => !delivery.success).map((delivery: any) => ({
+          channel: delivery.channel,
+          error: delivery.error || 'Delivery failed',
+        })),
       }
-    });
+    }, { status });
   } catch (error) {
     console.error('[API-NOTIFICATIONS-SEND] Error:', error);
 

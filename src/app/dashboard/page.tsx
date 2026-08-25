@@ -125,7 +125,7 @@ function DashboardContent() {
     // Data State
     const [strains, setStrains] = useState(defaultStrains);
     const [sensorData, setSensorData] = useState<DashboardSensorData>(initialSensorData);
-    const [notifications, setNotifications] = useState<Array<{ id: string; type: string; message: string; time: string }>>([]);
+    const [notifications, setNotifications] = useState<Array<{ id: string | number; type: string; message: string; time: string }>>([]);
 
     // UI State
   const [activeDashboard, setActiveDashboard] = useState('overview');
