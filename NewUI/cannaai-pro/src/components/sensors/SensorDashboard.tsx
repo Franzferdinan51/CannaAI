@@ -60,6 +60,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
   const [showAlerts, setShowAlerts] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [acknowledgedNotificationIds, setAcknowledgedNotificationIds] = useState<Set<string>>(new Set());
   const sensorConfigs = sensors;
   const roomConfigs = rooms;
 
@@ -243,7 +244,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Active Alerts</p>
-                <p className="text-2xl font-bold text-red-400">{notifications.filter(n => !n.acknowledged).length}</p>
+              <p className="text-2xl font-bold text-red-400">{notifications.filter(n => !n.acknowledged && !acknowledgedNotificationIds.has(n.id)).length}</p>
               </div>
               <Bell className="w-8 h-8 text-red-400" />
             </div>
@@ -327,7 +328,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">{new Date(notification.timestamp).toLocaleTimeString()}</span>
-                    <button className="text-xs text-emerald-400 hover:text-emerald-300">Acknowledge</button>
+                    <button type="button" onClick={() => setAcknowledgedNotificationIds((current) => new Set(current).add(notification.id))} className="text-xs text-emerald-400 hover:text-emerald-300">Acknowledge</button>
                   </div>
                 </div>
               ))}

@@ -66,6 +66,7 @@ export function ChatSettings({
   const [activeTab, setActiveTab] = useState<'providers' | 'ui' | 'features' | 'privacy' | 'notifications'>('providers');
   const [testResults, setTestResults] = useState<Record<string, boolean>>({});
   const [isTesting, setIsTesting] = useState<string | null>(null);
+  const [showOpenRouterKey, setShowOpenRouterKey] = useState(false);
 
   // Update settings
   const updateSetting = (category: keyof IChatSettings, key: string, value: any) => {
@@ -362,7 +363,7 @@ export function ChatSettings({
                       <label className="block text-sm text-gray-300 mb-2">API Key</label>
                       <div className="relative">
                         <input
-                          type="password"
+                          type={showOpenRouterKey ? 'text' : 'password'}
                           value={settings.providers.openRouter.apiKey}
                           onChange={(e) => updateSetting('providers', 'openRouter', { ...settings.providers.openRouter, apiKey: e.target.value })}
                           className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white pr-10"
@@ -370,9 +371,11 @@ export function ChatSettings({
                         />
                         <button
                           type="button"
+                          aria-label={showOpenRouterKey ? 'Hide OpenRouter API key' : 'Show OpenRouter API key'}
+                          onClick={() => setShowOpenRouterKey((value) => !value)}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                         >
-                          <Eye className="w-4 h-4" />
+                          {showOpenRouterKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
