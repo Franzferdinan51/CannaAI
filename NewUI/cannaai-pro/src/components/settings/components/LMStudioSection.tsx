@@ -43,21 +43,30 @@ const LMStudioSection: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCapability, setFilterCapability] = useState<ModelCapability | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'modified'>('name');
+  const [draftUrl, setDraftUrl] = useState('');
+
+  useEffect(() => {
+    setDraftUrl(settings?.lmStudio?.url || 'http://127.0.0.1:1234');
+  }, [settings?.lmStudio?.url]);
 
   useEffect(() => {
     loadLMStudioModels();
   }, [loadLMStudioModels]);
 
-  const handleUrlChange = async (url: string) => {
+  const handleUrlChange = (url: string) => {
+    setDraftUrl(url);
     if (settings) {
       updateSettings({
-        lmStudio: {
-          ...settings.lmStudio,
-          url,
-        },
+        lmStudio: { ...settings.lmStudio, url },
       });
-      await saveLMStudioUrl(url);
     }
+  };
+
+  const handleTestConnection = async () => {
+    const url = draftUrl.trim();
+    if (!url) return;
+    await saveLMStudioUrl(url);
+    await loadLMStudioModels(url);
   };
 
   const getCapabilityIcon = (capability: ModelCapability) => {
@@ -181,15 +190,15 @@ const LMStudioSection: React.FC = () => {
             <div className="flex gap-2">
               <input
                 type="url"
-                value={settings?.lmStudio?.url || ''}
+                value={draftUrl}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 placeholder="http://localhost:1234"
                 className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
               />
               <button
                 type="button"
-                onClick={() => loadLMStudioModels(settings?.lmStudio?.url)}
-                disabled={isSaving}
+                onClick={handleTestConnection}
+                disabled={isSaving || isLoading || !draftUrl.trim()}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-lg transition-colors flex items-center gap-2"
               >
                 {isSaving ? (

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSocketContext } from '../../contexts/SocketContext';
 import {
   Thermometer,
@@ -49,9 +49,10 @@ interface SensorDashboardProps {
   className?: string;
   sensors?: SensorConfig[];
   rooms?: RoomConfig[];
+  onRefresh?: () => void;
 }
 
-const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [] }) => {
+const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [], onRefresh }) => {
   const { lastSensorData, isConnected, notifications } = useSocketContext();
 
   // State management
@@ -63,6 +64,20 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
   const [acknowledgedNotificationIds, setAcknowledgedNotificationIds] = useState<Set<string>>(new Set());
   const sensorConfigs = sensors;
   const roomConfigs = rooms;
+
+  useEffect(() => {
+    if (!autoRefresh || !onRefresh) return;
+    const interval = window.setInterval(onRefresh, 30000);
+    return () => window.clearInterval(interval);
+  }, [autoRefresh, onRefresh]);
+
+  const handleAutoRefreshToggle = () => {
+    setAutoRefresh((enabled) => {
+      const nextEnabled = !enabled;
+      if (nextEnabled) onRefresh?.();
+      return nextEnabled;
+    });
+  };
 
   // Calculate sensor health and statistics
   const sensorStats = useMemo(() => {
@@ -202,7 +217,10 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
               </span>
             </div>
             <button
-              onClick={() => setAutoRefresh(!autoRefresh)}
+              type="button"
+              onClick={handleAutoRefreshToggle}
+              aria-label={autoRefresh ? 'Disable sensor auto refresh' : 'Enable sensor auto refresh'}
+              aria-pressed={autoRefresh}
               className={`p-2 rounded-lg ${autoRefresh ? 'bg-emerald-900/30 border border-emerald-700/50' : 'bg-gray-800 border border-gray-700'}`}
               title="Auto Refresh"
             >
