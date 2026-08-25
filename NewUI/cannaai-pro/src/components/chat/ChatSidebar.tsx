@@ -235,6 +235,8 @@ export function ChatSidebar({
           <div className="flex items-center gap-1">
             {onImport && (
               <button
+                type="button"
+                aria-label="Import conversations"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
@@ -253,6 +255,8 @@ export function ChatSidebar({
             )}
             {onExport && (
               <button
+                type="button"
+                aria-label="Export conversations as JSON"
                 onClick={() => onExport('json')}
                 className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
                 title="Export conversations"
@@ -286,6 +290,8 @@ export function ChatSidebar({
           />
           {searchQuery && (
             <button
+              type="button"
+              aria-label="Clear conversation search"
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
             >
@@ -297,6 +303,7 @@ export function ChatSidebar({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-1 px-2 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded"
             >
@@ -312,6 +319,7 @@ export function ChatSidebar({
 
           {onAnalyticsClick && analytics && (
             <button
+              type="button"
               onClick={onAnalyticsClick}
               className="flex items-center gap-1 px-2 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded"
             >
@@ -351,6 +359,8 @@ export function ChatSidebar({
                     {allTags.map(tag => (
                       <button
                         key={tag}
+                        type="button"
+                        aria-pressed={filterTags.includes(tag)}
                         onClick={() => {
                           setFilterTags(prev =>
                             prev.includes(tag)
@@ -376,7 +386,7 @@ export function ChatSidebar({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-700">
+      <div className="flex border-b border-gray-700" role="tablist" aria-label="Conversation filters">
         {[
           { key: 'all', label: 'All', count: conversations.filter(c => !c.isArchived).length },
           { key: 'starred', label: 'Starred', count: starredConversations.length, icon: Star },
@@ -385,6 +395,9 @@ export function ChatSidebar({
         ].map(tab => (
           <button
             key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
             onClick={() => setActiveTab(tab.key as any)}
             className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.key
@@ -457,6 +470,8 @@ export function ChatSidebar({
                   {/* Action menu */}
                   <div className="relative">
                     <button
+                      type="button"
+                      aria-label={`Open actions for ${conversation.title}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedConversation(
@@ -478,6 +493,7 @@ export function ChatSidebar({
                           className="absolute right-0 top-8 bg-gray-900 border border-gray-700 rounded-lg shadow-xl py-1 z-10 min-w-40"
                         >
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleConversationAction('star', conversation.id);
@@ -488,6 +504,7 @@ export function ChatSidebar({
                             {conversation.isStarred ? 'Unstar' : 'Star'}
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleConversationAction('archive', conversation.id);
@@ -498,6 +515,7 @@ export function ChatSidebar({
                             {conversation.isArchived ? 'Unarchive' : 'Archive'}
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleConversationAction('delete', conversation.id);
@@ -545,6 +563,7 @@ export function ChatSidebar({
             {quickResponses.slice(0, 3).map(response => (
               <button
                 key={response.id}
+                type="button"
                 onClick={() => onQuickResponse(response)}
                 className="w-full text-left px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-gray-300 transition-colors"
               >
