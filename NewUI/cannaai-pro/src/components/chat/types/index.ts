@@ -35,6 +35,9 @@ export interface ChatMessageMetadata {
   healthScore?: number;
   strainSpecificAdvice?: string;
   analysisType?: 'general' | 'plant-health' | 'environmental' | 'nutrient' | 'pest-disease';
+  bookmarked?: boolean;
+  rating?: 'up' | 'down';
+  flaggedReason?: string;
 }
 
 export interface ChatConversation {

@@ -334,8 +334,23 @@ export function ChatInterface({
   };
 
   const handleBookmarkMessage = (message: IChatMessage) => {
-    // Implement bookmark functionality
-    toast.success('Message bookmarked');
+    const bookmarked = !Boolean(message.metadata?.bookmarked);
+    updateMessage(message.id, { metadata: { ...message.metadata, bookmarked } });
+    toast.success(bookmarked ? 'Message bookmarked' : 'Bookmark removed');
+  };
+
+  const handleRateMessage = (messageId: string, rating: 'up' | 'down') => {
+    const message = messages.find((item) => item.id === messageId);
+    if (!message) return;
+    updateMessage(messageId, { metadata: { ...message.metadata, rating } });
+    toast.success('Rating saved');
+  };
+
+  const handleFlagMessage = (messageId: string, reason: string) => {
+    const message = messages.find((item) => item.id === messageId);
+    if (!message) return;
+    updateMessage(messageId, { metadata: { ...message.metadata, flaggedReason: reason } });
+    toast.success('Message flagged');
   };
 
   // Render functions
@@ -557,6 +572,10 @@ export function ChatInterface({
               onCopy={handleCopyMessage}
               onShare={handleShareMessage}
               onBookmark={handleBookmarkMessage}
+              onRate={handleRateMessage}
+              onFlag={handleFlagMessage}
+              onEdit={(messageId, content) => updateMessage(messageId, { content })}
+              onDelete={deleteMessage}
               onSelect={setSelectedMessage}
               isSelected={selectedMessage?.id === message.id}
               onSpeak={settings?.features?.enableVoiceOutput ? speak : undefined}

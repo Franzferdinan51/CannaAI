@@ -90,12 +90,18 @@ export function ChatMessage({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [rating, setRating] = useState<'up' | 'down' | null>(null);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(Boolean(message.metadata?.bookmarked));
   const [isFlagged, setIsFlagged] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
   const messageRef = useRef<HTMLDivElement>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsBookmarked(Boolean(message.metadata?.bookmarked));
+    setRating(message.metadata?.rating || null);
+    setIsFlagged(Boolean(message.metadata?.flaggedReason));
+  }, [message.metadata?.bookmarked, message.metadata?.rating, message.metadata?.flaggedReason]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
