@@ -49,9 +49,11 @@ export interface DeliveryResult {
 }
 
 // AgentMail inbox configuration
-const AGENTMAIL_API_KEY = 'am_us_ff3c79e0405a8d50cd4bfa709f4812f5c4be6a9abbba50c0fa9c0085b2548fe6';
-const AGENTMAIL_INBOX = 'duckbot@agentmail.to';
-const AGENTMAIL_SEND_ENDPOINT = 'https://api.agentmail.to/inboxes/duckbot@agentmail.to/messages/send';
+const AGENTMAIL_API_KEY = process.env.AGENTMAIL_API_KEY?.trim() || '';
+const AGENTMAIL_INBOX = process.env.AGENTMAIL_INBOX?.trim() || '';
+const AGENTMAIL_SEND_ENDPOINT = AGENTMAIL_INBOX
+  ? `https://api.agentmail.to/inboxes/${encodeURIComponent(AGENTMAIL_INBOX)}/messages/send`
+  : '';
 
 // AgentMail API response
 interface AgentMailSendResponse {
@@ -59,6 +61,15 @@ interface AgentMailSendResponse {
   id?: string;
   error?: string;
   message?: string;
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // Build a clean HTML email card for notifications
@@ -73,7 +84,7 @@ function buildNotificationHtml(data: NotificationData): string {
 
   const metaRows = data.metadata
     ? Object.entries(data.metadata)
-        .map(([k, v]) => `<tr><td style="padding:4px 12px;color:#666;font-size:13px"><strong>${k}</strong></td><td style="padding:4px 12px;font-size:13px">${v}</td></tr>`)
+        .map(([k, v]) => `<tr><td style="padding:4px 12px;color:#666;font-size:13px"><strong>${escapeHtml(k)}</strong></td><td style="padding:4px 12px;font-size:13px">${escapeHtml(v)}</td></tr>`)
         .join('')
     : '';
 
@@ -103,8 +114,8 @@ function buildNotificationHtml(data: NotificationData): string {
           <!-- Body -->
           <tr>
             <td style="padding:24px">
-              <h2 style="margin:0 0 8px;color:#1a1a1a;font-size:20px;font-weight:600">${data.title}</h2>
-              <p style="margin:0 0 16px;color:#444;font-size:15px;line-height:1.5">${data.message}</p>
+              <h2 style="margin:0 0 8px;color:#1a1a1a;font-size:20px;font-weight:600">${escapeHtml(data.title)}</h2>
+              <p style="margin:0 0 16px;color:#444;font-size:15px;line-height:1.5">${escapeHtml(data.message)}</p>
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f8f8;border-radius:8px">
                 ${metaRows}
               </table>
@@ -126,6 +137,14 @@ function buildNotificationHtml(data: NotificationData): string {
 
 // Send email via AgentMail API
 async function sendViaAgentMail(to: string, subject: string, data: NotificationData): Promise<DeliveryResult> {
+  if (!AGENTMAIL_API_KEY || !AGENTMAIL_SEND_ENDPOINT) {
+    return {
+      success: false,
+      channel: 'email',
+      error: 'AgentMail is not configured; set AGENTMAIL_API_KEY and AGENTMAIL_INBOX',
+    };
+  }
+
   const html = buildNotificationHtml(data);
   const text = `${data.title}\n${data.message}${data.metadata ? '\n\n' + JSON.stringify(data.metadata, null, 2) : ''}`;
 
@@ -187,6 +206,14 @@ export async function sendEmail(to: string, subject: string, body: string, data?
       return { success: false, channel: 'email', error: 'No recipient address' };
     }
 
+    if (!AGENTMAIL_API_KEY || !AGENTMAIL_SEND_ENDPOINT) {
+      return {
+        success: false,
+        channel: 'email',
+        error: 'AgentMail is not configured; set AGENTMAIL_API_KEY and AGENTMAIL_INBOX',
+      };
+    }
+
     // Forward full NotificationData so we can build a rich HTML card
     if (data) {
       return sendViaAgentMail(to, subject, data);
@@ -225,50 +252,25 @@ export async function sendEmail(to: string, subject: string, body: string, data?
 
 // SMS service (mock implementation - integrate with real service)
 export async function sendSMS(phone: string, message: string): Promise<DeliveryResult> {
-  try {
-    // TODO: Integrate with real SMS service (Twilio, etc.)
-    console.log(`[SMS] Sending to ${phone}: ${message}`);
-
-    // Mock delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    return {
-      success: true,
-      channel: 'sms',
-      messageId: `sms_${Date.now()}`,
-      response: { status: 'sent' }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      channel: 'sms',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
+  void phone;
+  void message;
+  return {
+    success: false,
+    channel: 'sms',
+    error: 'SMS delivery is not configured; no provider was contacted',
+  };
 }
 
 // Web push notification (mock implementation)
 export async function sendPushNotification(token: string, title: string, body: string): Promise<DeliveryResult> {
-  try {
-    // TODO: Integrate with real push service (FCM, APNS, etc.)
-    console.log(`[PUSH] Sending to ${token}: ${title}`);
-
-    // Mock delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    return {
-      success: true,
-      channel: 'push',
-      messageId: `push_${Date.now()}`,
-      response: { status: 'sent' }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      channel: 'push',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
+  void token;
+  void title;
+  void body;
+  return {
+    success: false,
+    channel: 'push',
+    error: 'Push delivery is not configured; no provider was contacted',
+  };
 }
 
 // Discord webhook integration
