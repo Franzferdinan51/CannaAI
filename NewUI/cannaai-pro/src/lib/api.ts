@@ -22,10 +22,15 @@ export interface ApiError {
   data?: any;
 }
 
+export const API_ORIGIN = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
+  ? `${window.location.protocol}//${window.location.hostname}:3001`
+  : 'http://localhost:3001');
+export const apiUrl = (path: string): string => `${API_ORIGIN}/api${path.startsWith('/') ? path : `/${path}`}`;
+
 class ApiClient {
   private client: AxiosInstance;
 
-  constructor(baseURL: string = `${import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001')}/api`) {
+  constructor(baseURL: string = `${API_ORIGIN}/api`) {
     this.client = axios.create({
       baseURL,
       timeout: 30000,

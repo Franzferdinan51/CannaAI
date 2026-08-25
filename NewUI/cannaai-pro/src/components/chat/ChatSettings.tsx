@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { apiUrl } from '../../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
@@ -84,7 +85,7 @@ export function ChatSettings({
   const testProvider = async (provider: 'lm-studio' | 'openrouter') => {
     setIsTesting(provider);
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(apiUrl('/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, Bot, Calendar, CheckCircle2, Clock3, Droplets, History, Lightbulb, RefreshCw, Settings, Shield, Thermometer, Wind, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../../lib/api';
 
 type AutomationTab = 'overview' | 'controls' | 'scheduling' | 'history' | 'safety';
 type AutomationState = { config: Record<string, unknown>; checkedAt: Date | null; loading: boolean; error: string | null };
@@ -18,7 +19,7 @@ export default function AutomationSimple() {
   const refresh = useCallback(async () => {
     setState((current) => ({ ...current, loading: true, error: null }));
     try {
-      const response = await fetch('/api/automation');
+      const response = await fetch(apiUrl('/automation'));
       if (!response.ok) throw new Error(`Automation status returned ${response.status}`);
       const payload = await response.json();
       setState({ config: payload.data || {}, checkedAt: new Date(), loading: false, error: null });

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { toast } from 'react-hot-toast';
+import { apiUrl } from '../lib/api';
 
 import {
   ChatMessage,
@@ -367,7 +368,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Check AI connection
   const checkConnection = useCallback(async () => {
     try {
-      const response = await fetch('/api/chat', { headers: apiAuthHeaders() });
+      const response = await fetch(apiUrl('/chat'), { headers: apiAuthHeaders() });
       const data = await response.json();
 
       if (data.success && data.currentProvider !== 'fallback') {
@@ -441,7 +442,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
 
       abortControllerRef.current = new AbortController();
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch(apiUrl('/chat'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -834,7 +835,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Test AI provider
   const testProvider = useCallback(async (provider: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(apiUrl('/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...apiAuthHeaders() },
         body: JSON.stringify({
@@ -872,7 +873,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Get provider status
   const getProviderStatus = useCallback(async () => {
     try {
-      const response = await fetch('/api/chat', { headers: apiAuthHeaders() });
+      const response = await fetch(apiUrl('/chat'), { headers: apiAuthHeaders() });
       return await response.json();
     } catch {
       return { success: false, error: 'Connection failed' };
