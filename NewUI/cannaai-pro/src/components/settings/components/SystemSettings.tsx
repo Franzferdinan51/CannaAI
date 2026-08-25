@@ -1,5 +1,6 @@
 import React from 'react';
 import { Cpu, Moon, Globe, Lock, Shield } from 'lucide-react';
+import SettingToggle from './SettingToggle';
 
 const SystemSettings: React.FC = () => {
   return (
@@ -22,9 +23,7 @@ const SystemSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Use dark theme</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-600">
-              <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Dark Mode" defaultChecked />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -35,9 +34,7 @@ const SystemSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Automatically save settings</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-600">
-              <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Auto-Save" defaultChecked />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">

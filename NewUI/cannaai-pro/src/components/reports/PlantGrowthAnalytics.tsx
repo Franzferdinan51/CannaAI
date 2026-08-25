@@ -269,6 +269,16 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
     ? null
     : filteredPlants.reduce((sum, plant) => sum + plant.yieldPrediction.estimated, 0);
 
+  const exportSnapshot = () => {
+    const blob = new Blob([JSON.stringify({ generatedAt: new Date().toISOString(), plants: filteredPlants }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `plant-growth-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -349,7 +359,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
             <Target className="w-4 h-4" />
             {showPredictions ? 'Hide' : 'Show'} Predictions
           </button>
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+          <button type="button" aria-label="Export plant growth analytics" onClick={exportSnapshot} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
             <Download className="w-4 h-4" />
           </button>
         </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bell, Volume2, VolumeX, Mail, Smartphone } from 'lucide-react';
+import SettingToggle from './SettingToggle';
 
 const NotificationSettings: React.FC = () => {
   return (
@@ -22,9 +23,7 @@ const NotificationSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Receive system alerts and updates</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-600">
-              <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Enable Notifications" defaultChecked />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -35,9 +34,7 @@ const NotificationSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Play sound for important alerts</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-600">
-              <span className="translate-x-1 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Sound Notifications" />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -48,9 +45,7 @@ const NotificationSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Show desktop notifications</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-600">
-              <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Desktop Notifications" defaultChecked />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -61,9 +56,7 @@ const NotificationSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Receive alerts via email</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-600">
-              <span className="translate-x-1 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Email Notifications" />
           </div>
         </div>
       </div>
@@ -82,17 +75,7 @@ const NotificationSettings: React.FC = () => {
                 <h4 className="font-medium text-white">{type.name}</h4>
                 <p className="text-sm text-gray-400">{type.description}</p>
               </div>
-              <button
-                className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                  type.enabled ? 'bg-emerald-600' : 'bg-gray-600'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                    type.enabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+              <SettingToggle label={type.name} defaultChecked={type.enabled} />
             </div>
           ))}
         </div>

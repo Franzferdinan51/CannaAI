@@ -1,5 +1,6 @@
 import React from 'react';
 import { Database, Download, Upload, Shield } from 'lucide-react';
+import SettingToggle from './SettingToggle';
 
 const DataSettings: React.FC = () => {
   return (
@@ -22,9 +23,7 @@ const DataSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Automatically backup data</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-600">
-              <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Auto Backup" defaultChecked />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -35,9 +34,7 @@ const DataSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Sync data to cloud storage</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-600">
-              <span className="translate-x-1 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Cloud Sync" />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -48,9 +45,7 @@ const DataSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Validate data integrity</p>
               </div>
             </div>
-            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-600">
-              <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-            </button>
+            <SettingToggle label="Data Validation" defaultChecked />
           </div>
         </div>
       </div>

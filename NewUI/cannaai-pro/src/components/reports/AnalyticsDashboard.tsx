@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   LineChart,
   Line,
@@ -44,7 +44,6 @@ import {
   Calendar,
   Filter,
   RefreshCw,
-  Settings,
   Maximize2,
   Grid,
   List,
@@ -104,6 +103,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const [chartType, setChartType] = useState<'line' | 'area' | 'bar' | 'scatter'>('line');
   const [showInsights, setShowInsights] = useState(true);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(autoRefresh);
+  const dashboardRef = useRef<HTMLDivElement>(null);
 
   // Load analytics data
   useEffect(() => {
@@ -158,6 +158,22 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const exportSnapshot = () => {
+    const payload = { generatedAt: new Date().toISOString(), analyticsData, plantGrowthData, environmentalData, financialData, yieldData, insights };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `analytics-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void dashboardRef.current?.requestFullscreen();
   };
 
   const financialDataChart = useMemo(() => financialData ? [{
@@ -230,7 +246,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div ref={dashboardRef} className={`space-y-6 ${className}`}>
       {/* Header Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -295,13 +311,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+          <button type="button" aria-label="Export analytics" onClick={exportSnapshot} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
             <Download className="w-4 h-4" />
           </button>
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+          <button type="button" aria-label="Toggle analytics fullscreen" onClick={toggleFullscreen} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
             <Maximize2 className="w-4 h-4" />
           </button>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   LineChart,
   Line,
@@ -38,7 +38,6 @@ import {
   Filter,
   Download,
   RefreshCw,
-  Settings,
   Eye,
   Target,
   Award,
@@ -107,6 +106,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [comparisonData, setComparisonData] = useState<any>(null);
   const [showComparison, setShowComparison] = useState(comparisonMode);
+  const analyticsRef = useRef<HTMLDivElement>(null);
 
   // Load financial data
   useEffect(() => {
@@ -133,6 +133,22 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const exportSnapshot = () => {
+    const payload = { generatedAt: new Date().toISOString(), financialData, selectedPeriod, viewMode };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `financial-analytics-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void analyticsRef.current?.requestFullscreen();
   };
 
   // Prepare chart data
@@ -244,7 +260,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div ref={analyticsRef} className={`space-y-6 ${className}`}>
       {/* Header Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -301,13 +317,10 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+          <button type="button" aria-label="Export financial analytics" onClick={exportSnapshot} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
             <Download className="w-4 h-4" />
           </button>
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+          <button type="button" aria-label="Toggle financial analytics fullscreen" onClick={toggleFullscreen} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
             <Maximize2 className="w-4 h-4" />
           </button>
         </div>
