@@ -177,6 +177,7 @@ const ComprehensiveDashboard: React.FC = () => {
   const [analysisMetadata, setAnalysisMetadata] = useState<AnalysisMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [image, setImage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Data State
   const [strains, setStrains] = useState<Strain[]>(defaultStrains);
@@ -230,6 +231,7 @@ const ComprehensiveDashboard: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImage(reader.result as string);
+        setFormError(null);
         setFormData(prev => ({ ...prev, plantImage: reader.result as string }));
       };
       reader.readAsDataURL(file);
@@ -238,6 +240,15 @@ const ComprehensiveDashboard: React.FC = () => {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const hasStrain = formData.strain.trim() !== '' && formData.strain !== 'Select Strain';
+    const hasSymptoms = formData.leafSymptoms.trim() !== '';
+    if (!hasStrain || (!hasSymptoms && !image)) {
+      setFormError(!hasStrain
+        ? 'Select a plant strain before starting the analysis.'
+        : 'Describe the symptoms or upload a plant image before starting the analysis.');
+      return;
+    }
+    setFormError(null);
     setIsLoading(true);
     setAnalysisResult(null);
     setAnalysisMetadata(null);
@@ -404,7 +415,7 @@ const ComprehensiveDashboard: React.FC = () => {
                       <form onSubmit={handleFormSubmit} className="space-y-4">
                         <div className="space-y-2">
                           <Label className="text-gray-300">Strain</Label>
-                          <Select value={formData.strain} onValueChange={(val) => setFormData(prev => ({ ...prev, strain: val }))}>
+                          <Select value={formData.strain} onValueChange={(val) => { setFormError(null); setFormData(prev => ({ ...prev, strain: val })); }}>
                             <SelectTrigger aria-label="Select plant strain" className="bg-[#0f1419] border-gray-700 text-gray-200">
                               <SelectValue placeholder="Select Strain" />
                             </SelectTrigger>
@@ -442,12 +453,13 @@ const ComprehensiveDashboard: React.FC = () => {
                           <Textarea
                             placeholder="Describe what you see..."
                             value={formData.leafSymptoms}
-                            onChange={(e) => setFormData(prev => ({ ...prev, leafSymptoms: e.target.value }))}
+                            onChange={(e) => { setFormError(null); setFormData(prev => ({ ...prev, leafSymptoms: e.target.value })); }}
                             className="bg-[#0f1419] border-gray-700 text-gray-200 min-h-[100px]"
                           />
                         </div>
 
-                        <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white" disabled={isLoading}>
+                        {formError && <p role="alert" className="text-sm text-red-300">{formError}</p>}
+                        <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white" disabled={isLoading || !formData.strain || formData.strain === 'Select Strain' || (!formData.leafSymptoms.trim() && !image)}>
                           {isLoading ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
