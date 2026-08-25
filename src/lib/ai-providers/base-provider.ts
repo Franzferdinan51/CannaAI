@@ -135,7 +135,8 @@ export abstract class BaseProvider {
   constructor(config: ProviderConfig) {
     this.config = config;
     this.health = {
-      status: 'healthy',
+      // A provider is not healthy until its availability check has run.
+      status: 'degraded',
       latency: 0,
       errorRate: 0,
       lastCheck: new Date(),
