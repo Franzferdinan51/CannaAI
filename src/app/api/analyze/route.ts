@@ -797,7 +797,9 @@ export async function POST(request: NextRequest) {
       },
       diagnosticCapabilities: {
         imageAnalysis: !!imageBase64ForAI,
-        visualDiagnostics: imageBase64ForAI ? ['powderyMildew', 'pests', 'nutrientDeficiencies', 'environmentalStress'] : [],
+        visualDiagnostics: imageBase64ForAI && Array.isArray(analysisResult?.imageAnalysis?.visualFindings)
+          ? analysisResult.imageAnalysis.visualFindings
+          : [],
         textBasedDiagnostics: ['nutrientAnalysis', 'diseaseIdentification', 'environmentalStressDetection'],
         strainSpecificAnalysis: true,
         usHempResearchIntegration: true,
