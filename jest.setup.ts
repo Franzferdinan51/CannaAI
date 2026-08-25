@@ -63,6 +63,10 @@ jest.mock('sharp', () => {
     metadata: jest.fn()
   };
   const mockSharp = jest.fn(() => mockSharpInstance);
+  mockSharp.mockReturnValue(mockSharpInstance);
+  // Keep both CommonJS `require('sharp')` and dynamic ESM import shapes
+  // compatible. Several image tests reset the callable mock directly.
+  (mockSharp as any).default = mockSharp;
   return mockSharp;
 });
 

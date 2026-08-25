@@ -52,7 +52,7 @@ describe('Image Processing Library', () => {
         channels: 3
       })
     };
-    sharp.mockReset();
+    sharp.mockClear();
     sharp.mockReturnValue(instance);
 
     const heicConvert = require('heic-convert');
