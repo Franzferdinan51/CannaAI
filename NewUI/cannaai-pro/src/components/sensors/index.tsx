@@ -231,6 +231,7 @@ const Sensors: React.FC<SensorsProps> = ({
           <h3 className="text-lg font-medium text-white mb-2">Error</h3>
           <p className="text-gray-400 mb-4">{error}</p>
           <button
+            type="button"
             onClick={loadInitialData}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
           >
@@ -280,6 +281,7 @@ const Sensors: React.FC<SensorsProps> = ({
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => {
                 setSelectedSensor(null);
                 setActiveView('config');
@@ -297,6 +299,7 @@ const Sensors: React.FC<SensorsProps> = ({
           {navItems.map((item) => (
             <button
               key={item.id}
+              type="button"
               onClick={() => setActiveView(item.id as any)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 activeView === item.id
