@@ -107,6 +107,9 @@ export function startQueueProcessor(intervalMs: number = 5000): void {
       console.error('[QUEUE] Error processing queue:', error);
     }
   }, intervalMs);
+  // The queue is background work and must not keep short-lived test, CLI, or
+  // serverless processes alive after their foreground work completes.
+  queueWorkerInterval.unref?.();
 }
 
 // Stop queue processor

@@ -300,6 +300,7 @@ export class CacheManager {
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
     }, this.config.cleanupInterval);
+    this.cleanupInterval.unref?.();
   }
 
   /**
