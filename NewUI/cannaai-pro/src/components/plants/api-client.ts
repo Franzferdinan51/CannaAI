@@ -43,8 +43,8 @@ const emptyPlantInventory = (): PlantInventory => ({
 
 // API base URL - adjust as needed for your environment
 const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
-  ? `${window.location.protocol}//${window.location.hostname}:3000`
-  : 'http://localhost:3000');
+  ? `${window.location.protocol}//${window.location.hostname}:3001`
+  : 'http://localhost:3001');
 
 class PlantsAPIClient {
   private api = axios.create({
@@ -236,7 +236,10 @@ class PlantsAPIClient {
         throw new Error(response.data.error || 'Failed to fetch strains');
       }
 
-      return response.data.data?.strains || [];
+      // The hybrid API has returned both `{ data: { strains } }` and the
+      // legacy-compatible top-level `{ strains }` envelope. Normalize both so
+      // the Strains tab does not silently render an empty library.
+      return response.data.data?.strains || (response.data as any).strains || [];
     } catch (error) {
       console.error('Failed to fetch strains:', error);
       throw error instanceof Error ? error : new Error('Unknown error fetching strains');

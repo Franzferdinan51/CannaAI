@@ -93,7 +93,7 @@ class EnhancedSocketService {
     // Determine server URL based on environment
     const serverUrl = process.env.NODE_ENV === 'production'
       ? window.location.origin
-      : `http://${window.location.hostname}:3000`;
+      : `http://${window.location.hostname}:3001`;
 
     console.log(`🔌 Connecting to enhanced Socket.IO server at: ${serverUrl}`);
 

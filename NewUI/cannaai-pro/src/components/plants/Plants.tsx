@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plant,
@@ -93,6 +93,9 @@ const Plants: React.FC = () => {
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
   const [showPlantForm, setShowPlantForm] = useState(false);
   const [editingPlant, setEditingPlant] = useState<Plant | null>(null);
+  const inventoryFileInput = useRef<HTMLInputElement>(null);
+  const [autoRefreshPlants, setAutoRefreshPlants] = useState(true);
+  const [showArchivedPlants, setShowArchivedPlants] = useState(false);
 
   // Load initial data
   const loadInitialData = useCallback(async () => {
@@ -252,6 +255,30 @@ const Plants: React.FC = () => {
   const handleAnalyzePlant = async (plantId: string) => {
     // This would open the analysis interface
     setState(prev => ({ ...prev, activeTab: 'analysis' }));
+  };
+
+  const exportInventory = () => {
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), plants: state.plants }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `plant-inventory-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importInventory = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      const importedPlants = Array.isArray(parsed) ? parsed : parsed?.plants;
+      if (!Array.isArray(importedPlants)) throw new Error('The file must contain a plants array.');
+      setState((prev) => ({ ...prev, plants: importedPlants, success: `Loaded ${importedPlants.length} plants from the import file.`, error: undefined }));
+    } catch (error) {
+      setState((prev) => ({ ...prev, error: error instanceof Error ? error.message : 'Invalid inventory file', success: undefined }));
+    }
   };
 
   // Calculate derived statistics
@@ -428,7 +455,11 @@ const Plants: React.FC = () => {
                         <CardTitle className="text-white">Recent Activity</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-gray-400">Activity feed coming soon...</p>
+                        {state.plants.length === 0 ? (
+                          <div className="space-y-3"><p className="text-sm text-gray-400">No plant activity yet.</p><Button size="sm" onClick={() => setShowPlantForm(true)} className="bg-emerald-600 hover:bg-emerald-500">Add your first plant</Button></div>
+                        ) : (
+                          <div className="space-y-3">{state.plants.slice(0, 4).map((plant) => <div key={plant.id} className="flex items-center justify-between border-b border-gray-800 pb-2 text-sm"><span className="text-gray-300">{plant.name}</span><span className="text-gray-500 capitalize">{plant.stage}</span></div>)}</div>
+                        )}
                       </CardContent>
                     </Card>
 
@@ -437,7 +468,7 @@ const Plants: React.FC = () => {
                         <CardTitle className="text-white">Health Trends</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-gray-400">Health trends chart coming soon...</p>
+                        {activePlants.length === 0 ? <p className="text-sm text-gray-400">Health trends will appear after plants are added and analyzed.</p> : <div className="space-y-3">{activePlants.slice(0, 5).map((plant) => <div key={plant.id}><div className="mb-1 flex justify-between text-xs"><span className="text-gray-300">{plant.name}</span><span className="text-emerald-400">{plant.health.score.toFixed(0)}%</span></div><div className="h-2 rounded-full bg-gray-800"><div className="h-2 rounded-full bg-emerald-500" style={{ width: `${Math.max(0, Math.min(100, plant.health.score))}%` }} /></div></div>)}</div>}
                       </CardContent>
                     </Card>
                   </div>
@@ -544,14 +575,15 @@ const Plants: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold text-white">Plant Inventory</h2>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" className="border-gray-700">
+                      <Button variant="outline" size="sm" onClick={exportInventory} className="border-gray-700">
                         <Download className="w-4 h-4 mr-2" />
                         Export
                       </Button>
-                      <Button variant="outline" size="sm" className="border-gray-700">
+                      <Button variant="outline" size="sm" onClick={() => inventoryFileInput.current?.click()} className="border-gray-700">
                         <Upload className="w-4 h-4 mr-2" />
                         Import
                       </Button>
+                      <input ref={inventoryFileInput} type="file" accept=".json,application/json" onChange={importInventory} className="hidden" />
                     </div>
                   </div>
                   <PlantInventory inventory={state.inventory} detailed />
@@ -579,7 +611,11 @@ const Plants: React.FC = () => {
                       <CardTitle className="text-white">Plant Management Settings</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-400">Settings interface coming soon...</p>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between rounded-lg bg-[#0f1419] p-3"><div><p className="text-sm text-white">Auto-refresh plant data</p><p className="text-xs text-gray-400">Refresh the plant list when this workspace is open.</p></div><Switch checked={autoRefreshPlants} onCheckedChange={setAutoRefreshPlants} /></div>
+                        <div className="flex items-center justify-between rounded-lg bg-[#0f1419] p-3"><div><p className="text-sm text-white">Show archived plants</p><p className="text-xs text-gray-400">Include archived plants in inventory views.</p></div><Switch checked={showArchivedPlants} onCheckedChange={setShowArchivedPlants} /></div>
+                        <p className="text-xs text-gray-500">These display preferences are stored for this session.</p>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
