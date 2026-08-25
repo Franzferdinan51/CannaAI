@@ -194,4 +194,38 @@ describe('LM Studio local-model regressions', () => {
       },
     ]);
   });
+
+  test('LM Studio refuses to send images to an advertised text-only model', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          models: [{
+            key: 'text-only-model',
+            type: 'llm',
+            capabilities: { vision: false },
+          }],
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'text-only-model' }] }),
+      } as Response);
+
+    const provider = new LMStudioProvider({
+      url: 'http://localhost:1234',
+      apiKey: '',
+      model: 'text-only-model',
+    });
+
+    await expect(provider.execute({
+      messages: [{
+        role: 'user',
+        content: 'Inspect this leaf',
+        image: 'data:image/jpeg;base64,abc123',
+      }],
+    })).rejects.toThrow('no vision-capable model');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

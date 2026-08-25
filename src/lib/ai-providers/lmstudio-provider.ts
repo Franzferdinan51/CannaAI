@@ -105,7 +105,13 @@ export class LMStudioProvider extends BaseProvider {
     // Resolve against both LM Studio's native model catalog and OpenAI model
     // list. The latter is important for JIT mode: a downloaded model can be
     // runnable even when there is no preloaded instance yet.
-    const resolvedModel = await this.resolveAvailableModel(request.model);
+    const requiresVision = request.messages.some(message => Boolean(normalizeImageUrl(message.image)));
+    const resolvedModel = await this.resolveAvailableModel(request.model, requiresVision);
+    if (requiresVision && !resolvedModel) {
+      throw new Error(
+        'LM Studio is reachable but no vision-capable model is available. Load a vision model or configure a vision-capable model.',
+      );
+    }
     const selectedModel = resolvedModel?.id || request.model || this.config.model;
     if (!selectedModel) {
       throw new Error(
@@ -224,17 +230,32 @@ export class LMStudioProvider extends BaseProvider {
    * - /v1/models is used as the runnable/JIT model source of truth.
    * - A configured/requested model wins when it is present in that list.
    */
-  private async resolveAvailableModel(requestedModel?: string): Promise<ResolvedLMStudioModel | undefined> {
+  private async resolveAvailableModel(
+    requestedModel?: string,
+    requiresVision = false,
+  ): Promise<ResolvedLMStudioModel | undefined> {
     const [nativeModels, openAIModelIds] = await Promise.all([
       this.getNativeModels(),
       this.getOpenAIModelIds(),
     ]);
 
     const preferredModel = requestedModel || this.config.model || undefined;
+    const visionCapabilityAdvertised = nativeModels.some(model => (
+      typeof model.capabilities?.vision === 'boolean'
+    ));
+    const isVisionCapable = (model: LMStudioNativeModel | undefined) => (
+      !requiresVision ||
+      !visionCapabilityAdvertised ||
+      model?.capabilities?.vision === true
+    );
 
     // Explicit/configured model that LM Studio currently advertises as
     // runnable (including JIT-loadable models).
-    if (preferredModel && openAIModelIds.includes(preferredModel)) {
+    if (
+      preferredModel &&
+      openAIModelIds.includes(preferredModel) &&
+      isVisionCapable(this.findNativeModel(nativeModels, preferredModel))
+    ) {
       return {
         id: preferredModel,
         nativeModel: this.findNativeModel(nativeModels, preferredModel),
@@ -249,7 +270,7 @@ export class LMStudioProvider extends BaseProvider {
     if (preferredModel) {
       const nativePreferred = this.findNativeModel(nativeModels, preferredModel);
       const loadedId = nativePreferred?.loaded_instances?.find(instance => instance?.id)?.id;
-      if (loadedId && openAIModelIds.includes(loadedId)) {
+      if (loadedId && openAIModelIds.includes(loadedId) && isVisionCapable(nativePreferred)) {
         return { id: loadedId, nativeModel: nativePreferred, loaded: true };
       }
     }
@@ -257,14 +278,18 @@ export class LMStudioProvider extends BaseProvider {
     // Prefer an already-loaded model to avoid unnecessary JIT churn.
     for (const model of nativeModels) {
       const loadedId = model.loaded_instances?.find(instance => instance?.id)?.id;
-      if (loadedId && (openAIModelIds.length === 0 || openAIModelIds.includes(loadedId))) {
+      if (
+        loadedId &&
+        (openAIModelIds.length === 0 || openAIModelIds.includes(loadedId)) &&
+        isVisionCapable(model)
+      ) {
         return { id: loadedId, nativeModel: model, loaded: true };
       }
     }
 
     // JIT mode: /v1/models advertises downloaded models that can be loaded on
     // first inference even though native loaded_instances is empty.
-    const jitId = openAIModelIds[0];
+    const jitId = openAIModelIds.find(id => isVisionCapable(this.findNativeModel(nativeModels, id)));
     if (jitId) {
       return {
         id: jitId,
