@@ -32,7 +32,10 @@ const OfflineIndicator: React.FC = () => {
         
         try {
           const registration = await navigator.serviceWorker.ready;
-          await registration.sync.register('background-sync');
+          const syncManager = (registration as ServiceWorkerRegistration & {
+            sync?: { register: (tag: string) => Promise<void> };
+          }).sync;
+          if (syncManager) await syncManager.register('background-sync');
           
           // Simulate sync delay
           await new Promise(resolve => setTimeout(resolve, 1500));

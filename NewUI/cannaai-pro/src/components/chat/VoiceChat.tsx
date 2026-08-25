@@ -19,13 +19,14 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
-  Waveform,
+  Activity,
   Headphones,
   Languages,
   Sliders
 } from 'lucide-react';
 
 import { VoiceChatSettings } from './types';
+import { Button } from '../ui/button';
 
 interface VoiceChatProps {
   isEnabled: boolean;

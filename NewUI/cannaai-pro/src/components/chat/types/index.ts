@@ -64,7 +64,7 @@ export interface ChatTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'general' | 'plant-care' | 'troubleshooting' | 'nutrients' | 'environment' | 'harvesting';
+  category: 'general' | 'plant-care' | 'troubleshooting' | 'nutrients' | 'environment' | 'harvesting' | 'pest-disease';
   prompt: string;
   variables?: TemplateVariable[];
   icon?: string;
@@ -242,18 +242,5 @@ export interface AILearningData {
   improvedResponse?: string;
 }
 
-// Export types for external use
-export type {
-  ChatMessage,
-  ChatConversation,
-  ChatTemplate,
-  ChatSettings,
-  ChatAnalytics,
-  QuickResponse,
-  VoiceChatSettings,
-  FileAttachment,
-  ChatSession,
-  ChatRealtimeEvent,
-  ChatNotification,
-  AILearningData
-};
+export type { SensorData } from '../../sensors/types';
+export type IChatMessage = ChatMessage;

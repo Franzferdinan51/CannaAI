@@ -2,6 +2,8 @@
 
 import { SensorData, RoomConfig, WateringConfig, LightingConfig, ClimateConfig } from '../sensors/types';
 
+export type { SensorData, RoomConfig, WateringConfig, LightingConfig, ClimateConfig } from '../sensors/types';
+
 export interface AutomationStatus {
   watering: {
     active: boolean;

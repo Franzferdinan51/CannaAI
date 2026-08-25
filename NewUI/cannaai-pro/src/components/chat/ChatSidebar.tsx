@@ -60,7 +60,7 @@ interface ChatSidebarProps {
   quickResponses: QuickResponse[];
   analytics?: ChatAnalytics;
   settings?: ChatSettings;
-  sensorData?: SensorData;
+  sensorData?: Partial<SensorData>;
   onConversationSelect: (conversationId: string) => void;
   onNewConversation: () => void;
   onQuickResponse: (response: QuickResponse) => void;

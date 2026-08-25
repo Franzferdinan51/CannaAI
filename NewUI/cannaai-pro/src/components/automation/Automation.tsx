@@ -32,14 +32,9 @@ import {
   MapPin
 } from 'lucide-react';
 
-// UI Components - Temporarily disabled for testing
-// import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../ui/card';
-// import { Button } from '../../ui/button';
-// import { Switch } from '../../ui/switch';
-// import { Badge } from '../../ui/badge';
-// import { Progress } from '../../ui/progress';
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
-// import { Alert, AlertDescription } from '../../ui/alert';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Button } from '../ui/button';
+import { Switch } from '../ui/switch';
 
 // Import automation components
 import { AutomationDashboard } from './AutomationDashboard';
@@ -51,9 +46,6 @@ import { ManualOverride } from './ManualOverride';
 import { SafetyFeatures } from './SafetyFeatures';
 import { AutomationScheduling } from './AutomationScheduling';
 import { AutomationHistory } from './AutomationHistory';
-
-// Import hooks and utilities (simplified for this component)
-import { useState, useCallback, useEffect } from 'react';
 
 // Mock implementation of useAutomationAPI hook
 const useAutomationAPI = () => {

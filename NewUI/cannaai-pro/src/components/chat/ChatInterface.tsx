@@ -169,10 +169,10 @@ export function ChatInterface({
   const {
     isSpeaking: voiceSpeaking,
     speak,
-    stopSpeaking,
+    stop: stopSpeaking,
     isSupported: speechSupported
   } = useSpeechSynthesis({
-    voice: settings?.features?.enableVoiceOutput ? settings?.ui?.language || 'en-US' : undefined,
+    voice: settings?.features?.enableVoiceOutput ? 'en-US' : undefined,
     rate: 1.0,
     pitch: 1.0
   });

@@ -355,7 +355,7 @@ class EnhancedSocketService {
   }
 
   unsubscribeFromAlerts() {
-    this.emit('unsubscribe-alerts');
+    this.emit('unsubscribe-alerts', {});
   }
 
   // Automation control methods

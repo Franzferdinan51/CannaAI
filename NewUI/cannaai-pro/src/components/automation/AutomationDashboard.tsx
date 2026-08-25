@@ -72,9 +72,9 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
   const [activeTab, setActiveTab] = useState('overview');
   const [automationStatus, setAutomationStatus] = useState<AutomationStatus>({
     watering: { active: false, lastRun: '', nextRun: '', status: 'idle' },
-    lighting: { active: false, schedule: '', status: 'off' },
-    climate: { active: false, status: 'idle' },
-    co2: { active: false, status: 'idle' }
+    lighting: { active: false, schedule: '', status: 'off', currentIntensity: 0, scheduleType: 'custom' },
+    climate: { active: false, status: 'idle', currentMode: 'off' },
+    co2: { active: false, status: 'idle', currentLevel: 0, targetLevel: 0, injectionRate: 0 }
   });
   const [recentLogs, setRecentLogs] = useState<AutomationLog[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);

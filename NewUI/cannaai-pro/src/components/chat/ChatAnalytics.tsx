@@ -28,10 +28,11 @@ import {
   EyeOff
 } from 'lucide-react';
 
-import { ChatAnalytics, ChatConversation, ChatMessage } from './types';
+import type { ChatAnalytics as ChatAnalyticsData, ChatConversation, ChatMessage } from './types';
+import { Button } from '../ui/button';
 
 interface ChatAnalyticsProps {
-  analytics: ChatAnalytics;
+  analytics: ChatAnalyticsData;
   conversations: ChatConversation[];
   messages: ChatMessage[];
   onClose?: () => void;

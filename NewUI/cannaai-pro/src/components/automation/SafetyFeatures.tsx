@@ -19,7 +19,8 @@ import {
   Clock,
   AlertCircle,
   Info,
-  TriangleAlert
+  TriangleAlert,
+  Pause
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -303,7 +304,7 @@ export const SafetyFeatures: React.FC<SafetyFeaturesProps> = ({
                       <div>
                         <h4 className="font-medium text-slate-100">{alert.title}</h4>
                         <p className="text-sm text-slate-300 flex items-center">
-                          <getCategoryIcon category={alert.category} className="w-3 h-3 mr-1" />
+                          {getCategoryIcon(alert.category)}
                           {alert.category} • {new Date(alert.timestamp).toLocaleString()}
                         </p>
                       </div>

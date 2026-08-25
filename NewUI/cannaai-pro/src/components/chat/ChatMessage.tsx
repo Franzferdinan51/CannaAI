@@ -37,9 +37,10 @@ import {
   BarChart3
 } from 'lucide-react';
 
-import { IChatMessage, ChatMessageMetadata } from './types';
+import type { ChatMessage as IChatMessage, ChatMessageMetadata } from './types';
 import { SafeMarkdown } from './markdown';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 interface ChatMessageProps {
   message: IChatMessage;

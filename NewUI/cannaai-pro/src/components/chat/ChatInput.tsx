@@ -33,6 +33,7 @@ import {
 
 import { ChatTemplate, FileAttachment } from './types';
 import { createFileAttachment, fileToDataUrl, validateAttachment } from './attachments';
+import { Button } from '../ui/button';
 
 interface ChatInputProps {
   onSend: (content: string, image?: string, attachments?: FileAttachment[]) => void;

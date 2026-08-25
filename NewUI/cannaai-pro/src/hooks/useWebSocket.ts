@@ -51,7 +51,7 @@ export function useWebSocket(url: string, options: WebSocketOptions = {}): UseWe
   optionsRef.current = { reconnectAttempts, reconnectInterval, shouldReconnect };
 
   const connect = useCallback(() => {
-    if (socketRef.current && [WebSocket.CONNECTING, WebSocket.OPEN].includes(socketRef.current.readyState)) {
+    if (socketRef.current && (socketRef.current.readyState === WebSocket.CONNECTING || socketRef.current.readyState === WebSocket.OPEN)) {
       return;
     }
 

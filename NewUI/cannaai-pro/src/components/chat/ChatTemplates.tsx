@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 
 import { ChatTemplate, TemplateVariable } from './types';
+import { Button } from '../ui/button';
 
 interface ChatTemplatesProps {
   templates: ChatTemplate[];

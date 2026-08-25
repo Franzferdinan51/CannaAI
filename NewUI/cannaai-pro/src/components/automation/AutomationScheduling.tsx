@@ -31,8 +31,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-import { RoomConfig, AutomationSchedule } from '../sensors/types';
-import { AutomationStatus } from './types';
+import { RoomConfig } from '../sensors/types';
+import { AutomationSchedule, AutomationStatus } from './types';
 
 interface AutomationSchedulingProps {
   rooms: RoomConfig[];

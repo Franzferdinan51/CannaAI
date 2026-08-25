@@ -41,6 +41,8 @@ import {
 } from 'lucide-react';
 
 import { ChatSettings as IChatSettings } from './types';
+import { Button } from '../ui/button';
+import { Switch } from '../ui/switch';
 
 interface ChatSettingsProps {
   settings: IChatSettings;

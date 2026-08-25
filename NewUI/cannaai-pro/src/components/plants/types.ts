@@ -479,7 +479,7 @@ export interface StrainCharacteristics {
 }
 
 export type ResistanceLevel = 'low' | 'medium' | 'high' | 'very-high';
-export type ClimateType = 'tropical' | 'temperate' | 'mediterranean' | 'arid' | 'continental' | 'maritime';
+export type ClimateType = 'tropical' | 'temperate' | 'mediterranean' | 'arid' | 'continental' | 'maritime' | 'arctic';
 
 // Component Props
 export interface PlantCardProps {

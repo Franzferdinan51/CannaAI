@@ -129,9 +129,6 @@ export function useSpeechSynthesis(defaultOptions: SpeechSynthesisOptions = {}):
         case 'text-too-long':
           errorMessage = 'Text too long';
           break;
-        case 'rate-not-supported':
-          errorMessage = 'Rate not supported';
-          break;
         default:
           errorMessage = `Speech synthesis error: ${event.error}`;
       }

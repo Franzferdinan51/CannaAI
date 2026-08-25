@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 
 import { ChatConversation } from './types';
+import { Button } from '../ui/button';
 
 interface ConversationManagerProps {
   conversations: ChatConversation[];
