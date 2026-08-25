@@ -401,52 +401,50 @@ Analyze the provided microscopic image and return ONLY valid JSON.`;
 function createStructuredTrichomeResponse(textResponse: string, provider: string): any {
   return {
     overallMaturity: {
-      stage: 'mixed',
-      percentage: 50,
-      confidence: 0.7,
-      recommendation: 'Analysis completed - review AI findings above'
+      stage: 'unknown',
+      percentage: null,
+      confidence: 0,
+      recommendation: 'Not available; the model returned unstructured text.'
     },
     trichomeDistribution: {
-      clear: 20,
-      cloudy: 50,
-      amber: 30,
-      density: 'medium'
+      clear: null,
+      cloudy: null,
+      amber: null,
+      density: 'unknown'
     },
     harvestReadiness: {
-      ready: true,
-      recommendation: 'Harvest window approaching - review AI analysis above',
-      estimatedHarvestTime: '3-7 days',
-      peakDays: 5
+      ready: null,
+      recommendation: 'Not available; harvest readiness was not structured by the model.',
+      estimatedHarvestTime: 'Unknown',
+      peakDays: null
     },
     detailedFindings: [
       {
         type: 'trichome',
         description: 'Trichome analysis completed by AI',
-        severity: 'low',
-        confidence: 0.7,
-        location: 'Flower surface'
+        severity: 'unknown',
+        confidence: 0,
+        location: 'Unknown'
       }
     ],
     metrics: {
-      trichomeDensity: 100,
-      averageTrichomeLength: 150,
-      pistilHealth: 80
+      trichomeDensity: null,
+      averageTrichomeLength: null,
+      pistilHealth: null
     },
     strainCharacteristics: {
-      morphology: 'Standard capitate-stalked trichomes observed',
-      trichomeProfile: 'Mixed maturity profile',
-      growthPattern: 'Normal development pattern'
+      morphology: 'Unknown',
+      trichomeProfile: 'Unknown',
+      growthPattern: 'Unknown'
     },
     technicalAnalysis: {
-      imageQuality: 'good',
-      magnificationLevel: 'Adequate for analysis',
+      imageQuality: 'unknown',
+      magnificationLevel: 'Unknown',
       focusQuality: 'unknown',
       lightingCondition: 'unknown'
     },
     recommendations: [
-      'Review complete AI analysis above',
-      'Continue monitoring trichome development',
-      'Prepare for harvest if ready'
+      'Review the preserved provider response manually.'
     ],
     aiResponse: textResponse,
     provider: provider
@@ -459,28 +457,28 @@ function enhanceTrichomeAnalysis(analysisResult: any, deviceInfo: any, options: 
   // Ensure required fields exist
   if (!enhanced.overallMaturity) {
     enhanced.overallMaturity = {
-      stage: 'mixed',
-      percentage: 50,
-      confidence: 0.7,
-      recommendation: 'Analysis completed'
+      stage: 'unknown',
+      percentage: null,
+      confidence: 0,
+      recommendation: 'Not available; the model did not provide structured maturity data.'
     };
   }
 
   if (!enhanced.trichomeDistribution) {
     enhanced.trichomeDistribution = {
-      clear: 20,
-      cloudy: 50,
-      amber: 30,
-      density: 'medium'
+      clear: null,
+      cloudy: null,
+      amber: null,
+      density: 'unknown'
     };
   }
 
   if (!enhanced.harvestReadiness) {
     enhanced.harvestReadiness = {
-      ready: false,
-      recommendation: 'Monitor trichome development',
+      ready: null,
+      recommendation: 'Not available; the model did not provide harvest-readiness data.',
       estimatedHarvestTime: 'Unknown',
-      peakDays: 7
+      peakDays: null
     };
   }
 
@@ -498,28 +496,30 @@ function enhanceTrichomeAnalysis(analysisResult: any, deviceInfo: any, options: 
 
   if (!enhanced.strainCharacteristics) {
     enhanced.strainCharacteristics = {
-      morphology: 'Standard development',
-      trichomeProfile: 'Balanced profile',
-      growthPattern: 'Normal'
+      morphology: 'Unknown',
+      trichomeProfile: 'Unknown',
+      growthPattern: 'Unknown'
     };
   }
 
   if (!enhanced.technicalAnalysis) {
     enhanced.technicalAnalysis = {
-      imageQuality: 'good',
-      magnificationLevel: 'Adequate',
+      imageQuality: 'unknown',
+      magnificationLevel: 'Unknown',
       focusQuality: 'unknown',
       lightingCondition: 'unknown'
     };
   }
 
   if (!enhanced.recommendations) {
-    enhanced.recommendations = ['Continue monitoring', 'Review analysis above'];
+    enhanced.recommendations = ['Review the preserved provider response manually.'];
   }
 
   // Validate trichome distribution adds to 100%
-  const total = enhanced.trichomeDistribution.clear + enhanced.trichomeDistribution.cloudy + enhanced.trichomeDistribution.amber;
-  if (Math.abs(total - 100) > 5) {
+  const total = Number(enhanced.trichomeDistribution.clear)
+    + Number(enhanced.trichomeDistribution.cloudy)
+    + Number(enhanced.trichomeDistribution.amber);
+  if (Number.isFinite(total) && total > 0 && Math.abs(total - 100) > 5) {
     // Normalize percentages
     enhanced.trichomeDistribution.clear = (enhanced.trichomeDistribution.clear / total) * 100;
     enhanced.trichomeDistribution.cloudy = (enhanced.trichomeDistribution.cloudy / total) * 100;
