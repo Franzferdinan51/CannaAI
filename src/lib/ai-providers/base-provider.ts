@@ -140,14 +140,14 @@ export abstract class BaseProvider {
       errorRate: 0,
       lastCheck: new Date(),
       consecutiveFailures: 0,
-      successRate: 100
+      successRate: 0
     };
     this.metrics = {
       totalRequests: 0,
       totalTokens: 0,
       totalCost: 0,
       averageLatency: 0,
-      successRate: 100,
+      successRate: 0,
       errorCount: 0,
       timeoutCount: 0,
       averageResponseTime: 0,

@@ -100,7 +100,8 @@ export async function GET(request: NextRequest) {
       cache: {
         hitRate: `${cacheStats.hitRate.toFixed(2)}%`,
         efficiency: cacheStats.hitRate > 50 ? 'excellent' : cacheStats.hitRate > 30 ? 'good' : 'needs improvement',
-        potentialSavings: `$${(totalCost * (cacheStats.hitRate / 100) * 0.1).toFixed(4)}`
+        potentialSavings: null,
+        note: 'Savings projections are unavailable until per-request pricing and historical comparisons are collected.'
       },
       recommendations
     });
