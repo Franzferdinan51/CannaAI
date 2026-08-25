@@ -80,9 +80,20 @@ export async function executeWithOpenClaw(params: any, options: any = {}): Promi
       temperature: request.temperature,
       maxTokens: request.maxTokens
     });
+    const message = response.choices[0]?.message as { content?: string; reasoning_content?: string } | undefined;
+    const content = message?.content
+      || message?.reasoning_content
+      || '';
+    if (!content.trim()) {
+      return {
+        success: false,
+        provider: 'openclaw',
+        error: 'OpenClaw returned no usable content',
+      };
+    }
     return {
       success: true,
-      result: response.choices[0]?.message?.content || '',
+      result: content,
       provider: 'openclaw',
       model: response.model,
       endpoint: 'openclaw-acp',
