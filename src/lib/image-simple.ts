@@ -64,9 +64,18 @@ export async function processImageForVisionModel(
     height?: number;
     quality?: number;
     format?: 'JPEG' | 'PNG' | 'WEBP';
+    withoutEnlargement?: boolean;
+    // Kept for compatibility with callers that tune the native Sharp path.
+    fastShrinkOnLoad?: boolean;
   } = {}
 ): Promise<ProcessedImageResult> {
-  const { quality = 80, format = 'JPEG', width = 1024, height = 1024 } = options;
+  const {
+    quality = 80,
+    format = 'JPEG',
+    width = 1024,
+    height = 1024,
+    withoutEnlargement = true,
+  } = options;
 
   const originalSize = inputBuffer.length;
 
@@ -82,7 +91,7 @@ export async function processImageForVisionModel(
       const processed = await sharp(inputBuffer)
         .resize(width, height, {
           fit: 'inside',
-          withoutEnlargement: true,
+          withoutEnlargement,
         })
         .jpeg({ quality, mozjpeg: false })
         .toBuffer();

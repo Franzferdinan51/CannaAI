@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withSecurity, createAPIResponse, createAPIError } from '@/lib/security';
-import { base64ToBuffer } from '@/lib/image';
+import { base64ToBuffer } from '@/lib/base64';
 import { getImageMetadata, processImageForVisionModel } from '@/lib/image-simple';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import crypto from 'crypto';

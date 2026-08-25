@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withSecurity, createAPIResponse, createAPIError } from '@/lib/security';
-import { base64ToBuffer, processImageForVisionModel } from '@/lib/image';
+import { base64ToBuffer } from '@/lib/base64';
+import { processImageForVisionModel } from '@/lib/image-simple';
 import { analyzePlantHealth } from '@/lib/ai';
 
 // Export configuration for dual-mode compatibility
