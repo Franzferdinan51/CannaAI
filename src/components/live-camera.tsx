@@ -43,14 +43,15 @@ interface DeviceInfo {
   label: string;
   capabilities: MediaTrackCapabilities;
   isMobile?: boolean;
+  isMicroscope?: boolean;
   magnification?: number;
 }
 
 export default function LiveCamera({
   onImageCapture,
   onTrichomeAnalysis,
-  autoAnalyze = false,
-  analyzeInterval = 30,
+  autoAnalyze: initialAutoAnalyze = false,
+  analyzeInterval: initialAnalyzeInterval = 30,
   className = "",
   enableTrichomeMode = false
 }: LiveCameraProps) {
@@ -67,6 +68,8 @@ export default function LiveCamera({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isTrichomeAnalyzing, setIsTrichomeAnalyzing] = useState(false);
   const [analysisCountdown, setAnalysisCountdown] = useState<number>(0);
+  const [autoAnalyze, setAutoAnalyze] = useState(initialAutoAnalyze);
+  const [analyzeInterval, setAnalyzeInterval] = useState(initialAnalyzeInterval);
   const [cameraMode, setCameraMode] = useState<'webcam' | 'microscope' | 'mobile'>('webcam');
   const [resolution, setResolution] = useState({ width: 1280, height: 720 });
   const [isMobileDevice, setIsMobileDevice] = useState(false);
@@ -116,6 +119,7 @@ export default function LiveCamera({
             label: label,
             capabilities: (device as any).getCapabilities?.() || {},
             isMobile: isMobileCamera || isMobileDevice,
+            isMicroscope,
             magnification: isMicroscope ? 200 : (isMobileCamera ? 100 : 1)
           };
         });
@@ -169,28 +173,21 @@ export default function LiveCamera({
       setError('');
 
       // Strategy 1: Try with exact device constraints
-      let constraints: MediaStreamConstraints = {
-        video: {
-          width: { ideal: resolution.width, min: 320 },
-          height: { ideal: resolution.height, min: 240 },
-          frameRate: { ideal: 30, max: 60 }
-        },
-        audio: false
+      const videoConstraints: MediaTrackConstraints = {
+        width: { ideal: resolution.width, min: 320 },
+        height: { ideal: resolution.height, min: 240 },
+        frameRate: { ideal: 30, max: 60 }
       };
 
       if (selectedDevice) {
-        constraints.video = {
-          ...constraints.video,
-          deviceId: { exact: selectedDevice }
-        };
+        videoConstraints.deviceId = { exact: selectedDevice };
       }
 
       if (isMobileDevice) {
-        constraints.video = {
-          ...constraints.video,
-          facingMode: 'environment'
-        };
+        videoConstraints.facingMode = 'environment';
       }
+
+      const constraints: MediaStreamConstraints = { video: videoConstraints, audio: false };
 
       let stream: MediaStream | null = null;
       let lastError: Error | null = null;
@@ -203,21 +200,20 @@ export default function LiveCamera({
 
         // Attempt 2: Fallback without exact device ID
         console.log('Fallback: Trying without exact device ID');
-        const fallbackConstraints = {
-          video: {
-            width: { ideal: resolution.width, min: 320 },
-            height: { ideal: resolution.height, min: 240 },
-            frameRate: { ideal: 30 }
-          },
-          audio: false
+        const fallbackVideoConstraints: MediaTrackConstraints = {
+          width: { ideal: resolution.width, min: 320 },
+          height: { ideal: resolution.height, min: 240 },
+          frameRate: { ideal: 30 }
         };
 
         if (isMobileDevice) {
-          fallbackConstraints.video = {
-            ...fallbackConstraints.video,
-            facingMode: 'environment'
-          };
+          fallbackVideoConstraints.facingMode = 'environment';
         }
+
+        const fallbackConstraints: MediaStreamConstraints = {
+          video: fallbackVideoConstraints,
+          audio: false
+        };
 
         try {
           stream = await attemptStream(fallbackConstraints, 'Fallback constraints');
@@ -268,11 +264,6 @@ export default function LiveCamera({
             await new Promise(resolve => setTimeout(resolve, 50)); // Reduced wait time
             attempts++;
 
-            // Force a re-render if needed
-            if (attempts === 10) {
-              // Trigger a small state change to force re-render
-              setStreamStatus(prev => prev);
-            }
           }
 
           if (!videoRef.current) {
@@ -490,6 +481,7 @@ export default function LiveCamera({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
+    return undefined;
   }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
 
   // Toggle PiP visibility with keyboard shortcut

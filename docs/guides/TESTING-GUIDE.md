@@ -23,10 +23,12 @@ UI branches:
 npm run typecheck:frontend
 npm run typecheck:local-ai
 npm run typecheck:server
+npm run typecheck:next-pages
 ```
 
 `typecheck:server` covers the custom server, middleware, API routes, and
-provider/library code used by the active Next.js backend.
+provider/library code used by the active Next.js backend. `typecheck:next-pages`
+follows the active Next.js pages and their imported UI components.
 
 ## ✅ Tests That Pass Now:
 

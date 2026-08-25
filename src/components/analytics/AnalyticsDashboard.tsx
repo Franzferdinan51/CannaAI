@@ -102,7 +102,7 @@ export function AnalyticsDashboard({ roomId, plantId }: AnalyticsDashboardProps)
 
   // Initialize WebSocket connection
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted) return undefined;
 
     const socketInstance = io({
       path: '/api/socketio',

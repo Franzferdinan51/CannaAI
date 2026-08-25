@@ -41,6 +41,7 @@ interface LMStudioModel {
 
 interface LMStudioResponse {
   status: string;
+  error?: string;
   lmStudioRunning: boolean;
   models: LMStudioModel[];
   summary: {
