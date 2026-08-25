@@ -8,9 +8,13 @@ const mockPrisma = {
 
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }));
 jest.mock('@/lib/ai', () => ({ analyzePlantHealth: jest.fn() }));
+jest.mock('@/lib/notifications', () => ({
+  sendNotification: jest.fn(),
+}));
 
 import { POST } from '@/app/api/automation/run/route';
 import { analyzePlantHealth } from '@/lib/ai';
+import { sendNotification } from '@/lib/notifications';
 
 describe('/api/automation/run', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -83,6 +87,43 @@ describe('/api/automation/run', () => {
           result: expect.objectContaining({ status: 'awaiting_capture', taskId: 'task-2' }),
         })],
       }),
+    }));
+  });
+
+  it('uses the notification service instead of claiming delivery', async () => {
+    mockPrisma.automationRule.findUnique.mockResolvedValue({
+      id: 'rule-3',
+      enabled: true,
+      plantId: 'plant-3',
+      actions: [{ type: 'notify', config: {
+        title: 'Plant alert',
+        message: 'Review the latest capture',
+        severity: 'warning',
+        channels: ['in_app'],
+      } }],
+      plant: null,
+      schedule: null,
+      trigger: null,
+    });
+    (sendNotification as jest.Mock).mockResolvedValue({
+      notification: { id: 'notification-3' },
+      deliveries: [{ success: true, channel: 'in_app', messageId: 'inapp-3' }],
+    });
+
+    const response = await POST(new Request('http://localhost/api/automation/run', {
+      method: 'POST',
+      body: JSON.stringify({ type: 'rule', id: 'rule-3' }),
+      headers: { 'content-type': 'application/json' },
+    }) as any);
+
+    expect(response.status).toBe(200);
+    expect(sendNotification).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Plant alert',
+      channels: ['in_app'],
+      plantId: 'plant-3',
+    }));
+    await expect(response.json()).resolves.toEqual(expect.objectContaining({
+      data: expect.objectContaining({ success: true }),
     }));
   });
 });

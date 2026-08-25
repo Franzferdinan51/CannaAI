@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { analyzePlantHealth } from '@/lib/ai';
+import { sendNotification as deliverNotification, type NotificationData } from '@/lib/notifications';
 
 interface RunRequest {
   type: 'rule' | 'schedule' | 'workflow' | 'batch';
@@ -86,7 +87,10 @@ async function executeAutomationRule(ruleId: string, data?: any) {
 
       case 'notify':
         // Send notification
-        const notificationResult = await sendNotification(action.config);
+        const notificationResult = await sendNotification({
+          ...(action.config || {}),
+          plantId: action.config?.plantId ?? rule.plantId
+        });
         results.push({ action: 'notify', result: notificationResult });
         break;
 
@@ -447,9 +451,38 @@ async function triggerCapture(plantId: string | null, config?: any) {
 }
 
 async function sendNotification(config: any) {
+  const channels = Array.isArray(config?.channels) && config.channels.length > 0
+    ? config.channels
+    : ['in_app'];
+  if (!config?.title || !config?.message) {
+    return {
+      success: false,
+      sent: false,
+      error: 'Notification title and message are required'
+    };
+  }
+
+  const notification: NotificationData = {
+    type: config.type || 'automation_event',
+    title: config.title,
+    message: config.message,
+    severity: config.severity || 'info',
+    channels,
+    metadata: config.metadata || {},
+    plantId: config.plantId,
+    sensorId: config.sensorId,
+    roomId: config.roomId,
+    userId: config.userId
+  };
+  const result = await deliverNotification(notification);
+  const deliveries = result.deliveries || [];
+  const success = deliveries.length > 0 && deliveries.every((delivery) => delivery.success);
+
   return {
-    sent: true,
-    config,
+    success,
+    sent: success,
+    notificationId: result.notification?.id,
+    deliveries,
     timestamp: new Date().toISOString()
   };
 }
