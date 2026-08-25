@@ -15,7 +15,7 @@ function commandPath(command: string): string {
   // LaunchAgents have a minimal PATH. These are the only binaries we invoke.
   return command === 'openclaw'
     ? (process.env.OPENCLAW_BIN || process.env.OPENCLAW_AGENT_COMMAND || 'openclaw')
-    : (process.env.HERMES_BIN || 'hermes');
+    : (process.env.HERMES_BIN || process.env.HERMES_AGENT_COMMAND || 'hermes');
 }
 
 async function readSessions(): Promise<Record<string, Session>> {

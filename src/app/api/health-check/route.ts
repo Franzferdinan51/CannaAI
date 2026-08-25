@@ -1,6 +1,6 @@
 /**
  * /api/health-check - Enhanced health check for full stack
- * Tests DB, LM Studio, OpenClaw connectivity
+ * Tests DB, LM Studio, OpenClaw, and (when configured) Hermes connectivity.
  */
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -46,20 +46,42 @@ async function checkOpenClaw() {
   }
 }
 
+async function checkHermes() {
+  const configured = Boolean(
+    process.env.HERMES_API_KEY ||
+    process.env.HERMES_API_SERVER_KEY ||
+    process.env.HERMES_AGENT_COMMAND,
+  );
+  if (!configured) return { status: 'unconfigured' as const };
+
+  try {
+    const { providerAuthStatus } = await import('@/lib/provider-auth');
+    const result = await providerAuthStatus('hermes');
+    return result.connected
+      ? { status: 'ok' as const, source: result.source }
+      : { status: 'unreachable' as const, source: result.source, error: result.summary };
+  } catch (e) {
+    return { status: 'unreachable' as const, error: String(e).slice(0, 80) };
+  }
+}
+
 export async function GET() {
-  const [db, lmstudio, openclaw] = await Promise.all([
+  const [db, lmstudio, openclaw, hermes] = await Promise.all([
     checkPrisma(),
     checkLMStudio(),
     checkOpenClaw(),
+    checkHermes(),
   ]);
 
-  const allUp = [db, lmstudio, openclaw].every((s) => s.status === 'ok');
-  const degraded = [db, lmstudio, openclaw].some((s) => s.status === 'ok');
+  const core = [db, lmstudio, openclaw];
+  const monitored = hermes.status === 'unconfigured' ? core : [...core, hermes];
+  const allUp = monitored.every((s) => s.status === 'ok');
+  const degraded = monitored.some((s) => s.status === 'ok');
 
   return NextResponse.json({
     status: allUp ? 'ok' : degraded ? 'degraded' : 'down',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    components: { db, lmstudio, openclaw },
+    components: { db, lmstudio, openclaw, hermes },
   }, { status: allUp ? 200 : degraded ? 200 : 503 });
 }
