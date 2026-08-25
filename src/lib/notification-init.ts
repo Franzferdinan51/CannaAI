@@ -240,6 +240,7 @@ export class NotificationSystem {
       notificationsByType,
       webhooks,
       webhookStats,
+      recentWebhookDeliveries,
       deliveries,
       deliveryStats
     ] = await Promise.all([
@@ -251,6 +252,13 @@ export class NotificationSystem {
       prisma.webhookSubscription.count(),
       prisma.webhookSubscription.findMany({
         select: { enabled: true, isVerified: true }
+      }),
+      prisma.webhookDelivery.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+          }
+        }
       }),
       prisma.notificationDelivery.count(),
       prisma.notificationDelivery.groupBy({
@@ -282,7 +290,7 @@ export class NotificationSystem {
         total: webhooks,
         enabled: enabledWebhooks,
         verified: verifiedWebhooks,
-        recentDeliveries: 0 // TODO: Add recent deliveries tracking
+        recentDeliveries: recentWebhookDeliveries
       },
       deliveries: {
         total: deliveries,
