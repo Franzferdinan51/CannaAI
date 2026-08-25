@@ -44,6 +44,7 @@ import {
   SensorMaintenance,
   RoomConfig
 } from './types';
+import { sensorAPI } from './api';
 
 interface SensorConfigProps {
   sensor?: SensorConfig;
@@ -170,14 +171,11 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
   const testSensor = async () => {
     setTestInProgress(true);
     try {
+      setTestResults(await sensorAPI.testSensor(formData.id));
+    } catch (error) {
       setTestResults({
         status: 'error',
-        message: 'Live sensor testing is unavailable until a connected sensor agent provides a test endpoint.'
-      });
-    } catch {
-      setTestResults({
-        status: 'error',
-        message: 'Unable to test this sensor.'
+        message: error instanceof Error ? error.message : 'Unable to test this sensor.'
       });
     } finally {
       setTestInProgress(false);

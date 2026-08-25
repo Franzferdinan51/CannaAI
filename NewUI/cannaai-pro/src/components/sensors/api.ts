@@ -78,7 +78,9 @@ function normalizeSensors(payload: any): SensorConfig[] {
   return values.map((reading: any, index: number) => {
     // Keep a stable fallback key for legacy readings that omit an identifier;
     // random IDs caused sensor rows to remount on every refresh.
-    const id = String(reading.id || reading.sensorId || `sensor-${index + 1}`);
+    // `/api/sensors` returns readings; follow-up CRUD/test calls need the
+    // sensor identity rather than the individual reading id.
+    const id = String(reading.sensorId || reading.id || `sensor-${index + 1}`);
     const type = sensorTypeFromId(String(reading.sensorId || id));
     const numericValue = typeof reading.value === 'number' ? reading.value : Number(reading.value) || 0;
     const timestamp = reading.timestamp || new Date().toISOString();
@@ -256,9 +258,10 @@ export const sensorAPI = {
     };
     message?: string;
   }> {
-    return apiRequest<any>(API_ENDPOINTS.SENSOR_TEST(id), {
+    const payload = await apiRequest<any>(API_ENDPOINTS.SENSOR_TEST(id), {
       method: 'POST',
     });
+    return payload?.data || payload;
   },
 };
 
