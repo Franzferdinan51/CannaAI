@@ -51,21 +51,23 @@ export class ClientAIService {
   }
 
   private loadConfig(): AIConfig {
+    const defaults: AIConfig = {
+      provider: 'lm-studio',
+      lmStudio: {
+        url: 'http://127.0.0.1:1234',
+        model: '',
+        apiKey: ''
+      },
+      openRouter: {
+        apiKey: '',
+        model: '',
+        baseUrl: 'https://openrouter.ai/api/v1'
+      },
+      fallbackEnabled: false
+    };
+
     if (typeof window === 'undefined') {
-      return {
-        provider: 'openrouter',
-        lmStudio: {
-          url: 'http://localhost:1234',
-          model: 'llama-3-8b-instruct',
-          apiKey: ''
-        },
-        openRouter: {
-          apiKey: '',
-          model: 'meta-llama/llama-3.1-8b-instruct:free',
-          baseUrl: 'https://openrouter.ai/api/v1'
-        },
-        fallbackEnabled: true
-      };
+      return defaults;
     }
 
     try {
@@ -77,7 +79,7 @@ export class ClientAIService {
       console.error('Failed to load AI config:', error);
     }
 
-    return this.config;
+    return defaults;
   }
 
   updateConfig(config: AIConfig) {
@@ -135,15 +137,13 @@ export class ClientAIService {
       }
     }
 
-    // Fallback mode or provider failure
-    if (this.config.fallbackEnabled || this.config.provider === 'fallback') {
-      return this.generateFallbackResponse(userMessage, mode, context);
-    }
-
+    // Never turn provider failure into fabricated cultivation advice. The UI
+    // can use this explicit state to offer configuration/retry controls.
     return {
       success: false,
       response: '',
-      error: 'No AI provider available',
+      provider: this.config.provider,
+      error: `No response from the configured ${this.config.provider} provider. Connect a provider and retry.`,
       fallbackUsed: false
     };
   }
