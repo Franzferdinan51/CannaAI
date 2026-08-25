@@ -21,6 +21,7 @@ import {
     PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
 import { useSocketContext } from '../../contexts/SocketContext';
+import { useNavigate } from 'react-router-dom';
 import { analyzePlant, getStrains } from '../../lib/cannai-api';
 
 // UI Components
@@ -154,6 +155,7 @@ const dashboardItems = [
 ];
 
 const ComprehensiveDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { lastSensorData, isConnected } = useSocketContext();
 
   // Form & Analysis State
@@ -197,6 +199,7 @@ const ComprehensiveDashboard: React.FC = () => {
   const [activeDashboard, setActiveDashboard] = useState('overview');
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Update sensor data from Socket.IO context
   useEffect(() => {
@@ -316,11 +319,11 @@ const ComprehensiveDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm" className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-700">
+          <Button variant="outline" size="sm" onClick={() => navigate('/plants')} aria-label="Start a new grow" className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-700">
             <Plus className="w-4 h-4 mr-2" />
             New Grow
           </Button>
-          <Button variant="ghost" size="sm" className="relative text-gray-400 hover:text-white hover:bg-gray-800">
+          <Button variant="ghost" size="sm" onClick={() => setShowNotifications(!showNotifications)} aria-label="Show dashboard notifications" className="relative text-gray-400 hover:text-white hover:bg-gray-800">
             <Bell className="w-5 h-5" />
             {notifications.length > 0 && (
               <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
@@ -328,6 +331,13 @@ const ComprehensiveDashboard: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {showNotifications && (
+        <div className="absolute right-6 top-16 z-50 w-80 rounded-xl border border-gray-700 bg-[#181b21] p-4 shadow-2xl" role="status" aria-label="Dashboard notifications panel">
+          <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close dashboard notifications" onClick={() => setShowNotifications(false)} className="text-sm text-gray-400 hover:text-white">Close</button></div>
+          {notifications.length === 0 ? <p className="text-sm text-gray-400">No notifications.</p> : <div className="space-y-2">{notifications.map((notification) => <div key={notification.id} className="rounded-lg bg-[#0f1419] p-3 text-sm text-gray-300"><p>{notification.message}</p><p className="mt-1 text-xs text-gray-500">{notification.time}</p></div>)}</div>}
+        </div>
+      )}
 
       {/* Mobile Menu Toggle */}
       <div className="lg:hidden px-4 py-2 border-b border-gray-800">
