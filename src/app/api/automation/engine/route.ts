@@ -90,10 +90,9 @@ async function runAutomationEngine() {
     const milestoneResults = await generateMilestones();
     results.milestonesGenerated = milestoneResults.generated;
 
-    // 4. Cleanup old data periodically
-    if (Math.random() < 0.1) { // 10% chance to run cleanup
-      await cleanupOldData();
-    }
+    // Cleanup is exposed as an explicit action. A random branch here made
+    // scheduled runs nondeterministic and could unexpectedly delete retained
+    // records during an ordinary automation pass.
 
   } catch (error) {
     results.errors.push(error instanceof Error ? error.message : 'Unknown error');
