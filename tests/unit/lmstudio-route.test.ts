@@ -1,7 +1,7 @@
 /** @jest-environment node */
 
 import { GET, POST } from '@/app/api/lmstudio/route';
-import { normalizeRemoteModels } from '@/app/api/lmstudio/models/route';
+import { normalizeRemoteModels } from '@/lib/lmstudio-models';
 
 function response(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {

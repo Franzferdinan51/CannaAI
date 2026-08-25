@@ -9,7 +9,8 @@ const mockPrisma = {
 
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }));
 
-import { PUT, executeCapture } from '@/app/api/automation/photo-capture/route';
+import { PUT } from '@/app/api/automation/photo-capture/route';
+import { executeCapture } from '@/lib/photo-capture-service';
 
 describe('/api/automation/photo-capture', () => {
   beforeEach(() => {
