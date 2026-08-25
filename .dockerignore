@@ -32,6 +32,13 @@ logs
 backups
 .cache
 .npm
+.npm-cache
+.pnpm-store
+.DS_Store
+playwright-report
+test-results
+*.tsbuildinfo
+*.tsbuildinfo.*
 tmp
 temp
 docker-compose*.yml
