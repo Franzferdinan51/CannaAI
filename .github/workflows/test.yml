@@ -6,10 +6,15 @@ on:
   pull_request:
     branches: [master, develop]
 
+concurrency:
+  group: cannaai-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -38,6 +43,7 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs: unit-tests
 
     steps:
@@ -77,6 +83,7 @@ jobs:
   visual-tests:
     name: Visual Regression Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs: unit-tests
 
     steps:
@@ -114,6 +121,7 @@ jobs:
   performance-tests:
     name: Performance Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -150,6 +158,7 @@ jobs:
   security-tests:
     name: Security Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -173,6 +182,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -206,6 +216,7 @@ jobs:
   all-tests-pass:
     name: All Tests Passed
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [unit-tests, e2e-tests, visual-tests, performance-tests, security-tests, integration-tests]
     if: always()
 

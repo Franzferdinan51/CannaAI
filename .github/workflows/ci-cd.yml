@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master, develop]
 
+concurrency:
+  group: cannaai-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '22.x'
   REGISTRY: ghcr.io
@@ -15,6 +19,7 @@ jobs:
   checks:
     name: Lint, typecheck, and tests
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,6 +47,7 @@ jobs:
   build:
     name: Build applications
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs: checks
     steps:
       - uses: actions/checkout@v4
