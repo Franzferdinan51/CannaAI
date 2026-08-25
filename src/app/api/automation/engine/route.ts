@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { addHours, addDays, addWeeks, addMonths } from 'date-fns';
+import { analyzePlantHealth } from '@/lib/ai';
 
 export async function GET(request: NextRequest) {
   try {
@@ -173,7 +174,10 @@ async function checkSchedules() {
           nextRun = addDays(now, 1);
       }
 
-      // Update scheduler
+      const actionSucceeded = analysisResult?.success !== false;
+
+      // Update scheduler even when a capture is unavailable so an hourly/daily
+      // job does not spin continuously and overload the local machine.
       await prisma.analysisScheduler.update({
         where: { id: scheduler.id },
         data: {
@@ -182,32 +186,35 @@ async function checkSchedules() {
         }
       });
 
-      executed++;
+      if (actionSucceeded) executed++;
 
       results.push({
         schedulerId: scheduler.id,
         plantId: scheduler.plantId,
         analysisType: scheduler.analysisType,
-        success: true,
+        success: actionSucceeded,
+        ...(actionSucceeded ? {} : { message: analysisResult?.message }),
         nextRun
       });
 
-      // Store in analysis history
-      await prisma.analysisHistory.create({
-        data: {
-          plantId: scheduler.plantId,
-          analysisType: `automated_${scheduler.analysisType}`,
-          data: analysisResult,
-          metadata: {
-            schedulerId: scheduler.id,
-            executedAt: now.toISOString(),
-            type: 'scheduled'
+      if (actionSucceeded) {
+        // Store only real provider-backed analysis results in history.
+        await prisma.analysisHistory.create({
+          data: {
+            plantId: scheduler.plantId,
+            analysisType: `automated_${scheduler.analysisType}`,
+            data: analysisResult,
+            metadata: {
+              schedulerId: scheduler.id,
+              executedAt: now.toISOString(),
+              type: 'scheduled'
+            }
           }
-        }
-      });
+        });
 
-      // Check for anomalies
-      await analyzeAndDetectAnomalies(scheduler.plantId, analysisResult);
+        // Check for anomalies only when analysis produced real data.
+        await analyzeAndDetectAnomalies(scheduler.plantId, analysisResult);
+      }
 
     } catch (error) {
       console.error(`Failed to execute scheduler ${scheduler.id}:`, error);
@@ -512,34 +519,57 @@ async function getEngineStatus() {
 
 // Helper functions
 async function triggerPhotoAnalysis(plantId: string | null, config?: any) {
-  // This would call the actual analysis API
+  if (!plantId) {
+    return { success: false, available: false, status: 'invalid', message: 'A plant is required for scheduled analysis.' };
+  }
+  const imageData = [config?.imageData, config?.plantImage, config?.image]
+    .find((value) => typeof value === 'string' && value.trim());
+  if (!imageData) {
+    return {
+      success: false,
+      available: false,
+      status: 'awaiting_capture',
+      plantId,
+      type: 'photo',
+      message: 'Scheduled photo analysis requires an image capture.'
+    };
+  }
+
+  const analysis = await analyzePlantHealth(imageData, {
+    strain: config?.strain,
+    growthStage: config?.growthStage,
+    medium: config?.medium,
+    temperature: typeof config?.temperature === 'number' ? config.temperature : undefined,
+    humidity: typeof config?.humidity === 'number' ? config.humidity : undefined,
+    phLevel: typeof config?.phLevel === 'number' ? config.phLevel : undefined,
+    symptoms: Array.isArray(config?.symptoms) ? config.symptoms : undefined
+  });
+
   return {
+    success: true,
+    available: true,
     plantId,
     type: 'photo',
     triggered: true,
     timestamp: new Date().toISOString(),
-    config: config || {}
+    analysis
   };
 }
 
 async function triggerTrichomeAnalysis(plantId: string | null, config?: any) {
   return {
+    success: false,
+    available: false,
+    status: 'awaiting_capture',
     plantId,
     type: 'trichome',
-    triggered: true,
-    timestamp: new Date().toISOString(),
-    config: config || {}
+    message: 'Scheduled trichome analysis requires a captured microscope image.'
   };
 }
 
 async function triggerHealthAnalysis(plantId: string | null, config?: any) {
-  return {
-    plantId,
-    type: 'health',
-    triggered: true,
-    timestamp: new Date().toISOString(),
-    config: config || {}
-  };
+  const result = await triggerPhotoAnalysis(plantId, config);
+  return { ...result, type: 'health' };
 }
 
 async function executeRule(ruleId: string) {
