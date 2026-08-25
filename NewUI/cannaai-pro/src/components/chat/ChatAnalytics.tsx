@@ -424,11 +424,11 @@ export function ChatAnalytics({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Positive</span>
-                      <span className="text-green-400">{formatNumber(analytics.sentimentAnalysis?.positive * 100, 1)}%</span>
+                      <span className="text-green-400">{analytics.sentimentAnalysis ? `${formatNumber(analytics.sentimentAnalysis.positive * 100, 1)}%` : 'Not available'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Neutral</span>
-                      <span className="text-yellow-400">{formatNumber(analytics.sentimentAnalysis?.neutral * 100, 1)}%</span>
+                      <span className="text-yellow-400">{analytics.sentimentAnalysis ? `${formatNumber(analytics.sentimentAnalysis.neutral * 100, 1)}%` : 'Not available'}</span>
                     </div>
                   </div>
                 </div>

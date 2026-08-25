@@ -961,6 +961,10 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       const modelUsage: Record<string, number> = {};
       let totalProcessingTime = 0;
       let messageCountWithTime = 0;
+      let assistantMessageCount = 0;
+      let failedAssistantMessages = 0;
+      const topicDistribution: Record<string, number> = {};
+      const topicKeywords = ['nutrient', 'temperature', 'humidity', 'ph', 'light', 'water', 'harvest', 'flower', 'vegetative', 'pest', 'disease'];
 
       conversations.forEach(conv => {
         conv.messages.forEach(msg => {
@@ -969,6 +973,16 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
           }
           if (msg.model) {
             modelUsage[msg.model] = (modelUsage[msg.model] || 0) + 1;
+          }
+          if (msg.role === 'assistant') {
+            assistantMessageCount++;
+            if (msg.provider === 'error') failedAssistantMessages++;
+          }
+          if (msg.role === 'user') {
+            const content = msg.content.toLowerCase();
+            topicKeywords.forEach(topic => {
+              if (content.includes(topic)) topicDistribution[topic] = (topicDistribution[topic] || 0) + 1;
+            });
           }
           if (msg.processingTime) {
             const time = parseInt(msg.processingTime.replace('ms', ''));
@@ -997,7 +1011,9 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         dailyUsage.push({
           date: dateStr,
           messages: dayMessages,
-          conversations: 0 // TODO: Calculate conversations created on this date
+          conversations: conversations.filter(conv =>
+            conv.createdAt.toISOString().split('T')[0] === dateStr
+          ).length
         });
       }
 
@@ -1008,14 +1024,8 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         providerUsage,
         modelUsage,
         dailyUsage,
-        topicDistribution: {}, // TODO: Implement topic analysis
-        sentimentAnalysis: {
-          positive: 0.7,
-          neutral: 0.25,
-          negative: 0.05
-        },
-        errorRate: 0.05, // TODO: Calculate from actual errors
-        userSatisfactionScore: 4.2 // TODO: Calculate from ratings
+        topicDistribution,
+        errorRate: assistantMessageCount > 0 ? failedAssistantMessages / assistantMessageCount : 0
       };
     };
 

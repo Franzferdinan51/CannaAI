@@ -48,10 +48,13 @@ const Chat: React.FC = () => {
 
     try {
       const response = await api.chat(inputMessage);
+      if (!response.response?.trim()) {
+        throw new Error('The AI provider returned an empty response.');
+      }
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response.response || 'I understand your question about cannabis cultivation. Let me help you with that.',
+        content: response.response,
         sender: 'ai',
         timestamp: new Date(),
       };
