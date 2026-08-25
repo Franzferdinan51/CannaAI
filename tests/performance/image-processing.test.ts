@@ -27,11 +27,13 @@ test.describe('Photo analysis performance', () => {
   });
 
   test('supports repeated uploads without losing the preview', async ({ page }) => {
-    await page.goto('/photo-analysis');
-    const input = page.locator('[data-testid="plant-image-input"]');
-
     for (let index = 0; index < 5; index += 1) {
-      await input.setInputFiles({ name: `plant-${index}.png`, mimeType: 'image/png', buffer: tinyPng });
+      await page.goto('/photo-analysis');
+      await page.locator('[data-testid="plant-image-input"]').setInputFiles({
+        name: `plant-${index}.png`,
+        mimeType: 'image/png',
+        buffer: tinyPng,
+      });
       await expect(page.locator('[data-testid="image-preview"]')).toBeVisible();
     }
   });
