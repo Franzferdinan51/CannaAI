@@ -19,10 +19,13 @@ export async function GET(request: NextRequest) {
     const healthy = providerStatus.filter(p => p.health.status === 'healthy');
     const degraded = providerStatus.filter(p => p.health.status === 'degraded');
     const unhealthy = providerStatus.filter(p => p.health.status === 'unhealthy');
+    const overallStatus = healthy.length > 0
+      ? (degraded.length > 0 || unhealthy.length > 0 ? 'degraded' : 'healthy')
+      : (degraded.length > 0 ? 'degraded' : 'unhealthy');
 
     return NextResponse.json({
       success: true,
-      status: 'healthy',
+      status: overallStatus,
       timestamp: new Date().toISOString(),
       summary: {
         total: providerStatus.length,

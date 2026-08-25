@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
     const cacheLookups = cacheStats.hitCount + cacheStats.missCount;
     const cacheSavings = cacheLookups > 0 ? (cacheStats.hitCount / cacheLookups) * 100 : 0;
     const estimatedCacheSavings = costSummary.total * (cacheSavings / 100);
+    const percentage = (value: number) => costSummary.total > 0
+      ? `${((value / costSummary.total) * 100).toFixed(1)}%`
+      : '0.0%';
 
     return NextResponse.json({
       success: true,
@@ -32,7 +35,7 @@ export async function GET(request: NextRequest) {
       byProvider: Object.entries(costSummary.byProvider).map(([provider, cost]) => ({
         provider,
         cost: `$${cost.toFixed(4)}`,
-        percentage: ((cost / costSummary.total) * 100).toFixed(1) + '%'
+        percentage: percentage(cost)
       })),
       byModel: Object.entries(costSummary.byModel).map(([model, cost]) => ({
         model,
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
       byType: Object.entries(costSummary.byType).map(([type, cost]) => ({
         type,
         cost: `$${cost.toFixed(4)}`,
-        percentage: ((cost / costSummary.total) * 100).toFixed(1) + '%'
+        percentage: percentage(cost)
       })),
       period: {
         daily: `$${costSummary.period.daily.toFixed(4)}`,
@@ -50,7 +53,8 @@ export async function GET(request: NextRequest) {
       },
       optimization: {
         recommendations: generateCostRecommendations(costSummary),
-        potentialSavings: `$${(costSummary.total * 0.15).toFixed(4)}` // Estimate 15% savings possible
+        potentialSavings: null,
+        note: 'Savings projections are unavailable until historical optimization data is collected.'
       }
     });
 
