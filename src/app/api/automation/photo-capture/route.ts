@@ -122,18 +122,46 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, status, imageData, result } = body;
 
+    if (typeof id !== 'string' || !id.trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required field: id' },
+        { status: 400 }
+      );
+    }
+
+    const existingTask = await prisma.task.findUnique({ where: { id } });
+    if (!existingTask || existingTask.type !== 'photo_capture') {
+      return NextResponse.json(
+        { success: false, error: 'Photo capture task not found' },
+        { status: 404 }
+      );
+    }
+
+    const hasImageData = typeof imageData === 'string' && imageData.trim().length > 0;
+    const requestedStatus = typeof status === 'string' ? status : undefined;
+    if ((requestedStatus === 'completed' || !requestedStatus) && !hasImageData) {
+      return NextResponse.json(
+        { success: false, error: 'imageData is required to complete a photo capture' },
+        { status: 400 }
+      );
+    }
+
+    const nextStatus = requestedStatus || 'completed';
+
     // Update task with capture result
     const task = await prisma.task.update({
       where: { id },
       data: {
-        status: status || 'completed',
+        status: nextStatus,
         data: {
-          ...body.data,
-          imageData,
-          result,
-          capturedAt: new Date().toISOString()
+          ...asJsonRecord(existingTask.data),
+          ...asJsonRecord(body.data),
+          ...(hasImageData
+            ? { imageData, capturedAt: new Date().toISOString() }
+            : {}),
+          ...(result !== undefined ? { result } : {})
         },
-        completedAt: new Date()
+        completedAt: nextStatus === 'completed' ? new Date() : null
       },
       include: {
         plant: true
@@ -164,7 +192,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-async function executeCapture(taskId: string) {
+export async function executeCapture(taskId: string) {
   try {
     const task = await prisma.task.findUnique({
       where: { id: taskId },
@@ -182,24 +210,23 @@ async function executeCapture(taskId: string) {
       }
     });
 
-    // Simulate photo capture
-    // In a real implementation, this would interface with camera APIs
     console.log(`Executing photo capture for plant ${task.plantId}`);
 
+    // The server cannot access a phone camera by itself. Leave the task
+    // waiting for Hermes/OpenClaw or another connected capture agent instead
+    // of recording a fabricated successful capture.
     const captureResult = {
-      success: true,
-      capturedAt: new Date().toISOString(),
+      success: false,
+      captureRequestedAt: new Date().toISOString(),
       deviceInfo: asJsonRecord(taskData.deviceInfo),
-      imageUrl: null, // Would be populated with actual image URL
-      message: 'Photo capture completed (simulated)'
+      message: 'Waiting for a connected capture agent to provide imageData'
     };
 
     // Update task with result
     await prisma.task.update({
       where: { id: taskId },
       data: {
-        status: 'completed',
-        completedAt: new Date(),
+        status: 'awaiting_capture',
         data: {
           ...taskData,
           ...captureResult
