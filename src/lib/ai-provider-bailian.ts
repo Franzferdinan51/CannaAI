@@ -15,8 +15,21 @@ const BAILIAN_MODEL = process.env.QWEN_MODEL || 'qwen3.5-plus';
 const BAILIAN_API_KEY = process.env.ALIBABA_API_KEY || '';
 const BAILIAN_TIMEOUT_MS = parseInt(process.env.BAILIAN_TIMEOUT_MS || '120000');
 
-// Vision-capable model for plant image analysis (qwen3.5-plus supports vision)
+// Vision-capable model for plant image analysis. Keep this independently
+// configurable because Bailian model names and regional availability change.
 const BAILIAN_VISION_MODEL = process.env.QWEN_VISION_MODEL || 'qwen3.5-plus';
+
+function isVisionModel(model: string): boolean {
+  // The configured vision model is authoritative. This matters for models
+  // such as qwen3.5-plus whose id does not contain "vl" or "vision".
+  return model === BAILIAN_VISION_MODEL || /(?:^|[-_/])(?:vl|vision)(?:[-_/]|$)/i.test(model);
+}
+
+function normalizeImageUrl(image: string): string {
+  if (/^(?:data:image\/[^;]+;base64,|https?:\/\/)/i.test(image)) return image;
+  const base64 = image.replace(/^data:[^,]+,/, '').replace(/\s/g, '');
+  return `data:image/jpeg;base64,${base64}`;
+}
 
 function createTimeoutSignal(timeoutMs: number): AbortSignal {
   const nativeTimeout = (AbortSignal as typeof AbortSignal & {
@@ -106,25 +119,29 @@ export async function executeWithBailian(params: {
 
     // Auto-select vision model when image is provided
     const selectedModel = model || (image ? BAILIAN_VISION_MODEL : BAILIAN_MODEL);
-    const isVisionModel = selectedModel.includes('vl') || selectedModel.includes('vision');
+    const selectedModelSupportsVision = isVisionModel(selectedModel);
 
     // Build messages based on whether we have vision capability
     let messages: any[];
 
-    if (image && isVisionModel) {
+    if (image && selectedModelSupportsVision) {
       // Vision-capable request with image
       messages = [{
         role: 'user',
         content: [
-          { type: 'image', image_url: image },
+          { type: 'image_url', image_url: { url: normalizeImageUrl(image) } },
           { type: 'text', text: prompt }
         ]
       }];
       console.log(`👁️ Bailian: Using vision model "${selectedModel}" for plant image analysis`);
     } else {
-      // Text-only request (either no image or text-only model)
-      if (image && !isVisionModel) {
-        console.warn(`⚠️ Bailian: Image provided but using text-only model "${selectedModel}" - visual analysis unavailable`);
+      if (image && !selectedModelSupportsVision) {
+        return {
+          success: false,
+          error: `Bailian model "${selectedModel}" is not configured as vision-capable; refusing to drop the image`,
+          provider: 'bailian',
+          model: selectedModel
+        };
       }
       messages = [{
         role: 'user',

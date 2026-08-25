@@ -228,4 +228,53 @@ describe('LM Studio local-model regressions', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  test('LM Studio accepts an arbitrarily named model when native metadata reports vision support', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          models: [{
+            key: 'ornith-1.5-35b-a3b',
+            type: 'llm',
+            loaded_instances: [{ id: 'ornith-1.5-35b-a3b' }],
+            capabilities: { vision: true },
+          }],
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'ornith-1.5-35b-a3b', object: 'model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'ornith-1.5-35b-a3b',
+          choices: [{ message: { role: 'assistant', content: 'The plant appears healthy.' } }],
+        }),
+      } as Response);
+
+    const provider = new LMStudioProvider({
+      url: 'http://localhost:1234',
+      apiKey: '',
+      model: 'ornith-1.5-35b-a3b',
+    });
+
+    const result = await provider.execute({
+      messages: [{
+        role: 'user',
+        content: 'Inspect this plant',
+        image: 'ZmFrZS1pbWFnZQ==',
+      }],
+    });
+
+    expect(result.choices[0].message.content).toBe('The plant appears healthy.');
+    const request = fetchMock.mock.calls[2][1] as RequestInit;
+    const body = JSON.parse(String(request.body));
+    expect(body.model).toBe('ornith-1.5-35b-a3b');
+    expect(body.messages[0].content).toEqual([
+      { type: 'text', text: 'Inspect this plant' },
+      { type: 'image_url', image_url: { url: 'data:image/png;base64,ZmFrZS1pbWFnZQ==' } },
+    ]);
+  });
 });
