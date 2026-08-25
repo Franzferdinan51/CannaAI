@@ -75,4 +75,28 @@ describe('/api/chat vision routing', () => {
       }),
     );
   });
+
+  test('does not silently drop an image when streaming is requested', async () => {
+    const result = await POST({
+      url: 'http://localhost/api/chat?stream=1',
+      headers: new Headers({
+        'content-type': 'application/json',
+        accept: 'text/event-stream',
+      }),
+      json: async () => ({
+        message: 'Inspect this leaf',
+        image: 'data:image/jpeg;base64,abc123',
+        mode: 'chat',
+        context: {},
+        sensorData: {},
+      }),
+    } as any);
+
+    expect(result.headers.get('content-type')).not.toContain('text/event-stream');
+    expect(result.status).toBe(200);
+    expect(mockExecuteChatWithFallback).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ image: 'data:image/jpeg;base64,abc123' }),
+    );
+  });
 });

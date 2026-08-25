@@ -88,7 +88,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'message is required' }, { status: 400 });
   }
 
-  if (wantsStream) {
+  // MiniMax's streaming adapter is text-only. An image-bearing request must
+  // stay on the normal provider path so the vision payload is preserved;
+  // silently streaming a text-only answer produces a misleading diagnosis.
+  if (wantsStream && typeof earlyBody.image !== 'string') {
     return streamChatResponse({
       message: earlyBody.message,
       mode: earlyBody.mode || 'chat',
