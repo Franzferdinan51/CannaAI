@@ -188,11 +188,22 @@ export async function checkLMStudio(includeModels = false): Promise<LMStudioProv
         ? data.data
           .map((model: any) => model?.id)
           .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
+          .filter(id => !isEmbeddingModel(id))
         : [];
+
+      if (models.length === 0) {
+        return buildResult({
+          available: false,
+          reason: 'LM Studio is running but no chat model is available',
+          provider: 'lm-studio',
+          config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
+          error: 'No chat-capable models were returned by LM Studio',
+        });
+      }
 
       return buildResult({
         available: true,
-        reason: models.length > 0 ? `LM Studio is running with ${models.length} model(s)` : 'LM Studio is running',
+        reason: `LM Studio is running with ${models.length} model(s)`,
         provider: 'lm-studio',
         config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
         models: includeModels ? models : undefined,

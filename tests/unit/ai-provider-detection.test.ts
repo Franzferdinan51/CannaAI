@@ -74,6 +74,21 @@ describe('AI Provider Detection', () => {
       expect(result.config.url).toBe('http://localhost:1234');
     });
 
+    test('should not report an embedding-only LM Studio catalog as chat-ready', async () => {
+      process.env.LM_STUDIO_URL = 'http://localhost:1234';
+
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [{ id: 'text-embedding-nomic-embed-text-v1.5' }] })
+      });
+
+      const result = await checkLMStudio();
+
+      expect(result.isAvailable).toBe(false);
+      expect(result.reason).toContain('no chat model');
+    });
+
     test('should not detect LM Studio when not running', async () => {
       process.env.LM_STUDIO_URL = 'http://localhost:1234';
 
@@ -209,7 +224,7 @@ describe('AI Provider Detection', () => {
       process.env.OPENROUTER_API_KEY = 'test-key';
 
       (fetch as jest.Mock)
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) }) // LM Studio
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ id: 'local-chat-model' }] }) }) // LM Studio
         .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) }); // OpenRouter
 
       const result = await detectAvailableProviders();
@@ -237,7 +252,7 @@ describe('AI Provider Detection', () => {
 
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: [] })
+        json: async () => ({ data: [{ id: 'local-chat-model' }] })
       });
 
       const result = await detectAvailableProviders();
@@ -275,7 +290,7 @@ describe('AI Provider Detection', () => {
       process.env.NODE_ENV = 'development';
 
       (fetch as jest.Mock)
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ id: 'local-chat-model' }] }) })
         .mockRejectedValue(new Error('Not configured'));
 
       const result = await detectAvailableProviders();
