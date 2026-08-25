@@ -1,6 +1,11 @@
 import { prisma } from './prisma';
 
 export async function ensureSeedData() {
+  // Never manufacture plants, sensor readings, or health scores in a real
+  // installation. Demo data is available only through an explicit opt-in so
+  // empty production databases accurately report an empty state.
+  if (process.env.CANNAAI_DEMO_SEED_DATA !== 'true') return;
+
   const roomCount = await prisma.room.count();
   if (roomCount === 0) {
     await prisma.room.createMany({
