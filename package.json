@@ -38,7 +38,7 @@
     "typecheck:tests": "tsc -p tsconfig.tests-check.json --noEmit --pretty false",
     "lint:frontend": "eslint --max-warnings=0 NewUI/cannaai-pro/index.tsx NewUI/cannaai-pro/components/Icons.tsx NewUI/cannaai-pro/src/App.tsx NewUI/cannaai-pro/src/components/Layout.tsx NewUI/cannaai-pro/src/components/dashboard/Dashboard.tsx NewUI/cannaai-pro/src/components/scanner/Scanner.tsx NewUI/cannaai-pro/src/components/plants/PlantsSimple.tsx NewUI/cannaai-pro/src/components/sensors/index.tsx NewUI/cannaai-pro/src/components/reports/ReportsSimple.tsx NewUI/cannaai-pro/src/components/chat/Chat.tsx NewUI/cannaai-pro/src/components/settings/Settings.tsx NewUI/cannaai-pro/src/components/automation/AutomationSimple.tsx NewUI/cannaai-pro/src/components/advisors/LocalMoaAdvisors.tsx NewUI/cannaai-pro/src/contexts/SocketContext.tsx NewUI/cannaai-pro/src/lib/socket.ts",
     "lint:backend": "eslint --max-warnings=0 'src/**/*.{ts,tsx,js,jsx}' server.ts --no-warn-ignored",
-    "db:push": "prisma db push",
+    "db:push": "cross-env RUST_LOG=info prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",

@@ -30,9 +30,17 @@ type HealthComponent = {
 async function checkPrisma() {
   try {
     await prisma.$queryRaw`SELECT 1`;
+    // A successful connection is not enough: an old or empty SQLite file can
+    // accept SELECT 1 while every write route fails with P2021. Verify the
+    // table required by the primary plant-analysis workflow as well.
+    await prisma.$queryRawUnsafe('SELECT 1 FROM "PlantAnalysis" LIMIT 1');
     return { status: 'ok', latency: null };
   } catch (e) {
-    return { status: 'error', error: String(e) };
+    const message = String(e);
+    if (/P2021|does not exist|no such table/i.test(message)) {
+      return { status: 'error', error: 'Database schema is not initialized. Run npm run db:push.' };
+    }
+    return { status: 'error', error: 'Database is unavailable.' };
   }
 }
 
