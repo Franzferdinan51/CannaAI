@@ -64,4 +64,19 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
       ],
     }]);
   });
+
+  test('returns unavailable when LM Studio advertises no runnable chat model', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ data: [{ id: 'text-embedding-model' }] }));
+
+    const result = await POST({
+      json: async () => ({ prompt: 'Inspect this plant' }),
+    } as any);
+
+    expect(result.status).toBe(503);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      code: 'LM_STUDIO_NO_CHAT_MODEL',
+    }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

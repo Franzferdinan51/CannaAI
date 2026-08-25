@@ -137,9 +137,26 @@ export async function POST(request: NextRequest) {
 
     // Accept both the legacy `modelId` field and the OpenAI-compatible `model`
     // field used by the main chat client. Never auto-select an embedding model.
-    let selectedModel = modelId || model;
+    const requestedModel = typeof (modelId || model) === 'string'
+      ? String(modelId || model).trim()
+      : '';
+    let selectedModel = requestedModel;
+    if (selectedModel && availableModels.length > 0 && !availableModels.some(entry => entry.id === selectedModel)) {
+      return NextResponse.json({
+        error: `LM Studio model "${selectedModel}" is not currently advertised`,
+        code: 'LM_STUDIO_MODEL_NOT_FOUND',
+        availableModels: availableModels.map(entry => entry.id),
+      }, { status: 503 });
+    }
     if (!selectedModel && availableModels.length > 0) {
       selectedModel = availableModels[0].id;
+    }
+    if (!selectedModel) {
+      return NextResponse.json({
+        error: 'LM Studio is reachable, but no runnable chat model is available',
+        code: 'LM_STUDIO_NO_CHAT_MODEL',
+        message: 'Load a chat model in LM Studio and retry.',
+      }, { status: 503 });
     }
 
     // Preserve an already-normalized OpenAI-compatible message list. This is
@@ -179,7 +196,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare LM Studio request payload
     const lmStudioPayload = {
-      model: selectedModel || 'auto',
+      model: selectedModel,
       messages,
       temperature,
       max_tokens: maxTokens,
