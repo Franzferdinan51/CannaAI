@@ -45,4 +45,20 @@ describe('/api/settings durability', () => {
       update: { config: expect.objectContaining({ aiProvider: 'hermes' }) },
     }));
   });
+
+  test('does not duplicate /v1 when discovering LM Studio models', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ id: 'ornith-1.5-35b-a3b' }] }),
+    } as Response);
+
+    const response = await POST(new Request('http://localhost/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'get_models', provider: 'lm-studio' }),
+      headers: { 'content-type': 'application/json' },
+    }) as any);
+
+    expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
+  });
 });

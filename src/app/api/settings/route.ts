@@ -341,7 +341,10 @@ async function getProviderModels(provider: string) {
     }
     if (provider === 'lm-studio') {
       // Get LM Studio models - doesn't need API key
-      const response = await fetch(`${settings.lmStudio.url}/v1/models`, {
+      const baseUrl = String(settings.lmStudio.url || 'http://localhost:1234')
+        .replace(/\/v1\/?$/i, '')
+        .replace(/\/$/, '');
+      const response = await fetch(`${baseUrl}/v1/models`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
