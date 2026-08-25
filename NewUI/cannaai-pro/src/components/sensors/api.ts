@@ -13,8 +13,8 @@ import {
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
-  ? `${window.location.protocol}//${window.location.hostname}:3000`
-  : 'http://localhost:3000');
+  ? `${window.location.protocol}//${window.location.hostname}:3001`
+  : 'http://localhost:3001');
 
 const API_ENDPOINTS = {
   // Sensor CRUD
