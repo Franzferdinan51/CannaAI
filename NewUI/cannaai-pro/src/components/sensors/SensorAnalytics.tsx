@@ -54,12 +54,11 @@ import {
 
 import type {
   SensorAnalytics as SensorAnalyticsData,
-  SensorData,
   SensorConfig,
   SensorType,
   RoomConfig,
-  AnalyticsDataPoint
 } from './types';
+import { sensorAPI } from './api';
 
 interface SensorAnalyticsProps {
   className?: string;
@@ -88,115 +87,6 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
   const [analyticsData, setAnalyticsData] = useState<SensorAnalyticsData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Generate mock analytics data
-  const generateMockData = (sensorId: string, sensorType: SensorType, timePoints: number): AnalyticsDataPoint[] => {
-    const data: AnalyticsDataPoint[] = [];
-    const now = Date.now();
-    const interval = timeframe === '1h' ? 60000 : // 1 min
-                    timeframe === '6h' ? 600000 : // 10 min
-                    timeframe === '24h' ? 3600000 : // 1 hour
-                    timeframe === '7d' ? 14400000 : // 4 hours
-                    timeframe === '30d' ? 86400000 : // 1 day
-                    259200000; // 3 days
-
-    let baseValue = getBaseValue(sensorType);
-    let trend = 0;
-
-    for (let i = 0; i < timePoints; i++) {
-      const timestamp = new Date(now - (timePoints - i) * interval).toISOString();
-
-      // Add realistic variations
-      const randomVariation = (Math.random() - 0.5) * getVariationRange(sensorType);
-      const trendChange = Math.sin(i * 0.1) * 2;
-      const value = Math.max(0, baseValue + randomVariation + trendChange);
-
-      // Determine quality based on variation
-      const quality = Math.random() > 0.9 ? 'poor' : Math.random() > 0.8 ? 'fair' : 'good';
-
-      data.push({
-        timestamp,
-        value: parseFloat(value.toFixed(2)),
-        quality: quality as 'good' | 'fair' | 'poor'
-      });
-
-      // Update trend
-      trend += (Math.random() - 0.5) * 0.5;
-      trend = Math.max(-5, Math.min(5, trend));
-      baseValue += trend * 0.1;
-      baseValue = Math.max(getMinValue(sensorType), Math.min(getMaxValue(sensorType), baseValue));
-    }
-
-    return data;
-  };
-
-  const getBaseValue = (sensorType: SensorType): number => {
-    switch (sensorType) {
-      case 'temperature': return 75;
-      case 'humidity': return 55;
-      case 'ph': return 6.2;
-      case 'ec': return 1.4;
-      case 'co2': return 1200;
-      case 'vpd': return 1.0;
-      case 'soil_moisture': return 45;
-      case 'light_intensity': return 600;
-      case 'dli': return 25;
-      case 'oxygen': return 8;
-      case 'pressure': return 1013;
-      default: return 50;
-    }
-  };
-
-  const getVariationRange = (sensorType: SensorType): number => {
-    switch (sensorType) {
-      case 'temperature': return 10;
-      case 'humidity': return 15;
-      case 'ph': return 1.0;
-      case 'ec': return 0.5;
-      case 'co2': return 300;
-      case 'vpd': return 0.5;
-      case 'soil_moisture': return 20;
-      case 'light_intensity': return 400;
-      case 'dli': return 10;
-      case 'oxygen': return 2;
-      case 'pressure': return 20;
-      default: return 10;
-    }
-  };
-
-  const getMinValue = (sensorType: SensorType): number => {
-    switch (sensorType) {
-      case 'temperature': return 32;
-      case 'humidity': return 0;
-      case 'ph': return 0;
-      case 'ec': return 0;
-      case 'co2': return 0;
-      case 'vpd': return 0;
-      case 'soil_moisture': return 0;
-      case 'light_intensity': return 0;
-      case 'dli': return 0;
-      case 'oxygen': return 0;
-      case 'pressure': return 900;
-      default: return 0;
-    }
-  };
-
-  const getMaxValue = (sensorType: SensorType): number => {
-    switch (sensorType) {
-      case 'temperature': return 120;
-      case 'humidity': return 100;
-      case 'ph': return 14;
-      case 'ec': return 5;
-      case 'co2': return 3000;
-      case 'vpd': return 5;
-      case 'soil_moisture': return 100;
-      case 'light_intensity': return 2000;
-      case 'dli': return 60;
-      case 'oxygen': return 15;
-      case 'pressure': return 1100;
-      default: return 100;
-    }
-  };
-
   const getUnit = (sensorType: SensorType): string => {
     switch (sensorType) {
       case 'temperature': return '°F';
@@ -219,34 +109,11 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const timePoints = timeframe === '1h' ? 60 :
-                          timeframe === '6h' ? 36 :
-                          timeframe === '24h' ? 24 :
-                          timeframe === '7d' ? 42 :
-                          timeframe === '30d' ? 30 :
-                          30;
-
-        const data: SensorAnalyticsData[] = sensors.map(sensor => {
-          const dataPoints = generateMockData(sensor.id, sensor.type, timePoints);
-          const values = dataPoints.map(d => d.value);
-          const statistics = calculateStatistics(values);
-
-          return {
-            sensorId: sensor.id,
-            timeframe,
-            data: dataPoints,
-            statistics,
-            alerts: Math.floor(Math.random() * 5),
-            dataQuality: calculateDataQuality(dataPoints)
-          };
-        });
-
+        const data = await Promise.all(sensors.map((sensor) => sensorAPI.getSensorAnalytics(sensor.id, timeframe)));
         setAnalyticsData(data);
       } catch (error) {
         console.error('Failed to load analytics data:', error);
+        setAnalyticsData([]);
       } finally {
         setIsLoading(false);
       }
@@ -259,43 +126,6 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
       return () => clearInterval(interval);
     }
   }, [sensors, timeframe, autoRefresh, refreshInterval]);
-
-  // Calculate statistics
-  const calculateStatistics = (values: number[]) => {
-    const sorted = [...values].sort((a, b) => a - b);
-    const min = sorted[0] || 0;
-    const max = sorted[sorted.length - 1] || 0;
-    const avg = values.reduce((a, b) => a + b, 0) / values.length || 0;
-    const current = values[values.length - 1] || 0;
-
-    // Calculate trend
-    const recentValues = values.slice(-10);
-    const olderValues = values.slice(-20, -10);
-    const recentAvg = recentValues.reduce((a, b) => a + b, 0) / recentValues.length || 0;
-    const olderAvg = olderValues.reduce((a, b) => a + b, 0) / olderValues.length || 0;
-
-    let trend: 'rising' | 'falling' | 'stable' = 'stable';
-    let trendPercentage = 0;
-
-    if (recentAvg > olderAvg * 1.05) {
-      trend = 'rising';
-      trendPercentage = ((recentAvg - olderAvg) / olderAvg) * 100;
-    } else if (recentAvg < olderAvg * 0.95) {
-      trend = 'falling';
-      trendPercentage = ((olderAvg - recentAvg) / olderAvg) * 100;
-    } else {
-      trendPercentage = Math.abs(((recentAvg - olderAvg) / olderAvg) * 100);
-    }
-
-    return { min, max, avg, current, trend, trendPercentage: parseFloat(trendPercentage.toFixed(1)) };
-  };
-
-  // Calculate data quality
-  const calculateDataQuality = (dataPoints: AnalyticsDataPoint[]): number => {
-    const goodPoints = dataPoints.filter(d => d.quality === 'good').length;
-    const fairPoints = dataPoints.filter(d => d.quality === 'fair').length;
-    return ((goodPoints * 100 + fairPoints * 50) / dataPoints.length);
-  };
 
   // Prepare chart data
   const chartData = useMemo(() => {

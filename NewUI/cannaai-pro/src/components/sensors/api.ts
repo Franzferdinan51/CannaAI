@@ -75,8 +75,10 @@ function normalizeSensors(payload: any): SensorConfig[] {
   const values = Array.isArray(payload) ? payload : payload?.readings;
   if (!Array.isArray(values)) return [];
 
-  return values.map((reading: any) => {
-    const id = String(reading.id || reading.sensorId || `sensor-${Math.random().toString(36).slice(2)}`);
+  return values.map((reading: any, index: number) => {
+    // Keep a stable fallback key for legacy readings that omit an identifier;
+    // random IDs caused sensor rows to remount on every refresh.
+    const id = String(reading.id || reading.sensorId || `sensor-${index + 1}`);
     const type = sensorTypeFromId(String(reading.sensorId || id));
     const numericValue = typeof reading.value === 'number' ? reading.value : Number(reading.value) || 0;
     const timestamp = reading.timestamp || new Date().toISOString();
