@@ -356,6 +356,7 @@ const PlantForm: React.FC<PlantFormProps> = ({
             />
             <Button
               type="button"
+              aria-label="Add tag"
               onClick={addTag}
               variant="outline"
               className="border-gray-700 text-gray-300"
@@ -385,6 +386,7 @@ const PlantForm: React.FC<PlantFormProps> = ({
                 />
                 <button
                   type="button"
+                  aria-label={`Remove plant image ${index + 1}`}
                   onClick={() => removeImage(index)}
                   className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
