@@ -602,7 +602,7 @@ async function executeRule(ruleId: string) {
     return { success: false, available: false, message: 'Automation rule not found.' };
   }
 
-  const actions = Array.isArray(rule.actions) ? rule.actions : [];
+  const actions = Array.isArray(rule.actions) ? rule.actions as any[] : [];
   const results = [];
   for (const action of actions) {
     const config = { ...(rule.config as any || {}), ...(action?.config || {}) };

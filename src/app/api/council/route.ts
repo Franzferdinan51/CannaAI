@@ -66,11 +66,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, ...data } = body;
-    const apiKey = body.apiKey || process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return NextResponse.json({ error: 'API key required' }, { status: 400 });
-    }
+    // Council generation uses CannaAI's shared local-first provider chain.
+    // Cloud credentials are optional fallback configuration, not a prerequisite.
+    const apiKey = body.apiKey || process.env.GEMINI_API_KEY || '';
 
     switch (action) {
       // === Council Sessions ===

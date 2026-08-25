@@ -3,7 +3,7 @@
  * Multi-agent deliberation system with voting, consensus, and specialized personas
  */
 
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { executeAIWithFallback } from '../ai-provider-detection';
 import {
   CouncilSession,
   CouncilMessage,
@@ -27,16 +27,19 @@ const DEFAULT_CONFIG: CouncilConfig = {
   defaultTemperature: 0.7
 };
 
-/**
- * Get AI client for council operations
- */
-const getAiClient = (apiKey: string) => {
-  const key = apiKey || process.env.GEMINI_API_KEY;
-  if (!key) {
-    throw new Error("API Key not found");
-  }
-  return new GoogleGenerativeAI(key);
-};
+async function generateCouncilText(prompt: string): Promise<string> {
+  const response = await executeAIWithFallback(prompt, undefined, {
+    timeout: 90000,
+    maxRetries: 2
+  });
+  if (typeof response.result === 'string' && response.result.trim()) return response.result;
+  throw new Error('Council provider returned an empty response');
+}
+
+function parseJsonResponse(text: string): any {
+  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+  return JSON.parse(cleaned);
+}
 
 /**
  * Generate response from a specific persona
@@ -47,15 +50,6 @@ export async function generatePersonaResponse(
   context: CouncilMessage[],
   apiKey: string
 ): Promise<string> {
-  const ai = getAiClient(apiKey);
-  const model = ai.getGenerativeModel({
-    model: persona.modelId,
-    generationConfig: {
-      temperature: persona.temperature,
-      maxOutputTokens: 1000,
-    }
-  });
-
   // Build context from previous messages
   const contextStr = context.length > 0
     ? `\n\nPrevious Discussion:\n${context.map(m => `${m.personaName}: ${m.content}`).join('\n\n')}`
@@ -64,8 +58,7 @@ export async function generatePersonaResponse(
   const prompt = `${persona.systemPrompt}\n\nTOPIC: ${topic}${contextStr}\n\nProvide your expert perspective as ${persona.name}. Keep your response focused and actionable (200-300 words).`;
 
   try {
-    const response = await model.generateContent(prompt);
-    return response.response.text() || "I couldn't generate a response.";
+    return await generateCouncilText(prompt);
   } catch (error) {
     console.error(`Error generating response for ${persona.name}:`, error);
     throw error;
@@ -150,34 +143,6 @@ async function calculateVoting(
   participants: CouncilPersona[],
   apiKey: string
 ): Promise<VotingResult> {
-  const ai = getAiClient(apiKey);
-  const model = ai.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    generationConfig: {
-      temperature: 0.3,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          votes: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                personaId: { type: SchemaType.STRING },
-                vote: { type: SchemaType.STRING },
-                reasoning: { type: SchemaType.STRING },
-                confidence: { type: SchemaType.NUMBER }
-              },
-              required: ["personaId", "vote", "reasoning", "confidence"]
-            }
-          }
-        },
-        required: ["votes"]
-      }
-    }
-  });
-
   const prompt = `Based on the following expert discussion about: "${topic}"
 
 ${messages.map(m => `${m.personaName}: ${m.content}`).join('\n\n')}
@@ -186,8 +151,7 @@ Have each expert vote on whether they AGREE with the proposed course of action, 
 Provide their reasoning and confidence (0-1).`;
 
   try {
-    const response = await model.generateContent(prompt);
-    const result = JSON.parse(response.response.text());
+    const result = parseJsonResponse(await generateCouncilText(`${prompt}\nReturn JSON only in the form {"votes":[{"personaId":"...","vote":"agree|disagree|abstain","reasoning":"...","confidence":0.0}]}.`));
 
     const votes: CouncilVote[] = result.votes.map((v: any) => ({
       personaId: v.personaId,
@@ -258,35 +222,6 @@ async function generateArguments(
   participants: CouncilPersona[],
   apiKey: string
 ): Promise<ArgumentClaim[]> {
-  const ai = getAiClient(apiKey);
-  const model = ai.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    generationConfig: {
-      temperature: 0.5,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          arguments: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                claim: { type: SchemaType.STRING },
-                evidence: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-                conclusion: { type: SchemaType.STRING },
-                confidence: { type: SchemaType.NUMBER },
-                proposedBy: { type: SchemaType.STRING }
-              },
-              required: ["claim", "evidence", "conclusion", "confidence", "proposedBy"]
-            }
-          }
-        },
-        required: ["arguments"]
-      }
-    }
-  });
-
   const prompt = `Extract structured arguments from this discussion about: "${topic}"
 
 ${messages.map(m => `${m.personaName}: ${m.content}`).join('\n\n')}
@@ -294,8 +229,7 @@ ${messages.map(m => `${m.personaName}: ${m.content}`).join('\n\n')}
 Identify 3-5 key arguments with claims, supporting evidence, and conclusions.`;
 
   try {
-    const response = await model.generateContent(prompt);
-    const result = JSON.parse(response.response.text());
+    const result = parseJsonResponse(await generateCouncilText(`${prompt}\nReturn JSON only in the form {"arguments":[{"claim":"...","evidence":["..."],"conclusion":"...","confidence":0.0,"proposedBy":"..."}]}.`));
 
     return result.arguments.map((arg: any, index: number) => ({
       id: crypto.randomUUID(),
