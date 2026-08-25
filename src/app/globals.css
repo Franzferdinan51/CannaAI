@@ -1,4 +1,11 @@
-@import "tailwindcss";
+/* Limit Tailwind's v4 source scanner to the active Next application. The
+   repository also contains legacy Android/research trees that must not be
+   traversed during every production build. */
+@import "tailwindcss" source(none);
+@source "../app";
+@source "../components";
+@source "../hooks";
+@source "../lib";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
