@@ -152,7 +152,7 @@ const SensorMap: React.FC<SensorMapProps> = ({
       // Room details
       ctx.font = '12px sans-serif';
       ctx.fillStyle = '#9ca3af';
-      ctx.fillText(`${room.sensors.length} sensors`, roomX + roomWidth / 2, roomY + 40);
+      ctx.fillText(`${room.sensors?.length ?? 0} sensors`, roomX + roomWidth / 2, roomY + 40);
 
       if (room.plantCount) {
         ctx.fillText(`${room.plantCount} plants`, roomX + roomWidth / 2, roomY + 55);
@@ -199,7 +199,7 @@ const SensorMap: React.FC<SensorMapProps> = ({
       const isSelected = selectedSensor === sensor.id;
       const isHovered = hoveredSensor === sensor.id;
       const isOnline = sensor.enabled;
-      const hasAlert = sensor.alerts.some(a => a.enabled);
+      const hasAlert = (sensor.alerts || []).some(a => a.enabled);
 
       // Sensor circle
       ctx.beginPath();
@@ -356,7 +356,7 @@ const SensorMap: React.FC<SensorMapProps> = ({
     // Status filter
     if (filterStatus === 'online' && !sensor.enabled) return false;
     if (filterStatus === 'offline' && sensor.enabled) return false;
-    if (filterStatus === 'alert' && !sensor.alerts.some(a => a.enabled)) return false;
+    if (filterStatus === 'alert' && !(sensor.alerts || []).some(a => a.enabled)) return false;
 
     // Type filter
     if (filterType !== 'all' && sensor.type !== filterType) return false;
@@ -590,7 +590,7 @@ const SensorMap: React.FC<SensorMapProps> = ({
                             <span className="text-xs text-gray-400">{sensor.batteryLevel}%</span>
                           </div>
                         )}
-                        {sensor.alerts.some(a => a.enabled) && (
+                        {(sensor.alerts || []).some(a => a.enabled) && (
                           <AlertTriangle className="w-4 h-4 text-yellow-400" />
                         )}
                         <Settings className="w-4 h-4 text-gray-400 hover:text-white" />
@@ -644,7 +644,7 @@ const SensorMap: React.FC<SensorMapProps> = ({
                     </div>
                   )}
                 </div>
-                {sensor.alerts.some(a => a.enabled) && (
+                {(sensor.alerts || []).some(a => a.enabled) && (
                   <div className="mt-3 flex items-center gap-1 text-yellow-400 text-xs">
                     <AlertTriangle className="w-3 h-3" />
                     <span>Alerts Active</span>
