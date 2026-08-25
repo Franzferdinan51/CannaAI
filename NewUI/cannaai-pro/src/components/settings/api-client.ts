@@ -119,7 +119,7 @@ class SettingsAPIClient {
       const response: AxiosResponse<TestConnectionResponse> = await this.api.post('/api/settings', {
         action: 'test_connection',
         provider,
-      });
+      }, { timeout: 8000 });
 
       return response.data;
     } catch (error) {
@@ -136,7 +136,7 @@ class SettingsAPIClient {
       const response: AxiosResponse<GetModelsResponse> = await this.api.post('/api/settings', {
         action: 'get_models',
         provider,
-      });
+      }, { timeout: 10000 });
 
       return response.data;
     } catch (error) {
@@ -189,7 +189,7 @@ class SettingsAPIClient {
   async getLMStudioModels(url?: string): Promise<LMStudioResponse> {
     try {
       const searchUrl = url ? `?url=${encodeURIComponent(url)}` : '';
-      const response: AxiosResponse<LMStudioResponse> = await this.api.get(`/api/lmstudio/models${searchUrl}`);
+      const response: AxiosResponse<LMStudioResponse> = await this.api.get(`/api/lmstudio/models${searchUrl}`, { timeout: 10000 });
 
       return response.data;
     } catch (error) {
