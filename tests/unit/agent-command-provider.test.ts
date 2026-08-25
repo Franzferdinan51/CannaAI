@@ -1,4 +1,4 @@
-import { AgentCommandProvider } from '@/lib/ai-providers/agent-command-provider';
+import { AgentCommandProvider, normalizeAgentImage } from '@/lib/ai-providers/agent-command-provider';
 
 describe('AgentCommandProvider Hermes proxy resilience', () => {
   const originalProvider = process.env.HERMES_PROXY_PROVIDER;
@@ -13,6 +13,12 @@ describe('AgentCommandProvider Hermes proxy resilience', () => {
     else process.env.HERMES_API_URL = originalApiUrl;
     if (originalApiKey === undefined) delete process.env.HERMES_API_KEY;
     else process.env.HERMES_API_KEY = originalApiKey;
+  });
+
+  test('preserves image data URLs and remote URLs while normalizing raw base64', () => {
+    expect(normalizeAgentImage('data:image/heic;base64,abc')).toBe('data:image/heic;base64,abc');
+    expect(normalizeAgentImage('https://phone.example/plant.jpg')).toBe('https://phone.example/plant.jpg');
+    expect(normalizeAgentImage('abc')).toBe('data:image/png;base64,abc');
   });
 
   test('falls back from an unavailable Nous model to authenticated xAI', async () => {

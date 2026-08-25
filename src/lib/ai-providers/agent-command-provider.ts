@@ -35,6 +35,14 @@ function contentFromParts(parts: string[]): string {
   return parts.join('').trim();
 }
 
+export function normalizeAgentImage(image: unknown): string | undefined {
+  if (typeof image !== 'string') return undefined;
+  const value = image.trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `data:image/png;base64,${value}`;
+}
+
 /**
  * Connects to the agents through their supported integration surfaces.
  * OpenClaw owns the Gateway WebSocket and exposes ACP over stdio; Hermes owns
@@ -159,7 +167,7 @@ export class AgentCommandProvider extends BaseProvider {
 
     const messages = request.messages.map((message) => {
       if (!message.image) return { role: message.role, content: message.content };
-      const image = message.image.startsWith('data:image/') ? message.image : `data:image/jpeg;base64,${message.image}`;
+      const image = normalizeAgentImage(message.image);
       return { role: message.role, content: [{ type: 'text', text: message.content }, { type: 'image_url', image_url: { url: image } }] };
     });
     const errors: string[] = [];
@@ -236,9 +244,7 @@ export class AgentCommandProvider extends BaseProvider {
   private async executeHermesApiServer(request: AIRequest): Promise<{ content: string; model?: string; usage?: any }> {
     const messages = request.messages.map((message) => {
       if (!message.image) return { role: message.role, content: message.content };
-      const image = message.image.startsWith('data:image/')
-        ? message.image
-        : `data:image/jpeg;base64,${message.image}`;
+      const image = normalizeAgentImage(message.image);
       return {
         role: message.role,
         content: [
@@ -374,11 +380,20 @@ export class AgentCommandProvider extends BaseProvider {
       for (const message of request.messages) {
         prompt.push({ type: 'text', text: `${message.role.toUpperCase()}: ${message.content}` });
         if (message.image) {
-          const raw = message.image.replace(/^data:image\/[^;]+;base64,/, '');
-          const filePath = path.join(os.tmpdir(), `cannaai-acp-${process.pid}-${Date.now()}.jpg`);
-          await writeFile(filePath, Buffer.from(raw, 'base64'), { mode: 0o600 });
+          const image = normalizeAgentImage(message.image);
+          if (!image) continue;
+          if (image.startsWith('http://') || image.startsWith('https://')) {
+            prompt.push({ type: 'resource_link', uri: image, name: 'plant-image', mimeType: 'image/*' });
+            continue;
+          }
+          const match = image.match(/^data:([^;,]+);base64,([\s\S]*)$/);
+          if (!match) throw new Error('OpenClaw ACP only supports base64 data URLs or remote image URLs');
+          const mimeType = match[1];
+          const extension = mimeType.split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'bin';
+          const filePath = path.join(os.tmpdir(), `cannaai-acp-${process.pid}-${Date.now()}.${extension}`);
+          await writeFile(filePath, Buffer.from(match[2], 'base64'), { mode: 0o600 });
           tempFiles.push(filePath);
-          prompt.push({ type: 'resource_link', uri: pathToFileURL(filePath).href, name: 'plant-image.jpg', mimeType: 'image/jpeg' });
+          prompt.push({ type: 'resource_link', uri: pathToFileURL(filePath).href, name: `plant-image.${extension}`, mimeType });
         }
       }
       child = spawn(this.command, ['acp', ...await this.openClawAcpArgs()], { stdio: ['pipe', 'pipe', 'ignore'], env: { ...process.env, OPENCLAW_HIDE_BANNER: '1', OPENCLAW_SUPPRESS_NOTES: '1' } });
