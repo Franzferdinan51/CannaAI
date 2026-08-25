@@ -258,15 +258,15 @@ You are a world-renowned cannabis cultivation expert specializing in trichome an
 🎯 **CRITICAL ANALYSIS REQUIREMENTS**:
 
 1. **TRICHOME COUNTING & DISTRIBUTION**:
-   - Count trichomes in the image (estimate if needed)
-   - Calculate exact percentages: Clear %, Cloudy %, Amber %
+   - Count visible trichomes only when the image resolution supports it; otherwise return null
+   - Calculate percentages only when the visible sample supports a defensible estimate; otherwise return null
    - Identify dominant maturity stage
    - Note trichome density (light/medium/heavy)
-   - Estimate trichome size (micrometers if magnification is sufficient)
+   - Estimate trichome size only when magnification is calibrated; otherwise return null
 
 2. **HARVEST READINESS ASSESSMENT**:
-   - Evaluate overall trichome maturity percentage
-   - Calculate optimal harvest window (days until peak)
+   - Evaluate overall maturity percentage only when the image provides sufficient evidence
+   - Calculate a harvest window only when maturity evidence supports it; otherwise return "Unknown"
    - Assess trichome degradation (cloudy→amber conversion rate)
    - Determine if harvest is: Too Early / Ready Now / Past Peak
    - Consider strain type (indica/sativa/hybrid) for harvest timing
@@ -352,8 +352,8 @@ You are a world-renowned cannabis cultivation expert specializing in trichome an
 }
 
 **CRITICAL**:
-- Be extremely precise with trichome maturity percentages
-- Provide specific days until harvest, not vague estimates
+   - Do not invent measurements, percentages, dates, or accuracy values when the image cannot support them
+   - Use null or "Unknown" for measurements that cannot be observed or calibrated
 - Consider magnification quality in your confidence scores
 - Focus on trichome head color and clarity
 - Account for strain type in harvest recommendations
@@ -731,9 +731,9 @@ export async function GET(request: NextRequest) {
         performance: {
           processingTime: '3-5 seconds',
           accuracy: {
-            trichomeDetection: '85-95%',
-            maturityAssessment: '80-90%',
-            harvestPrediction: '75-85%'
+            trichomeDetection: 'Not benchmarked in this installation',
+            maturityAssessment: 'Not benchmarked in this installation',
+            harvestPrediction: 'Not benchmarked in this installation'
           },
           requirements: {
             minResolution: '2MP',

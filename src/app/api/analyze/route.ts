@@ -425,8 +425,16 @@ export async function POST(request: NextRequest) {
 
         imageBase64ForAI = processedImage.base64;
       } catch (imageError) {
-        console.warn('Image processing failed, continuing with text analysis:', imageError);
-        // Continue without image - don't fail the entire analysis
+        // Never silently downgrade an explicitly requested vision analysis to
+        // text-only output. That produced confident-looking reports that had
+        // not seen the submitted photo.
+        console.warn('Image processing failed:', imageError);
+        const response = NextResponse.json({
+          success: false,
+          error: 'Image processing failed; the photo was not analyzed.',
+          details: imageError instanceof Error ? imageError.message : 'Invalid image data',
+        }, { status: 422 });
+        return addSecurityHeaders(response);
       }
     }
 

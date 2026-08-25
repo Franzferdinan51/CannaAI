@@ -48,6 +48,7 @@ export async function analyzePlantHealth(
   imageData: string,
   context: {
     model?: string;
+    baseUrl?: string;
     primaryProvider?: string;
     strain?: string;
     growthStage?: string;
@@ -74,6 +75,7 @@ export async function analyzePlantHealth(
   const result = await executeAIWithFallback([{ role: 'user', content: prompt }], {
     image: imageData,
     model: context.model,
+    baseUrl: context.baseUrl,
     primaryProvider: context.primaryProvider,
     requireVision: true,
     timeout: 120000,

@@ -10,6 +10,8 @@ export const revalidate = false;
 
 interface LiveVisionRequest {
   imageData: string; // Base64 image data
+  model?: string;
+  baseUrl?: string;
   deviceInfo: {
     deviceId: string;
     label: string;
@@ -53,18 +55,14 @@ export async function POST(request: NextRequest) {
   return withSecurity(request, async (req, context) => {
     try {
       const body = await request.json();
-      const { imageData, deviceInfo, plantContext = {}, analysisOptions = {} } = body as LiveVisionRequest;
+      const { imageData, model, baseUrl, deviceInfo, plantContext = {}, analysisOptions = {} } = body as LiveVisionRequest;
 
       if (!imageData) {
-        return NextResponse.json(
-          createAPIError('Image data is required', 400)
-        );
+        return createAPIError('Image data is required', 400);
       }
 
       if (!deviceInfo || !deviceInfo.deviceId) {
-        return NextResponse.json(
-          createAPIError('Device information is required', 400)
-        );
+        return createAPIError('Device information is required', 400);
       }
 
       // Validate base64 image data
@@ -83,14 +81,14 @@ export async function POST(request: NextRequest) {
         });
       } catch (imageError) {
         console.error('Image processing error:', imageError);
-        return NextResponse.json(
-          createAPIError(`Image processing failed: ${imageError.message}`, 400)
-        );
+        return createAPIError(`Image processing failed: ${imageError.message}`, 400);
       }
 
       // Prepare analysis context with live vision specifics
       const analysisContext = {
         ...plantContext,
+        ...(model ? { model } : {}),
+        ...(baseUrl ? { baseUrl } : {}),
         liveVision: {
           deviceId: deviceInfo.deviceId,
           deviceMode: deviceInfo.mode,

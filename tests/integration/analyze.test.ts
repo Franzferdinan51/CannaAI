@@ -360,6 +360,25 @@ describe('/api/analyze integration', () => {
     );
   });
 
+  test('does not silently downgrade a failed image request to text-only analysis', async () => {
+    mockDetectAvailableProviders.mockResolvedValue(createProviderDetection('openrouter'));
+    mockProcessImageForVisionModel.mockRejectedValue(new Error('unsupported image format'));
+
+    const response = await POST(
+      createAnalyzeRequest({
+        strain: 'Gelato',
+        leafSymptoms: 'Inspect the newest leaves for stress.',
+        plantImage: 'data:image/png;base64,ZmFrZQ==',
+      }, 8),
+    );
+    const data = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(data.success).toBe(false);
+    expect(data.error).toContain('photo was not analyzed');
+    expect(mockExecuteAIWithFallback).not.toHaveBeenCalled();
+  });
+
   test('routes a configured plant photo to Hermes native vision', async () => {
     process.env.CANNAAI_IMAGE_PROVIDER = 'hermes';
 
