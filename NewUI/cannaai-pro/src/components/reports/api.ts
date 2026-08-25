@@ -360,13 +360,31 @@ export const exportApi = {
     dateRange?: { start: Date; end: Date };
   }): Promise<string | null> {
     try {
-      const response = await api.post('/export/data', params, {
-        responseType: 'blob'
+      const format = params.format === 'excel' ? 'xlsx' : params.format;
+      const response = await api.post('/export/create', {
+        format,
+        filters: {
+          ...(params.filters || {}),
+          ...(params.dateRange ? {
+            dateRange: {
+              start: params.dateRange.start.toISOString(),
+              end: params.dateRange.end.toISOString(),
+            },
+          } : {}),
+        },
+        includeMetadata: true,
       });
-
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
-      return url;
+      const jobId = response.data?.jobId;
+      if (!jobId) return null;
+      for (let attempt = 0; attempt < 40; attempt += 1) {
+        const download = await api.get(`/export/${jobId}`, {
+          responseType: 'blob',
+          validateStatus: (status) => status === 200 || status === 202,
+        });
+        if (download.status === 200) return window.URL.createObjectURL(new Blob([download.data]));
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      throw new Error('Export job did not complete within 10 seconds.');
     } catch (error) {
       console.error('Failed to export data:', error);
       return null;

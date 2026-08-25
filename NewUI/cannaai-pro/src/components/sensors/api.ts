@@ -643,7 +643,7 @@ export const sensorUtils = {
 };
 
 // Export default API object
-export default {
+const sensorApiClient = {
   sensors: sensorAPI,
   rooms: roomAPI,
   data: dataAPI,
@@ -652,3 +652,5 @@ export default {
   system: systemAPI,
   utils: sensorUtils,
 };
+
+export default sensorApiClient;

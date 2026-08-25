@@ -330,7 +330,8 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
       });
 
       if (downloadUrl) {
-        exportUtils.downloadFile(downloadUrl, `report_${report.name}.${format}`);
+        const extension = format === 'excel' ? 'xlsx' : format;
+        exportUtils.downloadFile(downloadUrl, `report_${report.name}.${extension}`);
       }
     } catch (error) {
       console.error('Failed to export report:', error);
