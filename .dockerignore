@@ -25,7 +25,8 @@ playwright.config.*
 *.bat
 *.db
 *.db-*
-prisma/migrations
+# Migrations are part of the deployable artifact; production startup tooling
+# may apply them before serving requests.
 uploads
 logs
 backups

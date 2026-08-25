@@ -38,7 +38,8 @@ class ApiClient {
     this.client.interceptors.request.use(
       (config) => {
         // Add auth token if available
-        const token = localStorage.getItem('cannai_token');
+        const token = (typeof localStorage !== 'undefined' ? localStorage.getItem('cannai_token') : null)
+          || import.meta.env.VITE_CANNAAI_API_TOKEN;
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }

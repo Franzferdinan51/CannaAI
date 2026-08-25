@@ -109,6 +109,9 @@ const apiClient = axios.create({
 // Request interceptor for logging
 apiClient.interceptors.request.use(
   (config) => {
+    const token = (typeof localStorage !== 'undefined' ? localStorage.getItem('cannai_token') : null)
+      || import.meta.env.VITE_CANNAAI_API_TOKEN;
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },

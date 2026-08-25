@@ -14,12 +14,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // The Vite web UI runs on a sibling port during development and on
-        // the same host in the Tailscale deployment. Keep the JSON API
-        // callable from both without requiring per-device CORS edits.
+        // Origin is set by src/middleware.ts from the environment-driven
+        // allowlist. Do not emit wildcard CORS headers here: that would
+        // override the credential boundary for production API requests.
         source: '/api/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,PATCH,DELETE,OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, X-Requested-With' },
         ],

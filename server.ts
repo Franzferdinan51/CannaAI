@@ -269,6 +269,14 @@ async function createCustomServer() {
     server.on('upgrade', (request, socket, head) => {
       const { url } = request;
       if (url && url.startsWith('/api/chat/ws')) {
+        if (!dev) {
+          const token = new URL(url, `http://${request.headers.host || 'localhost'}`).searchParams.get('token');
+          const expected = process.env.CANNAAI_API_TOKEN || process.env.SOCKET_IO_TOKEN;
+          if (!expected || token !== expected) {
+            socket.destroy();
+            return;
+          }
+        }
         wss.handleUpgrade(request, socket, head, (ws) => {
           wss.emit('connection', ws, request);
         });

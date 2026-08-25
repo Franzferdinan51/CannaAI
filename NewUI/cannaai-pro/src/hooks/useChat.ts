@@ -19,6 +19,12 @@ import {
   ChatMessageContext
 } from '../components/chat/types';
 
+function apiAuthHeaders(): Record<string, string> {
+  const token = (typeof localStorage !== 'undefined' ? localStorage.getItem('cannai_token') : null)
+    || import.meta.env.VITE_CANNAAI_API_TOKEN;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 // Default settings
 const defaultSettings: ChatSettings = {
   providers: {
@@ -342,7 +348,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Check AI connection
   const checkConnection = useCallback(async () => {
     try {
-      const response = await fetch('/api/chat');
+      const response = await fetch('/api/chat', { headers: apiAuthHeaders() });
       const data = await response.json();
 
       if (data.success && data.currentProvider !== 'fallback') {
@@ -419,6 +425,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuthHeaders(),
         },
         body: JSON.stringify({
           message: content,
@@ -808,7 +815,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...apiAuthHeaders() },
         body: JSON.stringify({
           message: 'Test message',
           testProvider: provider
@@ -844,7 +851,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Get provider status
   const getProviderStatus = useCallback(async () => {
     try {
-      const response = await fetch('/api/chat');
+      const response = await fetch('/api/chat', { headers: apiAuthHeaders() });
       return await response.json();
     } catch {
       return { success: false, error: 'Connection failed' };

@@ -66,9 +66,9 @@ const LoadingSpinner: React.FC<{ message?: string }> = ({
 const Layout = lazy(() => import('./components/Layout'));
 const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
 const Scanner = lazy(() => import('./components/scanner/Scanner'));
-const Plants = lazy(() => import('./components/plants/PlantsSimple').then(module => ({ default: module.default })));
+const Plants = lazy(() => import('./components/plants/Plants'));
 const Sensors = lazy(() => import('./components/sensors').then(module => ({ default: module.default })));
-const Reports = lazy(() => import('./components/reports/ReportsSimple').then(module => ({ default: module.default })));
+const Reports = lazy(() => import('./components/reports/Reports'));
 const Chat = lazy(() => import('./components/chat/Chat'));
 const Settings = lazy(() => import('./components/settings/Settings'));
 const Automation = lazy(() => import('./components/automation/AutomationSimple').then(module => ({ default: module.default })));

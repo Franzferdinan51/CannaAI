@@ -7,6 +7,8 @@ export function resolveWebSocketUrl(endpoint: string, baseUrl?: string): string 
   const resolved = new URL(endpoint, base);
   if (resolved.protocol === 'http:') resolved.protocol = 'ws:';
   if (resolved.protocol === 'https:') resolved.protocol = 'wss:';
+  const token = import.meta.env.VITE_CANNAAI_API_TOKEN;
+  if (token && !resolved.searchParams.has('token')) resolved.searchParams.set('token', token);
   return resolved.toString();
 }
 

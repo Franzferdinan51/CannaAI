@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
   if (isApi) {
     const publicApiPaths = new Set(['/api/health', '/api/health-check', '/api/version']);
     const requireApiToken = process.env.CANNAAI_REQUIRE_AUTH === 'true'
-      || (process.env.NODE_ENV === 'production' && Boolean(process.env.CANNAAI_API_TOKEN));
+      || process.env.NODE_ENV === 'production';
 
     if (requireApiToken && !publicApiPaths.has(request.nextUrl.pathname)) {
       const configuredToken = process.env.CANNAAI_API_TOKEN;
