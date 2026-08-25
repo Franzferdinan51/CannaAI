@@ -258,7 +258,7 @@ class SettingsAPIClient {
         promises.push(this.updateUnitSettings(updates.units));
       }
 
-      for (const section of ['system', 'display', 'data'] as const) {
+      for (const section of ['system', 'display', 'data', 'integrations'] as const) {
         if (updates[section]) {
           promises.push(this.updateSettingsSection(section, updates[section]));
         }
@@ -291,7 +291,7 @@ class SettingsAPIClient {
     }
   }
 
-  private async updateSettingsSection(section: 'system' | 'display' | 'data', config: any): Promise<void> {
+  private async updateSettingsSection(section: 'system' | 'display' | 'data' | 'integrations', config: any): Promise<void> {
     const response: AxiosResponse<SettingsAPIResponse> = await this.api.post('/api/settings', {
       action: 'update_section',
       config: { section, values: config },

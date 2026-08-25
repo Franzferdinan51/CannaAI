@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
         });
 
       case 'update_section': {
-        const allowedSections = ['system', 'display', 'data'] as const;
+        const allowedSections = ['system', 'display', 'data', 'integrations'] as const;
         if (!allowedSections.includes(config?.section as typeof allowedSections[number]) || !config?.values) {
           return NextResponse.json(
             { error: 'Missing or invalid settings section' },
