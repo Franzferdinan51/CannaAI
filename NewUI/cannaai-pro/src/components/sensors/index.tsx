@@ -72,14 +72,19 @@ const Sensors: React.FC<SensorsProps> = ({
 
       setSensors(sensorsData);
       setRooms(roomsData);
+      // Render the primary sensor workspace immediately; health is advisory.
+      setIsLoading(false);
 
-      // Load system health
-      try {
-        const healthData = await sensorAPI.system.getSystemHealth();
-        setSystemHealth(healthData);
-      } catch (err) {
+      // Health is optional telemetry. Do not block the sensor UI on a slow or
+      // unavailable health provider after the primary sensor data is ready.
+      const healthData = await Promise.race([
+        sensorAPI.system.getSystemHealth(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+      ]).catch((err) => {
         console.warn('Failed to load system health:', err);
-      }
+        return null;
+      });
+      if (healthData) setSystemHealth(healthData);
 
     } catch (err) {
       console.error('Failed to load initial data:', err);
