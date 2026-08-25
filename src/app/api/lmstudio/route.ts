@@ -36,6 +36,38 @@ function normalizeImageUrl(image: unknown): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+async function discoverVisionModelIds(): Promise<Set<string> | null> {
+  try {
+    const response = await fetch(`${LM_STUDIO_URL}/api/v1/models`, {
+      signal: AbortSignal.timeout(3000),
+      headers: lmStudioHeaders(),
+    });
+    if (!response.ok) return null;
+
+    const payload = await response.json().catch(() => ({}));
+    if (!Array.isArray(payload?.models)) return null;
+
+    const modelsWithMetadata = payload.models.filter((model: any) => (
+      typeof model?.capabilities?.vision === 'boolean'
+    ));
+    if (modelsWithMetadata.length === 0) return null;
+
+    const visionIds = new Set<string>();
+    for (const model of modelsWithMetadata) {
+      if (model.capabilities.vision !== true) continue;
+      for (const id of [model.key, model.id]) {
+        if (typeof id === 'string' && id.trim()) visionIds.add(id.trim());
+      }
+      for (const instance of model.loaded_instances || []) {
+        if (typeof instance?.id === 'string' && instance.id.trim()) visionIds.add(instance.id.trim());
+      }
+    }
+    return visionIds;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -185,6 +217,19 @@ export async function POST(request: NextRequest) {
         message: 'Load a chat model in LM Studio and retry.',
         modelCount: advertisedModels.length,
       }, { status: 503 });
+    }
+
+    if (normalizedImage) {
+      const visionModelIds = await discoverVisionModelIds();
+      if (visionModelIds && !visionModelIds.has(selectedModel)) {
+        return NextResponse.json({
+          success: false,
+          error: `LM Studio model "${selectedModel}" is not advertised as vision-capable`,
+          code: 'LM_STUDIO_MODEL_NOT_VISION_CAPABLE',
+          model: selectedModel,
+          visionModels: Array.from(visionModelIds),
+        }, { status: 503 });
+      }
     }
 
     // Call LM Studio API with extended timeout

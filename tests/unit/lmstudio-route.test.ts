@@ -57,6 +57,47 @@ describe('/api/lmstudio legacy local endpoint', () => {
     expect(requestBody.model).toBe('cultivation-chat-model');
   });
 
+  test('preserves an image for a native vision-capable Ornith model', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
+      .mockResolvedValueOnce(response({ models: [{ key: 'ornith-1.5-35b-a3b', capabilities: { vision: true } }] }))
+      .mockResolvedValueOnce(response({
+        model: 'ornith-1.5-35b-a3b',
+        choices: [{ message: { content: 'vision answer' } }],
+      }));
+
+    const result = await POST({
+      json: async () => ({
+        prompt: 'Inspect this plant',
+        image: 'ZmFrZS1pbWFnZQ==',
+        modelId: 'ornith-1.5-35b-a3b',
+      }),
+    } as any);
+
+    expect(result.status).toBe(200);
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(requestBody.messages[0].content).toEqual([
+      { type: 'text', text: 'Inspect this plant' },
+      { type: 'image_url', image_url: { url: 'data:image/png;base64,ZmFrZS1pbWFnZQ==' } },
+    ]);
+  });
+
+  test('rejects a native text-only model for image analysis', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ data: [{ id: 'text-only-model' }] }))
+      .mockResolvedValueOnce(response({ models: [{ key: 'text-only-model', capabilities: { vision: false } }] }));
+
+    const result = await POST({
+      json: async () => ({ prompt: 'Inspect this plant', image: 'ZmFrZQ==', modelId: 'text-only-model' }),
+    } as any);
+
+    expect(result.status).toBe(503);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      code: 'LM_STUDIO_MODEL_NOT_VISION_CAPABLE',
+    }));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   test('reports degraded when LM Studio has no runnable chat model', async () => {
     jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({ data: [{ id: 'text-embedding-model' }] }));
