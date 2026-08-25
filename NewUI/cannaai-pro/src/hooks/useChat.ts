@@ -19,6 +19,22 @@ import {
   ChatMessageContext
 } from '../components/chat/types';
 
+function normalizeChatMessage(message: any, index: number): IChatMessage {
+  const rawContent = message?.content ?? message?.text ?? message?.message ?? '';
+  const content = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
+  return {
+    ...message,
+    id: String(message?.id || `legacy-message-${index}`),
+    role: message?.role === 'assistant' || message?.role === 'system' ? message.role : 'user',
+    content: content || '',
+    timestamp: new Date(message?.timestamp || Date.now()),
+  } as IChatMessage;
+}
+
+function normalizeChatMessages(messages: any[]): IChatMessage[] {
+  return messages.map((message, index) => normalizeChatMessage(message, index));
+}
+
 function apiAuthHeaders(): Record<string, string> {
   const token = (typeof localStorage !== 'undefined' ? localStorage.getItem('cannai_token') : null)
     || import.meta.env.VITE_CANNAAI_API_TOKEN;
@@ -289,10 +305,9 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
           ...conv,
           createdAt: new Date(conv.createdAt),
           updatedAt: new Date(conv.updatedAt),
-          messages: conv.messages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
-          }))
+          messages: Array.isArray(conv.messages)
+            ? normalizeChatMessages(conv.messages)
+            : []
         }));
         setConversations(conversationsWithDates);
 
@@ -642,11 +657,13 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   }, [settings.features.enableImageAnalysis]);
 
   // Switch conversation
+  // The callback is referenced by the storage loader below; keep its stable identity.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const switchConversation = useCallback((conversationId: string) => {
     const conversation = conversations.find(c => c.id === conversationId);
     if (conversation) {
       setCurrentConversation(conversation);
-      setMessages(conversation.messages);
+      setMessages(conversation.messages || []);
     }
   }, [conversations]);
 
@@ -735,7 +752,8 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         content = 'Conversation,Message,Role,Timestamp,Content\n';
         conversationsToExport.forEach(conv => {
           conv.messages.forEach(msg => {
-            content += `"${conv.title}","${msg.id}","${msg.role}","${msg.timestamp.toISOString()}","${msg.content.replace(/"/g, '""')}"\n`;
+            const messageContent = String(msg.content || '');
+            content += `"${conv.title}","${msg.id}","${msg.role}","${msg.timestamp.toISOString()}","${messageContent.replace(/"/g, '""')}"\n`;
           });
         });
         filename += '.csv';
@@ -748,7 +766,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
           content += `Created: ${conv.createdAt.toLocaleString()}\n`;
           content += `Updated: ${conv.updatedAt.toLocaleString()}\n\n`;
           conv.messages.forEach(msg => {
-            content += `[${msg.timestamp.toLocaleString()}] ${msg.role.toUpperCase()}:\n${msg.content}\n\n`;
+            content += `[${msg.timestamp.toLocaleString()}] ${String(msg.role || 'user').toUpperCase()}:\n${String(msg.content || '')}\n\n`;
           });
           content += '\n\n';
         });
@@ -788,11 +806,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
             id: conv.id || `imported_${Date.now()}_${index}`,
             createdAt: new Date(conv.createdAt),
             updatedAt: new Date(conv.updatedAt),
-            messages: (conv.messages || []).map((msg: any) => ({
-              ...msg,
-              id: msg.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              timestamp: new Date(msg.timestamp)
-            }))
+            messages: normalizeChatMessages(conv.messages || [])
           }));
 
           setConversations(prev => [...prev, ...conversationsWithIds]);
@@ -984,7 +998,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
             if (msg.provider === 'error') failedAssistantMessages++;
           }
           if (msg.role === 'user') {
-            const content = msg.content.toLowerCase();
+            const content = typeof msg.content === 'string' ? msg.content.toLowerCase() : '';
             topicKeywords.forEach(topic => {
               if (content.includes(topic)) topicDistribution[topic] = (topicDistribution[topic] || 0) + 1;
             });

@@ -87,10 +87,11 @@ export function ChatTemplates({
 
     // Search filter
     if (searchQuery) {
+      const query = String(searchQuery || '').toLowerCase();
       filtered = filtered.filter(t =>
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.prompt.toLowerCase().includes(searchQuery.toLowerCase())
+        String(t.name || '').toLowerCase().includes(query) ||
+        String(t.description || '').toLowerCase().includes(query) ||
+        String(t.prompt || '').toLowerCase().includes(query)
       );
     }
 

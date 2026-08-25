@@ -188,10 +188,12 @@ export function ChatInterface({
   }, [messages]);
 
   useEffect(() => {
-    const filtered = messages.filter(msg =>
-      msg.content.toLowerCase().includes(messageSearch.toLowerCase()) ||
-      msg.role.toLowerCase().includes(messageSearch.toLowerCase())
-    );
+    const query = String(messageSearch || '').toLowerCase();
+    const filtered = messages.filter(msg => {
+      const content = typeof msg.content === 'string' ? msg.content : '';
+      const role = typeof msg.role === 'string' ? msg.role : '';
+      return content.toLowerCase().includes(query) || role.toLowerCase().includes(query);
+    });
     setFilteredMessages(filtered);
   }, [messages, messageSearch]);
 

@@ -132,10 +132,11 @@ export function ChatSidebar({
 
     // Search filtering
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(c =>
-        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.messages.some(m => m.content.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        c.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        String(c.title || '').toLowerCase().includes(query) ||
+        (c.messages || []).some(m => String(m.content || '').toLowerCase().includes(query)) ||
+        c.tags?.some(tag => String(tag || '').toLowerCase().includes(query))
       );
     }
 

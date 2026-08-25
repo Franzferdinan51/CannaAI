@@ -121,7 +121,7 @@ export function ChatAnalytics({
 
     messages.forEach(msg => {
       if (msg.role === 'user') {
-        const content = msg.content.toLowerCase();
+        const content = String(msg.content || '').toLowerCase();
         topics.forEach(topic => {
           if (content.includes(topic)) {
             topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
