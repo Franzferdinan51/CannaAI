@@ -35,12 +35,12 @@ curl -X POST http://localhost:3000/api/analyze \
   -H 'Content-Type: application/json' \
   -d '{
     "image": "data:image/jpeg;base64,<base64-image>",
-    "analysisType": "plant_health",
+    "leafSymptoms": "general health check",
     "growthStage": "flowering"
   }'
 ```
 
-`image` and `plantImage` accept a data URL or raw base64. Optional context includes `plantId`, `roomId`, `strain`, `growthStage`, and environmental readings. The response includes diagnosis, severity, confidence, health score, provider metadata, and the versioned agent-analysis contract.
+`image` and `plantImage` accept a data URL or raw base64. Optional context includes `plantId`, `strain`, `growthStage`, symptoms, and environmental readings (`phLevel`, `temperature`, `humidity`, and `medium`). The response includes diagnosis, severity, confidence, health score, provider metadata, and the versioned agent-analysis contract.
 
 Useful routes:
 

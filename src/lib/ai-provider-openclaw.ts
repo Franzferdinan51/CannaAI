@@ -23,12 +23,16 @@ const provider = () => new AgentCommandProvider('openclaw', {
 const DETECT_TIMEOUT_MS = 20000;
 
 function withDetectTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error('detect-timeout')), DETECT_TIMEOUT_MS)
-    ),
-  ]).catch(() => fallback) as Promise<T>;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('detect-timeout')), DETECT_TIMEOUT_MS);
+    timer.unref?.();
+  });
+  return Promise.race([promise, timeout])
+    .catch(() => fallback)
+    .finally(() => {
+      if (timer) clearTimeout(timer);
+    });
 }
 
 export async function checkOpenClaw(): Promise<ProviderDetectionResult> {

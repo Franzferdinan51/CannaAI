@@ -307,12 +307,24 @@ export class AgentCommandProvider extends BaseProvider {
       });
       child.unref();
       children.set(key, child);
+      // A failed or intentionally stopped Hermes proxy must be restartable on
+      // the next request. Keeping an exited ChildProcess in this registry
+      // made the connection look permanently stuck until CannaAI restarted.
+      child.once('exit', () => {
+        if (children.get(key) === child) children.delete(key);
+      });
+      child.once('error', () => {
+        if (children.get(key) === child) children.delete(key);
+      });
     }
     const deadline = Date.now() + 15000;
     while (Date.now() < deadline) {
       if (await this.isHermesProxyAvailable(port)) return;
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
+    const child = children.get(key);
+    if (child && !child.killed) child.kill('SIGTERM');
+    children.delete(key);
     throw new Error(`Hermes ${provider} proxy is not reachable on 127.0.0.1:${port}; authenticate Hermes first with hermes portal login or connect an upstream with hermes proxy providers.`);
   }
 
@@ -375,10 +387,19 @@ export class AgentCommandProvider extends BaseProvider {
         },
         requestPermission: async (params: any) => ({ outcome: { outcome: 'cancelled' } })
       }), stream);
-      const timeout = <T>(promise: Promise<T>, label: string): Promise<T> => Promise.race([
-        promise,
-        new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`OpenClaw ACP ${label} timed out`)), this.config.timeout))
-      ]);
+      const timeout = <T>(promise: Promise<T>, label: string): Promise<T> => {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeoutPromise = new Promise<T>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`OpenClaw ACP ${label} timed out`)),
+            this.config.timeout,
+          );
+          timer.unref?.();
+        });
+        return Promise.race([promise, timeoutPromise]).finally(() => {
+          if (timer) clearTimeout(timer);
+        });
+      };
       await timeout(client.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {}, clientInfo: { name: 'cannaai', version: '1.0.0' } }), 'initialization');
       const session = await timeout(client.newSession({ cwd: process.cwd(), mcpServers: [] }), 'session creation');
       const response = await timeout(client.prompt({ sessionId: session.sessionId, prompt }), 'prompt');

@@ -146,6 +146,18 @@ openclaw-skill/
 
 ## 🔑 Configuration
 
+The skill defaults to `http://127.0.0.1:3000`. When OpenClaw runs on a
+different host (for example, a phone or remote node), configure the reachable
+CannaAI address and the same API token used by the server:
+
+```bash
+export CANNAAI_API_URL="https://cannaai.example.ts.net"
+export CANNAAI_API_TOKEN="use-the-cannaai-api-token"
+```
+
+`CANNAAI_URL` is accepted as a compatibility alias. Image tools accept raw
+base64 or an existing `data:image/...` URL and preserve an existing data URL.
+
 Add to `~/.openclaw/workspace/AGENTS.md`:
 
 ```markdown

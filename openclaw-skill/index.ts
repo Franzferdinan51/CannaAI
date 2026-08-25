@@ -14,6 +14,29 @@
 
 import { z } from 'zod';
 
+function getCannaAIBaseUrl(): string {
+  return (
+    process.env.CANNAAI_API_URL ||
+    process.env.CANNAAI_URL ||
+    'http://127.0.0.1:3000'
+  ).replace(/\/+$/, '');
+}
+
+function getCannaAIHeaders(json = false): Record<string, string> {
+  const token = process.env.CANNAAI_API_TOKEN || process.env.SOCKET_IO_TOKEN;
+  return {
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+function toImageDataUrl(image: string): string {
+  const value = image.trim();
+  return value.startsWith('data:image/')
+    ? value
+    : `data:image/jpeg;base64,${value}`;
+}
+
 // Skill metadata
 export const skill = {
   name: 'cannaai',
@@ -64,12 +87,11 @@ export const tools = {
       const { image, strain, stage, symptoms } = params;
       
       // Call CannaAI analysis API
-      const response = await fetch('http://localhost:3000/api/analyze', {
+      const response = await fetch(`${getCannaAIBaseUrl()}/api/analyze`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getCannaAIHeaders(true),
         body: JSON.stringify({
-          image: `data:image/jpeg;base64,${image}`,
-          analysisType: 'plant_health',
+          image: toImageDataUrl(image),
           strain: strain || 'Cannabis',
           leafSymptoms: symptoms?.join(', ') || 'general_health_check',
           growthStage: stage || 'vegetative'
@@ -100,7 +122,10 @@ export const tools = {
     description: 'Get current temperature, humidity, VPD, and other environmental data from grow room',
     schema: GetEnvironmentSchema,
     execute: async (params: z.infer<typeof GetEnvironmentSchema>) => {
-      const response = await fetch('http://localhost:3000/api/sensors');
+      const query = params.roomId ? `?roomId=${encodeURIComponent(params.roomId)}` : '';
+      const response = await fetch(`${getCannaAIBaseUrl()}/api/sensors${query}`, {
+        headers: getCannaAIHeaders(),
+      });
       
       if (!response.ok) {
         throw new Error(`CannaAI API error: ${response.status}`);
@@ -126,7 +151,9 @@ export const tools = {
     execute: async (params: z.infer<typeof GetStrainInfoSchema>) => {
       const { strain } = params;
       
-      const response = await fetch(`http://localhost:3000/api/strains?search=${encodeURIComponent(strain)}`);
+      const response = await fetch(`${getCannaAIBaseUrl()}/api/strains?search=${encodeURIComponent(strain)}`, {
+        headers: getCannaAIHeaders(),
+      });
       
       if (!response.ok) {
         // Fallback: return general info
@@ -176,9 +203,9 @@ export const tools = {
     schema: TrackGrowthSchema,
     execute: async (params: z.infer<typeof TrackGrowthSchema>) => {
       // Store in CannaAI database
-      const response = await fetch('http://localhost:3000/api/plants', {
+      const response = await fetch(`${getCannaAIBaseUrl()}/api/plants`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getCannaAIHeaders(true),
         body: JSON.stringify({
           image: params.image,
           stage: params.stage,
@@ -240,7 +267,9 @@ export const tools = {
 };
 
 // Export for OpenClaw
-export default {
+const cannaAISkill = {
   skill,
   tools
 };
+
+export default cannaAISkill;
