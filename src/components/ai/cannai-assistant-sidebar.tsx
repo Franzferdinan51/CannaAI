@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,6 +90,8 @@ export function CannaAIAssistantSidebar({
   onToggleCollapse,
   className = ""
 }: CannaAIAssistantSidebarProps) {
+  const router = useRouter();
+
   // State management
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -512,7 +515,7 @@ export function CannaAIAssistantSidebar({
                         variant="outline"
                         size="sm"
                         className="mt-3 border-emerald-600 text-emerald-400 hover:bg-emerald-900/20"
-                        onClick={() => window.location.href = '/settings'}
+                        onClick={() => router.push('/settings')}
                       >
                         <Settings className="h-4 w-4 mr-2" />
                         Configure AI
@@ -590,7 +593,7 @@ export function CannaAIAssistantSidebar({
             size="sm"
             className="text-slate-400 hover:text-slate-200"
             title="AI Settings"
-            onClick={() => window.location.href = '/settings'}
+            onClick={() => router.push('/settings')}
           >
             <Settings className="h-4 w-4" />
           </Button>

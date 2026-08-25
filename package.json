@@ -7,6 +7,11 @@
     "node": ">=22",
     "npm": ">=10"
   },
+  "overrides": {
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.2"
+    }
+  },
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd NewUI/cannaai-pro && npm run dev",
@@ -15,8 +20,8 @@
     "dev:backend:win": "nodemon --exec \"tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
     "build": "npm run build:frontend && npm run build:backend",
     "build:frontend": "cd NewUI/cannaai-pro && npm run build",
-    "build:backend": "next build",
-    "build:static": "cross-env BUILD_MODE=static next build",
+    "build:backend": "next build --webpack",
+    "build:static": "cross-env BUILD_MODE=static next build --webpack",
     "build:netlify": "npm run build:static",
     "build:frontend-only": "cd NewUI/cannaai-pro && npm run build",
     "preview": "cd NewUI/cannaai-pro && npm run preview",
@@ -125,7 +130,7 @@
     "libheif-js": "^1.19.8",
     "lucide-react": "^0.525.0",
     "mqtt": "^5.14.1",
-    "next": "15.5.23",
+    "next": "16.3.2",
     "next-auth": "^5.0.0-beta.30",
     "next-intl": "^4.3.4",
     "next-themes": "^0.4.6",
@@ -167,10 +172,10 @@
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "eslint": "^9",
-    "eslint-config-next": "15.5.23",
+    "eslint-config-next": "16.3.2",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "jest-junit": "^16.0.0",
+    "jest-junit": "17.0.0",
     "nodemon": "^3.1.11",
     "tailwindcss": "^4",
     "ts-jest": "^29.2.5",

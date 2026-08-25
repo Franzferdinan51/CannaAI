@@ -13,11 +13,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: !isProduction,
   },
 
-  // ESLint
-  eslint: {
-    ignoreDuringBuilds: !isProduction,
-  },
-
   // React Strict Mode (disabled for performance)
   reactStrictMode: false,
 

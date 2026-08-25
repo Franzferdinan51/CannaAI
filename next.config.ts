@@ -106,10 +106,6 @@ const nextConfig: NextConfig = {
 
     return config;
   },
-  eslint: {
-    // 构建时忽略ESLint错误
-    ignoreDuringBuilds: true,
-  },
   env: {
     NEXT_PUBLIC_BUILD_MODE: process.env.BUILD_MODE,
   },

@@ -1,5 +1,5 @@
 // Main Sensors Component - Comprehensive Sensor Monitoring System
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSocketContext } from '../../contexts/SocketContext';
 
 // Import all sensor components
@@ -59,12 +59,7 @@ const Sensors: React.FC<SensorsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial data
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -92,7 +87,12 @@ const Sensors: React.FC<SensorsProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Load initial data
+  useEffect(() => {
+    void loadInitialData();
+  }, [loadInitialData]);
 
   // Handle sensor configuration save
   const handleSensorSave = async (sensor: SensorConfig) => {
