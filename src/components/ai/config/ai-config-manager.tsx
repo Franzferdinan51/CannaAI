@@ -7,12 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Settings, Zap, Globe, Key, Save, Check, X, AlertCircle } from 'lucide-react';
+import { Settings, Zap, Globe, Key, Save, Check, X } from 'lucide-react';
 import { safeLocalStorage } from '@/lib/safe-local-storage';
 
 interface AIConfig {
-  provider: 'lm-studio' | 'openrouter' | 'fallback';
+  provider: 'lm-studio' | 'openrouter';
   lmStudio: {
     url: string;
     model: string;
@@ -23,14 +22,13 @@ interface AIConfig {
     model: string;
     baseUrl: string;
   };
-  fallbackEnabled: boolean;
 }
 
 const DEFAULT_CONFIG: AIConfig = {
-  provider: 'openrouter',
+  provider: 'lm-studio',
   lmStudio: {
-    url: 'http://localhost:1234',
-    model: 'llama-3-8b-instruct',
+    url: 'http://127.0.0.1:1234',
+    model: '',
     apiKey: ''
   },
   openRouter: {
@@ -38,7 +36,6 @@ const DEFAULT_CONFIG: AIConfig = {
     model: 'meta-llama/llama-3.1-8b-instruct:free',
     baseUrl: 'https://openrouter.ai/api/v1'
   },
-  fallbackEnabled: true
 };
 
 const OPENROUTER_MODELS = [
@@ -179,7 +176,7 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
                 <Label>AI Provider</Label>
                 <Select
                   value={config.provider}
-                  onValueChange={(value: 'lm-studio' | 'openrouter' | 'fallback') =>
+                  onValueChange={(value: 'lm-studio' | 'openrouter') =>
                     saveConfig({ ...config, provider: value })
                   }
                 >
@@ -197,12 +194,6 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
                       <div className="flex items-center">
                         <Globe className="h-4 w-4 mr-2" />
                         OpenRouter (Cloud)
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="fallback">
-                      <div className="flex items-center">
-                        <AlertCircle className="h-4 w-4 mr-2" />
-                        Fallback Mode
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -333,28 +324,6 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
                 </div>
               )}
 
-              {/* Fallback Mode Configuration */}
-              {config.provider === 'fallback' && (
-                <div className="space-y-4 p-4 bg-muted rounded-lg">
-                  <h3 className="font-medium">Fallback Mode</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Uses predefined responses when external AI providers are unavailable.
-                    This mode works offline but provides limited functionality.
-                  </p>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="fallback-enabled"
-                      checked={config.fallbackEnabled}
-                      onCheckedChange={(checked) =>
-                        saveConfig({ ...config, fallbackEnabled: checked })
-                      }
-                    />
-                    <Label htmlFor="fallback-enabled">Enable fallback responses</Label>
-                  </div>
-                </div>
-              )}
-
               {/* Connection Status */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -391,9 +360,7 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
               {/* Save Status */}
               <div className="flex items-center justify-between pt-4 border-t">
                 <span className="text-sm text-muted-foreground">
-                  {config.provider === 'fallback'
-                    ? 'Configuration saved locally'
-                    : hasRequiredConfig()
+                  {hasRequiredConfig()
                     ? 'Ready to use'
                     : 'Please complete configuration'}
                 </span>

@@ -387,7 +387,7 @@ export default function FloatingAIAssistant({
                 }`} />
                 {connectionStatus === 'connected' && aiConfig && (
                   <span className="text-xs text-green-100">
-                    ({aiConfig.provider === 'fallback' ? 'Fallback' : aiConfig.provider})
+                    ({aiConfig.provider})
                   </span>
                 )}
               </div>

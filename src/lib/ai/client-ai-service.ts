@@ -73,7 +73,12 @@ export class ClientAIService {
     try {
       let saved = null; try { saved = safeLocalStorage.getItem('ai-config'); } catch (e) {}
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved) as Partial<AIConfig>;
+        // Migrate configurations from the removed canned-response mode.
+        if (parsed.provider === 'fallback') {
+          return { ...defaults, ...parsed, provider: 'lm-studio', fallbackEnabled: false } as AIConfig;
+        }
+        return { ...defaults, ...parsed } as AIConfig;
       }
     } catch (error) {
       console.error('Failed to load AI config:', error);
