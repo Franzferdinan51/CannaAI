@@ -131,6 +131,9 @@ jobs:
       - name: Install static UI dependencies
         run: npm ci --prefix NewUI/cannaai-pro
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
       - name: Build application
         run: npm run build
 

@@ -23,9 +23,6 @@ export default defineConfig({
     trace: 'off',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    launchOptions: {
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    }
   },
 
   projects: [
