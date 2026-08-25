@@ -67,16 +67,26 @@ const defaultStrains = [
     // ... (Keep a few defaults for immediate render)
 ];
 
-// Mock sensor data (Initial state)
-const initialSensorData = {
-    temperature: 22.5,
-    humidity: 55,
-    soilMoisture: 45,
-    lightIntensity: 750,
-    ph: 6.2,
-    ec: 1.4,
-    co2: 1200,
-    vpd: 0.85
+type DashboardSensorData = {
+    temperature: number | null;
+    humidity: number | null;
+    soilMoisture: number | null;
+    lightIntensity: number | null;
+    ph: number | null;
+    ec: number | null;
+    co2: number | null;
+    vpd: number | null;
+};
+
+const initialSensorData: DashboardSensorData = {
+    temperature: null,
+    humidity: null,
+    soilMoisture: null,
+    lightIntensity: null,
+    ph: null,
+    ec: null,
+    co2: null,
+    vpd: null
 };
 
 // Dashboard Navigation Items
@@ -114,11 +124,8 @@ function DashboardContent() {
 
     // Data State
     const [strains, setStrains] = useState(defaultStrains);
-    const [sensorData, setSensorData] = useState(initialSensorData);
-    const [notifications, setNotifications] = useState([
-        { id: 1, type: 'alert', message: 'pH levels dropping below optimal range', time: '2 min ago' },
-        { id: 2, type: 'info', message: 'Automated watering cycle completed successfully', time: '15 min ago' }
-    ]);
+    const [sensorData, setSensorData] = useState<DashboardSensorData>(initialSensorData);
+    const [notifications, setNotifications] = useState<Array<{ id: string; type: string; message: string; time: string }>>([]);
 
     // UI State
   const [activeDashboard, setActiveDashboard] = useState('overview');
@@ -156,6 +163,46 @@ function DashboardContent() {
             }
         };
         fetchStrains();
+    }, []);
+
+    // Load persisted readings and notifications. Until the APIs respond, keep
+    // values unavailable rather than presenting sample conditions as live data.
+    useEffect(() => {
+        const loadDashboardData = async () => {
+            const [sensorResponse, notificationResponse] = await Promise.allSettled([
+                fetch('/api/sensors/data/latest'),
+                fetch('/api/notifications?limit=10'),
+            ]);
+
+            if (sensorResponse.status === 'fulfilled' && sensorResponse.value.ok) {
+                const payload = await sensorResponse.value.json().catch(() => ({}));
+                const readings = payload.data || {};
+                const reading = (id: string) => typeof readings[id]?.reading === 'number' ? readings[id].reading : null;
+                setSensorData({
+                    temperature: reading('sensor_temp'),
+                    humidity: reading('sensor_humidity'),
+                    soilMoisture: reading('sensor_soil'),
+                    lightIntensity: reading('sensor_light'),
+                    ph: reading('sensor_ph'),
+                    ec: reading('sensor_ec'),
+                    co2: reading('sensor_co2'),
+                    vpd: reading('sensor_vpd'),
+                });
+            }
+
+            if (notificationResponse.status === 'fulfilled' && notificationResponse.value.ok) {
+                const payload = await notificationResponse.value.json().catch(() => ({}));
+                const data = Array.isArray(payload.data) ? payload.data : [];
+                setNotifications(data.map((item: any) => ({
+                    id: String(item.id),
+                    type: item.type || item.severity || 'info',
+                    message: item.message || item.title || 'Notification',
+                    time: item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Unknown time',
+                })));
+            }
+        };
+
+        void loadDashboardData();
     }, []);
 
     // Real-time Sensor Data (Socket.IO)

@@ -52,14 +52,14 @@ interface Message {
 }
 
 interface SensorData {
-  temperature: number;
-  humidity: number;
-  ph: number;
-  soilMoisture: number;
-  lightIntensity: number;
-  ec: number;
-  co2?: number;
-  vpd?: number;
+  temperature: number | null;
+  humidity: number | null;
+  ph: number | null;
+  soilMoisture: number | null;
+  lightIntensity: number | null;
+  ec: number | null;
+  co2?: number | null;
+  vpd?: number | null;
 }
 
 interface AIModel {
@@ -91,6 +91,9 @@ export function CannaAIAssistantSidebar({
   className = ""
 }: CannaAIAssistantSidebarProps) {
   const router = useRouter();
+  const displaySensorValue = (value: number | null | undefined, suffix = '') => (
+    value === null || value === undefined || !Number.isFinite(value) ? 'N/A' : `${value}${suffix}`
+  );
 
   // State management
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -483,15 +486,17 @@ export function CannaAIAssistantSidebar({
             <div className="flex items-center space-x-3 text-xs text-slate-400">
               <div className="flex items-center space-x-1">
                 <Thermometer className="h-3 w-3" />
-                <span>{Math.round((sensorData.temperature * 9/5) + 32)}°F</span>
+                <span>{sensorData.temperature === null || sensorData.temperature === undefined
+                  ? 'N/A'
+                  : `${Math.round((sensorData.temperature * 9/5) + 32)}°F`}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Droplets className="h-3 w-3" />
-                <span>{sensorData.humidity}%</span>
+                <span>{displaySensorValue(sensorData.humidity, '%')}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Sun className="h-3 w-3" />
-                <span>{sensorData.lightIntensity}μmol</span>
+                <span>{displaySensorValue(sensorData.lightIntensity, 'μmol')}</span>
               </div>
             </div>
           </div>
