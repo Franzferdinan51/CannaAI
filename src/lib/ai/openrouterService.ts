@@ -50,6 +50,16 @@ Return valid JSON. Escape all double quotes.
 }
 `;
 
+export function normalizeOpenRouterImage(image: unknown): string | undefined {
+  if (typeof image !== 'string') return undefined;
+  const value = image.trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) {
+    return value;
+  }
+  return `data:image/jpeg;base64,${value}`;
+}
+
 /**
  * Analyze plant health using OpenRouter (multi-model access)
  */
@@ -83,10 +93,12 @@ export async function analyzeWithOpenRouter(
 
     if (images && images.length > 0) {
       images.slice(0, 3).forEach(imgData => {
+        const normalizedImage = normalizeOpenRouterImage(imgData);
+        if (!normalizedImage) return;
         content.push({
           type: "image_url",
           image_url: {
-            url: `data:image/jpeg;base64,${imgData}`
+            url: normalizedImage
           }
         });
       });
