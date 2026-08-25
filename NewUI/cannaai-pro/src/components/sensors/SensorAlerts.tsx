@@ -637,14 +637,15 @@ const AlertCard: React.FC<AlertCardProps> = ({
                     {notification.actions.map((action, index) => (
                       <button
                         key={index}
+                        disabled={action.action !== 'acknowledge'}
                         className={`px-3 py-1 text-xs rounded ${
                           action.style === 'primary' ? 'bg-emerald-600 text-white' :
                           action.style === 'danger' ? 'bg-red-600 text-white' :
-                          'bg-gray-700 text-gray-300'
+                          action.action === 'acknowledge' ? 'bg-gray-700 text-gray-300' : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log('Action clicked:', action.action);
+                          if (action.action === 'acknowledge') onAcknowledge();
                         }}
                       >
                         {action.label}
