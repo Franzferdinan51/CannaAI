@@ -3,7 +3,7 @@
  * Handles 14 different session modes for the AI Council
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createLocalAIClient } from './provider-compat';
 import {
   SessionMode,
   CouncilSession,
@@ -12,9 +12,7 @@ import {
 } from '../../types/council';
 
 const getAiClient = (apiKey: string) => {
-  const key = apiKey || process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("API Key not found");
-  return new GoogleGenerativeAI(key);
+  return createLocalAIClient();
 };
 
 /**

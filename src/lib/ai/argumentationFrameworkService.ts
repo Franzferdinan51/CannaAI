@@ -3,7 +3,7 @@
  * Structured debate and argument mapping for cultivation decisions
  */
 
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { createLocalAIClient, SchemaType } from './provider-compat';
 import {
   ArgumentClaim,
   CouncilPersona,
@@ -11,9 +11,7 @@ import {
 } from '../../types/council';
 
 const getAiClient = (apiKey: string) => {
-  const key = apiKey || process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("API Key not found");
-  return new GoogleGenerativeAI(key);
+  return createLocalAIClient();
 };
 
 /**

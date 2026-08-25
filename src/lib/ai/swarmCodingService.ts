@@ -3,7 +3,7 @@
  * Multi-phase code generation pipeline for cultivation automation
  */
 
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { createLocalAIClient, SchemaType } from './provider-compat';
 import {
   SwarmPhase,
   SwarmCodingPipeline,
@@ -12,9 +12,7 @@ import {
 } from '../../types/council';
 
 const getAiClient = (apiKey: string) => {
-  const key = apiKey || process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("API Key not found");
-  return new GoogleGenerativeAI(key);
+  return createLocalAIClient();
 };
 
 /**
