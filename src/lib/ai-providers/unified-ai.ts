@@ -42,6 +42,7 @@ export interface QualityScore {
   completeness: number;
   clarity: number;
   usefulness: number;
+  source: 'heuristic';
   feedback?: {
     userRating?: number;
     issues?: string[];
@@ -343,15 +344,19 @@ export class UnifiedAI {
     variant: { score: number; usage: number; cost: number };
     winner: string;
   }> {
-    const base = { score: 0, usage: 0, cost: 0 };
-    const variant = { score: 0, usage: 0, cost: 0 };
+    if (!this.promptVersions.has(basePromptId) || !this.promptVersions.has(variantPromptId)) {
+      throw new Error('Prompt experiment requires two existing prompt versions.');
+    }
+    if (!Number.isFinite(trafficSplit) || trafficSplit < 0 || trafficSplit > 1) {
+      throw new Error('trafficSplit must be between 0 and 1.');
+    }
+    if (!Number.isInteger(iterations) || iterations < 1) {
+      throw new Error('iterations must be a positive integer.');
+    }
 
-    // Run experiment logic would go here
-    // This is a placeholder implementation
-
-    const winner = base.score > variant.score ? basePromptId : variantPromptId;
-
-    return { base, variant, winner };
+    throw new Error(
+      'Prompt experiments are unavailable until an evaluation request and scoring policy are configured; no experiment was run.'
+    );
   }
 
   /**
@@ -411,18 +416,25 @@ export class UnifiedAI {
     request: UnifiedAIRequest,
     response: AIResponse
   ): Promise<QualityScore> {
-    // This is a simplified quality scoring algorithm
-    // In reality, you might use ML models or user feedback
+    // These are transparent response-shape heuristics, not factual evaluation.
+    // Accuracy and usefulness cannot be inferred reliably without a rubric,
+    // reference answer, or user feedback, so they are deliberately estimates.
     const content = response.choices[0].message.content;
     const responseLength = content.length;
-    const avgWordLength = content.split(' ').reduce((sum, word) => sum + word.length, 0) / (content.split(' ').length || 1);
-
-    // Scoring based on various heuristics
-    const relevance = 85; // Placeholder
-    const accuracy = 90; // Placeholder
+    const words = content.trim().split(/\s+/).filter(Boolean);
+    const avgWordLength = words.reduce((sum, word) => sum + word.length, 0) / (words.length || 1);
+    const userText = request.messages
+      .filter(message => message.role === 'user')
+      .map(message => message.content.toLowerCase())
+      .join(' ');
+    const userTerms = new Set((userText.match(/[a-z0-9]{4,}/g) || []).slice(0, 50));
+    const responseTerms = new Set((content.toLowerCase().match(/[a-z0-9]{4,}/g) || []));
+    const overlap = [...userTerms].filter(term => responseTerms.has(term)).length;
+    const relevance = userTerms.size ? Math.min(100, 40 + Math.round((overlap / userTerms.size) * 60)) : 50;
+    const accuracy = 50;
     const completeness = responseLength > 100 ? 85 : 60;
     const clarity = avgWordLength > 3 && avgWordLength < 8 ? 85 : 70;
-    const usefulness = 80; // Placeholder
+    const usefulness = /\b(step|recommend|try|because|warning|next)\b/i.test(content) ? 75 : 50;
 
     const overall = (relevance + accuracy + completeness + clarity + usefulness) / 5;
 
@@ -432,7 +444,8 @@ export class UnifiedAI {
       accuracy,
       completeness,
       clarity,
-      usefulness
+      usefulness,
+      source: 'heuristic'
     };
   }
 
