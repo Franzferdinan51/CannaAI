@@ -258,6 +258,12 @@ class SettingsAPIClient {
         promises.push(this.updateUnitSettings(updates.units));
       }
 
+      for (const section of ['system', 'display', 'data'] as const) {
+        if (updates[section]) {
+          promises.push(this.updateSettingsSection(section, updates[section]));
+        }
+      }
+
       // Handle provider updates
       if (updates.lmStudio) {
         promises.push(this.updateProviderConfig('lm-studio', updates.lmStudio));
@@ -282,6 +288,16 @@ class SettingsAPIClient {
     } catch (error) {
       console.error('Failed to batch update settings:', error);
       throw error instanceof Error ? error : new Error('Unknown error batch updating settings');
+    }
+  }
+
+  private async updateSettingsSection(section: 'system' | 'display' | 'data', config: any): Promise<void> {
+    const response: AxiosResponse<SettingsAPIResponse> = await this.api.post('/api/settings', {
+      action: 'update_section',
+      config: { section, values: config },
+    });
+    if (!response.data.success) {
+      throw new Error(response.data.error || `Failed to update ${section} settings`);
     }
   }
 

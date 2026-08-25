@@ -190,6 +190,38 @@ const createDefaultSettings = (): Settings => ({
   },
 });
 
+// The server intentionally returns only the settings it has stored. Older
+// installs therefore do not contain newer UI sections (or notificationTypes).
+// Normalize at the boundary so every settings panel can safely render and the
+// UI remains forward-compatible with existing databases.
+const normalizeSettings = (value: Partial<Settings>): Settings => {
+  const defaults = createDefaultSettings();
+  const source = value as any;
+  return {
+    ...defaults,
+    ...source,
+    lmStudio: { ...defaults.lmStudio, ...source.lmStudio },
+    openRouter: { ...defaults.openRouter, ...source.openRouter },
+    openai: { ...defaults.openai, ...source.openai },
+    gemini: { ...defaults.gemini, ...source.gemini },
+    groq: { ...defaults.groq, ...source.groq },
+    grok: { ...defaults.grok, ...source.grok },
+    openclaw: { ...defaults.openclaw, ...source.openclaw },
+    hermes: { ...defaults.hermes, ...source.hermes },
+    anthropic: { ...defaults.anthropic, ...source.anthropic },
+    notifications: {
+      ...defaults.notifications,
+      ...source.notifications,
+      notificationTypes: source.notifications?.notificationTypes || defaults.notifications.notificationTypes,
+    },
+    units: { ...defaults.units, ...source.units },
+    system: { ...defaults.system, ...source.system },
+    display: { ...defaults.display, ...source.display },
+    data: { ...defaults.data, ...source.data },
+    integrations: { ...defaults.integrations, ...source.integrations },
+  };
+};
+
 export const useSettingsStore = create<SettingsStore>()(
   devtools(
     persist(
@@ -213,7 +245,7 @@ export const useSettingsStore = create<SettingsStore>()(
         loadSettings: async () => {
           set({ isLoading: true, error: '' });
           try {
-            const settings = await settingsAPI.getSettings();
+            const settings = normalizeSettings(await settingsAPI.getSettings());
             set({
               settings,
               selectedProvider: settings.aiProvider,

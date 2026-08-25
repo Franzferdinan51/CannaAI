@@ -1,8 +1,11 @@
 import React from 'react';
 import { Cpu, Moon, Globe, Lock, Shield } from 'lucide-react';
 import SettingToggle from './SettingToggle';
+import { useSettingsStore } from '../store';
 
 const SystemSettings: React.FC = () => {
+  const { settings, updateSettings } = useSettingsStore();
+  const system = settings?.system;
   return (
     <div className="space-y-6">
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
@@ -23,7 +26,7 @@ const SystemSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Use dark theme</p>
               </div>
             </div>
-            <SettingToggle label="Dark Mode" defaultChecked />
+            <SettingToggle label="Dark Mode" checked={system?.darkMode ?? true} onCheckedChange={(darkMode) => system && updateSettings({ system: { ...system, darkMode } })} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -34,7 +37,7 @@ const SystemSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Automatically save settings</p>
               </div>
             </div>
-            <SettingToggle label="Auto-Save" defaultChecked />
+            <SettingToggle label="Auto-Save" checked={system?.autoSave ?? true} onCheckedChange={(autoSave) => system && updateSettings({ system: { ...system, autoSave } })} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -45,10 +48,10 @@ const SystemSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Interface language</p>
               </div>
             </div>
-            <select className="px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm">
-              <option>English</option>
-              <option>Spanish</option>
-              <option>French</option>
+            <select value={system?.language || 'en'} onChange={(event) => system && updateSettings({ system: { ...system, language: event.target.value } })} className="px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm">
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
             </select>
           </div>
         </div>

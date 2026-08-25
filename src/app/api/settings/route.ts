@@ -275,6 +275,26 @@ export async function POST(request: NextRequest) {
           persistence: unitsPersisted ? 'database' : 'memory'
         });
 
+      case 'update_section': {
+        const allowedSections = ['system', 'display', 'data'] as const;
+        if (!allowedSections.includes(config?.section as typeof allowedSections[number]) || !config?.values) {
+          return NextResponse.json(
+            { error: 'Missing or invalid settings section' },
+            { status: 400 }
+          );
+        }
+
+        const section = config.section as typeof allowedSections[number];
+        settings[section] = safeMergeSettings(settings[section] || {}, config.values);
+        const sectionPersisted = await persistSettings();
+        return NextResponse.json({
+          success: true,
+          message: `${section} settings updated`,
+          settings: maskSettings(settings[section]),
+          persistence: sectionPersisted ? 'database' : 'memory'
+        });
+      }
+
       case 'test_connection':
         if (!provider) {
           return NextResponse.json(

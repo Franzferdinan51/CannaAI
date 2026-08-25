@@ -3,10 +3,13 @@ import React, { useState } from 'react';
 interface SettingToggleProps {
   label: string;
   defaultChecked?: boolean;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
 }
 
-const SettingToggle: React.FC<SettingToggleProps> = ({ label, defaultChecked = false }) => {
-  const [checked, setChecked] = useState(defaultChecked);
+const SettingToggle: React.FC<SettingToggleProps> = ({ label, defaultChecked = false, checked: controlledChecked, onCheckedChange }) => {
+  const [internalChecked, setInternalChecked] = useState(defaultChecked);
+  const checked = controlledChecked ?? internalChecked;
 
   return (
     <button
@@ -14,7 +17,11 @@ const SettingToggle: React.FC<SettingToggleProps> = ({ label, defaultChecked = f
       role="switch"
       aria-label={label}
       aria-checked={checked}
-      onClick={() => setChecked((value) => !value)}
+      onClick={() => {
+        const nextChecked = !checked;
+        if (controlledChecked === undefined) setInternalChecked(nextChecked);
+        onCheckedChange?.(nextChecked);
+      }}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
         checked ? 'bg-emerald-600' : 'bg-gray-600'
       }`}

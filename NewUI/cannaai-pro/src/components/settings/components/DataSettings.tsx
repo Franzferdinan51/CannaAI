@@ -1,8 +1,11 @@
 import React from 'react';
 import { Database, Download, Upload, Shield } from 'lucide-react';
 import SettingToggle from './SettingToggle';
+import { useSettingsStore } from '../store';
 
 const DataSettings: React.FC = () => {
+  const { settings, updateSettings } = useSettingsStore();
+  const data = settings?.data;
   return (
     <div className="space-y-6">
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
@@ -23,7 +26,7 @@ const DataSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Automatically backup data</p>
               </div>
             </div>
-            <SettingToggle label="Auto Backup" defaultChecked />
+            <SettingToggle label="Auto Backup" checked={data?.backupEnabled ?? true} onCheckedChange={(backupEnabled) => data && updateSettings({ data: { ...data, backupEnabled } })} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -34,7 +37,7 @@ const DataSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Sync data to cloud storage</p>
               </div>
             </div>
-            <SettingToggle label="Cloud Sync" />
+            <SettingToggle label="Cloud Sync" checked={data?.cloudSync ?? false} onCheckedChange={(cloudSync) => data && updateSettings({ data: { ...data, cloudSync } })} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
@@ -45,7 +48,7 @@ const DataSettings: React.FC = () => {
                 <p className="text-sm text-gray-400">Validate data integrity</p>
               </div>
             </div>
-            <SettingToggle label="Data Validation" defaultChecked />
+            <SettingToggle label="Data Validation" checked={data?.dataValidation ?? true} onCheckedChange={(dataValidation) => data && updateSettings({ data: { ...data, dataValidation } })} />
           </div>
         </div>
       </div>
