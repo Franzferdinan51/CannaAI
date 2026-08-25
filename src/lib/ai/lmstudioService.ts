@@ -10,12 +10,17 @@ function normalizeImageUrl(image: unknown): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function normalizeBaseUrl(endpoint: string): string {
+  const withProtocol = endpoint.startsWith('http') ? endpoint : `http://${endpoint}`;
+  return withProtocol.replace(/\/v1\/?$/i, '').replace(/\/$/, '');
+}
+
 /**
  * Test connection to LM Studio
  */
 export async function testLMStudioConnection(endpoint: string): Promise<{ success: boolean; error?: string; models?: string[] }> {
   try {
-    const baseUrl = endpoint.startsWith('http') ? endpoint : `http://${endpoint}`;
+    const baseUrl = normalizeBaseUrl(endpoint);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -142,7 +147,7 @@ export async function analyzeWithLMStudio(
   const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 min timeout
 
   try {
-    const baseUrl = endpoint.startsWith('http') ? endpoint : `http://${endpoint}`;
+    const baseUrl = normalizeBaseUrl(endpoint);
     const url = `${baseUrl}/v1/chat/completions`;
 
     let modelId: string | null | undefined = requestedModelId;
@@ -275,7 +280,7 @@ export async function localRagChat(
     throw new Error("LM Studio endpoint is not configured");
   }
 
-  const baseUrl = endpoint.startsWith('http') ? endpoint : `http://${endpoint}`;
+  const baseUrl = normalizeBaseUrl(endpoint);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 120000);
 
