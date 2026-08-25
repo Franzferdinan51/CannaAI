@@ -198,6 +198,9 @@ export class AgentCommandProvider extends BaseProvider {
   }
 
   private async isHermesApiAvailable(): Promise<boolean> {
+    // Hermes API Server is bearer-protected by design. Do not advertise a
+    // reachable but unauthenticated port as an available agent provider.
+    if (!process.env.HERMES_API_KEY && !process.env.HERMES_API_SERVER_KEY) return false;
     try {
       const response = await fetch(`${this.hermesApiBaseUrl()}/health`, {
         headers: this.hermesApiHeaders(),
