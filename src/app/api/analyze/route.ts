@@ -58,6 +58,10 @@ const AnalysisRequestSchema = z.object({
   growthStage: z.string().max(100).optional().transform(val => val?.trim()),
   temperatureUnit: z.enum(['C', 'F']).optional().default('F'),
   plantImage: z.string().max(50 * 1024 * 1024).optional(), // 50MB max base64
+  // Optional per-request override used by local clients and agent captures.
+  // The server still validates that the selected model is available before
+  // sending it to LM Studio.
+  model: z.string().max(200).transform(val => val.trim() || undefined).optional(),
   pestDiseaseFocus: z.string().max(500).optional().transform(val => val?.trim()),
   urgency: z.enum(['low', 'medium', 'high', 'critical']).optional().default('medium'),
   additionalNotes: z.string().max(2000).optional().transform(val => val?.trim())
@@ -305,6 +309,7 @@ export async function POST(request: NextRequest) {
       growthStage,
       temperatureUnit,
       plantImage,
+      model: requestedModel,
       pestDiseaseFocus,
       urgency,
       additionalNotes
@@ -529,9 +534,9 @@ export async function POST(request: NextRequest) {
         // Let the LM Studio adapter resolve the configured or currently
         // advertised model. Hard-coding a Qwen id here made healthy local
         // installs using Ornith (or any other model) fail before inference.
-        const lmStudioModel = imageBase64ForAI
+        const lmStudioModel = requestedModel || (imageBase64ForAI
           ? process.env.LM_STUDIO_VISION_MODEL || process.env.LM_STUDIO_MODEL
-          : process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL;
+          : process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL);
         const lmStudioRaw = await executeWithLMStudio(
           [{ role: 'user', content: prompt }],
           {
