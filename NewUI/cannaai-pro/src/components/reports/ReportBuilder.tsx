@@ -97,7 +97,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
 }) => {
   // State management
   const [report, setReport] = useState<Partial<Report>>(() => ({
-    name: '',
+    name: 'Untitled Report',
     description: '',
     type: 'summary',
     category: 'overview',

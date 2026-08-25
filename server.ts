@@ -285,8 +285,12 @@ async function createCustomServer() {
     });
 
     // Attach Next.js request handler to the server
-    // Socket.IO will handle its own requests before Next.js
+    // Socket.IO registers its own request listener on the same HTTP server.
+    // Do not pass those Engine.IO requests to Next as well: both handlers
+    // writing the response causes `ERR_HTTP_HEADERS_SENT` and takes down the
+    // whole custom server, leaving Chat/Sensors falsely offline.
     server.on('request', (req, res) => {
+      if (req.url?.startsWith('/api/socketio')) return;
       handle(req, res);
     });
 

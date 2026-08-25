@@ -49,13 +49,22 @@ export interface NotificationData {
 class SocketService {
   private socket: Socket | null = null;
   private listeners = new Set<() => void>();
+  private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   connect() {
+    if (this.disconnectTimer) {
+      clearTimeout(this.disconnectTimer);
+      this.disconnectTimer = null;
+    }
     if (this.socket) return this.socket;
 
     this.socket = io(getSocketBaseUrl(), {
       path: '/api/socketio',
-      transports: ['websocket', 'polling'],
+      // Establish the reliable Engine.IO polling connection first; the local
+      // custom server may reject an immediate websocket upgrade while still
+      // serving Socket.IO correctly over polling.
+      transports: ['polling', 'websocket'],
+      upgrade: true,
       timeout: 20000,
       forceNew: false,
       reconnection: true,
@@ -124,11 +133,18 @@ class SocketService {
   }
 
   disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
-    this.notify();
+    // React StrictMode intentionally runs effect cleanup/setup back-to-back in
+    // development. Delay teardown one tick so that a replacement provider can
+    // reuse the singleton instead of killing the new connection.
+    if (this.disconnectTimer || !this.socket) return;
+    this.disconnectTimer = setTimeout(() => {
+      this.disconnectTimer = null;
+      if (this.socket) {
+        this.socket.disconnect();
+        this.socket = null;
+      }
+      this.notify();
+    }, 0);
   }
 
   // Emit methods
@@ -180,11 +196,12 @@ export const useSocket = () => {
   const emit = useCallback((event: string, data: any) => socketService.emit(event, data), []);
   const subscribeToSensorData = useCallback((roomName: string) => socketService.subscribeToSensorData(roomName), []);
   const unsubscribeFromSensorData = useCallback((roomName: string) => socketService.unsubscribeFromSensorData(roomName), []);
-  useSyncExternalStore(
+  const socketSnapshot = useSyncExternalStore(
     (listener) => socketService.subscribe(listener),
     () => `${socketService.isConnected}:${socketService.socketId ?? ''}`,
     () => `${socketService.isConnected}:${socketService.socketId ?? ''}`,
   );
+  const [connectedValue, socketIdValue = ''] = socketSnapshot.split(':');
 
   return {
     connect,
@@ -192,8 +209,8 @@ export const useSocket = () => {
     emit,
     subscribeToSensorData,
     unsubscribeFromSensorData,
-    isConnected: socketService.isConnected,
-    socketId: socketService.socketId,
+    isConnected: connectedValue === 'true',
+    socketId: socketIdValue || null,
   };
 };
 

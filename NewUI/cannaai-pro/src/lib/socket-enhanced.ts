@@ -99,7 +99,7 @@ class EnhancedSocketService {
 
     this.socket = io(serverUrl, {
       path: '/api/socketio',
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       timeout: 20000,
       forceNew: true,
       reconnection: false, // We'll handle reconnection manually
