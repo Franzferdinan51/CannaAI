@@ -375,7 +375,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
       <div className="bg-[#1A1D23] border-b border-gray-800">
         <div className="flex items-center p-4">
           <h1 className="text-2xl font-bold text-white mr-8">Reports & Analytics</h1>
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="tablist" aria-label="Report views">
             {[
               { id: 'reports', label: 'My Reports', icon: FileText },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -385,6 +385,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
             ].map((tab) => (
               <button
                 key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   activeTab === tab.id
@@ -675,6 +678,8 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                 <div className="flex gap-2">
                   {report.status === 'completed' && (
                     <button
+                      type="button"
+                      aria-label={`Export ${report.name}`}
                       onClick={() => {
                         setSelectedReport(report);
                         setShowExportModal(true);
@@ -687,6 +692,8 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                   )}
                   {(report.status === 'draft' || report.status === 'failed') && (
                     <button
+                      type="button"
+                      aria-label={`Generate ${report.name}`}
                       onClick={() => handleGenerateReport(report.id)}
                       className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
                     >
@@ -839,6 +846,8 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">Create New Report</h2>
               <button
+                type="button"
+                aria-label="Close create report dialog"
                 onClick={() => setShowCreateModal(false)}
                 className="p-1 text-gray-400 hover:text-white transition-colors"
               >
@@ -918,12 +927,14 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
 
             <div className="flex items-center justify-end gap-3 mt-6">
               <button
+                type="button"
                 onClick={() => setShowCreateModal(false)}
                 className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleCreateReport}
                 disabled={!newReport.name}
                 className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -942,6 +953,8 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">Export Report</h2>
               <button
+                type="button"
+                aria-label="Close export report dialog"
                 onClick={() => setShowExportModal(false)}
                 className="p-1 text-gray-400 hover:text-white transition-colors"
               >
@@ -958,6 +971,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                   {(['pdf', 'csv', 'excel', 'json'] as ExportFormat[]).map((format) => (
                     <button
                       key={format}
+                      type="button"
+                      aria-pressed={exportOptions.format === format}
+                      aria-label={`Export as ${format}`}
                       onClick={() => setExportOptions({ ...exportOptions, format })}
                       className={`flex flex-col items-center gap-2 p-3 border rounded-lg transition-colors ${
                         exportOptions.format === format
@@ -1007,12 +1023,14 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
 
             <div className="flex items-center justify-end gap-3 mt-6">
               <button
+                type="button"
                 onClick={() => setShowExportModal(false)}
                 className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => handleExportReport(selectedReport.id, exportOptions)}
                 className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
               >
