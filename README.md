@@ -187,6 +187,8 @@ OPENCLAW_AGENT_ID="main"
 HERMES_API_URL="http://127.0.0.1:8642/v1"
 HERMES_API_KEY="change-me-local-dev"
 HERMES_MODEL="hermes-agent"
+# Optional direct native-vision routing for plant photos:
+# CANNAAI_IMAGE_PROVIDER="hermes" # or "openclaw"
 # Optional legacy fallback:
 # HERMES_PROXY_PORT="8645"
 # HERMES_PROXY_PROVIDER="nous"

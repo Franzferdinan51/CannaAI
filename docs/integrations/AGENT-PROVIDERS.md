@@ -107,6 +107,10 @@ HERMES_MODEL=
 ```
 
 Leave `HERMES_MODEL` empty to use Hermes' active model.
+Set `CANNAAI_IMAGE_PROVIDER=hermes` to route plant-photo analysis directly
+through Hermes native vision. The equivalent OpenClaw override is
+`CANNAAI_IMAGE_PROVIDER=openclaw`; when unset, CannaAI uses the live local-first
+provider detection order.
 
 ## Routing and diagnostics
 
