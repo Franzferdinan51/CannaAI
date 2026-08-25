@@ -3,13 +3,13 @@
  * Returns detailed usage statistics and trends
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request?: Request) {
   try {
     const unifiedAI = getUnifiedAI();
     const providerStatus = unifiedAI.getProviderStatus();
