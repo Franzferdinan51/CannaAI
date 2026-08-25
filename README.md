@@ -143,7 +143,7 @@ The assistant camera control uses the browser's real image capture flow (`captur
 - `GET /api/openclaw/status` — current OpenClaw-backed cultivation data/status
 - `GET /api/lmstudio/models` — discovered LM Studio models
 
-Cost/revenue, harvest, inventory, and cloning routes currently return `503` with `available:false` because those legacy endpoints do not yet have persisted Prisma models. They no longer return sample records or process-memory writes as if they were production data.
+Cost/revenue, harvest, inventory, cloning, canopy measurements, watering/nutrient schedules, simple analysis, and automation-action routes currently return `503` with `available:false` because those legacy endpoints do not yet have persisted models or actuator integrations. They no longer return sample records, process-memory writes, or fake execution results as if they were production data.
 
 The agent-facing analysis response is documented in [`docs/developer/api/agent-analysis-contract.md`](docs/developer/api/agent-analysis-contract.md).
 
