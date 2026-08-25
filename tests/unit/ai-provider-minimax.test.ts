@@ -7,7 +7,7 @@
  *     base64 data:URL prefix is stripped; empty base64 is rejected
  */
 
-import { checkMiniMax, executeWithMiniMax } from '@/lib/ai-provider-minimax';
+import { checkMiniMax, executeWithMiniMax, normalizeMiniMaxImage } from '@/lib/ai-provider-minimax';
 
 const ORIGINAL_KEY = process.env.MINIMAX_API_KEY;
 const ORIGINAL_URL = process.env.MINIMAX_BASE_URL;
@@ -125,7 +125,7 @@ describe('executeWithMiniMax', () => {
     expect(body.messages[0].content).toBe('is my plant dying?');
   });
 
-  test('strips data: URL prefix from image base64', async () => {
+  test('preserves image data URL MIME type', async () => {
     const fetchSpy = jest.fn().mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -133,7 +133,7 @@ describe('executeWithMiniMax', () => {
     });
     (global.fetch as any) = fetchSpy;
 
-    const dirtyBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD';
+    const dirtyBase64 = 'data:image/heic;base64,AAECAwQ=';
     await executeWithMiniMax(
       [{ role: 'user', content: 'describe this plant' }],
       { imageBase64: dirtyBase64 }
@@ -142,7 +142,35 @@ describe('executeWithMiniMax', () => {
     const lastMsg = body.messages[body.messages.length - 1];
     expect(Array.isArray(lastMsg.content)).toBe(true);
     const imageBlock = lastMsg.content.find((c: any) => c.type === 'image_url');
-    expect(imageBlock.image_url.url).toBe(`data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD`);
+    expect(imageBlock.image_url.url).toBe(dirtyBase64);
+  });
+
+  test('wraps raw base64 without logging image bytes', async () => {
+    const fetchSpy = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
+    });
+    (global.fetch as any) = fetchSpy;
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    const rawBase64 = 'AAECAwQ=';
+
+    await executeWithMiniMax(
+      [{ role: 'user', content: 'describe' }],
+      { imageBase64: rawBase64 }
+    );
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    const imageUrl = body.messages.at(-1).content.find((c: any) => c.type === 'image_url').image_url.url;
+    expect(imageUrl).toBe(`data:image/jpeg;base64,${rawBase64}`);
+    expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining(rawBase64));
+    logSpy.mockRestore();
+  });
+
+  test('normalizes MIME-preserving and remote image inputs', () => {
+    expect(normalizeMiniMaxImage('data:application/octet-stream;base64,AA==')).toBe('data:application/octet-stream;base64,AA==');
+    expect(normalizeMiniMaxImage('https://example.test/image.webp')).toBe('https://example.test/image.webp');
+    expect(normalizeMiniMaxImage('   ')).toBeUndefined();
   });
 
   test('throws on empty base64 after sanitization', async () => {

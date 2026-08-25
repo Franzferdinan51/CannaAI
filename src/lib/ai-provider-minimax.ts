@@ -11,6 +11,22 @@ const getMiniMaxTimeoutMs = () => {
   return Number.isFinite(value) && value > 0 ? value : 60000;
 };
 
+/** Preserve provider-native data URLs while still accepting raw base64 input. */
+export function normalizeMiniMaxImage(image: unknown): string | undefined {
+  if (typeof image !== 'string') return undefined;
+  const value = image.trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:')) {
+    const separator = value.indexOf(',');
+    return separator >= 0 && value.slice(separator + 1).trim() ? value : undefined;
+  }
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value;
+  }
+  const base64 = value.replace(/\s/g, '');
+  return base64 ? `data:image/jpeg;base64,${base64}` : undefined;
+}
+
 export interface MiniMaxMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -75,24 +91,14 @@ export async function executeWithMiniMax(
   }>;
 
   if (imageBase64) {
-    // Strip data URL prefix if present (processedImage.base64 may include it)
-    let cleanBase64 = imageBase64;
-    if (cleanBase64.includes(',')) {
-      cleanBase64 = cleanBase64.split(',')[1];
-    }
-    // Remove any remaining non-base64 chars (whitespace, data URIs embedded, etc.)
-    cleanBase64 = cleanBase64.replace(/[^A-Za-z0-9+/=]/g, '');
-
-    console.log('[MiniMax] Image: original=' + imageBase64.length + ' chars, cleaned base64=' + cleanBase64.length + ' chars');
-    console.log('[MiniMax] base64 first 20:', JSON.stringify(cleanBase64.substring(0, 20)));
-    console.log('[MiniMax] base64 last 10:', JSON.stringify(cleanBase64.slice(-10)));
-    if (cleanBase64.length === 0) throw new Error('Base64 data is empty after cleaning');
+    const normalizedImage = normalizeMiniMaxImage(imageBase64);
+    if (!normalizedImage) throw new Error('Image data is empty');
 
     // Vision message
     content = [
       {
         type: 'image_url',
-        image_url: { url: `data:image/jpeg;base64,${cleanBase64}` },
+        image_url: { url: normalizedImage },
       },
       { type: 'text', text: messages[messages.length - 1]?.content || '' },
     ];
@@ -114,19 +120,6 @@ export async function executeWithMiniMax(
   const timeout = setTimeout(() => controller.abort(), getMiniMaxTimeoutMs());
 
   try {
-    // Log first 100 and last 50 chars of the base64 in the body
-    if (body.messages && body.messages[body.messages.length - 1]) {
-      const lastMsg = body.messages[body.messages.length - 1];
-      if (Array.isArray(lastMsg.content)) {
-        for (const item of lastMsg.content) {
-          if (item.type === 'image_url' && item.image_url && item.image_url.url) {
-            const url = item.image_url.url;
-            console.log('[MiniMax] Image URL: len=' + url.length + ' first=' + JSON.stringify(url.substring(0, 30)) + ' last=' + JSON.stringify(url.slice(-20)));
-          }
-        }
-      }
-    }
-
     const response = await fetch(`${getMiniMaxBaseUrl()}/chat/completions`, {
       method: 'POST',
       headers: {
