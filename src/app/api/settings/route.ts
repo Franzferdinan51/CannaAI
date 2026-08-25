@@ -24,7 +24,9 @@ export const revalidate = false;
 
 // Default settings
 const defaultSettings = {
-  aiProvider: 'openclaw',  // OpenClaw Gateway (PRIMARY - centralized model management)
+  // Keep the settings UI aligned with the runtime chain: LM Studio is the
+  // local-first provider, while OpenClaw/Hermes remain agent fallbacks.
+  aiProvider: 'lm-studio',
   lmStudio: {
     url: 'http://localhost:1234',
     apiKey: '',
