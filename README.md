@@ -10,7 +10,7 @@ Requirements:
 
 - Node.js 22 or newer
 - npm 10 or newer
-- LM Studio with a loaded model for local AI (optional for UI-only development)
+- LM Studio with a loaded chat/vision model for local AI (optional for UI-only development)
 - A local SQLite database; no PostgreSQL server is required by the default schema
 
 From the repository root:
@@ -18,12 +18,21 @@ From the repository root:
 ```bash
 npm run setup
 cp .env.example .env.local
-npm run db:generate
 npm run db:push
 npm run dev
 ```
 
-The backend is served on `http://localhost:3000`. The Vite application is served on `http://localhost:5173` and talks to the backend through the configured API base URL. `npm run dev` starts both processes.
+`npm run setup` installs both the backend and `NewUI/cannaai-pro` dependencies. `prisma db push` creates or updates the local SQLite schema; run it again after schema changes. The backend is served on `http://localhost:3000`. The Vite application is served on `http://localhost:5173` and talks to the backend through the configured API base URL. `npm run dev` starts both processes.
+
+After startup, verify the application and provider state:
+
+```bash
+npm run health
+curl http://localhost:3000/api/health-check
+curl http://localhost:3000/api/ai/providers
+```
+
+The health endpoints distinguish a stopped or unconfigured optional provider from a CannaAI startup failure.
 
 For a production build:
 
@@ -36,7 +45,7 @@ On Windows, `startup.bat` supports the same development, production, and build-o
 
 ## Local AI with LM Studio
 
-LM Studio is the default local provider for text and vision. Start its local server, load a model, and configure the OpenAI-compatible base URL:
+LM Studio is the default local provider for text and vision. Start its OpenAI-compatible local server, load the model and its vision projector when applicable, and configure the base URL:
 
 ```dotenv
 LM_STUDIO_BASE_URL="http://127.0.0.1:1234/v1"
@@ -44,7 +53,17 @@ LM_STUDIO_VISION_MODEL="ornith-1.5-35b-a3b"
 LM_STUDIO_TEXT_MODEL="ornith-1.5-35b-a3b"
 ```
 
-`LM_STUDIO_URL` is also accepted for compatibility. CannaAI discovers the available models from `/v1/models`; the configured model must actually be loaded in LM Studio. For vision, use a model and projector that support image input. CannaAI accepts data URLs and raw base64 image payloads at `/api/analyze`.
+`LM_STUDIO_URL` is also accepted for compatibility. If a model name is not configured, CannaAI can discover available models from `/v1/models`; an explicitly configured model must actually be loaded in LM Studio. For vision, the selected model and projector must support image input. CannaAI accepts data URLs and raw base64 image payloads at `/api/analyze`, including photos submitted by a remote agent.
+
+With the LM Studio CLI, the equivalent checks are:
+
+```bash
+lms server start
+lms ls
+curl http://127.0.0.1:1234/v1/models
+```
+
+The `lms` commands are optional; CannaAI communicates with LM Studio over its local OpenAI-compatible HTTP API.
 
 Useful checks:
 
@@ -75,6 +94,8 @@ The tracked `openclaw-bridge/` directory is retained as a legacy reference. It i
 
 See [`docs/guides/README-OPENCLAW.md`](docs/guides/README-OPENCLAW.md) for the agent contract and troubleshooting guidance.
 
+OpenClaw is not required for local LM Studio chat or analysis. Keep its credentials and runtime separate from Hermes; CannaAI reports each provider independently.
+
 ## Hermes integration
 
 Hermes is also a separate agent runtime. CannaAI prefers the authenticated Hermes API server, including native vision-capable chat, and falls back to the legacy Hermes proxy when only that interface is available.
@@ -87,7 +108,7 @@ HERMES_API_KEY="change-me-local-dev"
 HERMES_MODEL="hermes-agent"
 ```
 
-`HERMES_API_SERVER_KEY` is accepted as an alternative key name. For the legacy proxy fallback, configure `HERMES_AGENT_COMMAND` or the Hermes executable on `PATH`; `HERMES_PROXY_PORT` and `HERMES_PROXY_PROVIDER` remain available for compatibility. To route plant-photo analysis explicitly through Hermes:
+`HERMES_API_SERVER_KEY` is accepted as an alternative key name. For the legacy proxy fallback, configure `HERMES_AGENT_COMMAND` or the Hermes executable on `PATH`; `HERMES_PROXY_PORT` and `HERMES_PROXY_PROVIDER` remain available for compatibility. The native API path is preferred when its URL and key are available. To route plant-photo analysis explicitly through Hermes:
 
 ```dotenv
 CANNAAI_IMAGE_PROVIDER="hermes"
@@ -108,6 +129,8 @@ SOCKET_IO_TOKEN="use-a-long-random-value"
 ```
 
 The app uses Socket.IO for live dashboard updates and a WebSocket chat endpoint. Do not expose the development server directly to the public internet.
+
+The agent should submit the photo to the reachable CannaAI backend, not to the Vite development port. Use `/api/analyze` on the backend address and include the image as `image` or `plantImage`. A successful analysis response identifies the selected provider/model and whether vision processing was used.
 
 ## Core API routes
 
@@ -149,7 +172,7 @@ npm run build
 npm test -- --runInBand
 ```
 
-Additional suites are available through `npm run test:integration`, `npm run test:e2e`, `npm run test:visual`, `npm run test:security`, and `npm run test:performance`. Live provider checks require the corresponding local service; tests should report those services as unavailable rather than treating that state as a successful connection.
+Additional suites are available through `npm run test:integration`, `npm run test:e2e`, `npm run test:visual`, `npm run test:security`, and `npm run test:performance`. Live provider checks require the corresponding local service; tests should report those services as unavailable rather than treating that state as a successful connection. `npm run test:all` runs the unit, integration, browser, visual, performance, and security lanes together.
 
 ## Documentation
 
