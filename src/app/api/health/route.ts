@@ -9,6 +9,19 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const revalidate = false;
 
+async function withHealthTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<null>((resolve) => {
+      timer = setTimeout(() => resolve(null), timeoutMs);
+      timer.unref?.();
+    });
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 export async function GET() {
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -46,10 +59,7 @@ export async function GET() {
   // Non-blocking best-effort provider summary — never let probe failures
   // flip the health endpoint to unhealthy.
   try {
-    const detected = await Promise.race([
-      detectAvailableProviders(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
-    ]);
+    const detected = await withHealthTimeout(detectAvailableProviders(), 4000);
     if (detected) {
       const available = (detected.all || []).filter((p: any) => p.isAvailable).map((p: any) => p.provider);
       const unavailable = (detected.all || []).filter((p: any) => !p.isAvailable).map((p: any) => p.provider);
