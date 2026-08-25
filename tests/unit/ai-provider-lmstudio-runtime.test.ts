@@ -141,4 +141,28 @@ describe('legacy LM Studio runtime configuration', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  test('preserves non-image data URLs such as application/octet-stream captures', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'vision-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'vision-model', type: 'llm', capabilities: { vision: true } }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'vision answer' } }] }),
+      } as Response);
+
+    await executeWithLMStudio(
+      [{ role: 'user', content: 'Inspect this capture' }],
+      { image: 'data:application/octet-stream;base64,abc123', useVision: true },
+    );
+
+    const body = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(body.messages[0].content[1].image_url.url).toBe('data:application/octet-stream;base64,abc123');
+  });
 });

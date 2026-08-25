@@ -119,7 +119,7 @@ function normalizeImageUrl(image?: string): string | undefined {
   if (!image) return undefined;
   const value = String(image).trim();
   if (!value) return undefined;
-  if (value.startsWith('data:image/')) return value;
+  if (value.startsWith('data:')) return value;
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
   return `data:image/png;base64,${value}`;
 }
