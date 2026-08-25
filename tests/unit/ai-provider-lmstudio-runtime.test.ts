@@ -80,4 +80,25 @@ describe('legacy LM Studio runtime configuration', () => {
     expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
     expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
   });
+
+  test('does not send an image to a text-only model when no vision model is available', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'text-only-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          models: [{ key: 'text-only-model', type: 'llm', capabilities: { vision: false } }],
+        }),
+      } as Response);
+
+    await expect(executeWithLMStudio(
+      [{ role: 'user', content: 'Inspect this leaf' }],
+      { image: 'data:image/jpeg;base64,abc123', useVision: true },
+    )).rejects.toThrow('no vision-capable model');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

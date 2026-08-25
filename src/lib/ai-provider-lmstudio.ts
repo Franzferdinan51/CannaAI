@@ -324,15 +324,25 @@ async function resolveModel(type: 'vision' | 'text', explicitModel?: string): Pr
   const configured = getConfiguredModel(type).trim();
   const available = await getAvailableModels();
 
+  if (type === 'vision') {
+    if (configured && (available.length === 0 || available.includes(configured))) {
+      return configured;
+    }
+
+    const visionModels = await getVisionModels();
+    if (visionModels.length > 0) return visionModels[0];
+
+    if (configured && available.length === 0) return configured;
+
+    throw new Error(
+      'LM Studio is reachable but no vision-capable model is available. Load a vision model or configure LM_STUDIO_VISION_MODEL.',
+    );
+  }
+
   if (configured) {
     // If model discovery temporarily fails, preserve an explicit user choice
     // and let the completion endpoint produce the authoritative error.
     if (available.length === 0 || available.includes(configured)) return configured;
-  }
-
-  if (type === 'vision') {
-    const visionModels = await getVisionModels();
-    if (visionModels.length > 0) return visionModels[0];
   }
 
   if (available.length > 0) return available[0];
