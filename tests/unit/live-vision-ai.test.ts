@@ -35,6 +35,7 @@ describe('live vision AI helper', () => {
     })).resolves.toMatchObject({
       diagnosis: expect.stringContaining('Possible magnesium deficiency'),
       confidence: 0.82,
+      healthScore: 0.68,
       recommendations: expect.arrayContaining(['Check root-zone pH']),
     });
 

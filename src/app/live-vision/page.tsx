@@ -98,7 +98,9 @@ export default function LiveVisionDashboard() {
       if (result.success) {
         const analysis: AnalysisResult = {
           timestamp: result.timestamp,
-          healthScore: result.analysis.healthScore || 0.85,
+          healthScore: typeof result.analysis.healthScore === 'number'
+            ? result.analysis.healthScore
+            : 0,
           issues: result.analysis.issues || [],
           recommendations: result.analysis.recommendations || [],
           captureInfo: result.analysis.captureInfo

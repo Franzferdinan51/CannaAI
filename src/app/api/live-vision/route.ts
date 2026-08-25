@@ -130,12 +130,18 @@ export async function POST(request: NextRequest) {
             },
             resolution: deviceInfo.resolution,
             captureTime: deviceInfo.timestamp,
-            processingTime: Date.now() - new Date(deviceInfo.timestamp).getTime(),
+            processingTime: Number.isFinite(new Date(deviceInfo.timestamp).getTime())
+              ? Math.max(0, Date.now() - new Date(deviceInfo.timestamp).getTime())
+              : null,
             imageFormat: deviceInfo.format
           },
           liveAnalysis: {
             isRealtime: true,
-            confidence: analysisResult.confidence || 0.85,
+            // Preserve the model's actual confidence. A default score would
+            // turn an unavailable/uncertain response into a false positive.
+            confidence: typeof analysisResult.confidence === 'number'
+              ? analysisResult.confidence
+              : 0,
             processingLatency: 'fast', // fast, medium, slow
             nextCaptureSuggestion: getNextCaptureSuggestion(analysisResult, analysisContext)
           }

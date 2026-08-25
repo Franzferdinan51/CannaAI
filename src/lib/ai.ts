@@ -11,6 +11,8 @@ import { normalizePlantAnalysisResult } from './plant-analysis-report-v2';
 export interface PlantHealthAnalysis {
   diagnosis: string;
   confidence: number;
+  /** Normalized 0-1 health score from the provider report, when available. */
+  healthScore?: number;
   recommendations: string[];
   urgency: 'low' | 'medium' | 'high' | 'critical';
   potentialIssues: string[];
@@ -86,6 +88,7 @@ export async function analyzePlantHealth(
   return {
     diagnosis: report.diagnosis,
     confidence: Math.max(0, Math.min(1, (report.confidence || 0) / 100)),
+    healthScore: Math.max(0, Math.min(1, (report.healthScore || 0) / 100)),
     recommendations,
     urgency: report.urgency,
     potentialIssues: (report.detectedIssues || []).map(issue => issue.name),
