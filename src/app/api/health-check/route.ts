@@ -97,9 +97,13 @@ export async function GET() {
     checkPrisma(),
     checkLMStudio(),
     // OpenClaw's supported status command starts a CLI process and can take
-    // several seconds even with --no-probe on macOS launchd installations.
-    // Five seconds produced false outages for a running Gateway.
-    withHealthTimeout<HealthComponent>(checkOpenClaw(), { status: 'unreachable', transport: 'acp', error: 'health check timed out' }, 10000),
+    // 20–30 seconds even with --no-probe on macOS launchd installations.
+    // Keep the route bounded, but allow the detector to prove a healthy Gateway.
+    withHealthTimeout<HealthComponent>(
+      checkOpenClaw(),
+      { status: 'unreachable', transport: 'acp', error: 'health check timed out' },
+      Number(process.env.OPENCLAW_HEALTH_TIMEOUT_MS || 45000),
+    ),
     withHealthTimeout<HealthComponent>(checkHermes(), { status: 'unreachable', error: 'health check timed out' }, 5000),
   ]);
 

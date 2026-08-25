@@ -16,11 +16,15 @@ const provider = () => new AgentCommandProvider('openclaw', {
   timeout: Number(process.env.OPENCLAW_TIMEOUT_MS || 120000)
 });
 
-// Detection timeout – intentionally short so it never blocks API responses
+// OpenClaw's status command can be slow on macOS launchd installations even
+// with --no-probe. Keep a bounded timeout, but do not turn a healthy gateway
+// into a false outage merely because the CLI takes longer than a few seconds.
 // `openclaw gateway status --json` may take several seconds while the
-// authenticated gateway performs its local RPC handshake. Five seconds
-// produced false negatives even though agent execution was healthy.
-const DETECT_TIMEOUT_MS = 20000;
+// authenticated gateway performs its local RPC handshake.
+const DETECT_TIMEOUT_MS = Number(process.env.OPENCLAW_HEALTH_TIMEOUT_MS || 40000);
+const DETECT_CACHE_MS = 30000;
+
+let cachedAvailability: { value: boolean; expiresAt: number } | undefined;
 
 function withDetectTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -36,10 +40,21 @@ function withDetectTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
 }
 
 export async function checkOpenClaw(): Promise<ProviderDetectionResult> {
+  if (cachedAvailability && cachedAvailability.expiresAt > Date.now()) {
+    const available = cachedAvailability.value;
+    return {
+      isAvailable: available,
+      provider: 'openclaw',
+      reason: available ? 'OpenClaw Gateway is reachable through its official ACP bridge' : 'OpenClaw Gateway is not reachable',
+      config: { type: 'openclaw', transport: 'acp', gateway: 'configured in OpenClaw' },
+      recommendations: available ? [] : ['Start OpenClaw Gateway: openclaw gateway start', 'Check: openclaw gateway status']
+    };
+  }
   const available = await withDetectTimeout(
     provider().isAvailable(),
     false
   );
+  cachedAvailability = { value: available, expiresAt: Date.now() + DETECT_CACHE_MS };
   return {
     isAvailable: available,
     provider: 'openclaw',

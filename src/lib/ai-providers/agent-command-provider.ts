@@ -94,7 +94,8 @@ export class AgentCommandProvider extends BaseProvider {
         // ACP execution performs the authenticated request-level proof later.
         // `--no-probe` avoids reporting a running Gateway as unavailable just
         // because the diagnostic CLI probe is slow.
-        const { stdout } = await execFileAsync(this.command, ['gateway', 'status', '--json', '--no-probe'], { timeout: 15000, maxBuffer: 2 * 1024 * 1024 });
+        const statusTimeout = Number(process.env.OPENCLAW_HEALTH_TIMEOUT_MS || 40000);
+        const { stdout } = await execFileAsync(this.command, ['gateway', 'status', '--json', '--no-probe'], { timeout: statusTimeout, maxBuffer: 2 * 1024 * 1024 });
         const parsed = JSON.parse(stdout);
         return parsed?.rpc?.ok === true
           || parsed?.service?.runtime?.status === 'running'
