@@ -68,6 +68,13 @@ export function ChatTemplates({
   const [templateVariables, setTemplateVariables] = useState<Record<string, Record<string, any>>>({});
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<ChatTemplate | null>(null);
+  const [templateDraft, setTemplateDraft] = useState({
+    name: '',
+    description: '',
+    category: 'general' as ChatTemplate['category'],
+    prompt: '',
+    isQuickAction: false,
+  });
 
   // Categories
   const categories = useMemo(() => {
@@ -161,6 +168,31 @@ export function ChatTemplates({
       }
       return newSet;
     });
+  };
+
+  const closeTemplateForm = () => {
+    setShowCreateForm(false);
+    setEditingTemplate(null);
+    setTemplateDraft({ name: '', description: '', category: 'general', prompt: '', isQuickAction: false });
+  };
+
+  const handleTemplateSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const template = {
+      name: templateDraft.name.trim(),
+      description: templateDraft.description.trim(),
+      category: templateDraft.category,
+      prompt: templateDraft.prompt.trim(),
+      isQuickAction: templateDraft.isQuickAction,
+      sortOrder: templates.length + 1,
+    };
+
+    if (editingTemplate && onEditTemplate) {
+      onEditTemplate(editingTemplate.id, template);
+    } else if (onCreateTemplate) {
+      onCreateTemplate(template);
+    }
+    closeTemplateForm();
   };
 
   // Render variable input
@@ -454,7 +486,7 @@ export function ChatTemplates({
                 {editingTemplate ? 'Edit Template' : 'Create New Template'}
               </h3>
 
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleTemplateSubmit}>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Template Name
@@ -462,6 +494,8 @@ export function ChatTemplates({
                   <input
                     type="text"
                     placeholder="Enter template name"
+                    value={templateDraft.name}
+                    onChange={(event) => setTemplateDraft((draft) => ({ ...draft, name: event.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                     required
                   />
@@ -474,6 +508,8 @@ export function ChatTemplates({
                   <textarea
                     placeholder="Describe what this template does"
                     rows={2}
+                    value={templateDraft.description}
+                    onChange={(event) => setTemplateDraft((draft) => ({ ...draft, description: event.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -482,7 +518,7 @@ export function ChatTemplates({
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Category
                   </label>
-                  <select className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500">
+                  <select value={templateDraft.category} onChange={(event) => setTemplateDraft((draft) => ({ ...draft, category: event.target.value as ChatTemplate['category'] }))} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500">
                     <option value="general">General</option>
                     <option value="plant-care">Plant Care</option>
                     <option value="troubleshooting">Troubleshooting</option>
@@ -500,6 +536,8 @@ export function ChatTemplates({
                   <textarea
                     placeholder="Enter the template prompt. Use {variable_name} for variables."
                     rows={4}
+                    value={templateDraft.prompt}
+                    onChange={(event) => setTemplateDraft((draft) => ({ ...draft, prompt: event.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                     required
                   />
@@ -509,6 +547,8 @@ export function ChatTemplates({
                   <label className="flex items-center gap-2 text-sm text-gray-300">
                     <input
                       type="checkbox"
+                      checked={templateDraft.isQuickAction}
+                      onChange={(event) => setTemplateDraft((draft) => ({ ...draft, isQuickAction: event.target.checked }))}
                       className="rounded text-emerald-500 focus:ring-emerald-500"
                     />
                     Quick Action
@@ -525,10 +565,7 @@ export function ChatTemplates({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      setShowCreateForm(false);
-                      setEditingTemplate(null);
-                    }}
+                    onClick={closeTemplateForm}
                     className="border-gray-600 text-gray-300"
                   >
                     Cancel
