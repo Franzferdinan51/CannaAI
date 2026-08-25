@@ -16,6 +16,8 @@ const mockCheckOpenRouter = jest.fn();
 const mockExecuteWithOpenRouter = jest.fn();
 const mockCheckMiniMax = jest.fn();
 const mockExecuteWithMiniMax = jest.fn();
+const mockCheckHermes = jest.fn();
+const mockExecuteWithHermes = jest.fn();
 
 jest.mock('@/lib/ai-provider-lmstudio', () => ({
   checkLMStudio: (...args: unknown[]) => mockCheckLMStudio(...args),
@@ -42,6 +44,11 @@ jest.mock('@/lib/ai-provider-minimax', () => ({
   executeWithMiniMax: (...args: unknown[]) => mockExecuteWithMiniMax(...args),
 }));
 
+jest.mock('@/lib/ai-provider-hermes', () => ({
+  checkHermes: (...args: unknown[]) => mockCheckHermes(...args),
+  executeWithHermes: (...args: unknown[]) => mockExecuteWithHermes(...args),
+}));
+
 import {
   detectAvailableProviders,
   executeAIWithFallback,
@@ -64,10 +71,12 @@ describe('LM Studio local-model regressions', () => {
     mockCheckBailian.mockResolvedValue({ available: false, isAvailable: false });
     mockCheckOpenRouter.mockResolvedValue({ available: false, isAvailable: false });
     mockCheckMiniMax.mockResolvedValue({ available: false, isAvailable: false });
+    mockCheckHermes.mockResolvedValue({ available: false, isAvailable: false });
     mockExecuteWithOpenClaw.mockRejectedValue(new Error('OpenClaw unavailable'));
     mockExecuteWithBailian.mockRejectedValue(new Error('Bailian unavailable'));
     mockExecuteWithOpenRouter.mockRejectedValue(new Error('OpenRouter unavailable'));
     mockExecuteWithMiniMax.mockRejectedValue(new Error('MiniMax unavailable'));
+    mockExecuteWithHermes.mockRejectedValue(new Error('Hermes unavailable'));
   });
 
   test('provider detection waits for the LM Studio health check instead of racing an AbortSignal object', async () => {

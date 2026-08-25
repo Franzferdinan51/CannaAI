@@ -10,6 +10,7 @@ import { checkBailian, executeWithBailian } from './ai-provider-bailian';
 import { checkOpenRouter, executeWithOpenRouter } from './ai-provider-openrouter';
 import { executeWithLMStudio, checkLMStudio, getLMStudioApiKey } from './ai-provider-lmstudio';
 import { checkMiniMax, executeWithMiniMax } from './ai-provider-minimax';
+import { checkHermes, executeWithHermes } from './ai-provider-hermes';
 
 export interface ProviderDetectionResult {
   isAvailable: boolean;
@@ -144,6 +145,8 @@ function providerRecommendations(provider: string, isAvailable: boolean): string
       return ['Configure OPENROUTER_API_KEY if OpenRouter should be used'];
     case 'minimax':
       return ['Configure MINIMAX_API_KEY if MiniMax should be used'];
+    case 'hermes':
+      return ['Start Hermes API server with `hermes gateway` or configure the legacy Hermes proxy'];
     default:
       return [];
   }
@@ -169,11 +172,12 @@ export async function detectAvailableProviders() {
 
   // Run local / inexpensive probes together. These timeouts are outer safety
   // rails; provider implementations may also abort their own fetch calls.
-  const [lmstudio, openclaw, bailian, openrouter, minimax] = await Promise.all([
+  const [lmstudio, openclaw, hermes, bailian, openrouter, minimax] = await Promise.all([
     runCheck(checkLMStudio(), 3000, 'lmstudio'),
     // OpenClaw's ACP/gateway status check includes a local RPC handshake and
     // can legitimately take longer than an HTTP health probe.
     runCheck(checkOpenClaw(), 20000, 'openclaw'),
+    runCheck(checkHermes(), 10000, 'hermes'),
     runCheck(checkBailian(), 10000, 'bailian'),
     runCheck(checkOpenRouter(), 20000, 'openrouter'),
     runCheck(checkMiniMax(), 20000, 'minimax'),
@@ -193,6 +197,13 @@ export async function detectAvailableProviders() {
       reason: openclaw.isAvailable ? (openclaw.r as any)?.reason || 'connected' : (openclaw.r as any)?.reason || 'not reachable',
       recommendations: providerRecommendations('openclaw', openclaw.isAvailable),
       data: openclaw.r,
+    },
+    {
+      provider: 'hermes',
+      isAvailable: hermes.isAvailable,
+      reason: hermes.isAvailable ? (hermes.r as any)?.reason || 'connected' : (hermes.r as any)?.reason || 'not reachable',
+      recommendations: providerRecommendations('hermes', hermes.isAvailable),
+      data: hermes.r,
     },
     {
       provider: 'bailian',
@@ -327,6 +338,10 @@ export async function executeAIWithFallback(
     {
       name: 'openclaw',
       fn: () => executeWithOpenClaw(messages, options),
+    },
+    {
+      name: 'hermes',
+      fn: () => executeWithHermes(messages, options),
     },
     {
       name: 'minimax',

@@ -4,6 +4,7 @@ import { base64ToBuffer, ImageProcessingError } from '@/lib/base64';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithLMStudio } from '@/lib/ai-provider-lmstudio';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
+import { executeWithHermes } from '@/lib/ai-provider-hermes';
 import { executeWithBailian } from '@/lib/ai-provider-bailian';
 import { executeWithOpenRouter } from '@/lib/ai-provider-openrouter';
 import { executeWithMiniMax } from '@/lib/ai-provider-minimax';
@@ -17,8 +18,9 @@ import { withRequest } from '@/lib/logger';
  * Provider Priority Chain:
  * 1. LM Studio - Local models (PRIMARY for vision)
  * 2. OpenClaw Gateway - Local model management fallback
- * 3. Alibaba Bailian - Cloud fallback
- * 4. OpenRouter - Emergency fallback
+ * 3. Hermes Agent - authenticated local agent fallback
+ * 4. Alibaba Bailian - Cloud fallback
+ * 5. OpenRouter - Emergency fallback
  */
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -464,10 +466,14 @@ export async function POST(request: NextRequest) {
     const detectedPrimary = providerDetection.primary;
     const primaryProvider = imageProviderOverride === 'openclaw'
       ? { isAvailable: true, provider: 'openclaw', reason: 'Configured image provider: OpenClaw/MiniMax M3' }
+      : imageProviderOverride === 'hermes'
+        ? { isAvailable: true, provider: 'hermes', reason: 'Configured image provider: Hermes Agent' }
       : detectedPrimary.provider === 'lmstudio'
         ? { isAvailable: true, provider: 'lmstudio', reason: 'LM Studio is available' }
         : detectedPrimary.provider === 'openclaw'
           ? { isAvailable: true, provider: 'openclaw', reason: 'OpenClaw Gateway is running' }
+          : detectedPrimary.provider === 'hermes'
+            ? { isAvailable: true, provider: 'hermes', reason: 'Hermes Agent is available' }
           : detectedPrimary.provider === 'bailian'
             ? { isAvailable: true, provider: 'bailian', reason: 'Alibaba Bailian is available' }
             : detectedPrimary.provider === 'openrouter'
@@ -512,6 +518,10 @@ export async function POST(request: NextRequest) {
 
       // Execute AI analysis with vision-aware fallback
       let aiResult;
+      const hasUsableResult = (candidate: any) => {
+        if (typeof candidate === 'string') return candidate.trim().length > 0;
+        return candidate && typeof candidate === 'object' && Object.keys(candidate).length > 0;
+      };
 
       if (primaryProvider.provider === 'lmstudio') {
         // PRIMARY: Use LM Studio locally for vision and text
@@ -549,11 +559,6 @@ export async function POST(request: NextRequest) {
         // A gateway can return HTTP success with an empty/unsupported vision
         // response. Treat that as a failure so image analysis reaches a real
         // vision provider instead of generating a misleading fallback report.
-        const hasUsableResult = (candidate: any) => {
-          if (typeof candidate === 'string') return candidate.trim().length > 0;
-          return candidate && typeof candidate === 'object' && Object.keys(candidate).length > 0;
-        };
-
         if (!aiResult.success || !hasUsableResult(aiResult.result)) {
           console.log('⚠️ OpenClaw returned no usable content, trying vision fallback...');
 
@@ -587,6 +592,24 @@ export async function POST(request: NextRequest) {
               { image: imageBase64ForAI || undefined }
             );
           }
+        }
+      } else if (primaryProvider.provider === 'hermes') {
+        console.log('🟢 Using Hermes Agent as vision provider...');
+        aiResult = await executeWithHermes({
+          prompt,
+          image: imageBase64ForAI,
+          model: process.env.HERMES_MODEL || undefined,
+        });
+
+        if (!aiResult.success || !hasUsableResult(aiResult.result)) {
+          console.log('⚠️ Hermes returned no usable content, trying configured provider chain...');
+          aiResult = await executeAIWithFallback(
+            [{ role: 'user', content: prompt }],
+            {
+              image: imageBase64ForAI || undefined,
+              requireVision: !!imageBase64ForAI,
+            },
+          );
         }
       } else if (primaryProvider.provider === 'bailian') {
         // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint) - VISION CAPABLE

@@ -3,8 +3,10 @@
 const mockDetectAvailableProviders = jest.fn();
 const mockExecuteAIWithFallback = jest.fn();
 const mockExecuteWithOpenClaw = jest.fn();
+const mockExecuteWithHermes = jest.fn();
 const mockExecuteWithBailian = jest.fn();
 const mockProcessImageForVisionModel = jest.fn();
+const mockGetImageMetadata = jest.fn();
 const mockSharpMetadata = jest.fn();
 const mockSharp = jest.fn(() => ({
   metadata: mockSharpMetadata
@@ -62,7 +64,7 @@ jest.mock('@/lib/image-simple', () => {
   const actual = jest.requireActual('@/lib/image-simple');
   return {
     ...actual,
-    getImageMetadata: jest.fn().mockResolvedValue({ width: 3024, height: 4032, format: 'jpeg' }),
+    getImageMetadata: mockGetImageMetadata,
     processImageForVisionModel: mockProcessImageForVisionModel
   };
 });
@@ -79,6 +81,10 @@ jest.mock('@/lib/ai-provider-detection', () => {
 
 jest.mock('@/lib/ai-provider-openclaw', () => ({
   executeWithOpenClaw: mockExecuteWithOpenClaw
+}));
+
+jest.mock('@/lib/ai-provider-hermes', () => ({
+  executeWithHermes: mockExecuteWithHermes,
 }));
 
 jest.mock('@/lib/ai-provider-bailian', () => ({
@@ -201,6 +207,7 @@ describe('/api/analyze integration', () => {
     process.env.NODE_ENV = 'test';
     process.env.BUILD_MODE = 'server';
     process.env.OPENCLAW_MODEL = 'qwen3.5-plus';
+    delete process.env.CANNAAI_IMAGE_PROVIDER;
 
     mockSharp.mockImplementation(() => ({
       metadata: mockSharpMetadata
@@ -210,6 +217,7 @@ describe('/api/analyze integration', () => {
       height: 4032,
       format: 'jpeg'
     });
+    mockGetImageMetadata.mockResolvedValue({ width: 3024, height: 4032, format: 'jpeg' });
     mockDetectAvailableProviders.mockResolvedValue(createProviderDetection('openrouter'));
     mockExecuteAIWithFallback.mockResolvedValue({
       provider: 'openrouter',
@@ -219,6 +227,11 @@ describe('/api/analyze integration', () => {
       success: true,
       provider: 'openclaw',
       result: buildStructuredAnalysis()
+    });
+    mockExecuteWithHermes.mockResolvedValue({
+      success: true,
+      provider: 'hermes',
+      result: buildStructuredAnalysis(),
     });
     mockExecuteWithBailian.mockResolvedValue({
       success: true,
@@ -345,6 +358,31 @@ describe('/api/analyze integration', () => {
         prompt: expect.stringContaining('IMAGE ANALYSIS: High-resolution visual examination of plant provided')
       })
     );
+  });
+
+  test('routes a configured plant photo to Hermes native vision', async () => {
+    process.env.CANNAAI_IMAGE_PROVIDER = 'hermes';
+
+    const response = await POST(
+      createAnalyzeRequest(
+        {
+          strain: 'Gelato',
+          leafSymptoms: 'Inspect the newest leaves for stress.',
+          growthStage: 'vegetative',
+          plantImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        },
+        3
+      )
+    );
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.provider.used).toBe('hermes');
+    expect(mockExecuteWithHermes).toHaveBeenCalledWith(expect.objectContaining({
+      image: 'processed-image-base64',
+      prompt: expect.stringContaining('IMAGE ANALYSIS: High-resolution visual examination of plant provided'),
+    }));
   });
 
   test('returns explainability fields for successful analyses', async () => {

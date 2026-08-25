@@ -10,9 +10,15 @@ import {
   checkLMStudio,
   checkOpenRouter
 } from '@/lib/ai-provider-detection';
+import { checkHermes, executeWithHermes } from '@/lib/ai-provider-hermes';
 
 // Mock fetch globally
 global.fetch = jest.fn();
+
+jest.mock('@/lib/ai-provider-hermes', () => ({
+  checkHermes: jest.fn(),
+  executeWithHermes: jest.fn(),
+}));
 
 describe('AI Provider Detection', () => {
   beforeEach(() => {
@@ -37,6 +43,12 @@ describe('AI Provider Detection', () => {
     delete process.env.NETLIFY;
     delete process.env.AWS_LAMBDA_FUNCTION_NAME;
     process.env.OPENCLAW_AGENT_COMMAND = '/definitely/missing/cannaai-openclaw-test';
+    (checkHermes as jest.Mock).mockResolvedValue({
+      isAvailable: false,
+      provider: 'hermes',
+      reason: 'Hermes is not configured',
+    });
+    (executeWithHermes as jest.Mock).mockRejectedValue(new Error('Hermes unavailable'));
   });
 
   describe('checkLMStudio', () => {
@@ -206,6 +218,20 @@ describe('AI Provider Detection', () => {
       expect(result.fallback.length).toBeGreaterThan(0);
     });
 
+    test('should select authenticated Hermes as the local agent provider', async () => {
+      (checkHermes as jest.Mock).mockResolvedValue({
+        isAvailable: true,
+        provider: 'hermes',
+        reason: 'Hermes API server is connected',
+      });
+      (fetch as jest.Mock).mockRejectedValue(new Error('other providers unavailable'));
+
+      const result = await detectAvailableProviders();
+
+      expect(result.primary.provider).toBe('hermes');
+      expect(result.primary.isAvailable).toBe(true);
+    });
+
     test('should select primary provider correctly', async () => {
       process.env.OPENROUTER_API_KEY = 'test-key';
 
@@ -352,6 +378,28 @@ describe('AI Provider Detection', () => {
       expect(result.result).toBeDefined();
       expect(result.provider).toBe('openrouter');
       expect(result.processingTime).toBeGreaterThan(0);
+    });
+
+    test('should execute a requested Hermes vision provider before other fallbacks', async () => {
+      (executeWithHermes as jest.Mock).mockResolvedValue({
+        success: true,
+        provider: 'hermes',
+        result: 'Hermes vision answer',
+      });
+
+      const result = await executeAIWithFallback(
+        [{ role: 'user', content: 'Inspect this leaf' }],
+        { primaryProvider: 'hermes', image: 'data:image/jpeg;base64,abc' },
+      );
+
+      expect(result).toEqual(expect.objectContaining({
+        success: true,
+        provider: 'hermes',
+        result: 'Hermes vision answer',
+      }));
+      expect(executeWithHermes).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({
+        image: 'data:image/jpeg;base64,abc',
+      }));
     });
 
     test('should execute AI with image', async () => {
