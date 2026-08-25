@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const validatedData = ScheduleSchema.parse(body);
 
     // Schedule the backup/export
-    backupManager.scheduleBackup(validatedData.frequency);
+    const scheduleId = await backupManager.scheduleBackup(validatedData.frequency, validatedData);
 
     return NextResponse.json({
       success: true,
@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
       schedule: {
         frequency: validatedData.frequency,
         format: validatedData.format,
-        enabled: validatedData.enabled
+        enabled: validatedData.enabled,
+        id: scheduleId
       }
     });
   } catch (error) {
@@ -62,12 +63,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    // Return scheduled exports
+    const schedules = await backupManager.listScheduledBackups();
     return NextResponse.json({
       success: true,
-      schedules: [
-        // In a real implementation, fetch from database
-      ]
+      schedules
     });
   } catch (error) {
     return NextResponse.json({
@@ -89,7 +88,10 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Delete schedule
+    const deleted = await backupManager.deleteScheduledBackup(id);
+    if (!deleted) {
+      return NextResponse.json({ success: false, error: 'Schedule not found' }, { status: 404 });
+    }
     return NextResponse.json({
       success: true,
       message: 'Schedule deleted successfully'

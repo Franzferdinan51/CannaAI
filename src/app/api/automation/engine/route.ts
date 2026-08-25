@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { addHours, addDays, addWeeks, addMonths } from 'date-fns';
 import { analyzePlantHealth } from '@/lib/ai';
 import { sendNotification } from '@/lib/notifications';
+import { exportManager } from '@/lib/export-import-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -247,12 +248,28 @@ async function checkSchedules() {
       console.log(`Executing schedule: ${schedule.name}`);
       let scheduleSucceeded = true;
 
-      // Execute all rules for this schedule
-      for (const rule of schedule.rules) {
-        if (rule.enabled) {
-          const ruleResult = await executeRule(rule.id);
-          results.push({ ruleId: rule.id, ...ruleResult });
-          scheduleSucceeded = scheduleSucceeded && ruleResult.success === true;
+      if (schedule.type === 'export') {
+        const config = schedule.config && typeof schedule.config === 'object' && !Array.isArray(schedule.config)
+          ? schedule.config as Record<string, any>
+          : {};
+        const jobId = await exportManager.createExportJob({
+          format: config.format || 'zip',
+          filters: config.filters,
+          includeMetadata: config.includeMetadata !== false,
+          includeThumbnails: config.includeThumbnails,
+          customFields: config.customFields
+        });
+        results.push({ scheduleId: schedule.id, type: 'export', success: true, jobId });
+      }
+
+      if (schedule.type !== 'export') {
+        // Execute all rules for this schedule
+        for (const rule of schedule.rules) {
+          if (rule.enabled) {
+            const ruleResult = await executeRule(rule.id);
+            results.push({ ruleId: rule.id, ...ruleResult });
+            scheduleSucceeded = scheduleSucceeded && ruleResult.success === true;
+          }
         }
       }
 

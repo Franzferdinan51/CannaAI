@@ -766,9 +766,38 @@ export class BackupManager {
   /**
    * Schedule regular backup
    */
-  scheduleBackup(frequency: 'daily' | 'weekly' | 'monthly'): void {
-    // Implementation for scheduled backups
-    console.log(`Scheduling ${frequency} backups`);
+  async scheduleBackup(frequency: 'daily' | 'weekly' | 'monthly', config: Record<string, any> = {}): Promise<string> {
+    const nextRun = new Date();
+    if (frequency === 'daily') nextRun.setDate(nextRun.getDate() + 1);
+    if (frequency === 'weekly') nextRun.setDate(nextRun.getDate() + 7);
+    if (frequency === 'monthly') nextRun.setMonth(nextRun.getMonth() + 1);
+
+    const schedule = await prisma.schedule.create({
+      data: {
+        name: config.name || `Scheduled ${config.format || 'zip'} export`,
+        description: 'Durable export schedule',
+        cronExpression: `@${frequency}`,
+        timezone: config.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        type: 'export',
+        interval: frequency,
+        enabled: config.enabled !== false,
+        nextRun,
+        config
+      }
+    });
+    return schedule.id;
+  }
+
+  async listScheduledBackups() {
+    return prisma.schedule.findMany({
+      where: { type: 'export' },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async deleteScheduledBackup(scheduleId: string): Promise<boolean> {
+    const deleted = await prisma.schedule.delete({ where: { id: scheduleId } }).catch(() => null);
+    return Boolean(deleted);
   }
 
   /**
