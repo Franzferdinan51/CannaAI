@@ -49,80 +49,10 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
   disabled = false,
   className = ''
 }) => {
-  const [schedules, setSchedules] = useState<AutomationSchedule[]>([
-    {
-      id: 'water_morning',
-      name: 'Morning Watering',
-      system: 'watering',
-      enabled: true,
-      schedule: '0 6 * * *', // 6:00 AM every day
-      timezone: 'UTC',
-      actions: [
-        {
-          type: 'water',
-          config: { duration: 5, intensity: 100 }
-        }
-      ],
-      priority: 1,
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
-      nextRun: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      id: 'water_evening',
-      name: 'Evening Watering',
-      system: 'watering',
-      enabled: true,
-      schedule: '0 18 * * *', // 6:00 PM every day
-      timezone: 'UTC',
-      actions: [
-        {
-          type: 'water',
-          config: { duration: 3, intensity: 80 }
-        }
-      ],
-      priority: 1,
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
-      nextRun: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      id: 'lights_on',
-      name: 'Lights On',
-      system: 'lighting',
-      enabled: true,
-      schedule: '0 6 * * *', // 6:00 AM every day
-      timezone: 'UTC',
-      actions: [
-        {
-          type: 'light',
-          config: { intensity: 75, spectrum: 'full' }
-        }
-      ],
-      priority: 2,
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
-      nextRun: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      id: 'lights_off',
-      name: 'Lights Off',
-      system: 'lighting',
-      enabled: true,
-      schedule: '0 18 * * *', // 6:00 PM every day
-      timezone: 'UTC',
-      actions: [
-        {
-          type: 'light',
-          config: { intensity: 0 }
-        }
-      ],
-      priority: 2,
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
-      nextRun: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
-    }
-  ]);
+  // Schedules are loaded from the backend when that integration is available.
+  // Do not seed successful schedules locally because they imply actions that
+  // the current unavailable automation endpoint cannot execute.
+  const [schedules, setSchedules] = useState<AutomationSchedule[]>([]);
 
   const [editingSchedule, setEditingSchedule] = useState<AutomationSchedule | null>(null);
   const [showNewSchedule, setShowNewSchedule] = useState(false);
