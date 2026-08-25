@@ -6,6 +6,17 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkLMStudio as checkLMStudioProvider } from '@/lib/ai-provider-lmstudio';
 
+function withHealthTimeout<T>(promise: Promise<T>, fallback: T, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), timeoutMs);
+    timer.unref?.();
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 async function checkPrisma() {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -69,8 +80,8 @@ export async function GET() {
   const [db, lmstudio, openclaw, hermes] = await Promise.all([
     checkPrisma(),
     checkLMStudio(),
-    checkOpenClaw(),
-    checkHermes(),
+    withHealthTimeout(checkOpenClaw(), { status: 'unreachable', transport: 'acp', error: 'health check timed out' }, 5000),
+    withHealthTimeout(checkHermes(), { status: 'unreachable', error: 'health check timed out' }, 5000),
   ]);
 
   const core = [db, lmstudio, openclaw];
