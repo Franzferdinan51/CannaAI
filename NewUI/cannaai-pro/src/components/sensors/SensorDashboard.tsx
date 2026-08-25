@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSocketContext } from '../../contexts/SocketContext';
 import {
   Thermometer,
@@ -42,166 +42,35 @@ import {
   RoomConfig,
   SensorAlert,
   NotificationData,
-  SystemHealth,
   SensorType
 } from './types';
 
 interface SensorDashboardProps {
   className?: string;
+  sensors?: SensorConfig[];
+  rooms?: RoomConfig[];
 }
 
-const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '' }) => {
-  const { lastSensorData, isConnected, notifications, clearNotifications } = useSocketContext();
+const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [] }) => {
+  const { lastSensorData, isConnected, notifications } = useSocketContext();
 
   // State management
   const [selectedRoom, setSelectedRoom] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAlerts, setShowAlerts] = useState<boolean>(true);
-  const [showDetails, setShowDetails] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
-  const [refreshInterval, setRefreshInterval] = useState<number>(30000); // 30 seconds
-  const [systemHealth, setSystemHealth] = useState<SystemHealth>({
-    overall: 'healthy',
-    sensors: { total: 0, online: 0, offline: 0, calibrationDue: 0 },
-    connectivity: { socket: isConnected, database: true, externalApis: {} },
-    lastUpdate: new Date().toISOString()
-  });
-
-  // Mock sensor configurations (would come from API/database)
-  const [sensorConfigs] = useState<SensorConfig[]>([
-    {
-      id: 'temp_001',
-      name: 'Temperature Sensor A1',
-      type: 'temperature',
-      location: 'Canopy Level',
-      roomName: 'Main Flower Room',
-      enabled: true,
-      alerts: [
-        {
-          id: 'temp_high',
-          type: 'threshold',
-          condition: { operator: 'gt', value: 85 },
-          enabled: true,
-          severity: 'high',
-          message: 'Temperature exceeds safe limit',
-          actions: [{ type: 'notification', config: {} }],
-          cooldownMinutes: 15
-        }
-      ],
-      dataHistory: [],
-      batteryLevel: 87,
-      signalStrength: -45,
-      lastMaintenance: '2024-01-15T10:00:00Z',
-      nextMaintenanceDue: '2024-02-15T10:00:00Z',
-      firmwareVersion: '2.1.3',
-      manufacturer: 'SensorTech',
-      model: 'ST-TEMP-V2',
-      serialNumber: 'ST2024001'
-    },
-    {
-      id: 'humid_001',
-      name: 'Humidity Sensor B1',
-      type: 'humidity',
-      location: 'Center Room',
-      roomName: 'Main Flower Room',
-      enabled: true,
-      alerts: [],
-      dataHistory: [],
-      batteryLevel: 92,
-      signalStrength: -52
-    },
-    {
-      id: 'ph_001',
-      name: 'pH Sensor C1',
-      type: 'ph',
-      location: 'Reservoir',
-      roomName: 'Main Flower Room',
-      enabled: true,
-      alerts: [
-        {
-          id: 'ph_low',
-          type: 'range',
-          condition: { operator: 'outside', value: [5.8, 6.8] },
-          enabled: true,
-          severity: 'medium',
-          message: 'pH level out of optimal range',
-          actions: [{ type: 'notification', config: {} }],
-          cooldownMinutes: 30
-        }
-      ],
-      dataHistory: [],
-      calibration: {
-        offset: 0.02,
-        slope: 1.01,
-        lastCalibrated: '2024-01-10T14:00:00Z',
-        nextCalibrationDue: '2024-02-10T14:00:00Z',
-        calibrationPoints: [
-          { expectedValue: 4.0, actualValue: 4.02, timestamp: '2024-01-10T14:00:00Z' },
-          { expectedValue: 7.0, actualValue: 7.01, timestamp: '2024-01-10T14:05:00Z' },
-          { expectedValue: 10.0, actualValue: 9.98, timestamp: '2024-01-10T14:10:00Z' }
-        ]
-      }
-    }
-  ]);
-
-  // Mock room configurations
-  const [roomConfigs] = useState<RoomConfig[]>([
-    {
-      id: 'room_1',
-      name: 'Main Flower Room',
-      active: true,
-      targetEnvironment: {
-        temperature: { min: 68, max: 78 },
-        humidity: { min: 45, max: 55 },
-        co2: { min: 1000, max: 1400 },
-        vpd: { min: 0.8, max: 1.2 },
-        ph: { min: 5.8, max: 6.8 },
-        ec: { min: 1.2, max: 1.8 }
-      },
-      sensors: ['temp_001', 'humid_001', 'ph_001'],
-      automation: {
-        watering: { enabled: true, threshold: 35, schedule: '0 6,18 * * *', duration: 15, zones: [] },
-        lighting: { enabled: true, vegSchedule: '0 6-24 * * *', flowerSchedule: '0 6-18 * * *', intensity: 75 },
-        climate: { enabled: true, tempMin: 68, tempMax: 78, humidityMin: 45, humidityMax: 55, circulation: true, ventilation: true, heating: false, cooling: true },
-        co2: { enabled: true, target: 1200, tolerance: 100, schedule: '0 6-18 * * *' }
-      },
-      area: 200,
-      height: 8,
-      plantCount: 24,
-      growthStage: 'flowering'
-    },
-    {
-      id: 'room_2',
-      name: 'Veg Room',
-      active: false,
-      targetEnvironment: {
-        temperature: { min: 70, max: 80 },
-        humidity: { min: 60, max: 70 },
-        co2: { min: 800, max: 1200 },
-        vpd: { min: 0.7, max: 1.1 },
-        ph: { min: 5.5, max: 6.5 },
-        ec: { min: 1.0, max: 1.6 }
-      },
-      sensors: [],
-      automation: {
-        watering: { enabled: true, threshold: 40, schedule: '0 7,19 * * *', duration: 10, zones: [] },
-        lighting: { enabled: true, vegSchedule: '0 6-24 * * *', flowerSchedule: '0 6-18 * * *', intensity: 80 },
-        climate: { enabled: true, tempMin: 70, tempMax: 80, humidityMin: 60, humidityMax: 70, circulation: true, ventilation: true, heating: false, cooling: false },
-        co2: { enabled: false, target: 1000, tolerance: 150, schedule: '0 6-18 * * *' }
-      },
-      area: 150,
-      height: 6,
-      plantCount: 36,
-      growthStage: 'vegetative'
-    }
-  ]);
+  const sensorConfigs = sensors;
+  const roomConfigs = rooms;
 
   // Calculate sensor health and statistics
   const sensorStats = useMemo(() => {
     const activeSensors = sensorConfigs.filter(s => s.enabled);
-    const onlineSensors = activeSensors.length; // All enabled sensors considered online for demo
-    const offlineSensors = 0;
+    const onlineSensors = activeSensors.filter(sensor => {
+      const latest = sensor.dataHistory.at(-1)?.timestamp;
+      return Boolean(latest && Date.now() - new Date(latest).getTime() <= 5 * 60 * 1000);
+    }).length;
+    const offlineSensors = activeSensors.length - onlineSensors;
     const calibrationDue = activeSensors.filter(s =>
       s.calibration && new Date(s.calibration.nextCalibrationDue) <= new Date()
     ).length;
@@ -284,8 +153,11 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '' }) => 
   // Get connection status color
   const getConnectionStatusColor = (sensor: SensorConfig) => {
     if (!sensor.enabled) return 'bg-gray-500';
-    if (sensor.signalStrength && sensor.signalStrength > -60) return 'bg-emerald-500';
-    if (sensor.signalStrength && sensor.signalStrength > -80) return 'bg-yellow-500';
+    const latest = sensor.dataHistory.at(-1)?.timestamp;
+    if (!latest) return 'bg-gray-500';
+    const ageMs = Date.now() - new Date(latest).getTime();
+    if (ageMs <= 5 * 60 * 1000) return 'bg-emerald-500';
+    if (ageMs <= 60 * 60 * 1000) return 'bg-yellow-500';
     return 'bg-red-500';
   };
 
@@ -449,7 +321,15 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '' }) => 
         )}
 
         {/* Sensors Grid/List */}
-        {viewMode === 'grid' ? (
+        {filteredSensors.length === 0 ? (
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center">
+            <Activity className="w-10 h-10 mx-auto mb-3 text-gray-500" />
+            <h3 className="text-lg font-medium text-white">No sensor data available</h3>
+            <p className="mt-2 text-sm text-gray-400">
+              Connect a sensor agent or create a sensor configuration to view live readings.
+            </p>
+          </div>
+        ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredSensors.map((sensor) => (
               <SensorCard
@@ -615,7 +495,11 @@ const SensorTableRow: React.FC<SensorTableRowProps> = ({
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${connectionStatus}`} />
           <span className="text-xs text-gray-400">
-            {sensor.enabled ? 'Online' : 'Offline'}
+            {!sensor.enabled
+              ? 'Disabled'
+              : connectionStatus === 'bg-emerald-500'
+                ? 'Online'
+                : 'No recent data'}
           </span>
         </div>
       </td>

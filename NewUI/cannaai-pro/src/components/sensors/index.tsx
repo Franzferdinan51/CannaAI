@@ -319,7 +319,7 @@ const Sensors: React.FC<SensorsProps> = ({
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         {activeView === 'dashboard' && (
-          <SensorDashboard />
+          <SensorDashboard sensors={sensors} rooms={rooms} />
         )}
 
         {activeView === 'map' && (
