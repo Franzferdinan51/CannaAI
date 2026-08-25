@@ -111,6 +111,25 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  test('allows an image request when the selected model has no native capability metadata', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'custom-local-model' }]))
+      .mockResolvedValueOnce(response({ models: [{ key: 'custom-local-model' }] }))
+      .mockResolvedValueOnce(response({
+        model: 'custom-local-model',
+        choices: [{ message: { content: 'vision answer' }, finish_reason: 'stop' }],
+      }));
+
+    const result = await POST(requestWithBody({
+      prompt: 'Inspect this plant',
+      image: 'ZmFrZS1pbWFnZQ==',
+      model: 'custom-local-model',
+    }) as any);
+
+    expect(result.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   test('returns unavailable when LM Studio advertises no runnable chat model', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({ data: [{ id: 'text-embedding-model' }] }));

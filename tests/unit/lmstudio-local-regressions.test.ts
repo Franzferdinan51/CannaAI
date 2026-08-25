@@ -297,4 +297,39 @@ describe('LM Studio local-model regressions', () => {
       { type: 'image_url', image_url: { url: 'data:image/png;base64,ZmFrZS1pbWFnZQ==' } },
     ]);
   });
+
+  test('LM Studio allows vision requests when native metadata omits capabilities', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'custom-local-model', type: 'llm' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'custom-local-model', object: 'model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'custom-local-model',
+          choices: [{ message: { role: 'assistant', content: 'Image received.' } }],
+        }),
+      } as Response);
+
+    const provider = new LMStudioProvider({
+      url: 'http://localhost:1234',
+      apiKey: '',
+      model: 'custom-local-model',
+    });
+
+    await expect(provider.execute({
+      messages: [{ role: 'user', content: 'Describe this image', image: 'ZmFrZS1pbWFnZQ==' }],
+    })).resolves.toEqual(expect.objectContaining({
+      choices: [expect.objectContaining({
+        message: expect.objectContaining({ content: 'Image received.' }),
+      })],
+    }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
 });

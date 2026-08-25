@@ -98,7 +98,10 @@ async function discoverLMStudio(): Promise<{
   return null;
 }
 
-async function discoverVisionModelIds(baseUrl: string): Promise<Set<string> | null> {
+async function discoverVisionModelIds(baseUrl: string): Promise<{
+  vision: Set<string>;
+  known: Set<string>;
+} | null> {
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
       signal: createTimeoutSignal(3000),
@@ -115,16 +118,22 @@ async function discoverVisionModelIds(baseUrl: string): Promise<Set<string> | nu
     if (modelsWithMetadata.length === 0) return null;
 
     const visionIds = new Set<string>();
+    const knownIds = new Set<string>();
     for (const model of modelsWithMetadata) {
-      if (model.capabilities.vision !== true) continue;
       for (const id of [model.key, model.id]) {
-        if (typeof id === 'string' && id.trim()) visionIds.add(id.trim());
+        if (typeof id === 'string' && id.trim()) {
+          knownIds.add(id.trim());
+          if (model.capabilities.vision === true) visionIds.add(id.trim());
+        }
       }
       for (const instance of model.loaded_instances || []) {
-        if (typeof instance?.id === 'string' && instance.id.trim()) visionIds.add(instance.id.trim());
+        if (typeof instance?.id === 'string' && instance.id.trim()) {
+          knownIds.add(instance.id.trim());
+          if (model.capabilities.vision === true) visionIds.add(instance.id.trim());
+        }
       }
     }
-    return visionIds;
+    return { vision: visionIds, known: knownIds };
   } catch {
     // Older LM Studio builds may not expose the native catalog. The
     // OpenAI-compatible endpoint remains the source of truth in that case.
@@ -206,13 +215,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (image) {
-      const visionModelIds = await discoverVisionModelIds(discovered.baseUrl);
-      if (visionModelIds && !visionModelIds.has(selectedModel)) {
+      const visionCapabilities = await discoverVisionModelIds(discovered.baseUrl);
+      if (
+        visionCapabilities?.known.has(selectedModel) &&
+        !visionCapabilities.vision.has(selectedModel)
+      ) {
         return NextResponse.json({
           error: `LM Studio model "${selectedModel}" is not advertised as vision-capable`,
           code: 'LM_STUDIO_MODEL_NOT_VISION_CAPABLE',
           model: selectedModel,
-          visionModels: Array.from(visionModelIds),
+          visionModels: Array.from(visionCapabilities.vision),
         }, { status: 503 });
       }
     }

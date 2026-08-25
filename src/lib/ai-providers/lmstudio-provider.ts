@@ -243,12 +243,10 @@ export class LMStudioProvider extends BaseProvider {
     ]);
 
     const preferredModel = requestedModel || this.config.model || undefined;
-    const visionCapabilityAdvertised = nativeModels.some(model => (
-      typeof model.capabilities?.vision === 'boolean'
-    ));
     const isVisionCapable = (model: LMStudioNativeModel | undefined) => (
       !requiresVision ||
-      !visionCapabilityAdvertised ||
+      !model ||
+      typeof model.capabilities?.vision !== 'boolean' ||
       model?.capabilities?.vision === true
     );
 
