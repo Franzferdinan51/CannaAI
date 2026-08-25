@@ -84,9 +84,9 @@ export const ClimateControl: React.FC<ClimateControlProps> = ({
       id: room.id,
       name: room.name,
       mode: 'auto',
-      currentTemp: sensorData.temperature + (Math.random() - 0.5) * 4,
+      currentTemp: sensorData.temperature,
       targetTemp: room.targetEnvironment.temperature.max,
-      currentHumidity: sensorData.humidity + (Math.random() - 0.5) * 8,
+      currentHumidity: sensorData.humidity,
       targetHumidity: room.targetEnvironment.humidity.max,
       heatingActive: sensorData.temperature < room.targetEnvironment.temperature.min,
       coolingActive: sensorData.temperature > room.targetEnvironment.temperature.max,
@@ -95,9 +95,12 @@ export const ClimateControl: React.FC<ClimateControlProps> = ({
       circulationActive: true,
       vpd: calculateVPD(sensorData.temperature, sensorData.humidity),
       co2Level: sensorData.co2,
-      airFlowRate: 400,
-      filterStatus: Math.random() > 0.8 ? 'replace' : 'good',
-      maintenanceDue: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      // Airflow and filter service require device telemetry that is not part
+      // of the room/sensor payload. Keep these fields unavailable instead of
+      // presenting guessed values or random maintenance alerts.
+      airFlowRate: undefined,
+      filterStatus: undefined,
+      maintenanceDue: undefined
     }));
     setClimateZones(zones);
   }, [rooms, sensorData]);
@@ -374,7 +377,7 @@ export const ClimateControl: React.FC<ClimateControlProps> = ({
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Air Flow:</span>
-                        <span className="text-slate-200">{zone.airFlowRate} CFM</span>
+                        <span className="text-slate-200">{zone.airFlowRate === undefined ? 'Not measured' : `${zone.airFlowRate} CFM`}</span>
                       </div>
                     </div>
 
