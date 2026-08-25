@@ -58,6 +58,8 @@ describe('/api/chat vision routing', () => {
         mode: 'chat',
         context: {},
         sensorData: {},
+        model: 'ornith-1.5-35b-a3b',
+        primaryProvider: 'lmstudio',
       }),
     } as any);
 
@@ -71,6 +73,7 @@ describe('/api/chat vision routing', () => {
       expect.any(String),
       expect.objectContaining({
         primaryProvider: 'lmstudio',
+        model: 'ornith-1.5-35b-a3b',
         image: 'data:image/jpeg;base64,abc123',
       }),
     );

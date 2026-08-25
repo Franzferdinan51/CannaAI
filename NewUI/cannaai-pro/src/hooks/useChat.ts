@@ -440,7 +440,11 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
             }
           },
           sensorData,
-          mode: 'chat'
+          mode: 'chat',
+          // Pass the arbitrary LM Studio model selected in Settings through
+          // to the server instead of silently using only its env default.
+          model: settings.providers.lmStudio.model.trim() || undefined,
+          primaryProvider: settings.providers.lmStudio.enabled ? 'lmstudio' : undefined
         }),
         signal: abortControllerRef.current.signal
       });

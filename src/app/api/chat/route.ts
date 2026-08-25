@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = earlyBody;
-    const { message, image, mode = 'chat', context, sensorData } = body;
+    const { message, image, mode = 'chat', context, sensorData, model, primaryProvider } = body;
 
     // Validate required fields
     if (!message) {
@@ -160,7 +160,10 @@ export async function POST(request: NextRequest) {
 
     try {
       const aiResult = await executeChatWithFallback(contextPrompt, {
-        primaryProvider: providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
+        primaryProvider: typeof primaryProvider === 'string' && primaryProvider.trim()
+          ? primaryProvider.trim()
+          : providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
+        model: typeof model === 'string' && model.trim() ? model.trim() : undefined,
         image: typeof image === 'string' ? image : undefined,
         timeout: 45000,
       });
