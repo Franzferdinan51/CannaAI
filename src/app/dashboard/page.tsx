@@ -45,7 +45,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AgentDashboard } from '@/components/agent/AgentDashboard';
 import { CannaAIAssistantSidebar } from '@/components/ai/cannai-assistant-sidebar';
 
 // Default strain database with purple strain indicators (Fallback)
@@ -86,7 +85,6 @@ const dashboardItems = [
     { id: 'analysis', label: 'AI Analysis', icon: Brain },
     { id: 'environment', label: 'Environment', icon: Thermometer },
     { id: 'strains', label: 'Strain Database', icon: Sprout },
-    { id: 'agent', label: 'Agent Evolution', icon: Bot },
 ];
 
 // Dashboard component that uses searchParams
@@ -997,14 +995,6 @@ function DashboardContent() {
                                 </div>
                             </div>
                         )}
-
-                        {/* Agent Dashboard */}
-                        {activeDashboard === 'agent' && (
-                            <div className="max-w-4xl mx-auto">
-                                <AgentDashboard sensorData={sensorData} />
-                            </div>
-                        )}
-
 
                         {/* Analytics Dashboard (Placeholder/Alternative) */}
                         {activeDashboard === 'analytics' && (
