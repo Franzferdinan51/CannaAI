@@ -65,28 +65,31 @@ export function LMStudioSettings() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    loadSettings();
-    loadModels();
+    void loadSettings();
   }, []);
 
   const loadSettings = async () => {
     try {
       const response = await fetch('/api/settings');
       const data = await response.json();
-      if (data.success && data.settings.lmStudio?.url) {
-        setLmStudioUrl(data.settings.lmStudio.url);
+      if (data.success) {
+        const configuredUrl = data.settings.lmStudio?.url || 'http://localhost:1234';
+        setLmStudioUrl(configuredUrl);
+        setSelectedModel(data.settings.lmStudio?.model || null);
+        await loadModels(configuredUrl);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+      await loadModels(lmStudioUrl);
     }
   };
 
-  const loadModels = async () => {
+  const loadModels = async (url = lmStudioUrl) => {
     try {
       setIsLoading(true);
       setError('');
 
-      const response = await fetch(`/api/lmstudio/models?url=${encodeURIComponent(lmStudioUrl)}`);
+      const response = await fetch(`/api/lmstudio/models?url=${encodeURIComponent(url)}`);
       const data: LMStudioResponse = await response.json();
 
       if (data.status === 'success') {
@@ -110,7 +113,7 @@ export function LMStudioSettings() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadModels();
+    await loadModels(lmStudioUrl);
     setRefreshing(false);
   };
 
@@ -140,8 +143,29 @@ export function LMStudioSettings() {
 
   const handleSelectModel = (modelId: string) => {
     setSelectedModel(modelId);
-    // Here you would typically save the selected model to your app state
-    console.log('Selected model:', modelId);
+    void (async () => {
+      setIsSaving(true);
+      setError('');
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_provider',
+            provider: 'lm-studio',
+            config: { url: lmStudioUrl, model: modelId },
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Failed to save selected model');
+        }
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to save selected model');
+      } finally {
+        setIsSaving(false);
+      }
+    })();
   };
 
   const getCapabilityIcon = (capability: string) => {

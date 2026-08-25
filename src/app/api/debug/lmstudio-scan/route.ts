@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
@@ -115,7 +115,7 @@ async function checkLMStudioRunning() {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: Request) {
   if (!debugEndpointsEnabled()) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

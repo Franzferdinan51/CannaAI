@@ -129,4 +129,29 @@ describe('/api/automation/photo-capture', () => {
       }),
     });
   });
+
+  it('forwards model settings nested in a capture task config', async () => {
+    (analyzePlantHealth as jest.Mock).mockResolvedValue({
+      diagnosis: 'No obvious issue',
+      confidence: 0.8,
+      recommendations: [],
+      urgency: 'low',
+      potentialIssues: [],
+      suggestedActions: [],
+      nextSteps: [],
+    });
+    mockPrisma.analysisHistory.create.mockResolvedValue({ id: 'history-2' });
+
+    await triggerAnalysisAfterCapture('plant-1', 'data:image/jpeg;base64,abc', {
+      config: { model: 'ornith-1.5-35b-a3b', primaryProvider: 'lmstudio' },
+    });
+
+    expect(analyzePlantHealth).toHaveBeenCalledWith(
+      'data:image/jpeg;base64,abc',
+      expect.objectContaining({
+        model: 'ornith-1.5-35b-a3b',
+        primaryProvider: 'lmstudio',
+      }),
+    );
+  });
 });

@@ -48,6 +48,31 @@ describe('live vision AI helper', () => {
     );
   });
 
+  it('forwards a capture-selected model and provider to the vision chain', async () => {
+    (executeAIWithFallback as jest.Mock).mockResolvedValue({
+      result: JSON.stringify({
+        diagnosis: 'No obvious issue',
+        confidence: 80,
+        urgency: 'low',
+        healthScore: 80,
+      }),
+      provider: 'lmstudio',
+    });
+
+    await analyzePlantHealth('data:image/jpeg;base64,abc', {
+      model: 'ornith-1.5-35b-a3b',
+      primaryProvider: 'lmstudio',
+    });
+
+    expect(executeAIWithFallback).toHaveBeenCalledWith(
+      [{ role: 'user', content: expect.any(String) }],
+      expect.objectContaining({
+        model: 'ornith-1.5-35b-a3b',
+        primaryProvider: 'lmstudio',
+      }),
+    );
+  });
+
   it('rejects missing images instead of returning a canned analysis', async () => {
     await expect(analyzePlantHealth('', {})).rejects.toThrow('Image data is required');
     expect(executeAIWithFallback).not.toHaveBeenCalled();

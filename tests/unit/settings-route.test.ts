@@ -46,6 +46,25 @@ describe('/api/settings durability', () => {
     }));
   });
 
+  test('persists an explicitly selected LM Studio model', async () => {
+    const response = await POST(new Request('http://localhost/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'update_provider',
+        provider: 'lm-studio',
+        config: { model: 'ornith-1.5-35b-a3b' },
+      }),
+      headers: { 'content-type': 'application/json' },
+    }) as any);
+
+    expect(response.status).toBe(200);
+    expect(mockUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: { config: expect.objectContaining({
+        lmStudio: expect.objectContaining({ model: 'ornith-1.5-35b-a3b' }),
+      }) },
+    }));
+  });
+
   test('does not duplicate /v1 when discovering LM Studio models', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 
 const lmStudioHeaders = () => {
@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const revalidate = false;
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: Request) {
   if (!debugEndpointsEnabled()) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

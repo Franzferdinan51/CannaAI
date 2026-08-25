@@ -70,14 +70,18 @@ export async function triggerAnalysisAfterCapture(plantId: string, imageData: st
 }
 
 async function executeAnalysisAction(plantId: string, imageData: string, captureData: any, config: any) {
+  const captureConfig = asJsonRecord(captureData?.config);
+  const analysisContext = { ...captureConfig, ...asJsonRecord(captureData) };
   const analysis = await analyzePlantHealth(imageData, {
-    strain: captureData?.strain,
-    growthStage: captureData?.growthStage,
-    medium: captureData?.medium,
-    temperature: typeof captureData?.temperature === 'number' ? captureData.temperature : undefined,
-    humidity: typeof captureData?.humidity === 'number' ? captureData.humidity : undefined,
-    phLevel: typeof captureData?.phLevel === 'number' ? captureData.phLevel : undefined,
-    symptoms: Array.isArray(captureData?.symptoms) ? captureData.symptoms : undefined
+    model: typeof analysisContext.model === 'string' ? analysisContext.model : undefined,
+    primaryProvider: typeof analysisContext.primaryProvider === 'string' ? analysisContext.primaryProvider : undefined,
+    strain: typeof analysisContext.strain === 'string' ? analysisContext.strain : undefined,
+    growthStage: typeof analysisContext.growthStage === 'string' ? analysisContext.growthStage : undefined,
+    medium: typeof analysisContext.medium === 'string' ? analysisContext.medium : undefined,
+    temperature: typeof analysisContext.temperature === 'number' ? analysisContext.temperature : undefined,
+    humidity: typeof analysisContext.humidity === 'number' ? analysisContext.humidity : undefined,
+    phLevel: typeof analysisContext.phLevel === 'number' ? analysisContext.phLevel : undefined,
+    symptoms: Array.isArray(analysisContext.symptoms) ? analysisContext.symptoms : undefined
   });
 
   await prisma.analysisHistory.create({

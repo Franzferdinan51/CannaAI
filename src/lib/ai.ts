@@ -46,6 +46,8 @@ export interface LiveVisionAnalysis {
 export async function analyzePlantHealth(
   imageData: string,
   context: {
+    model?: string;
+    primaryProvider?: string;
     strain?: string;
     growthStage?: string;
     medium?: string;
@@ -70,6 +72,8 @@ export async function analyzePlantHealth(
   });
   const result = await executeAIWithFallback([{ role: 'user', content: prompt }], {
     image: imageData,
+    model: context.model,
+    primaryProvider: context.primaryProvider,
     requireVision: true,
     timeout: 120000,
   });
