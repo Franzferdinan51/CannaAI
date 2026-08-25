@@ -69,7 +69,9 @@ const Scanner = lazy(() => import('./components/scanner/Scanner'));
 const Plants = lazy(() => import('./components/plants/Plants'));
 const Sensors = lazy(() => import('./components/sensors').then(module => ({ default: module.default })));
 const Reports = lazy(() => import('./components/reports/Reports'));
-const Chat = lazy(() => import('./components/chat/Chat'));
+// Use the full chat surface so image attachments and local vision providers
+// are available from the shipped route, rather than the old text-only shell.
+const Chat = lazy(() => import('./components/chat/ChatInterface'));
 const Settings = lazy(() => import('./components/settings/Settings'));
 const Automation = lazy(() => import('./components/automation/AutomationSimple').then(module => ({ default: module.default })));
 const Advisors = lazy(() => import('./components/advisors/LocalMoaAdvisors'));
