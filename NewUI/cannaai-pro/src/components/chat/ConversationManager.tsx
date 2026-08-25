@@ -337,6 +337,8 @@ export function ConversationManager({
 
                   {/* Expand/Collapse */}
                   <button
+                    type="button"
+                    aria-label={`${expandedConversation === conversation.id ? 'Collapse' : 'Expand'} conversation ${conversation.title}`}
                     onClick={() => setExpandedConversation(
                       expandedConversation === conversation.id ? null : conversation.id
                     )}
@@ -371,13 +373,16 @@ export function ConversationManager({
                         />
                       ) : (
                         <>
-                          <h3
-                            className="font-medium text-white cursor-pointer hover:text-emerald-400"
+                          <button
+                            type="button"
+                            className="font-medium text-left text-white cursor-pointer hover:text-emerald-400"
                             onClick={() => onConversationSelect(conversation.id)}
                           >
                             {conversation.title}
-                          </h3>
+                          </button>
                           <button
+                            type="button"
+                            aria-label={`Rename ${conversation.title}`}
                             onClick={() => {
                               setEditingConversation(conversation.id);
                               setEditName(conversation.title);
@@ -466,6 +471,8 @@ export function ConversationManager({
                   {/* Actions */}
                   <div className="flex items-center gap-1">
                     <button
+                      type="button"
+                      aria-label={`Open ${conversation.title}`}
                       onClick={() => onConversationSelect(conversation.id)}
                       className="p-1 text-gray-400 hover:text-white hover:bg-gray-600 rounded"
                       title="Open conversation"
@@ -473,6 +480,8 @@ export function ConversationManager({
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
+                      aria-label={conversation.isStarred ? `Unstar ${conversation.title}` : `Star ${conversation.title}`}
                       onClick={() => onConversationStar(conversation.id)}
                       className="p-1 text-gray-400 hover:text-white hover:bg-gray-600 rounded"
                       title={conversation.isStarred ? 'Unstar' : 'Star'}
@@ -480,6 +489,8 @@ export function ConversationManager({
                       <Star className={`w-4 h-4 ${conversation.isStarred ? 'text-yellow-400 fill-current' : ''}`} />
                     </button>
                     <button
+                      type="button"
+                      aria-label={conversation.isArchived ? `Unarchive ${conversation.title}` : `Archive ${conversation.title}`}
                       onClick={() => onConversationArchive(conversation.id)}
                       className="p-1 text-gray-400 hover:text-white hover:bg-gray-600 rounded"
                       title={conversation.isArchived ? 'Unarchive' : 'Archive'}
@@ -487,6 +498,8 @@ export function ConversationManager({
                       <Archive className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
+                      aria-label={`Delete ${conversation.title}`}
                       onClick={() => {
                         if (confirm('Are you sure you want to delete this conversation?')) {
                           onConversationDelete(conversation.id);
