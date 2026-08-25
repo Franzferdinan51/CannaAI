@@ -4,12 +4,15 @@
  * This file exports common AI-related functions used across the application
  */
 
-// Re-export analyzePlantHealth from the analyze route logic
+import { executeAIWithFallback } from './ai-provider-detection';
+import { generateAnalysisPromptV2 } from './analysis-prompt-v2';
+import { normalizePlantAnalysisResult } from './plant-analysis-report-v2';
+
 export interface PlantHealthAnalysis {
   diagnosis: string;
   confidence: number;
   recommendations: string[];
-  urgency: 'low' | 'medium' | 'high';
+  urgency: 'low' | 'medium' | 'high' | 'critical';
   potentialIssues: string[];
   suggestedActions: string[];
   nextSteps: string[];
@@ -34,7 +37,9 @@ export interface LiveVisionAnalysis {
 
 /**
  * Analyze plant health from image data and context
- * This is a placeholder implementation - in production, this would call an AI service
+ * This is the shared server-side live-vision path. It deliberately uses the
+ * same local-first provider chain as `/api/analyze`, so webcam, microscope,
+ * and phone captures do not silently return canned data.
  */
 export async function analyzePlantHealth(
   imageData: string,
@@ -48,31 +53,51 @@ export async function analyzePlantHealth(
     symptoms?: string[];
   }
 ): Promise<PlantHealthAnalysis> {
-  // Placeholder implementation - replace with actual AI call
+  if (!imageData?.trim()) throw new Error('Image data is required for plant health analysis.');
+
+  const prompt = generateAnalysisPromptV2({
+    strain: context.strain || 'Unknown',
+    leafSymptoms: context.symptoms?.join(', ') || 'No symptoms reported',
+    phLevel: context.phLevel,
+    temperature: context.temperature,
+    humidity: context.humidity,
+    medium: context.medium,
+    growthStage: context.growthStage,
+    urgency: 'medium',
+    hasImage: true,
+  });
+  const result = await executeAIWithFallback([{ role: 'user', content: prompt }], {
+    image: imageData,
+    requireVision: true,
+    timeout: 120000,
+  });
+  const report = normalizePlantAnalysisResult(result.result ?? result.content, {
+    imageAnalysis: true,
+    provider: result.provider || 'unknown',
+    processingTime: result.processingTime,
+    inputParameters: context,
+  });
+  const recommendations = [
+    ...(report.recommendations?.immediate || []),
+    ...(report.recommendations?.shortTerm || []),
+    ...(report.recommendations?.longTerm || []),
+  ];
+  const actions = report.priorityActions || recommendations;
   return {
-    diagnosis: 'Analysis complete - placeholder result',
-    confidence: 0.85,
-    recommendations: [
-      'Monitor pH levels closely',
-      'Ensure proper nutrient balance',
-      'Check for signs of stress'
-    ],
-    urgency: 'low',
-    potentialIssues: ['Minor nutrient imbalance'],
-    suggestedActions: [
-      'Adjust nutrient solution',
-      'Monitor plant response'
-    ],
-    nextSteps: [
-      'Re-check in 3-5 days',
-      'Document any changes'
-    ]
+    diagnosis: report.diagnosis,
+    confidence: Math.max(0, Math.min(1, (report.confidence || 0) / 100)),
+    recommendations,
+    urgency: report.urgency,
+    potentialIssues: (report.detectedIssues || []).map(issue => issue.name),
+    suggestedActions: actions,
+    nextSteps: report.uncertainties || [],
   };
 }
 
 /**
  * Analyze live vision data from webcam/microscope
- * This is a placeholder implementation - in production, this would call an AI service
+ * Live vision uses the same real provider-backed plant analysis as the
+ * health-analysis helper above.
  */
 export async function analyzeLiveVision(
   imageData: string,
@@ -86,22 +111,18 @@ export async function analyzeLiveVision(
     growthStage?: string;
   }
 ): Promise<LiveVisionAnalysis> {
-  // Placeholder implementation - replace with actual AI call
+  const analysis = await analyzePlantHealth(imageData, {
+    strain: plantContext?.strain,
+    growthStage: plantContext?.growthStage,
+  });
   return {
     plantHealth: {
-      overall: 'healthy',
-      issues: [],
-      recommendations: ['Continue current care regimen']
+      overall: analysis.urgency === 'critical' || analysis.urgency === 'high' ? 'critical' : analysis.confidence < 0.5 ? 'stressed' : 'healthy',
+      issues: analysis.potentialIssues,
+      recommendations: analysis.recommendations,
     },
-    detectedElements: {
-      pests: [],
-      diseases: [],
-      deficiencies: []
-    },
-    imageAnalysis: {
-      clarity: 'clear',
-      recommendations: ['Good image quality for analysis']
-    }
+    detectedElements: { pests: [], diseases: [], deficiencies: analysis.potentialIssues },
+    imageAnalysis: { clarity: 'acceptable', recommendations: analysis.nextSteps },
   };
 }
 
@@ -112,15 +133,15 @@ export function getAIConfig() {
   return {
     providers: {
       openrouter: {
-        enabled: true,
-        baseUrl: 'https://openrouter.ai/api/v1'
+        enabled: Boolean(process.env.OPENROUTER_API_KEY),
+        baseUrl: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1'
       },
       lmstudio: {
         enabled: true,
-        baseUrl: 'http://localhost:1234/v1'
+        baseUrl: process.env.LM_STUDIO_BASE_URL || 'http://127.0.0.1:1234/v1'
       }
     },
-    defaultProvider: 'openrouter',
-    timeout: 30000
+    defaultProvider: 'lmstudio',
+    timeout: 120000
   };
 }
