@@ -53,7 +53,7 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
   sensors = [],
   onSettingsClick
 }) => {
-  const { notifications, clearNotifications, isConnected } = useSocketContext();
+  const { notifications, acknowledgeNotification, deleteNotification, isConnected } = useSocketContext();
 
   // State management
   const [selectedSeverity, setSelectedSeverity] = useState<'all' | AlertSeverity>('all');
@@ -164,9 +164,12 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
   };
 
   // Acknowledge alert
-  const acknowledgeAlert = (alertId: string) => {
-    // In a real implementation, this would call an API
-    console.log('Acknowledging alert:', alertId);
+  const acknowledgeAlert = async (alertId: string) => {
+    try {
+      await acknowledgeNotification(alertId);
+    } catch (error) {
+      console.error('Failed to acknowledge alert:', error);
+    }
   };
 
   // Acknowledge all alerts
@@ -177,9 +180,12 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
   };
 
   // Delete alert
-  const deleteAlert = (alertId: string) => {
-    // In a real implementation, this would call an API
-    console.log('Deleting alert:', alertId);
+  const deleteAlert = async (alertId: string) => {
+    try {
+      await deleteNotification(alertId);
+    } catch (error) {
+      console.error('Failed to delete alert:', error);
+    }
   };
 
   // Export alerts

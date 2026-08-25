@@ -8,6 +8,8 @@ interface SocketContextType {
   lastSensorData: SensorData | null;
   notifications: NotificationData[];
   clearNotifications: () => void;
+  acknowledgeNotification: (id: string) => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
   subscribeToSensorData: (roomName: string) => void;
   unsubscribeFromSensorData: (roomName: string) => void;
 }
@@ -54,12 +56,26 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setNotifications([]);
   };
 
+  const acknowledgeNotification = async (id: string) => {
+    const response = await fetch(`/api/notifications/${encodeURIComponent(id)}/acknowledge`, { method: 'POST' });
+    if (!response.ok) throw new Error('Failed to acknowledge notification');
+    setNotifications(prev => prev.map(item => item.id === id ? { ...item, acknowledged: true } : item));
+  };
+
+  const deleteNotification = async (id: string) => {
+    const response = await fetch(`/api/notifications/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete notification');
+    setNotifications(prev => prev.filter(item => item.id !== id));
+  };
+
   const contextValue: SocketContextType = {
     isConnected,
     socketId,
     lastSensorData,
     notifications,
     clearNotifications,
+    acknowledgeNotification,
+    deleteNotification,
     subscribeToSensorData: subscribe,
     unsubscribeFromSensorData: unsubscribe,
   };

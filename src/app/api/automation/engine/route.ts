@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { addHours, addDays, addWeeks, addMonths } from 'date-fns';
 import { analyzePlantHealth } from '@/lib/ai';
+import { sendNotification } from '@/lib/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -244,11 +245,14 @@ async function checkSchedules() {
   for (const schedule of dueSchedules) {
     try {
       console.log(`Executing schedule: ${schedule.name}`);
+      let scheduleSucceeded = true;
 
       // Execute all rules for this schedule
       for (const rule of schedule.rules) {
         if (rule.enabled) {
-          await executeRule(rule.id);
+          const ruleResult = await executeRule(rule.id);
+          results.push({ ruleId: rule.id, ...ruleResult });
+          scheduleSucceeded = scheduleSucceeded && ruleResult.success === true;
         }
       }
 
@@ -291,7 +295,7 @@ async function checkSchedules() {
         }
       });
 
-      executed++;
+      if (scheduleSucceeded) executed++;
 
     } catch (error) {
       console.error(`Failed to execute schedule ${schedule.id}:`, error);
@@ -573,19 +577,71 @@ async function triggerHealthAnalysis(plantId: string | null, config?: any) {
 }
 
 async function executeRule(ruleId: string) {
-  // Implementation for executing automation rules
   const rule = await prisma.automationRule.findUnique({
     where: { id: ruleId }
   });
 
-  if (!rule) return;
-
-  // Execute actions
-  const actions = rule.actions as any[];
-  for (const action of actions) {
-    // Execute action logic here
-    console.log(`Executing action: ${action.type}`);
+  if (!rule) {
+    return { success: false, available: false, message: 'Automation rule not found.' };
   }
+
+  const actions = Array.isArray(rule.actions) ? rule.actions : [];
+  const results = [];
+  for (const action of actions) {
+    const config = { ...(rule.config as any || {}), ...(action?.config || {}) };
+    let result;
+    switch (action?.type) {
+      case 'analyze':
+      case 'health':
+        result = await triggerHealthAnalysis(rule.plantId, config);
+        break;
+      case 'capture': {
+        const task = await prisma.task.create({
+          data: {
+            title: config.title || 'Automated Photo Capture',
+            description: config.description || 'Photo capture requested by automation',
+            type: 'photo_capture',
+            priority: config.priority || 'medium',
+            status: 'pending',
+            plantId: rule.plantId,
+            data: { captureType: config.captureType || 'automation', deviceInfo: config.deviceInfo || {}, requestedBy: 'automation' }
+          }
+        });
+        result = { success: true, available: true, triggered: true, status: 'awaiting_capture', taskId: task.id };
+        break;
+      }
+      case 'notify': {
+        if (!config.title || !config.message) {
+          result = { success: false, available: false, message: 'Notification title and message are required.' };
+          break;
+        }
+        const delivery = await sendNotification({
+          type: config.type || 'automation_event',
+          title: config.title,
+          message: config.message,
+          severity: config.severity || 'info',
+          channels: Array.isArray(config.channels) && config.channels.length ? config.channels : ['in_app'],
+          metadata: config.metadata || {},
+          plantId: config.plantId ?? rule.plantId,
+          sensorId: config.sensorId,
+          roomId: config.roomId,
+          userId: config.userId
+        });
+        result = { success: delivery.deliveries.some((item) => item.success), available: true, notificationId: delivery.notification.id, deliveries: delivery.deliveries };
+        break;
+      }
+      default:
+        result = { success: false, available: false, message: `Unsupported automation action: ${String(action?.type || 'unknown')}` };
+    }
+    results.push({ type: action?.type || 'unknown', result });
+  }
+
+  return {
+    success: results.length > 0 && results.every((item: any) => item.result?.success === true),
+    available: true,
+    results,
+    executedAt: new Date().toISOString()
+  };
 }
 
 async function analyzeAndDetectAnomalies(plantId: string | null, data: any) {
