@@ -66,25 +66,26 @@ export const LightingControl: React.FC<LightingControlProps> = ({
     flowerSchedule: '12/12'
   });
 
-  // Initialize lighting zones based on rooms
+  // The backend currently exposes no lighting telemetry or actuator action
+  // endpoint. Keep configuration visible, but do not invent device state.
   useEffect(() => {
-    const zones: LightingZoneStatus[] = rooms.flatMap((room, roomIndex) => {
+    const zones: LightingZoneStatus[] = rooms.flatMap((room) => {
       const isVeg = room.growthStage === 'vegetative';
-      const isOn = Math.random() > 0.3; // Simulate some lights being on
 
       return Array.from({ length: 2 }, (_, zoneIndex) => ({
         id: `${room.id}_light_${zoneIndex + 1}`,
         name: `${room.name} - Zone ${zoneIndex + 1}`,
-        status: isOn ? 'on' : 'off',
-        intensity: isOn ? (isVeg ? 80 : 60) + Math.random() * 20 : 0,
+        telemetryAvailable: false,
+        status: 'off' as const,
+        intensity: 0,
         spectrum: isVeg ? 'full' : 'red-heavy',
-        colorTemp: isVeg ? 6500 : 2700,
-        powerConsumption: isOn ? 300 + Math.random() * 200 : 0,
-        hoursOn: isOn ? Math.random() * 12 : 0,
-        totalHours: 1000 + Math.random() * 500,
-        lastOn: isOn ? new Date(Date.now() - Math.random() * 4 * 60 * 60 * 1000).toISOString() : '',
-        lastOff: !isOn ? new Date(Date.now() - Math.random() * 4 * 60 * 60 * 1000).toISOString() : '',
-        nextTransition: isOn ? new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString() : '',
+        colorTemp: undefined,
+        powerConsumption: 0,
+        hoursOn: 0,
+        totalHours: 0,
+        lastOn: '',
+        lastOff: '',
+        nextTransition: '',
         dimmable: settings.dimmable,
         spectrumControl: settings.spectrumControl
       }));
@@ -93,6 +94,9 @@ export const LightingControl: React.FC<LightingControlProps> = ({
   }, [rooms, settings.dimmable, settings.spectrumControl]);
 
   const handleToggleLight = (zoneId: string) => {
+    const selected = lightingZones.find((zone) => zone.id === zoneId);
+    if (!selected?.telemetryAvailable) return;
+
     setLightingZones(prev => prev.map(zone => {
       if (zone.id === zoneId) {
         const newStatus = zone.status === 'on' ? 'off' : 'on';
@@ -121,6 +125,8 @@ export const LightingControl: React.FC<LightingControlProps> = ({
   };
 
   const handleIntensityChange = (zoneId: string, intensity: number) => {
+    if (!lightingZones.find((zone) => zone.id === zoneId)?.telemetryAvailable) return;
+
     setLightingZones(prev => prev.map(zone =>
       zone.id === zoneId
         ? {
@@ -143,6 +149,7 @@ export const LightingControl: React.FC<LightingControlProps> = ({
 
   const getTotalPowerConsumption = lightingZones.reduce((sum, zone) => sum + zone.powerConsumption, 0);
   const activeZones = lightingZones.filter(zone => zone.status === 'on').length;
+  const hasLightingTelemetry = lightingZones.some(zone => zone.telemetryAvailable);
   const averageIntensity = lightingZones.length > 0
     ? lightingZones.reduce((sum, zone) => sum + zone.intensity, 0) / lightingZones.length
     : 0;
@@ -190,27 +197,36 @@ export const LightingControl: React.FC<LightingControlProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {!hasLightingTelemetry && (
+          <Alert className="border-amber-500/20 bg-amber-500/5">
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <AlertDescription className="text-amber-200">
+              Lighting telemetry and device actions are unavailable. Connect a supported lighting controller before using these controls.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Overall Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <Zap className="w-8 h-8 mx-auto mb-2 text-yellow-400" />
             <p className="text-sm text-slate-400">Power Usage</p>
-            <p className="text-xl font-bold text-slate-100">{Math.round(getTotalPowerConsumption)}W</p>
+            <p className="text-xl font-bold text-slate-100">{hasLightingTelemetry ? `${Math.round(getTotalPowerConsumption)}W` : '—'}</p>
           </div>
           <div className="text-center">
             <Activity className="w-8 h-8 mx-auto mb-2 text-emerald-400" />
             <p className="text-sm text-slate-400">Active Zones</p>
-            <p className="text-xl font-bold text-slate-100">{activeZones}/{lightingZones.length}</p>
+            <p className="text-xl font-bold text-slate-100">{hasLightingTelemetry ? `${activeZones}/${lightingZones.length}` : '—'}</p>
           </div>
           <div className="text-center">
             <Gauge className="w-8 h-8 mx-auto mb-2 text-purple-400" />
             <p className="text-sm text-slate-400">Avg Intensity</p>
-            <p className="text-xl font-bold text-slate-100">{Math.round(averageIntensity)}%</p>
+            <p className="text-xl font-bold text-slate-100">{hasLightingTelemetry ? `${Math.round(averageIntensity)}%` : '—'}</p>
           </div>
           <div className="text-center">
             <Clock className="w-8 h-8 mx-auto mb-2 text-orange-400" />
             <p className="text-sm text-slate-400">Daily Hours</p>
-            <p className="text-xl font-bold text-slate-100">12.5h</p>
+            <p className="text-xl font-bold text-slate-100">—</p>
           </div>
         </div>
 
@@ -241,7 +257,7 @@ export const LightingControl: React.FC<LightingControlProps> = ({
                     });
                   }
                 }}
-                disabled={!automationEnabled}
+                disabled={!automationEnabled || !hasLightingTelemetry}
               />
             </CardContent>
           </Card>
@@ -287,7 +303,7 @@ export const LightingControl: React.FC<LightingControlProps> = ({
                         ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                         : 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
                     }`}>
-                      {zone.status === 'on' ? 'ON' : 'OFF'}
+                      {zone.telemetryAvailable ? (zone.status === 'on' ? 'ON' : 'OFF') : 'UNAVAILABLE'}
                     </div>
                   </div>
 
@@ -296,7 +312,7 @@ export const LightingControl: React.FC<LightingControlProps> = ({
                     <div>
                       <div className="flex justify-between text-xs text-slate-400 mb-1">
                         <span>Intensity</span>
-                        <span>{Math.round(zone.intensity)}%</span>
+                        <span>{zone.telemetryAvailable ? `${Math.round(zone.intensity)}%` : '—'}</span>
                       </div>
                       <div className="relative">
                         <Slider
@@ -305,7 +321,7 @@ export const LightingControl: React.FC<LightingControlProps> = ({
                           max={100}
                           min={0}
                           step={1}
-                          disabled={!automationEnabled || globalMode === 'off'}
+                          disabled={!automationEnabled || globalMode === 'off' || !zone.telemetryAvailable}
                           className="w-full"
                         />
                         {zone.status === 'on' && (
@@ -322,7 +338,7 @@ export const LightingControl: React.FC<LightingControlProps> = ({
                     {/* Power Consumption */}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-400">Power:</span>
-                      <span className="text-slate-200">{Math.round(zone.powerConsumption)}W</span>
+                      <span className="text-slate-200">{zone.telemetryAvailable ? `${Math.round(zone.powerConsumption)}W` : 'Not measured'}</span>
                     </div>
 
                     {/* Spectrum */}
@@ -334,13 +350,13 @@ export const LightingControl: React.FC<LightingControlProps> = ({
                     {/* Color Temperature */}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-400">Color Temp:</span>
-                      <span className="text-slate-200">{zone.colorTemp}K</span>
+                      <span className="text-slate-200">{zone.colorTemp === undefined ? 'Not measured' : `${zone.colorTemp}K`}</span>
                     </div>
 
                     {/* Today's Runtime */}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-400">Today:</span>
-                      <span className="text-slate-200">{zone.hoursOn.toFixed(1)}h</span>
+                      <span className="text-slate-200">{zone.telemetryAvailable ? `${zone.hoursOn.toFixed(1)}h` : 'Not measured'}</span>
                     </div>
 
                     {/* Control Buttons */}
@@ -350,7 +366,7 @@ export const LightingControl: React.FC<LightingControlProps> = ({
                         size="sm"
                         className="flex-1"
                         onClick={() => handleToggleLight(zone.id)}
-                        disabled={!automationEnabled || globalMode === 'off'}
+                        disabled={!automationEnabled || globalMode === 'off' || !zone.telemetryAvailable}
                       >
                         {zone.status === 'on' ? (
                           <>

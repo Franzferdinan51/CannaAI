@@ -190,6 +190,7 @@ export interface IrrigationZoneStatus {
 export interface LightingZoneStatus {
   id: string;
   name: string;
+  telemetryAvailable?: boolean;
   status: 'on' | 'off' | 'dimming' | 'error' | 'sunrise' | 'sunset';
   intensity: number; // Percentage
   spectrum?: string;
