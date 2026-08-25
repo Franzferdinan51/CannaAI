@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ragChat, getSuggestedQuestions } from '@/lib/ai/ragChat';
-import { getDocuments } from '@/lib/indexedDB';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120; // 2 minutes
@@ -17,7 +16,12 @@ export const maxDuration = 120; // 2 minutes
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { query, config, history = [] } = body;
+    const {
+      query,
+      config,
+      history = [],
+      documents = [],
+    } = body;
 
     if (!query || typeof query !== 'string') {
       return NextResponse.json(
@@ -33,8 +37,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get documents from IndexedDB (server-side storage simulation)
-    const documents = await getDocuments();
+    if (!Array.isArray(documents)) {
+      return NextResponse.json(
+        { error: 'Documents must be an array when supplied' },
+        { status: 400 }
+      );
+    }
 
     console.log(`[RAG CHAT API] Processing query with ${documents.length} documents...`);
 
