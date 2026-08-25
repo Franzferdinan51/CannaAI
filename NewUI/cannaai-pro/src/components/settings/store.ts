@@ -455,6 +455,19 @@ export const useSettingsStore = create<SettingsStore>()(
         // storage key so older persisted settings cannot hydrate incompatible
         // component state and crash the Settings route (React #130).
         name: 'cannai-settings-store-v2',
+        version: 1,
+        migrate: (persistedState: any, version) => {
+          if (version === 0 && persistedState?.settings?.lmStudio?.model === 'llama-3-8b-instruct') {
+            return {
+              ...persistedState,
+              settings: {
+                ...persistedState.settings,
+                lmStudio: { ...persistedState.settings.lmStudio, model: '' },
+              },
+            };
+          }
+          return persistedState;
+        },
         partialize: (state) => ({
           settings: state.settings,
           defaultSettings: state.defaultSettings,

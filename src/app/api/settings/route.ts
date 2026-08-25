@@ -105,6 +105,9 @@ async function loadSettings(): Promise<void> {
     const stored = await prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } });
     if (stored?.config && typeof stored.config === 'object' && !Array.isArray(stored.config)) {
       settings = safeMergeSettings(defaultSettings, stored.config);
+      if (settings.lmStudio?.model === 'llama-3-8b-instruct') {
+        settings.lmStudio.model = '';
+      }
       settingsRecordId = stored.id;
     }
   } catch (error) {
