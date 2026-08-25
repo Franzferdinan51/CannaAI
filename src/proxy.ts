@@ -70,7 +70,7 @@ export function proxy(request: NextRequest) {
     const allowedList = allowedListRaw.trim();
 
     const requestOrigin = request.headers.get('origin') ?? '';
-    const devPorts = /^http:\/\/localhost:\d+$/;
+    const devPorts = /^http:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0):\d+$/;
 
     let allowedOrigin: string | null = null;
 

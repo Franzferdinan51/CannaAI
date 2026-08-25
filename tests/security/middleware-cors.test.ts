@@ -79,6 +79,7 @@ describe('CORS hardening — src/proxy.ts', () => {
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:5174',
+      'http://127.0.0.1:3001',
     ];
 
     test.each(allowedDevOrigins)(

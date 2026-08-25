@@ -59,7 +59,6 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
-import { useWebSocket } from '../../hooks/useWebSocket';
 
 import {
   ChatMessage as IChatMessage,
@@ -177,29 +176,6 @@ export function ChatInterface({
     pitch: 1.0
   });
 
-  // WebSocket for real-time updates
-  const {
-    socket,
-    isConnected: wsConnected,
-    send: wsSend,
-    lastMessage
-  } = useWebSocket('/api/chat/ws', {
-    onConnect: () => {
-      console.log('Chat WebSocket connected');
-    },
-    onDisconnect: () => {
-      console.log('Chat WebSocket disconnected');
-    },
-    onMessage: (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        handleWebSocketMessage(data);
-      } catch (error) {
-        console.error('Failed to parse WebSocket message:', error);
-      }
-    }
-  });
-
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -284,13 +260,11 @@ export function ChatInterface({
   const handleTypingStart = () => {
     if (!isTyping) {
       setIsTyping(true);
-      wsSend?.({ type: 'typing_started', conversationId: currentConversation?.id });
     }
 
     if (typingTimeout) clearTimeout(typingTimeout);
     setTypingTimeout(setTimeout(() => {
       setIsTyping(false);
-      wsSend?.({ type: 'typing_stopped', conversationId: currentConversation?.id });
     }, 1000));
   };
 
@@ -335,22 +309,6 @@ export function ChatInterface({
     const newConversation = createConversation('New Chat');
     if (newConversation) {
       switchConversation(newConversation.id);
-    }
-  };
-
-  const handleWebSocketMessage = (data: any) => {
-    switch (data.type) {
-      case 'message_received':
-        // Handle incoming real-time message
-        break;
-      case 'provider_status_changed':
-        // Handle provider status update
-        break;
-      case 'notification':
-        // Handle new notification
-        break;
-      default:
-        console.log('Unknown WebSocket message type:', data.type);
     }
   };
 

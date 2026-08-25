@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, './src'),
+          'es-toolkit/compat/get': path.resolve(__dirname, './src/lib/es-toolkit-get.ts'),
         }
       },
       build: {
@@ -53,9 +54,19 @@ export default defineConfig(({ mode }) => {
         include: [
           'react',
           'react-dom',
+          'react-dom/client',
           'react-router-dom',
           '@tanstack/react-query',
           'lucide-react',
+          'recharts',
+          // socket.io-client and its CommonJS debug dependency must be
+          // prebundled; otherwise Vite serves debug/src/browser.js as ESM and
+          // the dashboard fails before React can mount.
+          'socket.io-client',
+          // Recharts imports the CJS compatibility entrypoint from this
+          // package; prebundling prevents a raw CommonJS file from being
+          // served as an ESM route chunk.
+          'es-toolkit',
         ],
       },
     };
