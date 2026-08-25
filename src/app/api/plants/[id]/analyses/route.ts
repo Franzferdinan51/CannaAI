@@ -13,31 +13,5 @@ export async function GET(_: Request, { params }: Params) {
     take: 20
   });
 
-  if (analyses.length > 0) {
-    return NextResponse.json({ success: true, data: analyses });
-  }
-
-  return NextResponse.json({
-    success: true,
-    data: [
-      {
-        id: `analysis_${Date.now()}`,
-        plantId: id,
-        diagnosis: 'Healthy',
-        urgency: 'LOW',
-        confidence: 0.9,
-        healthScore: 88,
-        recommendations: { overall: ['Maintain current regimen'] },
-        provider: 'ai',
-        metadata: {
-          provider: 'local',
-          fallbackUsed: false,
-          processingTime: 10,
-          dataPoints: 0,
-          confidence: 0.9
-        },
-        createdAt: new Date().toISOString()
-      }
-    ]
-  });
+  return NextResponse.json({ success: true, data: analyses });
 }

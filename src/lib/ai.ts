@@ -9,6 +9,7 @@ import { generateAnalysisPromptV2 } from './analysis-prompt-v2';
 import { normalizePlantAnalysisResult } from './plant-analysis-report-v2';
 
 export interface PlantHealthAnalysis {
+  provider?: string;
   diagnosis: string;
   confidence: number;
   /** Normalized 0-1 health score from the provider report, when available. */
@@ -90,6 +91,7 @@ export async function analyzePlantHealth(
   ];
   const actions = report.priorityActions || recommendations;
   return {
+    provider: result.provider,
     diagnosis: report.diagnosis,
     confidence: Math.max(0, Math.min(1, (report.confidence || 0) / 100)),
     healthScore: Math.max(0, Math.min(1, (report.healthScore || 0) / 100)),
