@@ -21,8 +21,16 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file');
+    // Avoid relying on a global File constructor: Node versions and test
+    // runtimes may provide FormData file parts without exposing File globally.
+    const isFileLike = (value: FormDataEntryValue | null): value is File => (
+      value !== null &&
+      typeof value === 'object' &&
+      typeof (value as File).arrayBuffer === 'function' &&
+      typeof (value as File).size === 'number'
+    );
 
-    if (!(file instanceof File)) {
+    if (!isFileLike(file)) {
       return NextResponse.json({
         success: false,
         error: 'No file uploaded'

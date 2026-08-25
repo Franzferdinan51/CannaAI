@@ -156,7 +156,12 @@ export async function withSecurity(
     let body: any = {};
     if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
       try {
-        const rawBody = await request.text();
+        // NextRequest bodies are single-consumption streams. Read a clone so
+        // route handlers can still call request.json() after security checks.
+        // Test doubles may not implement clone(), so retain the direct-read
+        // fallback for those lightweight callers.
+        const bodyRequest = typeof request.clone === 'function' ? request.clone() : request;
+        const rawBody = await bodyRequest.text();
 
         // Additional JSON parsing security
         if (rawBody.length > 0) {

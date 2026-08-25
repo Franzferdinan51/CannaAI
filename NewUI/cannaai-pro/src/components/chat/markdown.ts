@@ -49,4 +49,3 @@ export function SafeMarkdown({ content }: { content: string }) {
     lineIndex < lines.length - 1 ? React.createElement('br', { key: `break-${lineIndex}` }) : null,
   ));
 }
-import React from 'react';

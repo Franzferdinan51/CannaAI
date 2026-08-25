@@ -2,9 +2,9 @@ name: Test Suite
 
 on:
   push:
-    branches: [master, dev]
+    branches: [master, develop]
   pull_request:
-    branches: [master, dev]
+    branches: [master, develop]
 
 jobs:
   unit-tests:
@@ -18,21 +18,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Run unit tests
-        run: npm test -- --coverage --ci
-
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage/lcov.info
-          flags: unit-tests
-          name: codecov-unit
+        run: npm run test:unit -- --ci
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -40,7 +33,6 @@ jobs:
         with:
           name: test-results-unit
           path: |
-            coverage/
             junit.xml
 
   e2e-tests:
@@ -55,11 +47,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install static UI dependencies
+        run: npm ci --prefix NewUI/cannaai-pro
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -91,11 +86,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install static UI dependencies
+        run: npm ci --prefix NewUI/cannaai-pro
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -124,11 +122,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install static UI dependencies
+        run: npm ci --prefix NewUI/cannaai-pro
 
       - name: Build application
         run: npm run build
@@ -154,7 +155,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install dependencies
@@ -169,19 +170,6 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
       - name: Checkout code
@@ -190,7 +178,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install dependencies
@@ -198,11 +186,11 @@ jobs:
 
       - name: Setup test database
         run: |
-          npx prisma db push
-          npx prisma generate
+          DATABASE_URL=file:./test.db npm run db:push
+          npm run db:generate
 
       - name: Run integration tests
-        run: npm test -- --testPathPattern=integration --coverage
+        run: npm test -- --testPathPattern=integration --ci
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
@@ -210,7 +198,6 @@ jobs:
         with:
           name: test-results-integration
           path: |
-            coverage/
             junit.xml
 
   all-tests-pass:

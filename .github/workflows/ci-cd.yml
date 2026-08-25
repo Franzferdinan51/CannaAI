@@ -26,8 +26,14 @@ jobs:
         run: npm ci
       - name: Generate Prisma client
         run: npm run db:generate
+      - name: Install static UI dependencies
+        run: npm ci --prefix NewUI/cannaai-pro
+      - name: Initialize SQLite test database
+        run: DATABASE_URL=file:./test.db npm run db:push
       - name: Run lint
         run: npm run lint
+      - name: Run frontend typecheck
+        run: npm run typecheck:frontend
       - name: Run unit tests
         run: npm run test:unit -- --ci
       - name: Run integration tests
@@ -48,6 +54,8 @@ jobs:
         run: npm ci
       - name: Generate Prisma client
         run: npm run db:generate
+      - name: Initialize SQLite build database
+        run: DATABASE_URL=file:./build.db npm run db:push
       - name: Install static UI dependencies
         run: npm ci --prefix NewUI/cannaai-pro
       - name: Build static UI
