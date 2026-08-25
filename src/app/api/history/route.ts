@@ -1,140 +1,129 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-// Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
 export const revalidate = false;
 
-// In-memory storage for analysis history (in production, use database)
-let analysisHistory: any[] = [];
+type StoredHistoryResult = {
+  diagnosis?: unknown;
+  confidence?: unknown;
+  healthScore?: unknown;
+  notes?: unknown;
+  isPurpleStrain?: unknown;
+  analysisData?: unknown;
+};
+
+function toHistoryEntry(record: any) {
+  const request = (record.request || {}) as { strain?: unknown };
+  const result = (record.result || {}) as StoredHistoryResult;
+
+  return {
+    id: record.id,
+    date: record.createdAt instanceof Date ? record.createdAt.toISOString() : record.createdAt,
+    strain: typeof request.strain === 'string' ? request.strain : '',
+    diagnosis: typeof result.diagnosis === 'string' ? result.diagnosis : '',
+    confidence: typeof result.confidence === 'number' ? result.confidence : null,
+    healthScore: typeof result.healthScore === 'number' ? result.healthScore : null,
+    notes: typeof result.notes === 'string' ? result.notes : '',
+    isPurpleStrain: result.isPurpleStrain === true,
+    analysisData: result.analysisData ?? null,
+    createdAt: record.createdAt instanceof Date ? record.createdAt.toISOString() : record.createdAt,
+  };
+}
+
+function staticExportResponse() {
+  return NextResponse.json({
+    success: false,
+    message: 'This API is handled client-side in static export mode.',
+    clientSide: true,
+    buildMode: 'static',
+  });
+}
 
 export async function GET() {
-  // For static export, provide client-side compatibility response
-  const isStaticExport = process.env.BUILD_MODE === 'static';
-  if (isStaticExport) {
-    return NextResponse.json({
-      success: false,
-      message: 'This API is handled client-side in static export mode.',
-      clientSide: true,
-      buildMode: 'static'
-    });
-  }
+  if (process.env.BUILD_MODE === 'static') return staticExportResponse();
 
   try {
-    return NextResponse.json({
-      success: true,
-      history: analysisHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-      count: analysisHistory.length
+    const records = await prisma.plantAnalysis.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 500,
     });
+    const history = records.map(toHistoryEntry);
+
+    return NextResponse.json({ success: true, history, count: history.length });
   } catch (error) {
     console.error('Get history error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch analysis history' },
-      { status: 500 }
+      { success: false, error: 'Failed to fetch analysis history' },
+      { status: 500 },
     );
   }
 }
 
 export async function POST(request: NextRequest) {
-  // For static export, provide client-side compatibility response
-  const isStaticExport = process.env.BUILD_MODE === 'static';
-  if (isStaticExport) {
-    return NextResponse.json({
-      success: false,
-      message: 'This API is handled client-side in static export mode.',
-      clientSide: true,
-      buildMode: 'static'
-    });
-  }
+  if (process.env.BUILD_MODE === 'static') return staticExportResponse();
 
   try {
     const body = await request.json();
-    const { strain, diagnosis, confidence, healthScore, notes, isPurpleStrain, analysisData } = body;
+    const { plantId, strain, diagnosis, confidence, healthScore, notes, isPurpleStrain, analysisData } = body;
 
-    // Validate required fields
-    if (!strain || !diagnosis) {
+    if (typeof strain !== 'string' || !strain.trim() || typeof diagnosis !== 'string' || !diagnosis.trim()) {
       return NextResponse.json(
-        { error: 'Missing required fields: strain and diagnosis' },
-        { status: 400 }
+        { success: false, error: 'Missing required fields: strain and diagnosis' },
+        { status: 400 },
       );
     }
 
-    // Create new history entry
-    const newEntry = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      strain,
-      diagnosis,
-      confidence: confidence || 85,
-      healthScore: healthScore || 75,
-      notes: notes || '',
-      isPurpleStrain: isPurpleStrain || false,
-      analysisData: analysisData || null,
-      createdAt: new Date().toISOString()
-    };
-
-    // Add to history
-    analysisHistory.unshift(newEntry);
-
-    return NextResponse.json({
-      success: true,
-      entry: newEntry,
-      message: 'Analysis saved to history successfully'
+    const record = await prisma.plantAnalysis.create({
+      data: {
+        plantId: typeof plantId === 'string' && plantId.trim() ? plantId.trim() : undefined,
+        request: { strain: strain.trim() },
+        result: {
+          diagnosis: diagnosis.trim(),
+          confidence: typeof confidence === 'number' ? confidence : null,
+          healthScore: typeof healthScore === 'number' ? healthScore : null,
+          notes: typeof notes === 'string' ? notes : '',
+          isPurpleStrain: isPurpleStrain === true,
+          analysisData: analysisData ?? null,
+        },
+        provider: 'history-route',
+      },
     });
 
+    const entry = toHistoryEntry(record);
+    return NextResponse.json({ success: true, entry, message: 'Analysis saved to history successfully' });
   } catch (error) {
     console.error('Save history error:', error);
     return NextResponse.json(
-      { error: 'Failed to save analysis to history' },
-      { status: 500 }
+      { success: false, error: 'Failed to save analysis to history' },
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  // For static export, provide client-side compatibility response
-  const isStaticExport = process.env.BUILD_MODE === 'static';
-  if (isStaticExport) {
-    return NextResponse.json({
-      success: false,
-      message: 'This API is handled client-side in static export mode.',
-      clientSide: true,
-      buildMode: 'static'
-    });
+  if (process.env.BUILD_MODE === 'static') return staticExportResponse();
+
+  const id = new URL(request.url).searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ success: false, error: 'Missing required parameter: id' }, { status: 400 });
   }
 
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: id' },
-        { status: 400 }
-      );
-    }
-
-    // Find and delete entry
-    const entryIndex = analysisHistory.findIndex(entry => entry.id === id);
-    if (entryIndex === -1) {
-      return NextResponse.json(
-        { error: 'History entry not found' },
-        { status: 404 }
-      );
-    }
-
-    const deletedEntry = analysisHistory.splice(entryIndex, 1)[0];
-
+    const deleted = await prisma.plantAnalysis.delete({ where: { id } });
     return NextResponse.json({
       success: true,
-      entry: deletedEntry,
-      message: 'History entry deleted successfully'
+      entry: toHistoryEntry(deleted),
+      message: 'Analysis history entry deleted successfully',
     });
-
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2025') {
+      return NextResponse.json({ success: false, error: 'History entry not found' }, { status: 404 });
+    }
     console.error('Delete history error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete history entry' },
-      { status: 500 }
+      { success: false, error: 'Failed to delete analysis history entry' },
+      { status: 500 },
     );
   }
 }
