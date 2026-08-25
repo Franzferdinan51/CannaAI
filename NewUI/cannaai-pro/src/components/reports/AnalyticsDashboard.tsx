@@ -76,7 +76,7 @@ import {
   InsightData
 } from './types';
 
-import { analyticsApi, mockData } from './api';
+import { analyticsApi } from './api';
 import { dateUtils, numberUtils, chartUtils } from './utils';
 
 interface AnalyticsDashboardProps {
@@ -128,12 +128,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
       // Load overview analytics
       const overviewData = await analyticsApi.getOverview({ dateRange });
-      if (overviewData) {
-        setAnalyticsData(overviewData);
-      } else {
-        // Fallback to mock data
-        setAnalyticsData(mockData.generateMockAnalytics());
-      }
+      setAnalyticsData(overviewData);
 
       // Load other analytics data
       const [plantData, envData, financeData, yieldDataResponse] = await Promise.all([
@@ -154,52 +149,57 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
     } catch (error) {
       console.error('Failed to load analytics data:', error);
-      // Fallback to mock data
-      setAnalyticsData(mockData.generateMockAnalytics());
+      setAnalyticsData(null);
+      setPlantGrowthData([]);
+      setEnvironmentalData([]);
+      setFinancialData(null);
+      setYieldData(null);
+      setInsights([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Generate mock financial data for demonstration
-  const generateMockFinancialData = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return months.map(month => ({
-      month,
-      revenue: 45000 + Math.random() * 20000,
-      costs: 30000 + Math.random() * 10000,
-      profit: 15000 + Math.random() * 10000,
-      efficiency: 75 + Math.random() * 20
-    }));
-  };
+  const financialDataChart = useMemo(() => financialData ? [{
+    month: dateUtils.formatDate(new Date(financialData.period.start), 'short'),
+    revenue: financialData.revenue.total,
+    costs: financialData.costs.total,
+    profit: financialData.profit.net,
+    efficiency: financialData.metrics.operatingMargin,
+  }] : [], [financialData]);
 
-  const financialDataChart = useMemo(() => generateMockFinancialData(), []);
+  const yieldDataChart = useMemo(() => yieldData?.harvests.map((harvest) => ({
+    name: harvest.strain,
+    yield: harvest.dryWeight,
+  })) || [], [yieldData]);
 
-  // Generate mock yield data
-  const generateMockYieldData = () => {
-    const strains = ['Blue Dream', 'OG Kush', 'Girl Scout Cookies', 'Sour Diesel', 'Green Crack'];
-    return strains.map(strain => ({
-      name: strain,
-      yield: 2.5 + Math.random() * 3,
-      quality: 85 + Math.random() * 15,
-      growth: 20 + Math.random() * 10
-    }));
-  };
+  const environmentalPerformance = useMemo(() => {
+    const averages = environmentalData[0]?.averages;
+    if (!averages) return [];
+    return [
+      { metric: 'Temperature', current: averages.temperature },
+      { metric: 'Humidity', current: averages.humidity },
+      { metric: 'CO2', current: averages.co2 },
+      { metric: 'Light', current: averages.lightIntensity },
+      { metric: 'VPD', current: averages.vpd },
+    ];
+  }, [environmentalData]);
 
-  const yieldDataChart = useMemo(() => generateMockYieldData(), []);
-
-  // Generate environmental performance data
-  const generateEnvironmentalData = () => {
-    const metrics = ['Temperature', 'Humidity', 'CO2', 'Light', 'VPD'];
-    return metrics.map(metric => ({
-      metric,
-      optimal: 90 + Math.random() * 10,
-      current: 70 + Math.random() * 25,
-      efficiency: 75 + Math.random() * 20
-    }));
-  };
-
-  const environmentalPerformance = useMemo(() => generateEnvironmentalData(), []);
+  const averageHealthScore = plantGrowthData.length > 0
+    ? plantGrowthData.reduce((sum, plant) => sum + plant.healthScore, 0) / plantGrowthData.length
+    : null;
+  const averageYield = yieldData?.yields.average ?? null;
+  const environmentalMetrics = useMemo(() => {
+    const averages = environmentalData[0]?.averages;
+    if (!averages) return [];
+    return [
+      { name: 'Temperature', current: averages.temperature, avg: averages.temperature, min: null, max: null },
+      { name: 'Humidity', current: averages.humidity, avg: averages.humidity, min: null, max: null },
+      { name: 'CO2 Level', current: averages.co2, avg: averages.co2, min: null, max: null },
+      { name: 'Light Intensity', current: averages.lightIntensity, avg: averages.lightIntensity, min: null, max: null },
+      { name: 'pH Level', current: averages.ph, avg: averages.ph, min: null, max: null },
+    ];
+  }, [environmentalData]);
 
   // Pie chart colors
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
@@ -316,11 +316,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </div>
             <TrendingUp className="w-5 h-5 text-emerald-400" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-1">847</h3>
+          <h3 className="text-2xl font-bold text-white mb-1">{plantGrowthData.length || '—'}</h3>
           <p className="text-sm text-gray-400 mb-2">Total Plants</p>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-emerald-400">+12.5%</span>
-            <span className="text-xs text-gray-500">from last period</span>
+            <span className="text-xs text-gray-500">{plantGrowthData.length ? 'from loaded data' : 'No persisted data'}</span>
           </div>
         </div>
 
@@ -331,11 +330,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </div>
             <TrendingUp className="w-5 h-5 text-blue-400" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-1">94.2%</h3>
+          <h3 className="text-2xl font-bold text-white mb-1">{averageHealthScore === null ? '—' : `${averageHealthScore.toFixed(1)}%`}</h3>
           <p className="text-sm text-gray-400 mb-2">Health Score</p>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-blue-400">+3.1%</span>
-            <span className="text-xs text-gray-500">from last period</span>
+            <span className="text-xs text-gray-500">{averageHealthScore === null ? 'No persisted data' : 'from loaded data'}</span>
           </div>
         </div>
 
@@ -346,11 +344,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </div>
             <TrendingUp className="w-5 h-5 text-purple-400" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-1">$47.8k</h3>
+          <h3 className="text-2xl font-bold text-white mb-1">{financialData ? numberUtils.formatCurrency(financialData.revenue.total) : '—'}</h3>
           <p className="text-sm text-gray-400 mb-2">Revenue</p>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-purple-400">+8.7%</span>
-            <span className="text-xs text-gray-500">from last period</span>
+            <span className="text-xs text-gray-500">{financialData ? 'from loaded data' : 'No persisted data'}</span>
           </div>
         </div>
 
@@ -361,11 +358,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </div>
             <TrendingDown className="w-5 h-5 text-yellow-400" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-1">2.4kg</h3>
+          <h3 className="text-2xl font-bold text-white mb-1">{averageYield === null ? '—' : `${numberUtils.formatNumber(averageYield)}kg`}</h3>
           <p className="text-sm text-gray-400 mb-2">Avg Yield</p>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-yellow-400">-1.2%</span>
-            <span className="text-xs text-gray-500">from last period</span>
+            <span className="text-xs text-gray-500">{averageYield === null ? 'No persisted data' : 'from loaded data'}</span>
           </div>
         </div>
       </div>
@@ -555,14 +551,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <RadarChart data={environmentalPerformance}>
               <PolarGrid stroke="#374151" />
               <PolarAngleAxis dataKey="metric" stroke="#9ca3af" />
-              <PolarRadiusAxis stroke="#9ca3af" domain={[0, 100]} />
-              <Radar
-                name="Optimal"
-                dataKey="optimal"
-                stroke="#10b981"
-                fill="#10b981"
-                fillOpacity={0.3}
-              />
+              <PolarRadiusAxis stroke="#9ca3af" />
               <Radar
                 name="Current"
                 dataKey="current"
@@ -597,33 +586,25 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {[
-                { name: 'Temperature', current: 24.5, avg: 23.8, min: 22.1, max: 26.2, trend: 'up', status: 'optimal' },
-                { name: 'Humidity', current: 58, avg: 60, min: 45, max: 75, trend: 'down', status: 'optimal' },
-                { name: 'CO2 Level', current: 1200, avg: 1150, min: 800, max: 1400, trend: 'up', status: 'optimal' },
-                { name: 'Light Intensity', current: 750, avg: 720, min: 600, max: 850, trend: 'stable', status: 'optimal' },
-                { name: 'pH Level', current: 6.2, avg: 6.3, min: 5.8, max: 6.8, trend: 'stable', status: 'optimal' },
-              ].map((metric, index) => (
-                <tr key={index} className="hover:bg-[#252A33]/50">
+              {environmentalMetrics.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">No persisted environmental readings for this period.</td>
+                </tr>
+              ) : environmentalMetrics.map((metric) => (
+                <tr key={metric.name} className="hover:bg-[#252A33]/50">
                   <td className="px-6 py-4 text-sm font-medium text-white">{metric.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-300">{metric.current}</td>
                   <td className="px-6 py-4 text-sm text-gray-300">{metric.avg}</td>
-                  <td className="px-6 py-4 text-sm text-gray-300">{metric.min} / {metric.max}</td>
+                  <td className="px-6 py-4 text-sm text-gray-300">—</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      {metric.trend === 'up' ? (
-                        <ArrowUp className="w-4 h-4 text-emerald-400" />
-                      ) : metric.trend === 'down' ? (
-                        <ArrowDown className="w-4 h-4 text-red-400" />
-                      ) : (
-                        <Minus className="w-4 h-4 text-gray-400" />
-                      )}
-                      <span className="text-sm text-gray-300 capitalize">{metric.trend}</span>
+                      <Minus className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-300">Not measured</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/50">
-                      {metric.status}
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-500/10 text-gray-400 border border-gray-500/50">
+                      observed
                     </span>
                   </td>
                 </tr>

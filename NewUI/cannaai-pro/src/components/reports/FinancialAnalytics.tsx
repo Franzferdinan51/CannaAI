@@ -81,7 +81,7 @@ import {
   CostBreakdown
 } from './types';
 
-import { analyticsApi, mockData } from './api';
+import { analyticsApi } from './api';
 import { dateUtils, numberUtils } from './utils';
 
 interface FinancialAnalyticsProps {
@@ -124,109 +124,27 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
       if (data) {
         setFinancialData(data);
       } else {
-        // Fallback to mock data
-        setFinancialData(generateMockFinancialData());
+        setFinancialData(null);
       }
 
     } catch (error) {
       console.error('Failed to load financial data:', error);
-      setFinancialData(generateMockFinancialData());
+      setFinancialData(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Generate mock financial data
-  const generateMockFinancialData = (): FinancialAnalyticsData => {
-    const generateMonthlyData = () => {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const currentMonth = new Date().getMonth();
-      return months.slice(0, currentMonth + 1).map((month, index) => ({
-        month,
-        revenue: 45000 + Math.random() * 20000,
-        costs: 30000 + Math.random() * 10000,
-        profit: 15000 + Math.random() * 10000,
-        growth: index > 0 ? (Math.random() - 0.3) * 20 : 0
-      }));
-    };
-
-    const monthlyData = generateMonthlyData();
-
-    return {
-      period,
-      revenue: {
-        total: monthlyData.reduce((sum, m) => sum + m.revenue, 0),
-        sources: [
-          { source: 'Flower Sales', amount: 350000, percentage: 70, growth: 12.5 },
-          { source: 'Clones', amount: 75000, percentage: 15, growth: 8.3 },
-          { source: 'Processing', amount: 50000, percentage: 10, growth: -2.1 },
-          { source: 'Other', amount: 25000, percentage: 5, growth: 15.7 }
-        ],
-        growth: 10.3,
-        forecast: 525000
-      },
-      costs: {
-        total: monthlyData.reduce((sum, m) => sum + m.costs, 0),
-        categories: [
-          { category: 'Energy', amount: 80000, percentage: 28.6, trend: 'up' as const },
-          { category: 'Labor', amount: 100000, percentage: 35.7, trend: 'stable' as const },
-          { category: 'Nutrients', amount: 45000, percentage: 16.1, trend: 'down' as const },
-          { category: 'Equipment', amount: 35000, percentage: 12.5, trend: 'up' as const },
-          { category: 'Other', amount: 20000, percentage: 7.1, trend: 'stable' as const }
-        ],
-        breakdown: {
-          energy: 80000,
-          water: 15000,
-          nutrients: 45000,
-          labor: 100000,
-          equipment: 35000,
-          supplies: 15000,
-          other: 20000
-        },
-        savings: 15000
-      },
-      profit: {
-        gross: 250000,
-        net: 220000,
-        margin: 44.0,
-        growth: 8.7
-      },
-      metrics: {
-        roi: 145.2,
-        breakEvenPoint: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-        costPerUnit: 280.50,
-        revenuePerUnit: 500.75,
-        operatingMargin: 38.5,
-        grossMargin: 44.0
-      },
-      forecasts: [
-        { period: 'Next Month', revenue: 52000, costs: 35000, profit: 17000, confidence: 0.85 },
-        { period: 'Next Quarter', revenue: 165000, costs: 110000, profit: 55000, confidence: 0.75 },
-        { period: 'Next Year', revenue: 650000, costs: 420000, profit: 230000, confidence: 0.65 }
-      ],
-      kpis: [
-        { name: 'Revenue Growth Rate', value: 12.5, unit: '%', trend: { direction: 'up', percentage: 12.5, significance: 'medium' }, target: 15, status: 'good' as const },
-        { name: 'Operating Margin', value: 38.5, unit: '%', trend: { direction: 'up', percentage: 2.3, significance: 'low' }, target: 40, status: 'warning' as const },
-        { name: 'Cost Per Unit', value: 280.50, unit: '$', trend: { direction: 'down', percentage: -5.2, significance: 'medium' }, target: 275, status: 'warning' as const },
-        { name: 'ROI', value: 145.2, unit: '%', trend: { direction: 'up', percentage: 8.7, significance: 'high' }, target: 150, status: 'good' as const }
-      ]
-    };
-  };
-
   // Prepare chart data
   const monthlyRevenueData = useMemo(() => {
     if (!financialData) return [];
-
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const currentMonth = new Date().getMonth();
-
-    return months.slice(0, currentMonth + 1).map((month, index) => ({
-      month,
-      revenue: 45000 + Math.random() * 20000,
-      costs: 30000 + Math.random() * 10000,
-      profit: 15000 + Math.random() * 10000,
-      efficiency: 75 + Math.random() * 20
-    }));
+    return [{
+      month: dateUtils.formatDate(new Date(financialData.period.start), 'short'),
+      revenue: financialData.revenue.total,
+      costs: financialData.costs.total,
+      profit: financialData.profit.net,
+      efficiency: financialData.metrics.operatingMargin,
+    }];
   }, [financialData]);
 
   // Cost breakdown data

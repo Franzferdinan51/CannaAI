@@ -2,11 +2,6 @@ import axios from 'axios';
 import {
   Report,
   ReportTemplate,
-  AnalyticsData,
-  PlantGrowthAnalytics,
-  EnvironmentalAnalytics,
-  FinancialAnalytics,
-  YieldAnalytics,
   ReportParameters,
   ExportOptions,
   ExportFormat,
@@ -392,103 +387,6 @@ export const exportApi = {
       return null;
     }
   },
-};
-
-// Utility functions for generating mock data (development fallback)
-export const mockData = {
-  // Generate mock reports
-  generateMockReports(count: number = 10): Report[] {
-    const reports: Report[] = [];
-    const categories = ['overview', 'plants', 'sensors', 'environment', 'financial', 'yield'];
-    const types = ['summary', 'detailed', 'comparison', 'trend', 'financial', 'growth'];
-    const statuses = ['completed', 'scheduled', 'generating', 'failed'];
-
-    for (let i = 0; i < count; i++) {
-      const createdDate = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
-      reports.push({
-        id: `report_${i + 1}`,
-        name: `Report ${i + 1}`,
-        description: `Sample report ${i + 1} description`,
-        type: types[Math.floor(Math.random() * types.length)] as any,
-        category: categories[Math.floor(Math.random() * categories.length)] as any,
-        createdAt: createdDate,
-        updatedAt: createdDate,
-        generatedAt: Math.random() > 0.3 ? createdDate : undefined,
-        status: statuses[Math.floor(Math.random() * statuses.length)] as any,
-        createdBy: 'user_1',
-        parameters: {
-          dateRange: {
-            start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-            end: new Date(),
-            preset: 'week'
-          },
-          filters: {
-            rooms: ['room_1', 'room_2'],
-            plants: [`plant_${i}`]
-          },
-          format: 'pdf',
-          includeCharts: true,
-          includeTables: true,
-          includeImages: false
-        },
-        metadata: {
-          duration: Math.floor(Math.random() * 30000),
-          recordCount: Math.floor(Math.random() * 10000),
-          dataSource: 'database',
-          version: '1.0',
-          tags: ['sample', 'mock'],
-          permissions: {
-            view: ['user_1'],
-            edit: ['user_1'],
-            share: true,
-            public: false
-          }
-        }
-      });
-    }
-
-    return reports;
-  },
-
-  // Generate mock analytics data
-  generateMockAnalytics(): AnalyticsData {
-    const now = Date.now();
-    const timeSeries = [];
-
-    // Generate last 30 days of data
-    for (let i = 29; i >= 0; i--) {
-      const timestamp = new Date(now - i * 24 * 60 * 60 * 1000);
-      timeSeries.push({
-        timestamp,
-        value: 100 + Math.random() * 50,
-        metric: 'temperature',
-        unit: '°F',
-        quality: 'good'
-      });
-    }
-
-    return {
-      timeSeries,
-      summary: {
-        total: 29,
-        average: 125.5,
-        minimum: 100.1,
-        maximum: 149.9,
-        median: 125.2,
-        standardDeviation: 14.4,
-        trend: {
-          direction: 'up',
-          percentage: 5.2,
-          significance: 'medium'
-        },
-        growth: {
-          absolute: 12.3,
-          percentage: 10.8,
-          period: '30 days'
-        }
-      }
-    };
-  }
 };
 
 export default api;

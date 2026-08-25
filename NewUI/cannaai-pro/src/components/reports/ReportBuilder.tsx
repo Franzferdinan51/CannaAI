@@ -1256,13 +1256,13 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
                 <div>
                   <p className="text-xs text-gray-500">Estimated Records</p>
                   <p className="text-sm text-gray-300">
-                    {Math.floor(Math.random() * 5000) + 1000} records
+                    {report.metadata?.recordCount === undefined ? 'Not available' : `${report.metadata.recordCount} records`}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-xs text-gray-500">File Size (PDF)</p>
-                  <p className="text-sm text-gray-300">~{Math.floor(Math.random() * 5) + 2} MB</p>
+                  <p className="text-sm text-gray-300">Calculated after generation</p>
                 </div>
               </div>
             </div>

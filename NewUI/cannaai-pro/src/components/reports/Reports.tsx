@@ -74,7 +74,7 @@ import {
   YieldAnalytics
 } from './types';
 
-import { reportsApi, analyticsApi, exportApi, mockData } from './api';
+import { reportsApi, analyticsApi, exportApi } from './api';
 import { dateUtils, numberUtils, exportUtils } from './utils';
 
 interface ReportsProps {

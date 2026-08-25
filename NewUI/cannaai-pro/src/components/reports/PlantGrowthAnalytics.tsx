@@ -78,7 +78,7 @@ import {
   TrendData
 } from './types';
 
-import { analyticsApi, mockData } from './api';
+import { analyticsApi } from './api';
 import { dateUtils, numberUtils, chartUtils } from './utils';
 
 interface PlantGrowthAnalyticsProps {
@@ -148,113 +148,11 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
 
     } catch (error) {
       console.error('Failed to load plant growth data:', error);
-      // Fallback to mock data
-      setGrowthData(generateMockPlantGrowthData());
+      setGrowthData([]);
+      setSelectedPlant(null);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Generate mock data for demonstration
-  const generateMockPlantGrowthData = (): PlantGrowthAnalyticsData[] => {
-    const mockPlants: PlantGrowthAnalyticsData[] = [];
-    const stages: PlantGrowthStage[] = ['vegetative', 'flowering', 'ripening'];
-    const strains = ['Blue Dream', 'OG Kush', 'Girl Scout Cookies', 'Sour Diesel'];
-
-    for (let i = 0; i < 12; i++) {
-      const strain = strains[i % strains.length];
-      const stage = stages[Math.floor(Math.random() * stages.length)];
-
-      const measurements: GrowthMeasurement[] = [];
-      const now = Date.now();
-      const days = 30;
-
-      for (let d = 0; d < days; d++) {
-        const timestamp = new Date(now - (days - d) * 24 * 60 * 60 * 1000);
-        measurements.push({
-          timestamp,
-          height: 20 + d * 2 + Math.random() * 5,
-          width: 10 + d * 1.5 + Math.random() * 3,
-          leafCount: Math.floor(d * 2 + Math.random() * 5),
-          color: {
-            dominant: '#4ade80',
-            variance: 0.2,
-            chlorophyll: 45 + Math.random() * 20,
-            stress: Math.random() * 0.3
-          },
-          health: {
-            score: 75 + Math.random() * 25,
-            issues: [],
-            nutrients: [
-              { nutrient: 'Nitrogen', level: 200 + Math.random() * 100, status: 'optimal' as const },
-              { nutrient: 'Phosphorus', level: 50 + Math.random() * 50, status: 'optimal' as const },
-              { nutrient: 'Potassium', level: 150 + Math.random() * 100, status: 'optimal' as const }
-            ],
-            pests: [],
-            diseases: []
-          },
-          environmental: {
-            timestamp,
-            temperature: 22 + Math.random() * 4,
-            humidity: 50 + Math.random() * 20,
-            co2: 1000 + Math.random() * 400,
-            light: {
-              intensity: 600 + Math.random() * 300,
-              duration: 16 + Math.random() * 4,
-              spectrum: {
-                blue: 20,
-                green: 30,
-                red: 40,
-                far_red: 5,
-                uv: 5
-              },
-              dli: 25 + Math.random() * 10
-            },
-            air: {
-              vpd: 1.1,
-              pressure: 1013,
-              circulation: 80,
-              quality: { oxygen: 21, volatileOrganicCompounds: 0, particulates: 0 },
-            },
-            water: {
-              ph: 6.0 + Math.random() * 0.8,
-              ec: 1.2 + Math.random() * 0.8,
-              temperature: 20 + Math.random() * 4,
-              oxygen: 8 + Math.random() * 2,
-              nutrients: []
-            }
-          }
-        });
-      }
-
-      mockPlants.push({
-        plantId: `plant_${i + 1}`,
-        strain,
-        growthStage: stage,
-        measurements,
-        healthScore: 75 + Math.random() * 25,
-        growthRate: 2.5 + Math.random() * 2,
-        yieldPrediction: {
-          estimated: 2.5 + Math.random() * 2,
-          unit: 'kg',
-          confidence: 0.8 + Math.random() * 0.2,
-          factors: [
-            { factor: 'Genetics', impact: 0.4, description: 'Strain genetic potential' },
-            { factor: 'Environment', impact: 0.3, description: 'Growing conditions' },
-            { factor: 'Nutrition', impact: 0.2, description: 'Nutrient regimen' },
-            { factor: 'Care', impact: 0.1, description: 'Maintenance quality' }
-          ],
-          timeline: new Date(now + 30 * 24 * 60 * 60 * 1000)
-        },
-        recommendations: [
-          'Maintain current environmental conditions',
-          'Monitor for any signs of nutrient deficiencies',
-          'Consider pruning lower leaves for better air circulation'
-        ]
-      });
-    }
-
-    return mockPlants;
   };
 
   // Filter plants
