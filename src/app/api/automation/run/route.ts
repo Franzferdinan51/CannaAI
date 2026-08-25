@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { analyzePlantHealth } from '@/lib/ai';
 
 interface RunRequest {
   type: 'rule' | 'schedule' | 'workflow' | 'batch';
@@ -343,11 +344,53 @@ async function executeBatch(batchId: string) {
 
 // Helper functions
 async function triggerAnalysis(plantId: string | null, config?: any) {
-  // This would integrate with the actual analysis API
+  if (!plantId) throw new Error('A plant is required for automated analysis');
+
+  const imageData = [config?.imageData, config?.plantImage, config?.image]
+    .find((value) => typeof value === 'string' && value.trim());
+  if (!imageData) {
+    return {
+      success: false,
+      available: false,
+      status: 'awaiting_capture',
+      plantId,
+      message: 'Automated analysis requires an image. Create a capture task or provide imageData.'
+    };
+  }
+
+  const analysis = await analyzePlantHealth(imageData, {
+    strain: config?.strain,
+    growthStage: config?.growthStage,
+    medium: config?.medium,
+    temperature: typeof config?.temperature === 'number' ? config.temperature : undefined,
+    humidity: typeof config?.humidity === 'number' ? config.humidity : undefined,
+    phLevel: typeof config?.phLevel === 'number' ? config.phLevel : undefined,
+    symptoms: Array.isArray(config?.symptoms) ? config.symptoms : undefined
+  });
+
+  await prisma.analysisHistory.create({
+    data: {
+      plantId,
+      analysisType: 'automated_health',
+      data: {
+        diagnosis: analysis.diagnosis,
+        confidence: analysis.confidence,
+        recommendations: analysis.recommendations,
+        urgency: analysis.urgency,
+        potentialIssues: analysis.potentialIssues,
+        suggestedActions: analysis.suggestedActions,
+        nextSteps: analysis.nextSteps
+      },
+      metadata: { source: 'automation_run', automated: true }
+    }
+  });
+
   return {
+    success: true,
+    available: true,
     triggered: true,
     plantId,
-    config,
+    result: analysis,
     timestamp: new Date().toISOString()
   };
 }
@@ -373,10 +416,29 @@ async function triggerHealthAnalysis(plantId: string, config?: any) {
 }
 
 async function triggerCapture(plantId: string | null, config?: any) {
+  const task = await prisma.task.create({
+    data: {
+      title: config?.title || 'Automated Photo Capture',
+      description: config?.description || 'Photo capture requested by automation',
+      type: 'photo_capture',
+      priority: config?.priority || 'medium',
+      status: 'pending',
+      plantId,
+      data: {
+        captureType: config?.captureType || 'automation',
+        deviceInfo: config?.deviceInfo || {},
+        requestedBy: 'automation'
+      }
+    }
+  });
+
   return {
+    success: true,
+    available: true,
     triggered: true,
     plantId,
-    config,
+    status: 'awaiting_capture',
+    taskId: task.id,
     timestamp: new Date().toISOString()
   };
 }
