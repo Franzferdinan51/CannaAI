@@ -1,7 +1,10 @@
 import React from 'react';
 import { Sprout, Plus, Search, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const PlantsSimple: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex-1 flex items-center justify-center bg-gray-900 text-white">
       <div className="text-center max-w-2xl mx-auto">
@@ -88,15 +91,15 @@ const PlantsSimple: React.FC = () => {
         </div>
 
         <div className="flex gap-4 justify-center">
-          <button className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2">
+          <button type="button" onClick={() => navigate('/plants')} className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2">
             <Plus className="w-4 h-4" />
             Add Plant
           </button>
-          <button className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2">
+          <button type="button" onClick={() => navigate('/plants')} className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2">
             <Search className="w-4 h-4" />
             Search Plants
           </button>
-          <button className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2">
+          <button type="button" onClick={() => navigate('/plants')} className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2">
             <Filter className="w-4 h-4" />
             Filter
           </button>
