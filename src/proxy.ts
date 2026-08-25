@@ -51,7 +51,9 @@ export function proxy(request: NextRequest) {
       }
     }
 
-    const allowedListRaw = process.env.ALLOWED_ORIGINS ?? '';
+    // SOCKET_IO_ORIGINS is the documented deployment setting and is shared
+    // with the Socket.IO server. Keep ALLOWED_ORIGINS for older deployments.
+    const allowedListRaw = process.env.SOCKET_IO_ORIGINS ?? process.env.ALLOWED_ORIGINS ?? '';
     const allowedList = allowedListRaw.trim();
 
     const requestOrigin = request.headers.get('origin') ?? '';

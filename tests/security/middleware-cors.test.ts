@@ -186,6 +186,25 @@ describe('CORS hardening — src/proxy.ts', () => {
       expect(headersMap.get('Access-Control-Allow-Origin')).not.toBe('*');
     });
 
+    test('SOCKET_IO_ORIGINS is honored for the documented deployment setting', async () => {
+      delete process.env.ALLOWED_ORIGINS;
+      process.env.SOCKET_IO_ORIGINS = 'https://phone.example.com';
+
+      const { proxy: middleware } = await import('@/proxy');
+      const request = {
+        method: 'POST',
+        nextUrl: { pathname: '/api/analyze' },
+        headers: {
+          get(name: string) {
+            return name === 'origin' ? 'https://phone.example.com' : null;
+          },
+        },
+      };
+
+      middleware(request as never);
+      expect(headersMap.get('Access-Control-Allow-Origin')).toBe('https://phone.example.com');
+    });
+
     test('empty ALLOWED_ORIGINS falls back to dev-safe localhost behavior', async () => {
       delete process.env.ALLOWED_ORIGINS;
 
