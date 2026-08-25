@@ -1,147 +1,50 @@
-import React from 'react';
-import { Bot, Activity, Droplets, Lightbulb, Thermometer, Wind, Shield, Calendar, History } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Activity, Bot, Calendar, CheckCircle2, Clock3, Droplets, History, Lightbulb, RefreshCw, Settings, Shield, Thermometer, Wind, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const AutomationSimple: React.FC = () => {
+type AutomationTab = 'overview' | 'controls' | 'scheduling' | 'history' | 'safety';
+type AutomationState = { config: Record<string, unknown>; checkedAt: Date | null; loading: boolean; error: string | null };
+const systems = [
+  { name: 'Climate Control', detail: 'Temperature and humidity management', icon: Thermometer, color: 'text-orange-300' },
+  { name: 'Irrigation', detail: 'Watering and nutrient delivery', icon: Droplets, color: 'text-blue-300' },
+  { name: 'Lighting', detail: 'Schedules and intensity control', icon: Lightbulb, color: 'text-yellow-300' },
+  { name: 'Air Quality', detail: 'CO₂ and circulation monitoring', icon: Wind, color: 'text-cyan-300' },
+];
+
+export default function AutomationSimple() {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<AutomationTab>('overview');
+  const [state, setState] = useState<AutomationState>({ config: {}, checkedAt: null, loading: true, error: null });
+  const refresh = useCallback(async () => {
+    setState((current) => ({ ...current, loading: true, error: null }));
+    try {
+      const response = await fetch('/api/automation');
+      if (!response.ok) throw new Error(`Automation status returned ${response.status}`);
+      const payload = await response.json();
+      setState({ config: payload.data || {}, checkedAt: new Date(), loading: false, error: null });
+    } catch (error) {
+      setState((current) => ({ ...current, loading: false, checkedAt: new Date(), error: error instanceof Error ? error.message : 'Unable to load automation status.' }));
+    }
+  }, []);
+  useEffect(() => { void refresh(); }, [refresh]);
+  const goToSettings = () => { navigate('/settings'); };
+  const tabs: Array<{ id: AutomationTab; label: string; icon: React.ComponentType<{ size?: number }> }> = [
+    { id: 'overview', label: 'Overview', icon: Activity }, { id: 'controls', label: 'Controls', icon: Settings }, { id: 'scheduling', label: 'Scheduling', icon: Calendar }, { id: 'history', label: 'History', icon: History }, { id: 'safety', label: 'Safety', icon: Shield },
+  ];
   return (
-    <div className="flex-1 flex items-center justify-center bg-gray-900 text-white">
-      <div className="text-center max-w-2xl mx-auto">
-        <Bot className="w-16 h-16 mx-auto mb-4 text-emerald-400" />
-        <h2 className="text-2xl font-bold mb-2">Automation System</h2>
-        <p className="text-gray-400 mb-6">Environmental controls and automation for your cultivation</p>
-        <div className="mb-8 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Live automation telemetry and actions are unavailable until a supported device controller is connected.
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <Thermometer className="w-6 h-6 text-orange-400" />
-              <h3 className="font-medium text-lg">Climate Control</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">Temperature and humidity management</p>
-            <div className="space-y-2 text-left">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Temperature:</span>
-                <span className="text-gray-400 font-medium">Not measured</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Humidity:</span>
-                <span className="text-gray-400 font-medium">Not measured</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Status:</span>
-                <span className="text-amber-300 font-medium">Unavailable</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <Droplets className="w-6 h-6 text-blue-400" />
-              <h3 className="font-medium text-lg">Irrigation System</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">Automated watering and nutrient delivery</p>
-            <div className="space-y-2 text-left">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Last Watering:</span>
-                <span className="text-gray-400 font-medium">Not recorded</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Next Scheduled:</span>
-                <span className="text-gray-400 font-medium">Not scheduled</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">pH Level:</span>
-                <span className="text-gray-400 font-medium">Not measured</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <Lightbulb className="w-6 h-6 text-yellow-400" />
-              <h3 className="font-medium text-lg">Lighting Control</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">Automated lighting schedules and intensity</p>
-            <div className="space-y-2 text-left">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Current Stage:</span>
-                <span className="text-gray-400 font-medium">Not available</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Light Hours:</span>
-                <span className="text-gray-400 font-medium">Not configured</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Intensity:</span>
-                <span className="text-gray-400 font-medium">Not measured</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <Wind className="w-6 h-6 text-cyan-400" />
-              <h3 className="font-medium text-lg">Air Quality</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">CO2 levels and air circulation management</p>
-            <div className="space-y-2 text-left">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">CO2 Level:</span>
-                <span className="text-gray-400 font-medium">Not measured</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Air Flow:</span>
-                <span className="text-gray-400 font-medium">Not measured</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-300">Filter Status:</span>
-                <span className="text-gray-400 font-medium">Not measured</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <Calendar className="w-6 h-6 text-purple-400" />
-              <h3 className="font-medium text-lg">Scheduling</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">Manage automation schedules</p>
-            <div className="text-left">
-              <div className="text-2xl font-bold text-gray-400 mb-1">—</div>
-              <div className="text-xs text-gray-400">No schedule data</div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <History className="w-6 h-6 text-yellow-400" />
-              <h3 className="font-medium text-lg">Activity Log</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">View automation history</p>
-            <div className="text-left">
-              <div className="text-2xl font-bold text-gray-400 mb-1">—</div>
-              <div className="text-xs text-gray-400">No activity data</div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="w-6 h-6 text-red-400" />
-              <h3 className="font-medium text-lg">Safety</h3>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">Safety monitoring and alerts</p>
-            <div className="text-left">
-              <div className="text-2xl font-bold text-gray-400 mb-1">—</div>
-              <div className="text-xs text-gray-400">Alerts not measured</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div className="min-h-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8"><div className="max-w-6xl mx-auto space-y-6">
+      <header className="flex flex-col gap-4 rounded-2xl border border-gray-800 bg-gray-850/60 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="rounded-xl bg-emerald-500/15 p-3 text-emerald-300"><Bot size={28} /></div><div><h1 className="text-2xl font-bold">Automation System</h1><p className="text-sm text-gray-400">Status, schedules, and device-control readiness</p></div></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void refresh()} disabled={state.loading} className="inline-flex items-center gap-2 rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-200 hover:bg-gray-800 disabled:cursor-wait disabled:opacity-60"><RefreshCw size={16} className={state.loading ? 'animate-spin' : ''} /> Refresh status</button><button type="button" onClick={goToSettings} className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-gray-950 hover:bg-emerald-400"><Settings size={16} /> Configure</button></div></header>
+      <div className="flex flex-wrap gap-2 border-b border-gray-800 pb-3" role="tablist" aria-label="Automation sections">{tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${tab === id ? 'bg-emerald-500/15 text-emerald-300' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><Icon size={16} /> {label}</button>)}</div>
+      {state.error && <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200"><XCircle className="mr-2 inline" size={16} />{state.error}</div>}
+      <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100"><div className="flex items-start gap-3"><Shield className="mt-0.5 shrink-0 text-amber-300" size={18} /><div><p className="font-semibold">Live device actions are unavailable</p><p className="mt-1 text-amber-200/80">CannaAI can display configuration and prepare schedules, but it will not claim to control equipment until a supported controller is connected.</p></div></div></section>
+      {tab === 'overview' && <><div className="grid gap-4 sm:grid-cols-3"><StatusCard icon={<CheckCircle2 className="text-emerald-300" />} label="Backend status" value={state.error ? 'Unavailable' : 'Online'} /><StatusCard icon={<Clock3 className="text-blue-300" />} label="Last checked" value={state.checkedAt ? state.checkedAt.toLocaleTimeString() : 'Checking…'} /><StatusCard icon={<Shield className="text-amber-300" />} label="Controller" value="Not connected" /></div><div className="grid gap-4 md:grid-cols-2">{systems.map(({ name, detail, icon: Icon, color }) => <div key={name} className="rounded-xl border border-gray-800 bg-gray-800/60 p-5"><div className="flex items-center gap-3"><Icon className={color} size={22} /><div><h2 className="font-semibold">{name}</h2><p className="text-sm text-gray-400">{detail}</p></div></div><p className="mt-4 text-sm text-gray-500">No connected device data</p></div>)}</div></>}
+      {tab === 'controls' && <UnavailablePanel title="Controls are paused" description="Connect a supported device controller before sending climate, irrigation, lighting, or air-quality commands." />}
+      {tab === 'scheduling' && <UnavailablePanel title="Scheduling is ready for configuration" description="Schedules can be configured once a controller is connected. No schedule will run silently in the background." action="Open settings" onAction={goToSettings} />}
+      {tab === 'history' && <UnavailablePanel title="No automation activity yet" description="Controller actions and safety events will appear here after a supported device integration is connected." />}
+      {tab === 'safety' && <UnavailablePanel title="Safety monitoring is not connected" description="CannaAI will keep live actions paused until device telemetry and safety limits are available." />}
+      <p className="text-xs text-gray-500">{Object.keys(state.config).length ? 'Automation configuration loaded from the local backend.' : 'No automation configuration has been saved yet.'}</p>
+    </div></div>
   );
-};
-
-export default AutomationSimple;
+}
+function StatusCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) { return <div className="rounded-xl border border-gray-800 bg-gray-800/60 p-5"><div className="flex items-center gap-2 text-sm text-gray-400">{icon}{label}</div><p className="mt-3 text-xl font-semibold text-white">{value}</p></div>; }
+function UnavailablePanel({ title, description, action, onAction }: { title: string; description: string; action?: string; onAction?: () => void }) { return <div className="rounded-xl border border-gray-800 bg-gray-800/50 p-8 text-center"><Shield className="mx-auto mb-4 text-amber-300" size={34} /><h2 className="text-xl font-semibold">{title}</h2><p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-gray-400">{description}</p>{action && onAction && <button type="button" onClick={onAction} className="mt-5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-gray-950 hover:bg-emerald-400">{action}</button>}</div>; }
