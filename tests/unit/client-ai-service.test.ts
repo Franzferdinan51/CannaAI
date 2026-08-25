@@ -11,4 +11,10 @@ describe('ClientAIService', () => {
       provider: 'fallback',
     });
   });
+
+  it('does not report the removed fallback provider as connected', async () => {
+    const service = new ClientAIService({ provider: 'fallback' } as any);
+
+    await expect(service.testConnection()).resolves.toBe(false);
+  });
 });

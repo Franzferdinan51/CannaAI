@@ -96,7 +96,9 @@ export class ClientAIService {
 
   async testConnection(): Promise<boolean> {
     try {
-      if (this.config.provider === 'fallback') return true;
+      // The canned fallback provider was removed. Never report it as a
+      // healthy AI connection or make the Settings UI appear configured.
+      if (this.config.provider === 'fallback') return false;
       if (this.config.provider === 'lm-studio') {
         const response = await fetch(`${this.config.lmStudio.url.replace(/\/$/, '')}/v1/models`, {
           headers: this.config.lmStudio.apiKey
@@ -273,33 +275,15 @@ export class ClientAIService {
   }
 
   private generateFallbackResponse(message: string, mode: string, context?: any): AIResponse {
-    const fallbackResponses = {
-      chat: this.getFallbackChatResponse(message, context),
-      analysis: this.getFallbackAnalysisResponse(message, context),
-      diagnosis: this.getFallbackDiagnosisResponse(message, context),
-      recommendation: this.getFallbackRecommendationResponse(message, context),
-      trichome: this.getFallbackTrichomeResponse(message, context),
-      harvest: this.getFallbackHarvestResponse(message, context),
-      autonomous: this.getFallbackAutonomousResponse(message, context),
-      proactive: this.getFallbackProactiveResponse(message, context),
-      predictive: this.getFallbackPredictiveResponse(message, context),
-      planner: this.getFallbackPlannerResponse(message, context),
-      monitor: this.getFallbackMonitorResponse(message, context),
-      thinking: this.getFallbackThinkingResponse(message, context),
-      'study-plan': this.getFallbackStudyPlanResponse(message, context),
-      quiz: this.getFallbackQuizResponse(message, context),
-      research: this.getFallbackResearchResponse(message, context),
-      troubleshoot: this.getFallbackTroubleshootResponse(message, context),
-    };
-
-    const response = fallbackResponses[mode as keyof typeof fallbackResponses] || fallbackResponses.chat;
-
+    void message;
+    void mode;
+    void context;
     return {
-      success: true,
-      response,
-      model: 'Fallback Mode',
-      provider: 'Local',
-      fallbackUsed: true,
+      success: false,
+      response: '',
+      provider: 'fallback',
+      error: 'Canned fallback responses are disabled. Configure LM Studio or another AI provider.',
+      fallbackUsed: false,
     };
   }
 
