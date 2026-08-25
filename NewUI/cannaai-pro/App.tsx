@@ -78,7 +78,7 @@ export default function App() {
       setSelectedId(newImage.id);
       setIsAnalyzing(true);
 
-      // Trigger Gemini Analysis
+        // Run the image through CannaAI's server-side local-first vision chain
       try {
         const analysis = await analyzePlantImage(base64Content);
         
