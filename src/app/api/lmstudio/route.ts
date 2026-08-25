@@ -14,7 +14,9 @@ export const dynamic = 'auto';
 export const revalidate = false;
 
 // LM Studio configuration
-const LM_STUDIO_URL = process.env.LM_STUDIO_URL || 'http://localhost:1234';
+const LM_STUDIO_URL = (process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234')
+  .replace(/\/v1\/?$/, '')
+  .replace(/\/$/, '');
 const LM_STUDIO_TIMEOUT = parseInt(process.env.LM_STUDIO_TIMEOUT || '30000');
 
 function lmStudioHeaders(includeJson = false): Record<string, string> {
@@ -77,8 +79,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if LM Studio is running with timeout
+    // Check if LM Studio is running with timeout and use its model catalog as
+    // the source of truth. LM Studio does not accept the OpenAI-style
+    // `auto` sentinel on every release; chat completions need a real model ID.
     console.log('🔍 Checking LM Studio availability at', LM_STUDIO_URL);
+    let advertisedModels: Array<{ id?: string }> = [];
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second health check timeout
 
@@ -96,7 +101,8 @@ export async function POST(request: NextRequest) {
       }
 
       const modelsData = await healthCheck.json();
-      console.log(`✅ LM Studio is running with ${modelsData.data?.length || 0} models available`);
+      advertisedModels = Array.isArray(modelsData?.data) ? modelsData.data : [];
+      console.log(`✅ LM Studio is running with ${advertisedModels.length} models available`);
 
     } catch (healthError) {
       clearTimeout(timeoutId);
@@ -155,6 +161,22 @@ export async function POST(request: NextRequest) {
 
     messages.push(userMessage);
 
+    const requestedModel = typeof modelId === 'string' ? modelId.trim() : '';
+    const selectedModel = requestedModel && advertisedModels.some(model => model.id === requestedModel)
+      ? requestedModel
+      : advertisedModels.find(model => (
+        typeof model.id === 'string' && !model.id.toLowerCase().includes('embedding')
+      ))?.id;
+
+    if (!selectedModel) {
+      return NextResponse.json({
+        success: false,
+        error: 'LM Studio has no runnable chat model available',
+        message: 'Load a chat model in LM Studio and retry.',
+        modelCount: advertisedModels.length,
+      }, { status: 503 });
+    }
+
     // Call LM Studio API with extended timeout
     console.log('📡 Sending request to LM Studio...');
     const lmStudioController = new AbortController();
@@ -165,7 +187,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: lmStudioHeaders(true),
         body: JSON.stringify({
-          model: modelId || 'auto', // Let LM Studio choose the best model
+          model: selectedModel,
           messages,
           temperature: temperature || 0.7,
           max_tokens: maxTokens || 2000,
@@ -190,7 +212,7 @@ export async function POST(request: NextRequest) {
         content: result.choices?.[0]?.message?.content
           || result.choices?.[0]?.message?.reasoning_content
           || '',
-        model: result.model || modelId || 'unknown',
+        model: result.model || selectedModel,
         usage: result.usage,
         timestamp: new Date().toISOString(),
         provider: 'lmstudio-local',
