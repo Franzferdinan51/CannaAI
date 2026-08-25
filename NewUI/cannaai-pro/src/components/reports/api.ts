@@ -26,6 +26,13 @@ const api = axios.create({
   },
 });
 
+const normalizeReport = (report: any): Report => ({
+  ...report,
+  createdAt: new Date(report.createdAt),
+  updatedAt: new Date(report.updatedAt),
+  generatedAt: report.generatedAt ? new Date(report.generatedAt) : undefined,
+});
+
 // Request interceptor for authentication
 api.interceptors.request.use(
   (config) => {
@@ -60,7 +67,7 @@ export const reportsApi = {
   }): Promise<{ reports: Report[]; total: number }> {
     try {
       const response = await api.get('/reports', { params });
-      return response.data;
+      return { reports: (response.data.reports || []).map(normalizeReport), total: response.data.total || 0 };
     } catch (error) {
       console.error('Failed to fetch reports:', error);
       return { reports: [], total: 0 };
@@ -71,7 +78,7 @@ export const reportsApi = {
   async getReport(id: string): Promise<Report | null> {
     try {
       const response = await api.get(`/reports/${id}`);
-      return response.data;
+      return normalizeReport(response.data);
     } catch (error) {
       console.error('Failed to fetch report:', error);
       return null;
@@ -82,7 +89,7 @@ export const reportsApi = {
   async createReport(report: Partial<Report>): Promise<Report | null> {
     try {
       const response = await api.post('/reports', report);
-      return response.data;
+      return normalizeReport(response.data);
     } catch (error) {
       console.error('Failed to create report:', error);
       return null;
@@ -93,7 +100,7 @@ export const reportsApi = {
   async updateReport(id: string, updates: Partial<Report>): Promise<Report | null> {
     try {
       const response = await api.put(`/reports/${id}`, updates);
-      return response.data;
+      return normalizeReport(response.data);
     } catch (error) {
       console.error('Failed to update report:', error);
       return null;
