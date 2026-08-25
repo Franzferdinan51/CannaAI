@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Security tests for global API CORS configuration in src/middleware.ts
+ * Security tests for global API CORS configuration in src/proxy.ts
  *
  * Acceptance criteria:
  * 1. localhost:3000/5173/5174 remain allowed in development
@@ -9,7 +9,7 @@
  * 3. An explicit ALLOWED_ORIGINS env allowlist permits only listed origins
  *
  * RED phase: these tests define the desired hardening behavior.
- * GREEN phase: implement the smallest fix in src/middleware.ts to make them pass.
+ * GREEN phase: implement the smallest fix in src/proxy.ts to make them pass.
  */
 
 import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
@@ -69,7 +69,7 @@ afterEach(() => {
 // Test suite
 // ---------------------------------------------------------------------------
 
-describe('CORS hardening — src/middleware.ts', () => {
+describe('CORS hardening — src/proxy.ts', () => {
 
   // -------------------------------------------------------------------------
   // AC-1: localhost:3000/5173/5174 remain allowed in development
@@ -84,7 +84,7 @@ describe('CORS hardening — src/middleware.ts', () => {
     test.each(allowedDevOrigins)(
       'in dev mode, %s is allowed (Access-Control-Allow-Origin is set)',
       async (origin) => {
-        const { middleware } = await import('@/middleware');
+        const { proxy: middleware } = await import('@/proxy');
 
         const mockRequest = {
           method: 'POST',
@@ -118,7 +118,7 @@ describe('CORS hardening — src/middleware.ts', () => {
     test.each(externalOrigins)(
       'external origin %s must NOT be echoed as Access-Control-Allow-Origin',
       async (origin) => {
-        const { middleware } = await import('@/middleware');
+        const { proxy: middleware } = await import('@/proxy');
 
         const mockRequest = {
           method: 'POST',
@@ -151,7 +151,7 @@ describe('CORS hardening — src/middleware.ts', () => {
     test('only origins listed in ALLOWED_ORIGINS are permitted', async () => {
       process.env.ALLOWED_ORIGINS = 'https://app.example.com,https://dashboard.example.com';
 
-      const { middleware } = await import('@/middleware');
+      const { proxy: middleware } = await import('@/proxy');
 
       // Permitted origin
       headersMap.clear();
@@ -189,7 +189,7 @@ describe('CORS hardening — src/middleware.ts', () => {
     test('empty ALLOWED_ORIGINS falls back to dev-safe localhost behavior', async () => {
       delete process.env.ALLOWED_ORIGINS;
 
-      const { middleware } = await import('@/middleware');
+      const { proxy: middleware } = await import('@/proxy');
 
       // Any localhost dev origin should still work
       const localhostReq = {
@@ -227,7 +227,7 @@ describe('CORS hardening — src/middleware.ts', () => {
     test('whitespace-only ALLOWED_ORIGINS is treated as unset (dev localhost fallback works)', async () => {
       process.env.ALLOWED_ORIGINS = '   ';
 
-      const { middleware } = await import('@/middleware');
+      const { proxy: middleware } = await import('@/proxy');
 
       // localhost origin must still be allowed in dev even with whitespace-only ALLOWED_ORIGINS
       const req = {
@@ -266,7 +266,7 @@ describe('CORS hardening — src/middleware.ts', () => {
     test('empty-string ALLOWED_ORIGINS is treated as unset (dev localhost fallback works)', async () => {
       process.env.ALLOWED_ORIGINS = '';
 
-      const { middleware } = await import('@/middleware');
+      const { proxy: middleware } = await import('@/proxy');
 
       const req = {
         method: 'POST',
@@ -305,7 +305,7 @@ describe('CORS hardening — src/middleware.ts', () => {
       process.env.NODE_ENV = 'production';
       process.env.ALLOWED_ORIGINS = 'https://allowed.example.com';
 
-      const { middleware } = await import('@/middleware');
+      const { proxy: middleware } = await import('@/proxy');
 
       const req = {
         method: 'POST',

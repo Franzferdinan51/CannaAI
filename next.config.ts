@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Origin is set by src/middleware.ts from the environment-driven
+        // Origin is set by src/proxy.ts from the environment-driven
         // allowlist. Do not emit wildcard CORS headers here: that would
         // override the credential boundary for production API requests.
         source: '/api/:path*',
