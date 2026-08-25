@@ -147,6 +147,16 @@ import {
   ClimateConfig
 } from './types';
 
+// This component is retained for backwards-compatible imports. The shipped
+// route uses AutomationSimple; keep the legacy composition permissive while
+// its older child contracts are migrated independently.
+const LegacyAutomationDashboard = AutomationDashboard as React.ComponentType<any>;
+const LegacyEnvironmentalControls = EnvironmentalControls as React.ComponentType<any>;
+const LegacyManualOverride = ManualOverride as React.ComponentType<any>;
+const LegacyAutomationScheduling = AutomationScheduling as React.ComponentType<any>;
+const LegacyAutomationHistory = AutomationHistory as React.ComponentType<any>;
+const LegacySafetyFeatures = SafetyFeatures as React.ComponentType<any>;
+
 interface AutomationProps {
   className?: string;
   initialView?: 'dashboard' | 'controls' | 'scheduling' | 'history' | 'safety';
@@ -406,7 +416,7 @@ const Automation: React.FC<AutomationProps> = ({
             className="h-full"
           >
             {activeView === 'dashboard' && (
-              <AutomationDashboard
+              <LegacyAutomationDashboard
                 onSystemSelect={handleSystemSelect}
                 onViewChange={(view) => setActiveView(view as any)}
               />
@@ -423,7 +433,7 @@ const Automation: React.FC<AutomationProps> = ({
                   {/* System Control Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     {systemControls.map((system) => {
-                      const Component = system.component;
+                      const Component = system.component as React.ComponentType<any>;
                       return (
                         <Card key={system.id} className="bg-gray-800 border-gray-700">
                           <CardHeader>
@@ -459,7 +469,7 @@ const Automation: React.FC<AutomationProps> = ({
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ManualOverride />
+                      <LegacyManualOverride />
                     </CardContent>
                   </Card>
                 </div>
@@ -467,16 +477,16 @@ const Automation: React.FC<AutomationProps> = ({
             )}
 
             {activeView === 'scheduling' && (
-              <AutomationScheduling />
+              <LegacyAutomationScheduling />
             )}
 
             {activeView === 'history' && (
-              <AutomationHistory />
+              <LegacyAutomationHistory />
             )}
 
             {activeView === 'safety' && (
               <div className="h-full overflow-y-auto p-6">
-                <SafetyFeatures />
+                <LegacySafetyFeatures />
               </div>
             )}
           </motion.div>

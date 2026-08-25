@@ -266,7 +266,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
 
             <ManualOverride
               automationStatus={automationStatus}
-              onUpdateStatus={setAutomationStatus}
+              onUpdateStatus={(status) => setAutomationStatus(prev => ({ ...prev, ...status }))}
               disabled={!automationEnabled || !automationActionsAvailable}
             />
           </div>
