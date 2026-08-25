@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { maskSettings, safeMergeSettings } from '@/lib/settings-security';
 import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
 import { providerAuthStatus } from '@/lib/provider-auth';
+import { prisma } from '@/lib/prisma';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -94,8 +95,39 @@ const defaultSettings = {
   }
 };
 
-// In-memory settings storage (in production, use database)
-let settings = { ...defaultSettings };
+let settings: any = { ...defaultSettings };
+let settingsLoaded = false;
+let settingsRecordId = 1;
+
+async function loadSettings(): Promise<void> {
+  if (settingsLoaded) return;
+  try {
+    const stored = await prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } });
+    if (stored?.config && typeof stored.config === 'object' && !Array.isArray(stored.config)) {
+      settings = safeMergeSettings(defaultSettings, stored.config);
+      settingsRecordId = stored.id;
+    }
+  } catch (error) {
+    // Keep development/static installs usable before the Prisma schema exists.
+    console.warn('[SETTINGS] Durable settings unavailable; using process memory:', error);
+  } finally {
+    settingsLoaded = true;
+  }
+}
+
+async function persistSettings(): Promise<boolean> {
+  try {
+    await prisma.automationSetting.upsert({
+      where: { id: settingsRecordId },
+      update: { config: settings },
+      create: { id: settingsRecordId, config: settings },
+    });
+    return true;
+  } catch (error) {
+    console.warn('[SETTINGS] Could not persist settings; retaining process-local changes:', error);
+    return false;
+  }
+}
 
 export async function GET() {
   // For static export, provide client-side compatibility response
@@ -110,6 +142,7 @@ export async function GET() {
   }
 
   try {
+    await loadSettings();
     return NextResponse.json({
       success: true,
       settings: maskSettings(settings)
@@ -136,6 +169,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    await loadSettings();
     const body = await request.json();
     const { action, provider, config } = body;
 
@@ -169,10 +203,12 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        const providerPersisted = await persistSettings();
         return NextResponse.json({
           success: true,
           message: `${provider} settings updated successfully`,
-          settings: settings[provider]
+          settings: maskSettings(settings[provider]),
+          persistence: providerPersisted ? 'database' : 'memory'
         });
 
       case 'switch_provider':
@@ -192,10 +228,12 @@ export async function POST(request: NextRequest) {
 
         settings.aiProvider = provider;
 
+        const switchPersisted = await persistSettings();
         return NextResponse.json({
           success: true,
           message: `Switched to ${provider}`,
-          currentProvider: settings.aiProvider
+          currentProvider: settings.aiProvider,
+          persistence: switchPersisted ? 'database' : 'memory'
         });
 
       case 'update_notifications':
@@ -208,10 +246,12 @@ export async function POST(request: NextRequest) {
 
         settings.notifications = { ...settings.notifications, ...config };
 
+        const notificationPersisted = await persistSettings();
         return NextResponse.json({
           success: true,
           message: 'Notification settings updated',
-          notifications: settings.notifications
+          notifications: settings.notifications,
+          persistence: notificationPersisted ? 'database' : 'memory'
         });
 
       case 'update_units':
@@ -224,10 +264,12 @@ export async function POST(request: NextRequest) {
 
         settings.units = { ...settings.units, ...config };
 
+        const unitsPersisted = await persistSettings();
         return NextResponse.json({
           success: true,
           message: 'Unit settings updated',
-          units: settings.units
+          units: settings.units,
+          persistence: unitsPersisted ? 'database' : 'memory'
         });
 
       case 'test_connection':

@@ -1,0 +1,48 @@
+/** @jest-environment node */
+
+const mockFindFirst = jest.fn();
+const mockUpsert = jest.fn();
+
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    automationSetting: {
+      findFirst: (...args: unknown[]) => mockFindFirst(...args),
+      upsert: (...args: unknown[]) => mockUpsert(...args),
+    },
+  },
+}));
+
+import { GET, POST } from '@/app/api/settings/route';
+
+describe('/api/settings durability', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockFindFirst.mockResolvedValue({ id: 7, config: { aiProvider: 'lm-studio' }, updatedAt: new Date() });
+    mockUpsert.mockResolvedValue({ id: 7 });
+  });
+
+  test('loads persisted settings and uses the stored record id for future writes', async () => {
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.settings.aiProvider).toBe('lm-studio');
+    expect(mockFindFirst).toHaveBeenCalledWith({ orderBy: { updatedAt: 'desc' } });
+  });
+
+  test('persists provider switches instead of only mutating process memory', async () => {
+    const response = await POST(new Request('http://localhost/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'switch_provider', provider: 'hermes' }),
+      headers: { 'content-type': 'application/json' },
+    }) as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.persistence).toBe('database');
+    expect(mockUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 7 },
+      update: { config: expect.objectContaining({ aiProvider: 'hermes' }) },
+    }));
+  });
+});
