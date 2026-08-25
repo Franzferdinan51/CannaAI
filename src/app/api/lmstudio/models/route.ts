@@ -504,8 +504,15 @@ export async function GET(request: NextRequest) {
     });
 
     const result = {
-      status: 'success',
-    lmStudioRunning: false,
+      // A disk catalog is useful for diagnostics, but it does not prove that
+      // LM Studio can accept inference requests. Do not present stale files
+      // as a healthy connected provider.
+      status: 'unavailable',
+      lmStudioRunning: false,
+      available: false,
+      message: uniqueModels.length > 0
+        ? 'LM Studio is not reachable; showing locally discovered model files only.'
+        : 'LM Studio is not reachable and no local model files were discovered.',
       models: uniqueModels,
       summary: {
         total: uniqueModels.length,
@@ -516,7 +523,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     };
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, { status: 503 });
 
   } catch (error) {
     console.error('Error scanning LM Studio models:', error);
