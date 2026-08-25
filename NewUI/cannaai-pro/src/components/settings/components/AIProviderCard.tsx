@@ -48,6 +48,7 @@ const AIProviderCard: React.FC = () => {
   const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
   const [localConfigs, setLocalConfigs] = useState<Record<string, any>>({});
   const [authState, setAuthState] = useState<Record<string, { running?: boolean; authenticated?: boolean; message?: string }>>({});
+  const [configError, setConfigError] = useState('');
 
   const providers: Array<{
     id: AIProviderType;
@@ -183,6 +184,7 @@ const AIProviderCard: React.FC = () => {
   };
 
   const handleConfigChange = (providerId: string, field: string, value: any) => {
+    setConfigError('');
     setLocalConfigs(prev => ({
       ...prev,
       [providerId]: {
@@ -197,9 +199,11 @@ const AIProviderCard: React.FC = () => {
     if (!provider) return;
 
     if (!validateProviderConfig(provider.id, config)) {
+      setConfigError(`Complete the required ${provider.name} settings before saving.`);
       return;
     }
 
+    setConfigError('');
     await updateProviderConfig(provider.id, config);
   };
 
@@ -567,6 +571,9 @@ const AIProviderCard: React.FC = () => {
                         Test
                       </button>
                     </div>
+                    {configError && isSelected && (
+                      <p role="alert" className="text-xs text-red-400">{configError}</p>
+                    )}
 
                     {/* Documentation Link */}
                     {provider.docsUrl && (

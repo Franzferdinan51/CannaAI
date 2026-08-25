@@ -214,11 +214,12 @@ export function ChatInput({
   };
 
   // File handling
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'file') => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'file') => {
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).forEach(file => {
+    const selectedFiles = Array.from(files as FileList) as File[];
+    selectedFiles.forEach(file => {
       if (type === 'image') {
         if (file.type.startsWith('image/')) {
           handleImageUpload(file);
@@ -229,7 +230,7 @@ export function ChatInput({
         handleFileUpload(file);
       }
     });
-  }, []);
+  };
 
   // These callbacks are intentionally stable because they are passed to file input and drag/drop handlers.
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
@@ -295,7 +296,7 @@ export function ChatInput({
     e.preventDefault();
     setIsDragging(false);
 
-    const files = Array.from(e.dataTransfer.files);
+    const files = Array.from(e.dataTransfer.files as FileList) as File[];
     files.forEach(file => {
       if (file.type.startsWith('image/')) {
         handleImageUpload(file);

@@ -34,7 +34,8 @@ import {
   TrendingUp,
   Hash,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  FileText
 } from 'lucide-react';
 
 import type { ChatMessage as IChatMessage, ChatMessageMetadata } from './types';
@@ -442,6 +443,17 @@ export function ChatMessage({
               alt="Uploaded content"
               className="max-w-full h-auto rounded-lg border border-gray-700"
             />
+          </div>
+        )}
+
+        {message.attachments && message.attachments.some((attachment) => !attachment.analysis?.isImage) && (
+          <div className="space-y-1 text-xs text-gray-400">
+            {message.attachments.filter((attachment) => !attachment.analysis?.isImage).map((attachment) => (
+              <div key={attachment.id} className="flex items-center gap-2 rounded bg-gray-800 px-2 py-1">
+                <FileText className="h-3 w-3" />
+                <span className="truncate">{attachment.name}</span>
+              </div>
+            ))}
           </div>
         )}
 

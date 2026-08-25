@@ -8,6 +8,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   image?: string;
+  attachments?: FileAttachment[];
   model?: string;
   provider?: string;
   processingTime?: string;

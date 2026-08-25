@@ -161,7 +161,7 @@ export function ChatInterface({
     isSupported: voiceSupported
   } = useVoiceRecognition({
     onResult: (text) => {
-      // Handle voice input
+      if (text.trim()) void handleSendMessage(text);
     },
     onError: (error) => {
       toast.error(`Voice recognition error: ${error}`);
@@ -637,12 +637,6 @@ export function ChatInterface({
         <ChatInput
           onSend={handleSendMessage}
           onTypingStart={handleTypingStart}
-          onImageUpload={settings?.features?.enableImageAnalysis ? (file) => {
-            // Handle image upload
-          } : undefined}
-          onFileUpload={settings?.features?.enableFileSharing ? (file) => {
-            // Handle file upload
-          } : undefined}
           isLoading={isLoading}
           isVoiceEnabled={settings?.features?.enableVoiceInput}
           isListening={isVoiceListening}

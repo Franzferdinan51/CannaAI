@@ -265,6 +265,9 @@ class SettingsAPIClient {
       }
 
       // Handle provider updates
+      if (updates.aiProvider) {
+        promises.push(this.switchProvider(updates.aiProvider));
+      }
       if (updates.lmStudio) {
         promises.push(this.updateProviderConfig('lm-studio', updates.lmStudio));
       }
@@ -282,6 +285,15 @@ class SettingsAPIClient {
       }
       if (updates.anthropic) {
         promises.push(this.updateProviderConfig('anthropic', updates.anthropic));
+      }
+      if (updates.grok) {
+        promises.push(this.updateProviderConfig('grok', updates.grok));
+      }
+      if (updates.openclaw) {
+        promises.push(this.updateProviderConfig('openclaw', updates.openclaw));
+      }
+      if (updates.hermes) {
+        promises.push(this.updateProviderConfig('hermes', updates.hermes));
       }
 
       await Promise.all(promises);

@@ -248,6 +248,8 @@ export const useSettingsStore = create<SettingsStore>()(
             const settings = normalizeSettings(await settingsAPI.getSettings());
             set({
               settings,
+              defaultSettings: settings,
+              hasChanges: false,
               selectedProvider: settings.aiProvider,
               isLoading: false
             });
@@ -308,10 +310,13 @@ export const useSettingsStore = create<SettingsStore>()(
             await settingsAPI.switchProvider(provider);
             const { settings } = get();
             if (settings) {
+              const nextSettings = { ...settings, aiProvider: provider };
+              const { defaultSettings } = get();
               set({
-                settings: { ...settings, aiProvider: provider },
+                settings: nextSettings,
+                defaultSettings: defaultSettings ? { ...defaultSettings, aiProvider: provider } : nextSettings,
                 selectedProvider: provider,
-                hasChanges: true,
+                hasChanges: Boolean(defaultSettings && JSON.stringify(nextSettings) !== JSON.stringify({ ...defaultSettings, aiProvider: provider })),
                 isSaving: false,
                 success: `Switched to ${provider}`
               });
@@ -333,15 +338,18 @@ export const useSettingsStore = create<SettingsStore>()(
               const providerKey = provider === 'lm-studio' ? 'lmStudio' :
                                provider === 'openrouter' ? 'openRouter' :
                                provider;
+              const nextSettings = {
+                ...settings,
+                [providerKey]: {
+                  ...(settings as any)[providerKey] || {},
+                  ...config,
+                }
+              } as Settings;
+              const { defaultSettings } = get();
               set({
-                settings: {
-                  ...settings,
-                  [providerKey]: {
-                    ...(settings as any)[providerKey] || {},
-                    ...config,
-                  }
-                },
-                hasChanges: true,
+                settings: nextSettings,
+                defaultSettings: defaultSettings ? { ...defaultSettings, [providerKey]: (nextSettings as any)[providerKey] } : nextSettings,
+                hasChanges: Boolean(defaultSettings && JSON.stringify(nextSettings) !== JSON.stringify({ ...defaultSettings, [providerKey]: nextSettings[providerKey] })),
                 isSaving: false,
                 success: `${provider} configuration updated`
               });

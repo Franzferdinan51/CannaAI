@@ -405,6 +405,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       content: content.trim(),
       timestamp: new Date(),
       image,
+      attachments,
       metadata: {
         tokens: content.split(' ').length
       }

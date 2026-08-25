@@ -1,0 +1,3 @@
+- Wired voice recognition to submit transcribed chat messages.
+- Preserved file attachments through chat submission and rendered non-image attachments in message history.
+- Persisted provider selection/configuration changes and surfaced validation feedback in Settings.
