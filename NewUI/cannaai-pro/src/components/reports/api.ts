@@ -2,6 +2,11 @@ import axios from 'axios';
 import {
   Report,
   ReportTemplate,
+  AnalyticsData,
+  PlantGrowthAnalytics,
+  EnvironmentalAnalytics,
+  FinancialAnalytics,
+  YieldAnalytics,
   ReportParameters,
   ExportOptions,
   ExportFormat,
