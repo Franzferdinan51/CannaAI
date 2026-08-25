@@ -4,26 +4,29 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-// In a real implementation, store import history in database
-const importHistory: any[] = [];
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const requestedLimit = Number.parseInt(searchParams.get('limit') || '50', 10);
+    const requestedOffset = Number.parseInt(searchParams.get('offset') || '0', 10);
+    const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50;
+    const offset = Number.isFinite(requestedOffset) ? Math.max(requestedOffset, 0) : 0;
 
-    const paginatedHistory = importHistory.slice(offset, offset + limit);
+    const [imports, total] = await Promise.all([
+      prisma.importHistory.findMany({ orderBy: { createdAt: 'desc' }, skip: offset, take: limit }),
+      prisma.importHistory.count()
+    ]);
 
     return NextResponse.json({
       success: true,
-      imports: paginatedHistory,
-      total: importHistory.length,
+      imports,
+      total,
       pagination: {
         limit,
         offset,
-        hasMore: offset + limit < importHistory.length
+        hasMore: offset + limit < total
       }
     });
   } catch (error) {

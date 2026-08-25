@@ -625,6 +625,20 @@ export class ImportManager {
       }
     }
 
+    const historyModel = (prisma as any).importHistory;
+    if (historyModel?.create) {
+      await historyModel.create({
+        data: {
+          imported: result.imported,
+          skipped: result.skipped,
+          errors: result.errors,
+          details: result.details
+        }
+      }).catch((historyError: unknown) => {
+        console.error('Failed to persist import history:', historyError);
+      });
+    }
+
     return result;
   }
 }

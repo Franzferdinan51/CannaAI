@@ -529,6 +529,17 @@ model Schedule {
   @@index([type])
 }
 
+model ImportHistory {
+  id        String   @id @default(cuid())
+  imported  Int
+  skipped   Int
+  errors    Int
+  details   Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model Trigger {
   id            String           @id @default(cuid())
   name          String
