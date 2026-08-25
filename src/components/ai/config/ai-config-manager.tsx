@@ -46,16 +46,6 @@ const OPENROUTER_MODELS = [
   { value: 'anthropic/claude-3-haiku:free', label: 'Claude 3 Haiku (Free)' },
 ];
 
-const LM_STUDIO_MODELS = [
-  'llama-3.1-8b-instruct',
-  'llama-3.2-3b-instruct',
-  'mixtral-8x7b-instruct-v0.1',
-  'qwen2.5-7b-instruct',
-  'deepseek-coder-6.7b-instruct',
-  'mistral-7b-instruct-v0.2',
-  'phi-3-mini-4k-instruct',
-];
-
 interface AIConfigManagerProps {
   onConfigChange: (config: AIConfig) => void;
   children: React.ReactNode;
@@ -222,26 +212,20 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
 
                   <div className="space-y-2">
                     <Label htmlFor="lm-studio-model">Model</Label>
-                    <Select
+                    <Input
+                      id="lm-studio-model"
+                      placeholder="Leave blank to auto-discover, or enter any loaded model ID"
                       value={config.lmStudio.model}
-                      onValueChange={(value) =>
+                      onChange={(e) =>
                         saveConfig({
                           ...config,
-                          lmStudio: { ...config.lmStudio, model: value }
+                          lmStudio: { ...config.lmStudio, model: e.target.value }
                         })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LM_STUDIO_MODELS.map((model) => (
-                          <SelectItem key={model} value={model}>
-                            {model}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Use the exact ID shown by LM Studio, including custom or vision model names.
+                    </p>
                   </div>
 
                   <div className="space-y-2">
