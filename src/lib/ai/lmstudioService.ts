@@ -1,5 +1,15 @@
 import { PlantHealthAnalysis } from "../../types/plant-analysis";
 
+function normalizeImageUrl(image: unknown): string | undefined {
+  if (typeof image !== 'string') return undefined;
+  const value = image.trim();
+  if (!value) return undefined;
+  if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) {
+    return value;
+  }
+  return `data:image/png;base64,${value}`;
+}
+
 /**
  * Test connection to LM Studio
  */
@@ -164,10 +174,12 @@ export async function analyzeWithLMStudio(
 
     if (images && images.length > 0) {
       images.slice(0, 3).forEach(imgData => {
+        const imageUrl = normalizeImageUrl(imgData);
+        if (!imageUrl) return;
         content.push({
           type: "image_url",
           image_url: {
-            url: `data:image/jpeg;base64,${imgData}`
+            url: imageUrl
           }
         });
       });
@@ -197,8 +209,6 @@ export async function analyzeWithLMStudio(
         max_tokens: 2000
       })
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
@@ -246,6 +256,8 @@ export async function analyzeWithLMStudio(
       throw new Error("Analysis timeout: LM Studio took too long to respond");
     }
     throw e;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
