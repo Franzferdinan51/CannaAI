@@ -26,8 +26,9 @@ function isVisionModel(model: string): boolean {
 }
 
 function normalizeImageUrl(image: string): string {
-  if (/^(?:data:image\/[^;]+;base64,|https?:\/\/)/i.test(image)) return image;
-  const base64 = image.replace(/^data:[^,]+,/, '').replace(/\s/g, '');
+  const value = image.trim();
+  if (/^data:/i.test(value) || /^https?:\/\//i.test(value)) return value;
+  const base64 = value.replace(/^data:[^,]+,/, '').replace(/\s/g, '');
   return `data:image/jpeg;base64,${base64}`;
 }
 

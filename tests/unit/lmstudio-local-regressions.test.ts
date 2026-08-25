@@ -195,6 +195,26 @@ describe('LM Studio local-model regressions', () => {
     ]);
   });
 
+  test('LM Studio preserves non-image data URL MIME types', () => {
+    const provider = new TestLMStudioProvider({
+      url: 'http://localhost:1234',
+      apiKey: '',
+      model: 'vision-model',
+    });
+
+    const normalized = provider.normalizeForTest({
+      messages: [{
+        role: 'user',
+        content: 'Inspect this capture',
+        image: 'data:application/octet-stream;base64,AAECAwQ=',
+      }],
+    });
+
+    expect(normalized.messages[0].content[1].image_url.url).toBe(
+      'data:application/octet-stream;base64,AAECAwQ=',
+    );
+  });
+
   test('LM Studio refuses to send images to an advertised text-only model', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({

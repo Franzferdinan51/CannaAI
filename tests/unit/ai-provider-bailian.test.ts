@@ -37,6 +37,19 @@ describe('Bailian vision requests', () => {
     ]);
   });
 
+  test('preserves a non-image data URL MIME type for vision requests', async () => {
+    await executeWithBailian({
+      image: 'data:application/octet-stream;base64,AAECAwQ=',
+      prompt: 'Assess this plant',
+    });
+
+    const [, request] = (global.fetch as jest.Mock).mock.calls[0];
+    const body = JSON.parse(request.body);
+    expect(body.messages[0].content[0].image_url.url).toBe(
+      'data:application/octet-stream;base64,AAECAwQ=',
+    );
+  });
+
   test('refuses to silently discard an image for an explicit text-only model', async () => {
     const response = await executeWithBailian({
       image: 'ZmFrZQ==',
