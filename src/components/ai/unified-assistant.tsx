@@ -817,8 +817,10 @@ export default function UnifiedAIAssistant({
       type: 'automation',
       title: `Auto: ${trigger.action}`,
       description: `Triggered by ${trigger.type} condition`,
-      executed: true,
-      result: { success: true, message: 'Action completed successfully' },
+      // The assistant currently has no actuator contract for this action.
+      // Never claim a device change occurred when only a UI trigger fired.
+      executed: false,
+      result: { success: false, message: 'Action not executed: no connected actuator is configured.' },
       impact: 'medium'
     };
 
@@ -833,7 +835,7 @@ export default function UnifiedAIAssistant({
     const notification: Message = {
       id: (Date.now() + 1).toString(),
       type: 'agentic',
-      content: `🤖 **Autonomous Action Executed**\\n\\n${action.title}\\n\\n${action.description}\\n\\nResult: ${action.result.message}`,
+      content: `🤖 **Autonomous Action Unavailable**\\n\\n${action.title}\\n\\n${action.description}\\n\\nResult: ${action.result.message}`,
       timestamp: new Date(),
       messageType: 'autonomous',
       urgency: 'low',
