@@ -37,6 +37,7 @@ import {
 
 const EnhancedScanner: React.FC = () => {
   const configuredLMStudioModel = useSettingsStore((state) => state.settings?.lmStudio?.model || '');
+  const configuredLMStudioUrl = useSettingsStore((state) => state.settings?.lmStudio?.url || '');
   // State management
   const [images, setImages] = useState<PlantImage[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
@@ -195,7 +196,8 @@ const EnhancedScanner: React.FC = () => {
       const analysisPayload = {
         ...formData,
         plantImage: currentImage || undefined,
-        model: configuredLMStudioModel.trim() || undefined
+        model: configuredLMStudioModel.trim() || undefined,
+        baseUrl: configuredLMStudioUrl.trim() || undefined,
       };
 
       const response = await api.analyze(analysisPayload);

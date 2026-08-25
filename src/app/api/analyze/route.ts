@@ -62,6 +62,7 @@ const AnalysisRequestSchema = z.object({
   // The server still validates that the selected model is available before
   // sending it to LM Studio.
   model: z.string().max(200).transform(val => val.trim() || undefined).optional(),
+  baseUrl: z.string().url().max(500).transform(val => val.replace(/\/+$/, '')).optional(),
   pestDiseaseFocus: z.string().max(500).optional().transform(val => val?.trim()),
   urgency: z.enum(['low', 'medium', 'high', 'critical']).optional().default('medium'),
   additionalNotes: z.string().max(2000).optional().transform(val => val?.trim())
@@ -310,6 +311,7 @@ export async function POST(request: NextRequest) {
       temperatureUnit,
       plantImage,
       model: requestedModel,
+      baseUrl: requestedBaseUrl,
       pestDiseaseFocus,
       urgency,
       additionalNotes
@@ -466,7 +468,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Enhanced AI provider detection with detailed logging
-    const providerDetection = await detectAvailableProviders();
+    const providerDetection = await detectAvailableProviders({
+      lmStudioBaseUrl: requestedBaseUrl,
+    });
     const imageProviderOverride = imageBase64ForAI && process.env.CANNAAI_IMAGE_PROVIDER;
     const detectedPrimary = providerDetection.primary;
     const primaryProvider = imageProviderOverride === 'openclaw'
@@ -542,6 +546,7 @@ export async function POST(request: NextRequest) {
           {
             image: imageBase64ForAI,
             ...(lmStudioModel ? { model: lmStudioModel } : {}),
+            ...(requestedBaseUrl ? { baseUrl: requestedBaseUrl } : {}),
             temperature: 0.15,
             useVision: !!imageBase64ForAI,
           }

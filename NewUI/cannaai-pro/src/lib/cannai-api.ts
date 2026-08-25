@@ -16,6 +16,7 @@ interface AnalysisRequest {
   growthStage?: string;
   plantImage?: string;
   model?: string;
+  baseUrl?: string;
   pestDiseaseFocus?: string;
   urgency?: string;
   additionalNotes?: string;

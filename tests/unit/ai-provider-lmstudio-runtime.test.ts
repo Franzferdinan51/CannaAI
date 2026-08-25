@@ -58,6 +58,26 @@ describe('legacy LM Studio runtime configuration', () => {
     expect(body.model).toBe('my-local-model');
   });
 
+  test('uses an explicit LM Studio endpoint for discovery and completion', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'remote-local-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'remote answer' } }] }),
+      } as Response);
+
+    await expect(executeWithLMStudio(
+      [{ role: 'user', content: 'hello' }],
+      { baseUrl: 'http://192.168.1.50:1234' },
+    )).resolves.toBe('remote answer');
+
+    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
+    expect(fetchMock.mock.calls[1][0]).toBe('http://192.168.1.50:1234/v1/chat/completions');
+  });
+
   test('does not auto-select a reranker as a chat model', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({

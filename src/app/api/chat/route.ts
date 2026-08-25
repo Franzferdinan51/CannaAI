@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = earlyBody;
-    const { message, image, mode = 'chat', context, sensorData, model, primaryProvider } = body;
+    const { message, image, mode = 'chat', context, sensorData, model, baseUrl, primaryProvider } = body;
 
     // Validate required fields
     if (!message) {
@@ -125,7 +125,12 @@ export async function POST(request: NextRequest) {
     // primary was healthy.
     let providerDetection;
     try {
-      providerDetection = await withTimeout(detectAvailableProviders(), 25000);
+      providerDetection = await withTimeout(
+        detectAvailableProviders({
+          lmStudioBaseUrl: typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined,
+        }),
+        25000,
+      );
     } catch {
       providerDetection = null;
     }
@@ -164,6 +169,7 @@ export async function POST(request: NextRequest) {
           ? primaryProvider.trim()
           : providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
         model: typeof model === 'string' && model.trim() ? model.trim() : undefined,
+        baseUrl: typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined,
         image: typeof image === 'string' ? image : undefined,
         timeout: 45000,
       });

@@ -17,11 +17,12 @@ function normalizeBaseUrl(value?: string): string {
     .replace(/\/$/, '');
 }
 
-function getLMStudioBaseUrl(): string {
-  return normalizeBaseUrl(process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL);
+function getLMStudioBaseUrl(value?: string): string {
+  return normalizeBaseUrl(value || process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL);
 }
 
-export function getLMStudioEndpointCandidates(): string[] {
+export function getLMStudioEndpointCandidates(configuredBaseUrl?: string): string[] {
+  if (configuredBaseUrl?.trim()) return [getLMStudioBaseUrl(configuredBaseUrl)];
   return Array.from(new Set([
     getLMStudioBaseUrl(),
     'http://127.0.0.1:1234',
@@ -151,7 +152,7 @@ export interface LMStudioProviderResult {
   error?: string;
 }
 
-export async function checkLMStudio(includeModels = false): Promise<LMStudioProviderResult> {
+export async function checkLMStudio(includeModels = false, configuredBaseUrl?: string): Promise<LMStudioProviderResult> {
   const buildResult = (result: Omit<LMStudioProviderResult, 'isAvailable'>): LMStudioProviderResult => ({
     ...result,
     isAvailable: result.available,
@@ -170,7 +171,7 @@ export async function checkLMStudio(includeModels = false): Promise<LMStudioProv
   }
 
   let lastError = 'connection refused';
-  for (const url of getLMStudioEndpointCandidates()) {
+  for (const url of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     try {
       const response = await fetchWithTimeout(`${url}/v1/models`, {
         method: 'GET',
@@ -222,9 +223,9 @@ export async function checkLMStudio(includeModels = false): Promise<LMStudioProv
   });
 }
 
-export async function getAvailableModels(forceRefresh = false): Promise<string[]> {
+export async function getAvailableModels(forceRefresh = false, configuredBaseUrl?: string): Promise<string[]> {
   const now = Date.now();
-  const baseUrl = getLMStudioBaseUrl();
+  const baseUrl = getLMStudioBaseUrl(configuredBaseUrl);
 
   if (
     !forceRefresh &&
@@ -235,7 +236,7 @@ export async function getAvailableModels(forceRefresh = false): Promise<string[]
     return availableModelsCache;
   }
 
-  for (const endpoint of getLMStudioEndpointCandidates()) {
+  for (const endpoint of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     try {
       const response = await fetch(`${endpoint}/v1/models`, {
         method: 'GET',
@@ -274,8 +275,8 @@ export async function getAvailableModels(forceRefresh = false): Promise<string[]
   return [];
 }
 
-async function getNativeVisionModelIds(): Promise<string[] | null> {
-  const baseUrl = cacheBaseUrl || getLMStudioBaseUrl();
+async function getNativeVisionModelIds(configuredBaseUrl?: string): Promise<string[] | null> {
+  const baseUrl = configuredBaseUrl ? getLMStudioBaseUrl(configuredBaseUrl) : cacheBaseUrl || getLMStudioBaseUrl();
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
       method: 'GET',
@@ -304,14 +305,14 @@ async function getNativeVisionModelIds(): Promise<string[] | null> {
   }
 }
 
-async function getVisionModelCatalog(): Promise<{
+async function getVisionModelCatalog(configuredBaseUrl?: string): Promise<{
   models: string[];
   metadataAvailable: boolean;
 }> {
-  const models = await getAvailableModels();
+  const models = await getAvailableModels(false, configuredBaseUrl);
   if (models.length === 0) return { models: [], metadataAvailable: false };
 
-  const nativeVision = await getNativeVisionModelIds();
+  const nativeVision = await getNativeVisionModelIds(configuredBaseUrl);
   if (nativeVision !== null) {
     return {
       models: models.filter(id => nativeVision.includes(id)),
@@ -326,12 +327,12 @@ async function getVisionModelCatalog(): Promise<{
   };
 }
 
-export async function getVisionModels(): Promise<string[]> {
-  return (await getVisionModelCatalog()).models;
+export async function getVisionModels(configuredBaseUrl?: string): Promise<string[]> {
+  return (await getVisionModelCatalog(configuredBaseUrl)).models;
 }
 
-export async function getTextModels(): Promise<string[]> {
-  return getAvailableModels();
+export async function getTextModels(configuredBaseUrl?: string): Promise<string[]> {
+  return getAvailableModels(false, configuredBaseUrl);
 }
 
 function getConfiguredModel(type: 'vision' | 'text'): string {
@@ -341,15 +342,15 @@ function getConfiguredModel(type: 'vision' | 'text'): string {
   return process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL || LM_STUDIO_TEXT_MODEL || '';
 }
 
-async function resolveModel(type: 'vision' | 'text', explicitModel?: string): Promise<string> {
+async function resolveModel(type: 'vision' | 'text', explicitModel?: string, configuredBaseUrl?: string): Promise<string> {
   const requested = explicitModel?.trim();
   if (requested && type === 'text') return requested;
 
   const configured = getConfiguredModel(type).trim();
-  const available = await getAvailableModels();
+  const available = await getAvailableModels(false, configuredBaseUrl);
 
   if (type === 'vision') {
-    const visionCatalog = await getVisionModelCatalog();
+    const visionCatalog = await getVisionModelCatalog(configuredBaseUrl);
     const candidate = requested || configured;
 
     if (candidate && (available.length === 0 || available.includes(candidate))) {
@@ -392,13 +393,14 @@ export async function executeWithLMStudio(
   messages: any[],
   options: {
     model?: string;
+    baseUrl?: string;
     image?: string;
     temperature?: number;
     useVision?: boolean;
   } = {},
 ) {
   const wantsVision = Boolean(options.image) && options.useVision !== false;
-  const model = await resolveModel(wantsVision ? 'vision' : 'text', options.model);
+  const model = await resolveModel(wantsVision ? 'vision' : 'text', options.model, options.baseUrl);
 
   let formattedMessages = messages;
   const normalizedImage = normalizeImageUrl(options.image);
@@ -431,7 +433,8 @@ export async function executeWithLMStudio(
     }).reverse();
   }
 
-  const response = await fetch(`${cacheBaseUrl || getLMStudioBaseUrl()}/v1/chat/completions`, {
+  const endpoint = options.baseUrl ? getLMStudioBaseUrl(options.baseUrl) : cacheBaseUrl || getLMStudioBaseUrl();
+  const response = await fetch(`${endpoint}/v1/chat/completions`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify({
