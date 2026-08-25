@@ -72,26 +72,26 @@ export const IrrigationControl: React.FC<IrrigationControlProps> = ({
 
   // Initialize zones based on rooms
   useEffect(() => {
-    const zones: IrrigationZoneStatus[] = rooms.flatMap((room, roomIndex) =>
-      room.automation.watering.zones.map((zone, zoneIndex) => ({
+    const zones: IrrigationZoneStatus[] = rooms.flatMap((room) =>
+      room.automation.watering.zones.map((zone) => ({
         id: zone.id,
         name: zone.name,
         status: 'idle' as const,
-        moistureLevel: sensorData.soilMoisture + (Math.random() - 0.5) * 10,
-        lastWatered: zone.lastWatered || new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        nextWatering: zone.nextWatering || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-        waterUsage: Math.random() * 50,
-        flowRate: 2.5,
+        moistureLevel: sensorData.soilMoisture,
+        lastWatered: zone.lastWatered || '',
+        nextWatering: zone.nextWatering || '',
+        waterUsage: 0,
+        flowRate: settings.flowRate,
         valveOpen: false,
         pumpActive: false,
-        pressure: 30,
-        temperature: 68,
-        ph: 6.0,
-        ec: 1.5
+        pressure: 0,
+        temperature: 0,
+        ph: sensorData.ph,
+        ec: sensorData.ec
       }))
     );
     setIrrigationZones(zones);
-  }, [rooms, sensorData.soilMoisture]);
+  }, [rooms, sensorData.soilMoisture, sensorData.ph, sensorData.ec, settings.flowRate]);
 
   // Simulate watering progress
   useEffect(() => {
@@ -295,7 +295,9 @@ export const IrrigationControl: React.FC<IrrigationControlProps> = ({
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-400">Last Watered:</span>
                         <span className="text-slate-200">
-                          {new Date(zone.lastWatered).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {zone.lastWatered
+                            ? new Date(zone.lastWatered).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : 'Not recorded'}
                         </span>
                       </div>
 
