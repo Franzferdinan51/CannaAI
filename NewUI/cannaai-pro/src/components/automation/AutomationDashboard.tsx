@@ -65,12 +65,15 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
   initialAutomationSettings,
   className = ''
 }) => {
-  const [automationEnabled, setAutomationEnabled] = useState(true);
+  // The current backend explicitly reports automation actions as unavailable.
+  // Keep the dashboard paused until a real controller integration is present.
+  const automationActionsAvailable = false;
+  const [automationEnabled, setAutomationEnabled] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [automationStatus, setAutomationStatus] = useState<AutomationStatus>({
     watering: { active: false, lastRun: '', nextRun: '', status: 'idle' },
-    lighting: { active: true, schedule: '18/6', status: 'running' },
-    climate: { active: true, status: 'maintaining' },
+    lighting: { active: false, schedule: '', status: 'off' },
+    climate: { active: false, status: 'idle' },
     co2: { active: false, status: 'idle' }
   });
   const [recentLogs, setRecentLogs] = useState<AutomationLog[]>([]);
@@ -106,7 +109,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
             <Switch
               checked={automationEnabled}
               onCheckedChange={setAutomationEnabled}
-              disabled={false}
+              disabled={!automationActionsAvailable}
             />
           </div>
 
@@ -118,6 +121,15 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
           </Badge>
         </div>
       </div>
+
+      {!automationActionsAvailable && (
+        <Alert className="border-amber-500/20 bg-amber-500/5">
+          <AlertTriangle className="w-4 h-4 text-amber-400" />
+          <AlertDescription className="text-amber-200">
+            Automation actions are unavailable because no device controller is connected. Configuration and history remain available; live controls are paused.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* System Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -249,20 +261,20 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
             <EnvironmentalControls
               sensorData={sensorData}
               rooms={activeRooms}
-              automationEnabled={automationEnabled}
+              automationEnabled={automationEnabled && automationActionsAvailable}
             />
 
             <ManualOverride
               automationStatus={automationStatus}
               onUpdateStatus={setAutomationStatus}
-              disabled={!automationEnabled}
+              disabled={!automationEnabled || !automationActionsAvailable}
             />
           </div>
 
           <SafetyFeatures
             alerts={alerts}
             systemHealth={systemHealth}
-            automationEnabled={automationEnabled}
+            automationEnabled={automationEnabled && automationActionsAvailable}
           />
         </TabsContent>
 
@@ -270,7 +282,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
           <ClimateControl
             sensorData={sensorData}
             rooms={activeRooms}
-            automationEnabled={automationEnabled}
+            automationEnabled={automationEnabled && automationActionsAvailable}
             onStatusUpdate={(status) => setAutomationStatus(prev => ({
               ...prev,
               climate: { ...prev.climate, ...status }
@@ -281,7 +293,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
         <TabsContent value="lighting" className="space-y-6">
           <LightingControl
             rooms={activeRooms}
-            automationEnabled={automationEnabled}
+            automationEnabled={automationEnabled && automationActionsAvailable}
             onStatusUpdate={(status) => setAutomationStatus(prev => ({
               ...prev,
               lighting: { ...prev.lighting, ...status }
@@ -293,7 +305,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
           <IrrigationControl
             sensorData={sensorData}
             rooms={activeRooms}
-            automationEnabled={automationEnabled}
+            automationEnabled={automationEnabled && automationActionsAvailable}
             onStatusUpdate={(status) => setAutomationStatus(prev => ({
               ...prev,
               watering: { ...prev.watering, ...status }
@@ -309,7 +321,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({
               // Handle schedule updates
               console.log('Schedule updates:', updates);
             }}
-            disabled={!automationEnabled}
+            disabled={!automationEnabled || !automationActionsAvailable}
           />
         </TabsContent>
 
