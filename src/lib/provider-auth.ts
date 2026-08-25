@@ -94,15 +94,38 @@ export async function providerAuthStatus(provider: AuthProvider) {
     const authenticated = profiles.some((item: any) => item?.provider === target && item?.type === 'oauth');
     return { provider, authenticated, connected: authenticated, source: 'openclaw-auth', summary: authenticated ? `${target} OAuth profile is available` : `No ${target} OAuth profile found`, rawStatus: redact(output) };
   }
-  // Hermes' proxy is the supported integration surface for external apps. Its
-  // status command reflects the actual upstream OAuth adapters (Nous/xAI),
-  // whereas `hermes auth status openai-codex` only describes one credential
-  // entry and can report a false negative for the proxy.
+  // Prefer Hermes' authenticated API server. Its health endpoint is the
+  // authoritative connection check for the full agent surface (tools,
+  // sessions, model routing, and vision), not merely a CLI install check.
+  const apiUrl = (process.env.HERMES_API_URL || 'http://127.0.0.1:8642/v1')
+    .replace(/\/+$/, '').replace(/\/v1$/i, '');
+  const apiKey = process.env.HERMES_API_KEY || process.env.HERMES_API_SERVER_KEY;
+  if (apiKey) {
+    try {
+      const response = await fetch(`${apiUrl}/health`, {
+        headers: { authorization: `Bearer ${apiKey}` },
+        signal: AbortSignal.timeout(2000),
+      });
+      if (response.ok) {
+        return {
+          provider,
+          authenticated: true,
+          connected: true,
+          source: 'hermes-api-server',
+          summary: 'Hermes API server is connected and authenticated',
+          rawStatus: 'status: ok',
+        };
+      }
+    } catch { /* fall back to the legacy proxy status below */ }
+  }
+
+  // Legacy Hermes proxy compatibility. Its status command reflects the
+  // actual upstream OAuth adapters (Nous/xAI).
   const output = await run(commandPath('hermes'), ['proxy', 'status']);
   const target = provider === 'nous' ? 'nous' : undefined;
   const targetLine = target ? new RegExp(`\\[${target}\\][^\\n]*(ready|logged in|authenticated|✓)`, 'i') : null;
   const authenticated = targetLine ? targetLine.test(output) : /\[[^\]]+\][^\n]*(ready|logged in|authenticated|✓)/i.test(output);
-  return { provider, authenticated, connected: authenticated, source: 'hermes-proxy', summary: authenticated ? 'Hermes proxy has an authenticated upstream' : 'No authenticated Hermes proxy upstream found', rawStatus: redact(output) };
+  return { provider, authenticated, connected: authenticated, source: 'hermes-proxy', summary: authenticated ? 'Hermes proxy has an authenticated upstream' : 'No authenticated Hermes API server or proxy upstream found', rawStatus: redact(output) };
 }
 
 export async function providerAuthLog(provider: AuthProvider) {

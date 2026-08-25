@@ -62,7 +62,10 @@ export class AgentCommandProvider extends BaseProvider {
       retryDelay: 500,
       capabilities: {
         text: true,
-        vision: provider === 'openclaw',
+        // Hermes API Server and OpenClaw ACP both accept native image input.
+        // Hermes' legacy proxy is also OpenAI-vision compatible when its
+        // selected upstream model supports images.
+        vision: true,
         streaming: false,
         functionCalling: false,
         jsonMode: false,
@@ -93,6 +96,7 @@ export class AgentCommandProvider extends BaseProvider {
         const parsed = JSON.parse(stdout);
         return parsed?.rpc?.ok === true || parsed?.gateway?.service?.runtime?.status === 'running';
       }
+      if (await this.isHermesApiAvailable()) return true;
       for (const provider of this.hermesProxyCandidates()) {
         if (await this.isHermesProxyAvailable(this.hermesProxyPort(provider))) return true;
       }
@@ -136,6 +140,18 @@ export class AgentCommandProvider extends BaseProvider {
   }
 
   private async executeHermesProxy(request: AIRequest): Promise<{ content: string; model?: string; usage?: any }> {
+    // Prefer Hermes' full API server. It preserves the agent's tools, memory,
+    // sessions, native vision routing, and model selection. The older proxy
+    // remains a compatibility fallback for existing installations.
+    if (await this.isHermesApiAvailable()) {
+      try {
+        return await this.executeHermesApiServer(request);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!this.shouldTryHermesFallback(message)) throw error;
+      }
+    }
+
     const messages = request.messages.map((message) => {
       if (!message.image) return { role: message.role, content: message.content };
       const image = message.image.startsWith('data:image/') ? message.image : `data:image/jpeg;base64,${message.image}`;
@@ -166,6 +182,86 @@ export class AgentCommandProvider extends BaseProvider {
       }
     }
     throw new Error(`All Hermes proxy providers failed: ${errors.join(' | ')}`);
+  }
+
+  private hermesApiBaseUrl(): string {
+    const configured = process.env.HERMES_API_URL || 'http://127.0.0.1:8642/v1';
+    return configured.replace(/\/+$/, '').replace(/\/v1$/i, '');
+  }
+
+  private hermesApiHeaders(): Record<string, string> {
+    const key = process.env.HERMES_API_KEY || process.env.HERMES_API_SERVER_KEY;
+    return {
+      'content-type': 'application/json',
+      ...(key ? { authorization: `Bearer ${key}` } : {}),
+    };
+  }
+
+  private async isHermesApiAvailable(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.hermesApiBaseUrl()}/health`, {
+        headers: this.hermesApiHeaders(),
+        signal: timeoutSignal(1500),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  private async resolveHermesApiModel(requested: string | undefined): Promise<string> {
+    if (requested && requested !== 'auto') return requested;
+    const response = await fetch(`${this.hermesApiBaseUrl()}/v1/models`, {
+      headers: this.hermesApiHeaders(),
+      signal: timeoutSignal(5000),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(`Hermes API model discovery failed (${response.status})`);
+    }
+    const model = Array.isArray(body?.data)
+      ? body.data.find((item: any) => typeof item?.id === 'string')?.id
+      : undefined;
+    return model || process.env.HERMES_MODEL || 'hermes-agent';
+  }
+
+  private async executeHermesApiServer(request: AIRequest): Promise<{ content: string; model?: string; usage?: any }> {
+    const messages = request.messages.map((message) => {
+      if (!message.image) return { role: message.role, content: message.content };
+      const image = message.image.startsWith('data:image/')
+        ? message.image
+        : `data:image/jpeg;base64,${message.image}`;
+      return {
+        role: message.role,
+        content: [
+          { type: 'text', text: message.content },
+          { type: 'image_url', image_url: { url: image, detail: 'high' } },
+        ],
+      };
+    });
+    const model = await this.resolveHermesApiModel(request.model || this.model);
+    const response = await fetch(`${this.hermesApiBaseUrl()}/v1/chat/completions`, {
+      method: 'POST',
+      headers: this.hermesApiHeaders(),
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: request.temperature,
+        max_tokens: request.maxTokens || 2048,
+        stream: false,
+      }),
+      signal: timeoutSignal(this.config.timeout),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(`Hermes API error ${response.status}: ${body?.error?.message || body?.message || response.statusText}`);
+    }
+    const rawContent = body?.choices?.[0]?.message?.content;
+    const content = Array.isArray(rawContent)
+      ? rawContent.filter((part: any) => part?.type === 'text' && typeof part?.text === 'string').map((part: any) => part.text).join('')
+      : String(rawContent || '').trim();
+    if (!content) throw new Error('Hermes API returned an empty response');
+    return { content: content.trim(), model: body.model || model, usage: body.usage };
   }
 
   private async resolveHermesModel(requested: string | undefined, port: number): Promise<string> {

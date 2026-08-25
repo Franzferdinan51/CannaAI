@@ -67,8 +67,8 @@ const defaultSettings = {
   hermes: {
     apiKey: '',
     model: process.env.HERMES_MODEL || '',
-    baseUrl: `hermes://proxy:${process.env.HERMES_PROXY_PORT || '8645'}/v1`,
-    transport: 'hermes-proxy',
+    baseUrl: process.env.HERMES_API_URL || 'http://127.0.0.1:8642/v1',
+    transport: 'hermes-api-server',
     managedAuth: true
   },
   anthropic: {

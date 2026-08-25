@@ -44,18 +44,35 @@ OpenClaw session.
 
 ## Hermes
 
-Reference: [Hermes Agent](https://github.com/NousResearch/hermes-agent), [Nous Portal/Tool Gateway](https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-gateway), and the native `hermes serve`/`hermes proxy` commands.
+Reference: [Hermes Agent](https://github.com/NousResearch/hermes-agent), [Hermes API Server](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/user-guide/features/api-server.md), and [Nous Portal/Tool Gateway](https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-gateway).
 
-Hermes is connected through its supported credential-attaching local proxy,
-not through a guessed remote base URL. CannaAI starts or reuses:
+Hermes is connected through its supported authenticated API server, which
+preserves the full agent surface: tools, sessions, model routing, streaming,
+and native vision. Configure Hermes with `API_SERVER_ENABLED=true` and
+`API_SERVER_KEY`, then start its gateway:
 
 ```bash
-hermes proxy start --provider nous --host 127.0.0.1 --port 8645
+hermes gateway
 ```
 
-The CannaAI base URL is `http://127.0.0.1:8645/v1`; the bearer value is only a
-placeholder because Hermes attaches the real OAuth credentials. CannaAI does
-not reproduce Hermes' OAuth or credential store.
+The CannaAI base URL is `http://127.0.0.1:8642/v1` and the bearer value is
+`HERMES_API_KEY`. CannaAI does not reproduce Hermes' OAuth or credential store.
+Hermes' chat endpoint accepts OpenAI image content blocks, so Pixel photos
+retain native vision data instead of being reduced to text.
+
+```text
+HERMES_API_URL=http://127.0.0.1:8642/v1
+HERMES_API_KEY=change-me-local-dev
+HERMES_MODEL=hermes-agent
+```
+
+For older Hermes installations without the API server, CannaAI falls back to
+the local proxy:
+
+```text
+HERMES_PROXY_PORT=8645
+HERMES_PROXY_PROVIDER=nous
+```
 
 Hermes has two distinct connection paths. `hermes portal login` is the native
 Nous Portal OAuth flow. Existing pooled credentials (including OpenAI Codex,
@@ -69,18 +86,19 @@ hermes auth status openai-codex
 hermes auth status xai-oauth
 ```
 
-The Settings page reports `hermes proxy status`, so it reflects whether the
-selected upstream adapter is actually ready rather than merely checking that
+The Settings page reports the live Hermes API/legacy proxy status, so it
+reflects whether the bridge is actually ready rather than merely checking that
 the Hermes executable is installed.
 
 ## Transport contract
 
 OpenClaw uses ACP over the running Gateway WebSocket. Hermes uses its local
-OAuth proxy over HTTP. These are different transports by design:
+authenticated API server over HTTP, with a proxy fallback for older installs:
 
 ```text
 CannaAI ── ACP/stdio ──> openclaw acp ── authenticated Gateway WebSocket ──> active OpenClaw model
-CannaAI ── HTTP /v1 ───> hermes proxy ── OAuth adapter ──> Nous/xAI upstream
+CannaAI ── HTTP /v1 ───> Hermes API server ── agent tools/session/vision ──> configured model
+                         └─ legacy fallback: Hermes proxy ── OAuth adapter ──> Nous/xAI upstream
 ```
 
 ```text

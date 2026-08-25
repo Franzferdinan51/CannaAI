@@ -444,7 +444,7 @@ const AIProviderCard: React.FC = () => {
                         <div className="flex items-center justify-between gap-2">
                           <div>
                             <p className="text-sm font-medium text-white">{isOAuthProvider(provider.id) ? 'Native OAuth connection' : 'Native agent connection'}</p>
-                            <p className="text-xs text-gray-400">{provider.id === 'grok' ? 'Uses xAI/Grok OAuth through OpenClaw.' : provider.id === 'openai' ? 'Uses OpenAI OAuth through the current OpenClaw provider.' : provider.id === 'openclaw' ? 'Uses the local OpenClaw Gateway and its configured model/auth profiles.' : 'Uses Hermes’ native CLI, pooled credentials, and configured model routing.'}</p>
+                            <p className="text-xs text-gray-400">{provider.id === 'grok' ? 'Uses xAI/Grok OAuth through OpenClaw.' : provider.id === 'openai' ? 'Uses OpenAI OAuth through the current OpenClaw provider.' : provider.id === 'openclaw' ? 'Uses the local OpenClaw Gateway and its configured model/auth profiles.' : 'Uses Hermes’ authenticated API server for tools, sessions, model routing, and native vision.'}</p>
                           </div>
                           <Key className="w-4 h-4 text-purple-300" />
                         </div>

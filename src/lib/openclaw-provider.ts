@@ -24,7 +24,8 @@ export async function testOpenClawConnection(): Promise<boolean> {
 
 export async function getOpenClawModels(): Promise<string[]> {
   try {
-    const { stdout } = await execFileAsync(process.env.OPENCLAW_AGENT_COMMAND || '/opt/homebrew/bin/openclaw', ['models', 'list', '--json'], { timeout: 8000, maxBuffer: 2 * 1024 * 1024 });
+    const command = process.env.OPENCLAW_BIN || process.env.OPENCLAW_AGENT_COMMAND || 'openclaw';
+    const { stdout } = await execFileAsync(command, ['models', 'list', '--json'], { timeout: 8000, maxBuffer: 2 * 1024 * 1024 });
     const parsed = JSON.parse(stdout);
     return (parsed?.models || parsed?.data || []).map((model: any) => String(model.id || model.name || '')).filter(Boolean);
   } catch {

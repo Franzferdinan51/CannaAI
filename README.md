@@ -184,8 +184,12 @@ Copy `.env.example` to `.env` and configure:
 DATABASE_URL="postgresql://..."
 OPENCLAW_ACP_URL="" # optional; defaults to the Gateway configured in OpenClaw
 OPENCLAW_AGENT_ID="main"
-HERMES_PROXY_PORT="8645"
-HERMES_PROXY_PROVIDER="nous"
+HERMES_API_URL="http://127.0.0.1:8642/v1"
+HERMES_API_KEY="change-me-local-dev"
+HERMES_MODEL="hermes-agent"
+# Optional legacy fallback:
+# HERMES_PROXY_PORT="8645"
+# HERMES_PROXY_PROVIDER="nous"
 LM_STUDIO_URL="http://<YOUR_WINDOWS_IP>:1234"
 ```
 
