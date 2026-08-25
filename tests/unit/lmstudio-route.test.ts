@@ -1,6 +1,7 @@
 /** @jest-environment node */
 
 import { GET, POST } from '@/app/api/lmstudio/route';
+import { normalizeRemoteModels } from '@/app/api/lmstudio/models/route';
 
 function response(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
@@ -13,6 +14,19 @@ function response(body: unknown, init: ResponseInit = {}) {
 describe('/api/lmstudio legacy local endpoint', () => {
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  test('deduplicates native model records and excludes non-chat models', () => {
+    const models = normalizeRemoteModels([
+      { key: 'ornith-1.5-35b-a3b', capabilities: { vision: false }, loaded_instances: [] },
+      { key: 'ornith-1.5-35b-a3b', capabilities: { vision: true }, loaded_instances: [{ id: 'ornith-1.5-35b-a3b' }] },
+      { key: 'text-embedding-nomic-embed-text-v1.5', capabilities: { vision: false } },
+      { key: 'qwen3-reranker-0.6b', capabilities: { vision: false } },
+    ]);
+
+    expect(models).toHaveLength(1);
+    expect(models[0]).toEqual(expect.objectContaining({ id: 'ornith-1.5-35b-a3b', loaded: true }));
+    expect(models[0].capabilities).toEqual(expect.arrayContaining(['vision', 'image-analysis', 'loaded']));
   });
 
   test('uses an advertised model instead of sending the unsupported auto sentinel', async () => {
