@@ -89,7 +89,14 @@ function trend(readings: number[]): 'rising' | 'falling' | 'stable' {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const room = searchParams.get('room') || 'all';
-  const hours = Math.min(parseInt(searchParams.get('hours') || '24', 10), 168);
+  const requestedHours = Number(searchParams.get('hours') || '24');
+  if (!Number.isInteger(requestedHours) || requestedHours < 1 || requestedHours > 168) {
+    return NextResponse.json(
+      { error: 'hours must be an integer between 1 and 168.' },
+      { status: 400 }
+    );
+  }
+  const hours = requestedHours;
 
   const since = new Date(Date.now() - hours * 3600 * 1000);
 

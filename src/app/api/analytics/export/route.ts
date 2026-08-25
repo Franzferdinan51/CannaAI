@@ -26,12 +26,31 @@ export async function GET(request: Request) {
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
 
+    if (format !== 'csv' && format !== 'json') {
+      return NextResponse.json(
+        { success: false, error: 'Invalid export format. Use csv or json.' },
+        { status: 400 }
+      );
+    }
+
     let startDate: Date;
     let endDate: Date = new Date();
 
     if (startDateParam && endDateParam) {
       startDate = new Date(startDateParam);
       endDate = new Date(endDateParam);
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        return NextResponse.json(
+          { success: false, error: 'startDate and endDate must be valid dates.' },
+          { status: 400 }
+        );
+      }
+      if (startDate > endDate) {
+        return NextResponse.json(
+          { success: false, error: 'startDate must be earlier than or equal to endDate.' },
+          { status: 400 }
+        );
+      }
     } else {
       switch (timeframe) {
         case '7d':
