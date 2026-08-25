@@ -9,5 +9,5 @@ export async function POST(request: NextRequest) {
     where: { id: { in: ids } },
     data: updates
   });
-  return NextResponse.json({ success: true, updated: ids.length });
+  return NextResponse.json({ success: true, updated: result.count });
 }
