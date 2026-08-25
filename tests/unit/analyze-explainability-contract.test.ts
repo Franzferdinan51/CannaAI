@@ -101,6 +101,10 @@ describe('analysis explainability contract', () => {
     expect(normalized.environmentRiskAssessment.contributingFactors.length).toBeGreaterThan(0);
     expect(normalized.recommendations.shortTerm.length).toBeGreaterThan(0);
     expect(normalized.recommendations.longTerm.length).toBeGreaterThan(0);
+    expect(normalized.trichomeAnalysis.density).toBe('unknown');
+    expect(normalized.morphologicalAnalysis.growthPattern).toBe('unknown');
+    expect(normalized.imageAnalysis.imageQuality.focus).toBe('unknown');
+    expect(normalized.prognosis.expectedOutcome).toMatch(/not available/i);
   });
 
   test('preserves fallback text and still emits explainability fields for unstructured provider output', () => {

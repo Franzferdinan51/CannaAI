@@ -134,7 +134,7 @@ export function normalizePlantAnalysisResult(
     : {};
   const rawNarrative = parsedResult.rawFallbackText;
 
-  enhanced.confidence = clampScore(enhanced.confidence, 75);
+  enhanced.confidence = clampScore(enhanced.confidence, parsedResult.parsedFromStructuredJson ? 75 : 0);
   enhanced.severity = normalizeSeverity(enhanced.severity, 'moderate');
   enhanced.healthScore = clampScore(enhanced.healthScore, enhanced.confidence);
   enhanced.urgency = normalizeUrgency(enhanced.urgency, 'medium');
@@ -163,13 +163,13 @@ export function normalizePlantAnalysisResult(
 
   if (!enhanced.purpleAnalysis || !isRecord(enhanced.purpleAnalysis)) {
     enhanced.purpleAnalysis = {
-      isGenetic: Boolean(enhanced.isPurpleStrain),
-      isDeficiency: false,
+      isGenetic: null,
+      isDeficiency: null,
       analysis: enhanced.isPurpleStrain
         ? 'Genetic purple strain characteristics detected'
         : 'AI analysis required for detailed assessment',
-      anthocyaninLevel: 'medium',
-      recommendedActions: ['Continue monitoring purple coloration patterns']
+      anthocyaninLevel: 'unknown',
+      recommendedActions: []
     };
   }
 
@@ -229,24 +229,24 @@ export function normalizePlantAnalysisResult(
 
   if (!enhanced.trichomeAnalysis || !isRecord(enhanced.trichomeAnalysis)) {
     enhanced.trichomeAnalysis = {
-      isVisible: metadata.imageAnalysis || false,
-      density: 'medium',
+      isVisible: null,
+      density: 'unknown',
       maturity: {
         clear: 0,
         cloudy: 0,
         amber: 0
       },
-      overallStage: 'mixed',
+      overallStage: 'unknown',
       health: {
-        intact: 100,
-        degraded: 0,
-        collapsed: 0
+        intact: null,
+        degraded: null,
+        collapsed: null
       },
       harvestReadiness: {
         ready: false,
-        daysUntilOptimal: 14,
-        recommendation: 'Monitor trichome development',
-        effects: 'Effects will depend on trichome maturity'
+        daysUntilOptimal: null,
+        recommendation: 'Trichome maturity was not assessed by the model.',
+        effects: 'Unknown until trichome maturity is assessed.'
       },
       confidence: 0
     };
@@ -254,21 +254,21 @@ export function normalizePlantAnalysisResult(
 
   if (!enhanced.morphologicalAnalysis || !isRecord(enhanced.morphologicalAnalysis)) {
     enhanced.morphologicalAnalysis = {
-      overallVigor: enhanced.healthScore || 75,
-      growthPattern: 'normal',
-      symmetry: 'symmetrical',
+      overallVigor: null,
+      growthPattern: 'unknown',
+      symmetry: 'unknown',
       leafDevelopment: {
-        size: 'normal',
-        color: 'normal',
-        shape: 'normal',
-        spots: false,
-        lesions: false
+        size: 'unknown',
+        color: 'unknown',
+        shape: 'unknown',
+        spots: null,
+        lesions: null
       },
       stemHealth: {
-        color: 'normal',
-        strength: 'strong',
-        signsOfStress: false,
-        pestDamage: false
+        color: 'unknown',
+        strength: 'unknown',
+        signsOfStress: null,
+        pestDamage: null
       }
     };
   }
@@ -277,11 +277,11 @@ export function normalizePlantAnalysisResult(
     enhanced.visualChanges = {
       hasPreviousData: false,
       changeDetected: false,
-      changeType: 'stable',
-      progressionRate: 'slow',
+      changeType: 'unknown',
+      progressionRate: 'unknown',
       changes: [],
       predictions: [],
-      urgencyAdjustment: 'none'
+      urgencyAdjustment: 'unknown'
     };
   }
 
@@ -291,13 +291,21 @@ export function normalizePlantAnalysisResult(
       visualFindings: enhanced.evidenceObservations.slice(0, 3),
       overallConfidence: enhanced.confidence,
       imageQuality: {
-        resolution: 'good',
-        focus: 'adequate',
-        lighting: 'adequate',
-        magnification: 'appropriate'
+        resolution: 'unknown',
+        focus: 'unknown',
+        lighting: 'unknown',
+        magnification: 'unknown'
       },
       factorsAffectingAnalysis: [],
       recommendationsForFuture: []
+    };
+  }
+  if (!isRecord(enhanced.imageAnalysis.imageQuality)) {
+    enhanced.imageAnalysis.imageQuality = {
+      resolution: 'unknown',
+      focus: 'unknown',
+      lighting: 'unknown',
+      magnification: 'unknown'
     };
   }
   enhanced.imageAnalysis.visualFindings = normalizeMeaningfulStringArray(
@@ -313,26 +321,26 @@ export function normalizePlantAnalysisResult(
 
   if (!enhanced.followUpSchedule || !isRecord(enhanced.followUpSchedule)) {
     enhanced.followUpSchedule = {
-      checkAfterDays: 7,
-      whatToMonitor: ['Overall plant health', 'Symptom progression'],
-      successIndicators: ['Improved leaf color', 'New healthy growth'],
-      escalationTriggers: ['Symptoms worsen rapidly', 'No improvement after treatment']
+      checkAfterDays: null,
+      whatToMonitor: [],
+      successIndicators: [],
+      escalationTriggers: []
     };
   }
 
   if (!enhanced.prognosis || !isRecord(enhanced.prognosis)) {
     enhanced.prognosis = {
-      expectedOutcome: 'Positive outcome with proper care',
-      timeframe: '1-2 weeks',
-      factorsAffectingOutcome: ['Environmental conditions', 'Treatment compliance'],
-      fullRecoveryExpected: true
+      expectedOutcome: 'Not available; the model did not provide a prognosis.',
+      timeframe: 'Unknown',
+      factorsAffectingOutcome: [],
+      fullRecoveryExpected: null
     };
   }
 
   if (!enhanced.costEstimates || !isRecord(enhanced.costEstimates)) {
     enhanced.costEstimates = {
-      treatmentCost: 'Varies by treatment type',
-      preventiveSavings: 'Prevention is more cost-effective than treatment'
+      treatmentCost: 'Not available; no treatment cost was provided by the model.',
+      preventiveSavings: 'Not available; no prevention estimate was provided by the model.'
     };
   }
 
