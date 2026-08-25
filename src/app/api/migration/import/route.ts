@@ -18,17 +18,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Import migrated data
-    await migrationManager.importMigratedData(data);
+    // Import migrated data and preserve per-record outcome details.
+    const result = await migrationManager.importMigratedData(data);
 
     return NextResponse.json({
-      success: true,
-      imported: true,
+      success: result.errors === 0,
+      imported: result.imported,
+      skipped: result.skipped,
+      errors: result.errors,
+      details: result.details,
       sourceVersion: data.sourceVersion,
       targetVersion: data.targetVersion,
       importedAt: new Date().toISOString(),
       message: 'Migration data imported successfully'
-    });
+    }, { status: result.errors === 0 ? 200 : 422 });
   } catch (error) {
     console.error('Migration import failed:', error);
     return NextResponse.json({
@@ -51,13 +54,13 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Return migration status
+    // Migration status is not persisted independently of the artifacts.
+    // Never report completion from the presence of an arbitrary identifier.
     return NextResponse.json({
-      success: true,
+      success: false,
+      error: 'Migration status is not persisted; inspect the export job or import response.',
       migrationId,
-      status: 'completed',
-      importedAt: new Date().toISOString()
-    });
+    }, { status: 501 });
   } catch (error) {
     return NextResponse.json({
       success: false,

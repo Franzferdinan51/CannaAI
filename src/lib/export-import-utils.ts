@@ -844,7 +844,6 @@ export class MigrationManager {
     const currentVersion = await this.getCurrentVersion();
 
     // Gather data with version compatibility
-    const exportManager = new ExportManager();
     const jobId = await exportManager.createExportJob({
       format: 'json',
       includeMetadata: true,
@@ -853,11 +852,16 @@ export class MigrationManager {
 
     // Wait and retrieve
     await this.waitForJobCompletion(jobId);
+    const job = exportManager.getJobStatus(jobId);
+    if (!job || job.status !== 'completed') {
+      throw new Error(job?.error || 'Migration export failed');
+    }
 
     return {
       sourceVersion,
       targetVersion,
       migrationId: uuidv4(),
+      exportJobId: jobId,
       timestamp: new Date().toISOString(),
       // Add migration metadata
     };
@@ -866,7 +870,7 @@ export class MigrationManager {
   /**
    * Import migrated data
    */
-  async importMigratedData(data: any): Promise<void> {
+  async importMigratedData(data: any): Promise<{ imported: number; skipped: number; errors: number; details: any[] }> {
     // Validate migration compatibility
     await this.validateMigrationCompatibility(data);
 
@@ -875,7 +879,7 @@ export class MigrationManager {
 
     // Import data
     const importManager = new ImportManager();
-    await importManager.processImport(transformedData, {
+    return importManager.processImport(transformedData, {
       mergeMode: 'replace'
     });
   }
@@ -908,7 +912,6 @@ export class MigrationManager {
    * Wait for export job to complete
    */
   private async waitForJobCompletion(jobId: string, timeout: number = 60000): Promise<void> {
-    const exportManager = new ExportManager();
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {

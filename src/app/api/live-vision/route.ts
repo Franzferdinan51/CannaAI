@@ -168,10 +168,7 @@ export async function POST(request: NextRequest) {
         statusCode = 503; // Service Unavailable
       }
 
-      return NextResponse.json(
-        createAPIError(errorMessage, statusCode, error.message),
-        { status: statusCode }
-      );
+      return createAPIError(errorMessage, statusCode, error.message);
     }
   });
 }
@@ -286,10 +283,7 @@ export async function GET(request: NextRequest) {
 
     } catch (error: any) {
       console.error('Live vision status error:', error);
-      return NextResponse.json(
-        createAPIError('Failed to get live vision status', 500, error.message),
-        { status: 500 }
-      );
+      return createAPIError('Failed to get live vision status', 500, error.message);
     }
   });
 }

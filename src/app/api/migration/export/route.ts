@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       migrationId: migrationData.migrationId,
+      exportJobId: migrationData.exportJobId,
+      downloadUrl: `/api/export/${migrationData.exportJobId}`,
       sourceVersion,
       targetVersion,
       timestamp: migrationData.timestamp,
