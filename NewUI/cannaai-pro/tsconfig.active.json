@@ -5,7 +5,6 @@
     "baseUrl": "."
   },
   "include": [
-    "src/App.tsx",
-    "src/vite-env.d.ts"
+    "src/**/*"
   ]
 }
