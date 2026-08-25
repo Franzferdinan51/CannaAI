@@ -209,11 +209,18 @@ export async function POST(request: NextRequest) {
     messages.push(userMessage);
 
     const requestedModel = typeof modelId === 'string' ? modelId.trim() : '';
-    const selectedModel = requestedModel && advertisedModels.some(model => model.id === requestedModel)
-      ? requestedModel
-      : advertisedModels.find(model => (
-        typeof model.id === 'string' && !model.id.toLowerCase().includes('embedding')
-      ))?.id;
+    const chatModels = advertisedModels.filter(model => (
+      typeof model.id === 'string' && !model.id.toLowerCase().includes('embedding')
+    ));
+    if (requestedModel && chatModels.length > 0 && !chatModels.some(model => model.id === requestedModel)) {
+      return NextResponse.json({
+        success: false,
+        error: `LM Studio model "${requestedModel}" is not currently advertised`,
+        code: 'LM_STUDIO_MODEL_NOT_FOUND',
+        availableModels: chatModels.map(model => model.id),
+      }, { status: 503 });
+    }
+    const selectedModel = requestedModel || chatModels[0]?.id;
 
     if (!selectedModel) {
       return NextResponse.json({

@@ -89,6 +89,22 @@ describe('/api/lmstudio legacy local endpoint', () => {
     expect(requestBody.model).toBe('cultivation-chat-model');
   });
 
+  test('does not silently replace an explicitly selected unavailable model', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }));
+
+    const result = await POST({
+      json: async () => ({ prompt: 'Inspect this plant', modelId: 'missing-vision-model' }),
+    } as any);
+
+    expect(result.status).toBe(503);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      code: 'LM_STUDIO_MODEL_NOT_FOUND',
+      availableModels: ['ornith-1.5-35b-a3b'],
+    }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   test('preserves an image for a native vision-capable Ornith model', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
