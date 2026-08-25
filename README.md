@@ -132,6 +132,8 @@ The app uses Socket.IO for live dashboard updates and a WebSocket chat endpoint.
 
 The agent should submit the photo to the reachable CannaAI backend, not to the Vite development port. Use `/api/analyze` on the backend address and include the image as `image` or `plantImage`. A successful analysis response identifies the selected provider/model and whether vision processing was used.
 
+The assistant camera control uses the browser's real image capture flow (`capture="environment"` on supported phones) and never submits a generated placeholder image. If no provider is connected, chat and vision return an unavailable/error state; CannaAI does not substitute canned cultivation advice.
+
 ## Core API routes
 
 - `GET /api/health-check` — database and provider health, with honest unavailable states
@@ -140,6 +142,8 @@ The agent should submit the photo to the reachable CannaAI backend, not to the V
 - `POST /api/chat` — cultivation chat with provider fallback
 - `GET /api/openclaw/status` — current OpenClaw-backed cultivation data/status
 - `GET /api/lmstudio/models` — discovered LM Studio models
+
+Cost/revenue, harvest, inventory, and cloning routes currently return `503` with `available:false` because those legacy endpoints do not yet have persisted Prisma models. They no longer return sample records or process-memory writes as if they were production data.
 
 The agent-facing analysis response is documented in [`docs/developer/api/agent-analysis-contract.md`](docs/developer/api/agent-analysis-contract.md).
 
