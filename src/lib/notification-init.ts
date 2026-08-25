@@ -1,5 +1,5 @@
-import { startWebhookWorker } from './webhooks';
-import { startQueueProcessor } from './notification-queue';
+import { startWebhookWorker, stopWebhookWorker } from './webhooks';
+import { startQueueProcessor, stopQueueProcessor } from './notification-queue';
 import { Server } from 'socket.io';
 
 // Notification system initialization
@@ -352,6 +352,8 @@ export class NotificationSystem {
    */
   public shutdown(): void {
     console.log('[NOTIFICATION-SYSTEM] Shutting down...');
+    stopWebhookWorker();
+    stopQueueProcessor();
     this.initialized = false;
     this.io = null;
     console.log('[NOTIFICATION-SYSTEM] Shutdown complete');

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { resolveWebSocketUrl } from '../../NewUI/cannaai-pro/src/hooks/useWebSocket';
+import { resolveWebSocketUrl } from '../../NewUI/cannaai-pro/src/lib/websocket-url';
 import { SafeMarkdown } from '../../NewUI/cannaai-pro/src/components/chat/markdown';
 import {
   MAX_ATTACHMENT_SIZE,
@@ -23,6 +23,15 @@ describe('Vite frontend runtime contracts', () => {
   it('preserves explicit WebSocket URLs while converting HTTP schemes', () => {
     expect(resolveWebSocketUrl('http://localhost:3000/ws')).toBe('ws://localhost:3000/ws');
     expect(resolveWebSocketUrl('https://api.example/ws')).toBe('wss://api.example/ws');
+  });
+
+  it('adds an API token without overwriting an explicit token query value', () => {
+    expect(resolveWebSocketUrl('/api/chat/ws', 'https://app.example', 'secret')).toBe(
+      'wss://app.example/api/chat/ws?token=secret'
+    );
+    expect(resolveWebSocketUrl('/api/chat/ws?token=provided', 'https://app.example', 'secret')).toBe(
+      'wss://app.example/api/chat/ws?token=provided'
+    );
   });
 
   it('renders markdown as React content without interpreting HTML', () => {

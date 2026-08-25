@@ -474,6 +474,7 @@ export async function getWebhookStatistics(webhookId: string) {
 
 // Background worker to process webhook retries
 let webhookWorkerRunning = false;
+let webhookWorkerInterval: NodeJS.Timeout | null = null;
 const WEBHOOK_WORKER_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 let webhookWorkerLastErrorAt = 0;
 
@@ -489,7 +490,7 @@ export function startWebhookWorker(): void {
   // Process pending deliveries every 30 seconds, with a 5-minute cooldown
   // after a P1008 (SQLite socket timeout) so a slow database does not spam
   // the log every tick. Real (non-timeout) errors still surface on every tick.
-  setInterval(async () => {
+  webhookWorkerInterval = setInterval(async () => {
     try {
       await processPendingWebhookDeliveries();
       webhookWorkerLastErrorAt = 0;
@@ -510,9 +511,15 @@ export function startWebhookWorker(): void {
       }
     }
   }, 30000);
+  webhookWorkerInterval.unref?.();
 }
 
 export function stopWebhookWorker(): void {
+  if (webhookWorkerInterval) {
+    clearInterval(webhookWorkerInterval);
+    webhookWorkerInterval = null;
+  }
   webhookWorkerRunning = false;
+  webhookWorkerLastErrorAt = 0;
   console.log('[WEBHOOK-WORKER] Stopped');
 }

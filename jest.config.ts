@@ -72,8 +72,7 @@ const config: Config = {
     '^.+\\.(ts|tsx)$': [
       'ts-jest',
       {
-        tsconfig: '<rootDir>/tsconfig.json',
-        isolatedModules: true
+        tsconfig: '<rootDir>/tsconfig.json'
       }
     ]
   },
@@ -81,7 +80,10 @@ const config: Config = {
     'node_modules/(?!(sharp|heic-convert|libheif-js)/)'
   ],
   verbose: true,
-  forceExit: true,
+  // Tests share a mocked provider registry and a SQLite integration fixture.
+  // Serial workers avoid cross-worker teardown races while remaining faster
+  // than the previous parallel configuration on the supported local setup.
+  maxWorkers: 1,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,

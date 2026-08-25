@@ -1,15 +1,13 @@
 import { io, Socket } from 'socket.io-client';
 import { useCallback, useSyncExternalStore } from 'react';
+import { resolveWebSocketUrl as resolveWebSocketUrlWithoutVite } from './websocket-url';
 
 export function resolveWebSocketUrl(endpoint: string, baseUrl?: string): string {
-  const fallback = typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000';
-  const base = baseUrl || (typeof window !== 'undefined' ? window.location.href : fallback);
-  const resolved = new URL(endpoint, base);
-  if (resolved.protocol === 'http:') resolved.protocol = 'ws:';
-  if (resolved.protocol === 'https:') resolved.protocol = 'wss:';
-  const token = import.meta.env.VITE_CANNAAI_API_TOKEN;
-  if (token && !resolved.searchParams.has('token')) resolved.searchParams.set('token', token);
-  return resolved.toString();
+  return resolveWebSocketUrlWithoutVite(
+    endpoint,
+    baseUrl,
+    import.meta.env.VITE_CANNAAI_API_TOKEN,
+  );
 }
 
 export function getSocketBaseUrl(): string {

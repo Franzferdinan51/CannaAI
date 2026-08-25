@@ -281,7 +281,12 @@ if (globalForRateLimiter.__rateLimiterCleanupInterval) {
   clearInterval(globalForRateLimiter.__rateLimiterCleanupInterval);
 }
 
-globalForRateLimiter.__rateLimiterCleanupInterval = setInterval(() => {
+const cleanupInterval = setInterval(() => {
   apiRateLimiter.cleanup();
   analysisRateLimiter.cleanup();
 }, 300000); // Every 5 minutes
+
+// The cleanup timer is useful while the server is alive, but it must not keep
+// short-lived workers, CLI checks, or test processes alive on its own.
+cleanupInterval.unref?.();
+globalForRateLimiter.__rateLimiterCleanupInterval = cleanupInterval;
