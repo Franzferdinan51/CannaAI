@@ -138,7 +138,9 @@ export function ChatInterface({
   } = useChat({ initialConversation, sensorData });
 
   // UI State
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window === 'undefined' || window.matchMedia('(min-width: 1024px)').matches
+  );
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -579,7 +581,7 @@ export function ChatInterface({
   );
 
   return (
-    <div className={`flex h-screen bg-gray-900 ${className}`}>
+    <div className={`flex min-w-0 h-screen overflow-hidden bg-gray-900 ${className}`}>
       {/* Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -609,7 +611,7 @@ export function ChatInterface({
       </AnimatePresence>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col">
         {renderHeader()}
         {renderMessages()}
 

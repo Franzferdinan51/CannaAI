@@ -95,6 +95,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <button
+            type="button"
+            aria-label="Close navigation menu"
             onClick={() => setIsSidebarOpen(false)}
             className="lg:hidden p-2 hover:bg-gray-800 rounded-lg"
           >
@@ -146,6 +148,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Mobile Header */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#101712]/95 backdrop-blur-xl border-b border-emerald-950/80 sticky top-0 z-30">
           <button
+            type="button"
+            aria-label="Open navigation menu"
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 hover:bg-gray-800 rounded-lg"
           >
@@ -167,6 +171,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-3">
             <button
+              type="button"
+              aria-label="Start a new analysis"
               onClick={() => navigate('/scanner')}
               className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3.5 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
             >
@@ -189,7 +195,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {mobileNavItems.map(item => {
             const Icon = item.icon;
             const active = isActive(item.path);
-            return <button key={item.path} onClick={() => navigate(item.path)} className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors ${active ? 'text-emerald-300' : 'text-slate-500'}`}>
+            return <button key={item.path} type="button" aria-label={item.label} onClick={() => navigate(item.path)} className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors ${active ? 'text-emerald-300' : 'text-slate-500'}`}>
               <span className={`grid h-8 w-10 place-items-center rounded-xl ${active ? 'bg-emerald-400/12' : ''}`}><Icon className="h-4 w-4" /></span>
               <span className="truncate">{item.label.replace('Plant Analysis', 'Scan').replace('AI Assistant', 'Assistant').replace('MoA Advisors', 'Advisors')}</span>
             </button>;

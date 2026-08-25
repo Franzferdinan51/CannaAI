@@ -231,6 +231,8 @@ export function ChatInput({
     });
   }, []);
 
+  // These callbacks are intentionally stable because they are passed to file input and drag/drop handlers.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const handleImageUpload = useCallback((file: File) => {
     const validation = validateAttachment(file, 'image');
     if (!validation.valid) {
@@ -247,6 +249,7 @@ export function ChatInput({
     onImageUpload?.(file);
   }, [onImageUpload]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const handleFileUpload = useCallback(async (file: File) => {
     const validation = validateAttachment(file, 'file');
     if (!validation.valid) {
@@ -506,7 +509,7 @@ export function ChatInput({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="flex items-end gap-3 p-4">
+        <div className="flex flex-col gap-2 p-3 sm:flex-row sm:items-end sm:gap-3 sm:p-4">
           {/* File inputs */}
           <input
             ref={imageInputRef}
@@ -525,11 +528,12 @@ export function ChatInput({
           />
 
           {/* Left side actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 sm:order-none">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => imageInputRef.current?.click()}
+              aria-label="Upload image"
               className="text-gray-400 hover:text-white"
               title="Upload image"
             >
@@ -540,6 +544,7 @@ export function ChatInput({
               size="sm"
               variant="ghost"
               onClick={() => fileInputRef.current?.click()}
+              aria-label="Attach file"
               className="text-gray-400 hover:text-white"
               title="Attach file"
             >
@@ -551,6 +556,7 @@ export function ChatInput({
                 size="sm"
                 variant="ghost"
                 onClick={() => setShowFormattingBar(!showFormattingBar)}
+                aria-label="Formatting options"
                 className={`text-gray-400 hover:text-white ${showFormattingBar ? 'text-white' : ''}`}
                 title="Formatting options"
               >
@@ -560,7 +566,7 @@ export function ChatInput({
           </div>
 
           {/* Text area */}
-          <div className="flex-1 relative">
+          <div className="order-first min-w-0 flex-1 relative sm:order-none">
             <textarea
               ref={textareaRef}
               value={input}
@@ -588,6 +594,7 @@ export function ChatInput({
                 size="sm"
                 variant="ghost"
                 onClick={onVoiceToggle}
+                aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
                 className={`${
                   isListening ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-white'
                 }`}
@@ -600,6 +607,7 @@ export function ChatInput({
             {/* Send button */}
             <Button
               onClick={handleSend}
+              aria-label="Send message"
               disabled={isLoading || (!input.trim() && !selectedImage && attachedFiles.length === 0)}
               className="bg-emerald-600 hover:bg-emerald-500 text-white disabled:bg-gray-700 disabled:cursor-not-allowed"
             >

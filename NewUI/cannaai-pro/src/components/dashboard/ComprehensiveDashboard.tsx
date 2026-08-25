@@ -310,15 +310,15 @@ const ComprehensiveDashboard: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col bg-[#0f1419] text-gray-100">
       {/* Header */}
-      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800 bg-[#181b21]/90 backdrop-blur-sm sticky top-0 z-40">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-white">CannaAI Pro Dashboard</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-h-16 px-4 sm:px-6 py-3 border-b border-gray-800 bg-[#181b21]/90 backdrop-blur-sm sticky top-0 z-40">
+        <div className="flex min-w-0 items-center space-x-3 sm:space-x-4">
+          <h1 className="min-w-0 text-xl sm:text-2xl font-bold text-white">CannaAI Pro Dashboard</h1>
           <Badge variant="outline" className={`${isConnected ? 'border-emerald-500 text-emerald-400' : 'border-red-500 text-red-400'}`}>
             {isConnected ? 'Connected' : 'Offline'}
           </Badge>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-end space-x-3 sm:justify-start">
           <Button variant="outline" size="sm" onClick={() => navigate('/plants')} aria-label="Start a new grow" className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-700">
             <Plus className="w-4 h-4 mr-2" />
             New Grow
@@ -385,7 +385,7 @@ const ComprehensiveDashboard: React.FC = () => {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="p-6 max-w-7xl mx-auto">
+          <div className="p-4 sm:p-6 max-w-7xl mx-auto">
             {/* Overview Dashboard */}
             {activeDashboard === 'overview' && (
               <div className="space-y-6">

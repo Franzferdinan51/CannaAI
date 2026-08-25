@@ -153,6 +153,8 @@ const LMStudioSection: React.FC = () => {
               </div>
             )}
             <button
+              type="button"
+              aria-label="Refresh LM Studio models"
               onClick={() => loadLMStudioModels()}
               disabled={isLoading}
               className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
@@ -181,6 +183,7 @@ const LMStudioSection: React.FC = () => {
                 className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
               />
               <button
+                type="button"
                 onClick={() => loadLMStudioModels(settings?.lmStudio?.url)}
                 disabled={isSaving}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-lg transition-colors flex items-center gap-2"

@@ -258,6 +258,7 @@ const Settings: React.FC = () => {
               <div className="relative group">
                 <button
                   onClick={() => handleExport('json')}
+                  aria-label="Export settings"
                   className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
                   title="Export Settings"
                 >
@@ -282,6 +283,7 @@ const Settings: React.FC = () => {
               {/* Import Button */}
               <button
                 onClick={() => setShowImportDialog(true)}
+                aria-label="Import settings"
                 className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
                 title="Import Settings"
               >
@@ -291,6 +293,7 @@ const Settings: React.FC = () => {
               {/* Reset Button */}
               <button
                 onClick={() => setShowResetDialog(true)}
+                aria-label="Reset settings to defaults"
                 className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
                 title="Reset to Defaults"
               >
@@ -344,8 +347,8 @@ const Settings: React.FC = () => {
                 <span className="data-[state=active]:text-white text-gray-400 group-hover:text-gray-200">
                   {tab.icon}
                 </span>
-                <span className="hidden xs:block text-xs"> {/* Show text on larger screens */}
-                  {tab.label.split(' ')[0]}
+                <span className="hidden sm:block text-xs"> {/* Keep labels visible on desktop */}
+                  {tab.label}
                 </span>
               </Tabs.Trigger>
             ))}
