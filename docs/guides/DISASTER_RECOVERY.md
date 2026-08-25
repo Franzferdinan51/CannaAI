@@ -181,7 +181,8 @@ echo "Application recovery completed"
 
 ```bash
 #!/bin/bash
-# Run: ./scripts/disaster-recovery.sh
+# This repository does not ship an executable disaster-recovery.sh; run the
+# reviewed steps below manually against the approved production context.
 
 echo "=========================================="
 echo "DISASTER RECOVERY PROCEDURE"

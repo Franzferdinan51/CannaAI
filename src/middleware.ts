@@ -26,7 +26,9 @@ export function middleware(request: NextRequest) {
     const requireApiToken = process.env.CANNAAI_REQUIRE_AUTH === 'true'
       || process.env.NODE_ENV === 'production';
 
-    if (requireApiToken && !publicApiPaths.has(request.nextUrl.pathname)) {
+    // Browser CORS preflights do not carry the eventual Authorization header.
+    // They may validate the allowlist here; the actual request remains gated.
+    if (requireApiToken && request.method !== 'OPTIONS' && !publicApiPaths.has(request.nextUrl.pathname)) {
       const configuredToken = process.env.CANNAAI_API_TOKEN;
       const authorization = request.headers.get('authorization') ?? '';
       const bearerToken = authorization.startsWith('Bearer ')
@@ -72,7 +74,10 @@ export function middleware(request: NextRequest) {
       securedResponse.headers.set('Vary', 'Origin');
     }
     securedResponse.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-    securedResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    securedResponse.headers.set(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-Requested-With, X-CannaAI-API-Token',
+    );
   }
 
   if (isApi && request.method === 'OPTIONS') {

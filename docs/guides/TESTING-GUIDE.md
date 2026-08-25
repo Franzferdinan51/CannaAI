@@ -44,9 +44,9 @@ npx tsc --noEmit src/app/api/grow-monitor/data/route.ts
 
 ### Start CannaAI Server:
 ```bash
-cd /home/duckets/CannaAI
-npm run dev
-# Server will start on http://localhost:3000
+cd /Users/duckets/Desktop/CannaAI
+npm run dev:backend
+# Backend will start on http://localhost:3000
 ```
 
 ### API Endpoint Tests:

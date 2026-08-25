@@ -25,9 +25,8 @@ Open your browser to **http://localhost:5173** to see the new CannaAI Pro interf
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start both frontend & backend (recommended) |
-| `npm run dev:full` | Alternative command to start both services |
-| `npm run backend` | Start only the Next.js backend |
-| `npm run frontend` | Start only the New UI frontend |
+| `npm run dev:backend` | Start only the backend in development |
+| `npm run dev:frontend` | Start only the Vite frontend in development |
 | `npm run start:both` | Advanced startup with health checks |
 
 ### Utilities & Diagnostics
@@ -42,10 +41,10 @@ Open your browser to **http://localhost:5173** to see the new CannaAI Pro interf
 | Command | Description |
 |---------|-------------|
 | `npm run build` | Build both frontend & backend |
-| `npm run deploy:prod` | Full production build + deployment |
-| `npm run deploy:build` | Build for production only |
+| `npm run deploy:prod` | Run the repository deployment helper |
+| `npm run deploy:build` | Run the deployment helper in build-only mode |
 | `npm run start` | Start both services in production mode |
-| `npm run start:prod` | Production mode with monitoring |
+| `npm run start:prod` | Start both services through the production launcher |
 
 ## 📁 Architecture
 

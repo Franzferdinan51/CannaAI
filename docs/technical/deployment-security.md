@@ -1905,7 +1905,7 @@ jobs:
         run: npm ci
 
       - name: Type check
-        run: npm run type-check
+        run: npm run typecheck:local-ai
 
       - name: Lint
         run: npm run lint

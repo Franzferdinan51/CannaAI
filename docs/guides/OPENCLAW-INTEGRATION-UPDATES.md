@@ -50,7 +50,7 @@ python3 integrations/openclaw-grow-bridge.py --test
 python3 integrations/openclaw-grow-bridge.py --manual --verbose
 
 # Add to cron (every 15 minutes)
-*/15 * * * * cd /home/duckets/CannaAI && python3 integrations/openclaw-grow-bridge.py >> logs/bridge.log 2>&1
+*/15 * * * * cd /path/to/CannaAI && python3 integrations/openclaw-grow-bridge.py >> logs/bridge.log 2>&1
 ```
 
 ### 3. Model Integration Updates

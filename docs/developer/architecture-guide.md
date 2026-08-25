@@ -524,7 +524,7 @@ curl -X POST http://localhost:3000/api/trichome-analysis \
 **Linting**:
 ```bash
 npm run lint          # Check code quality
-npm run lint:fix      # Auto-fix issues
+npx eslint --fix <files> # Auto-fix a reviewed set of files
 ```
 
 ### Debugging
