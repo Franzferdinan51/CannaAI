@@ -43,6 +43,41 @@ interface AIResponse {
   fallbackUsed?: boolean;
 }
 
+function getLMStudioEndpointCandidates(configuredUrl: string): string[] {
+  const baseUrl = configuredUrl.replace(/\/$/, '').replace(/\/v1\/?$/, '');
+  try {
+    const parsed = new URL(baseUrl);
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+      return Array.from(new Set([
+        baseUrl,
+        `${parsed.protocol}//127.0.0.1${parsed.port ? `:${parsed.port}` : ''}`,
+        `${parsed.protocol}//localhost${parsed.port ? `:${parsed.port}` : ''}`,
+      ]));
+    }
+  } catch {
+    // Let the fetch below report an invalid configured URL.
+  }
+  return [baseUrl];
+}
+
+function isNonChatModel(model: { id?: string }): boolean {
+  const id = String(model.id || '').toLowerCase();
+  return id.includes('embedding') || id.includes('embed-') || id.endsWith('-embed') || id.includes('reranker');
+}
+
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const timeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof timeout === 'function') return timeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const unref = (timer as ReturnType<typeof setTimeout> & { unref?: () => void }).unref;
+  unref?.call(timer);
+  return controller.signal;
+}
+
 export class ClientAIService {
   private config: AIConfig;
 
@@ -205,7 +240,6 @@ export class ClientAIService {
   }
 
   private async callLMStudio(prompt: string, context?: any): Promise<AIResponse> {
-    const baseUrl = this.config.lmStudio.url.replace(/\/$/, '').replace(/\/v1\/?$/, '');
     const headers: HeadersInit = this.config.lmStudio.apiKey
       ? { Authorization: `Bearer ${this.config.lmStudio.apiKey}` }
       : {};
@@ -214,27 +248,37 @@ export class ClientAIService {
     // endpoint is not available in every LM Studio release and made a healthy
     // local server look offline in the browser client.
     let advertisedModels: Array<{ id?: string }> = [];
-    try {
-      const modelsResponse = await fetch(`${baseUrl}/v1/models`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000),
-        headers,
-      });
+    let baseUrl = '';
+    let lastError = 'model discovery failed';
+    for (const candidate of getLMStudioEndpointCandidates(this.config.lmStudio.url)) {
+      try {
+        const modelsResponse = await fetch(`${candidate}/v1/models`, {
+          method: 'GET',
+          signal: createTimeoutSignal(3000),
+          headers,
+        });
+        if (!modelsResponse.ok) {
+          lastError = `LM Studio model discovery failed: ${modelsResponse.status}`;
+          continue;
+        }
 
-      if (!modelsResponse.ok) {
-        throw new Error(`LM Studio model discovery failed: ${modelsResponse.status}`);
+        const modelsPayload = await modelsResponse.json();
+        advertisedModels = Array.isArray(modelsPayload?.data) ? modelsPayload.data : [];
+        baseUrl = candidate;
+        break;
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : lastError;
       }
+    }
 
-      const modelsPayload = await modelsResponse.json();
-      advertisedModels = Array.isArray(modelsPayload?.data) ? modelsPayload.data : [];
-    } catch (error) {
-      throw new Error(`Cannot connect to LM Studio: ${error instanceof Error ? error.message : 'model discovery failed'}`);
+    if (!baseUrl) {
+      throw new Error(`Cannot connect to LM Studio: ${lastError}`);
     }
 
     const configuredModel = this.config.lmStudio.model.trim();
     const selectedModel = configuredModel && advertisedModels.some(model => model.id === configuredModel)
       ? configuredModel
-      : advertisedModels.find(model => typeof model.id === 'string' && !model.id.toLowerCase().includes('embedding'))?.id;
+      : advertisedModels.find(model => typeof model.id === 'string' && !isNonChatModel(model))?.id;
 
     if (!selectedModel) {
       throw new Error('LM Studio is connected, but no runnable chat model was advertised. Load a model and retry.');

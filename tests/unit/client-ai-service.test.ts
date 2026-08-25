@@ -17,4 +17,29 @@ describe('ClientAIService', () => {
 
     await expect(service.testConnection()).resolves.toBe(false);
   });
+
+  it('fails over loopback and does not select a reranker in the browser adapter', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockRejectedValueOnce(new Error('connect ECONNREFUSED ::1:1234'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'qwen3-reranker-0.6b' }, { id: 'browser-chat-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ model: 'browser-chat-model', choices: [{ message: { content: 'local answer' } }] }),
+      } as Response);
+
+    const service = new ClientAIService({
+      provider: 'lm-studio',
+      lmStudio: { url: 'http://localhost:1234', model: '', apiKey: '' },
+    } as any);
+
+    await expect(service.generateResponse('hello')).resolves.toMatchObject({
+      success: true,
+      model: 'browser-chat-model',
+    });
+    expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
+    expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
+  });
 });
