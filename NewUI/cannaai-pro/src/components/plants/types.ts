@@ -124,6 +124,7 @@ export interface PlantMetadata {
   harvestDate?: string;
   cureDate?: string;
   quality?: QualityGrade;
+  medium?: GrowthMedium;
 }
 
 // Environmental Data
@@ -452,7 +453,7 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'failed';
 export type ScheduleType = 'once' | 'daily' | 'weekly' | 'monthly' | 'custom' | 'triggered';
 export type PlantSortField = 'name' | 'age' | 'health' | 'stage' | 'plantedDate' | 'updatedAt';
-export type PlantTab = 'overview' | 'plants' | 'strains' | 'analysis' | 'inventory' | 'tasks' | 'settings';
+export type PlantTab = 'overview' | 'plants' | 'strains' | 'analysis' | 'inventory' | 'tasks' | 'details' | 'settings';
 
 // Supporting Interfaces
 export interface OptimalConditions {
@@ -518,5 +519,6 @@ export interface PlantSearchProps {
   onFilterChange: (filter: PlantFilter) => void;
   onSearch: (query: string) => void;
   onClear: () => void;
+  strains?: PlantStrain[];
   isLoading?: boolean;
 }

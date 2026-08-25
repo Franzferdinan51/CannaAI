@@ -41,7 +41,6 @@ import {
   Save,
   Printer,
   Share2,
-  Schedule,
   Image,
   Database,
   DollarSign,
@@ -69,9 +68,9 @@ import {
   ExportOptions,
   ExportFormat,
   AnalyticsData,
-  PlantGrowthAnalytics,
+  PlantGrowthAnalytics as PlantGrowthAnalyticsData,
   EnvironmentalAnalytics,
-  FinancialAnalytics,
+  FinancialAnalytics as FinancialAnalyticsData,
   YieldAnalytics
 } from './types';
 
@@ -140,12 +139,10 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
     setIsLoading(true);
     try {
       const data = await reportsApi.getReports();
-      // Fallback to mock data if API returns empty
-      const reportData = data.reports.length > 0 ? data.reports : mockData.generateMockReports(15);
-      setReports(reportData);
+      setReports(data.reports);
     } catch (error) {
       console.error('Failed to load reports:', error);
-      setReports(mockData.generateMockReports(15));
+      setReports([]);
     } finally {
       setIsLoading(false);
     }
@@ -996,6 +993,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
           </div>
         )}
 
+        </div>
+        )}
+
         {activeTab === 'analytics' && (
           <AnalyticsDashboard />
         )}
@@ -1010,8 +1010,6 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
 
         {activeTab === 'builder' && (
           <ReportBuilder />
-        )}
-        </div>
         )}
       </div>
     </div>

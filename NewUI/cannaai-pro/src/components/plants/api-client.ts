@@ -16,8 +16,30 @@ import {
   EnvironmentalData,
   PlantImage,
   PlantTask,
-  PlantAction
+  PlantAction,
+  SearchFacets
 } from './types';
+
+const emptySearchFacets = (): SearchFacets => ({
+  strains: [], stages: [], healthStatuses: [], locations: [], tags: [],
+});
+
+const emptyPlantInventory = (): PlantInventory => ({
+  totalPlants: 0,
+  activePlants: 0,
+  archivedPlants: 0,
+  byStage: {
+    germination: 0, seedling: 0, vegetative: 0, 'pre-flowering': 0,
+    flowering: 0, ripening: 0, harvesting: 0, cured: 0, archived: 0,
+  },
+  byHealth: { excellent: 0, good: 0, fair: 0, poor: 0, critical: 0 },
+  byLocation: {},
+  byStrain: {},
+  estimatedYield: 0,
+  averageHealth: 0,
+  upcomingTasks: 0,
+  overdueTasks: 0,
+});
 
 // API base URL - adjust as needed for your environment
 const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
@@ -71,7 +93,7 @@ class PlantsAPIClient {
         plants: response.data.data?.plants || [],
         total: response.data.pagination?.total || 0,
         filters: filter || {},
-        facets: response.data.data?.facets || {},
+        facets: response.data.data?.facets || emptySearchFacets(),
         took: 0
       };
     } catch (error) {
@@ -198,19 +220,7 @@ class PlantsAPIClient {
         throw new Error(response.data.error || 'Failed to fetch plant inventory');
       }
 
-      return response.data.data?.inventory || {
-        totalPlants: 0,
-        activePlants: 0,
-        archivedPlants: 0,
-        byStage: {},
-        byHealth: {},
-        byLocation: {},
-        byStrain: {},
-        estimatedYield: 0,
-        averageHealth: 0,
-        upcomingTasks: 0,
-        overdueTasks: 0
-      };
+      return response.data.data?.inventory || emptyPlantInventory();
     } catch (error) {
       console.error('Failed to fetch plant inventory:', error);
       throw error instanceof Error ? error : new Error('Unknown error fetching plant inventory');

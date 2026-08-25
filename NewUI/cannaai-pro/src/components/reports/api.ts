@@ -243,6 +243,8 @@ export const analyticsApi = {
   // Get plant growth analytics
   async getPlantGrowth(params?: {
     plantIds?: string[];
+    strainIds?: string[];
+    roomIds?: string[];
     dateRange: { start: Date; end: Date };
     growthStages?: string[];
   }): Promise<PlantGrowthAnalytics[]> {

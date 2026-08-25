@@ -65,7 +65,7 @@ import {
 } from 'lucide-react';
 
 import {
-  PlantGrowthAnalytics,
+  PlantGrowthAnalytics as PlantGrowthAnalyticsData,
   GrowthMeasurement,
   PlantGrowthStage,
   PlantHealth,
@@ -97,8 +97,8 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
   timeRange
 }) => {
   // State management
-  const [growthData, setGrowthData] = useState<PlantGrowthAnalytics[]>([]);
-  const [selectedPlant, setSelectedPlant] = useState<PlantGrowthAnalytics | null>(null);
+  const [growthData, setGrowthData] = useState<PlantGrowthAnalyticsData[]>([]);
+  const [selectedPlant, setSelectedPlant] = useState<PlantGrowthAnalyticsData | null>(null);
   const [selectedStage, setSelectedStage] = useState<PlantGrowthStage | 'all'>('all');
   const [selectedMetric, setSelectedMetric] = useState<'height' | 'health' | 'yield'>('height');
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'chart'>('grid');
@@ -156,8 +156,8 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
   };
 
   // Generate mock data for demonstration
-  const generateMockPlantGrowthData = (): PlantGrowthAnalytics[] => {
-    const mockPlants: PlantGrowthAnalytics[] = [];
+  const generateMockPlantGrowthData = (): PlantGrowthAnalyticsData[] => {
+    const mockPlants: PlantGrowthAnalyticsData[] = [];
     const stages: PlantGrowthStage[] = ['vegetative', 'flowering', 'ripening'];
     const strains = ['Blue Dream', 'OG Kush', 'Girl Scout Cookies', 'Sour Diesel'];
 
@@ -194,6 +194,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
             diseases: []
           },
           environmental: {
+            timestamp,
             temperature: 22 + Math.random() * 4,
             humidity: 50 + Math.random() * 20,
             co2: 1000 + Math.random() * 400,
@@ -208,6 +209,12 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
                 uv: 5
               },
               dli: 25 + Math.random() * 10
+            },
+            air: {
+              vpd: 1.1,
+              pressure: 1013,
+              circulation: 80,
+              quality: { oxygen: 21, volatileOrganicCompounds: 0, particulates: 0 },
             },
             water: {
               ph: 6.0 + Math.random() * 0.8,

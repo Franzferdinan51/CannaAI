@@ -201,7 +201,7 @@ const PlantGrid: React.FC<PlantGridProps> = ({
                 <h3 className="text-lg font-semibold text-white group-hover:text-emerald-400 transition-colors">
                   {plant.name}
                 </h3>
-                {plant.issues && plant.issues.length > 0 && (
+                {plant.health.issues.length > 0 && (
                   <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 ml-2" />
                 )}
               </div>

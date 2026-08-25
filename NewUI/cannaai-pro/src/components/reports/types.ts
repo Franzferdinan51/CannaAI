@@ -16,6 +16,7 @@ export interface Report {
   parameters: ReportParameters;
   data?: any;
   metadata: ReportMetadata;
+  layout?: ReportLayout;
 }
 
 export type ReportType =

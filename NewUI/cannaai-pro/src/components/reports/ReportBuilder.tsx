@@ -48,7 +48,6 @@ import {
   FileDown,
   FileImage,
   Share2,
-  Schedule,
   Play,
   Pause,
   SkipForward,
@@ -142,7 +141,8 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
         branding: {
           name: 'CannaAI Pro',
           website: 'https://cannai.app',
-          contact: 'support@cannai.app'
+          contact: 'support@cannai.app',
+          logo: ''
         }
       },
       charts: [],
@@ -723,7 +723,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
                         key={preset}
                         onClick={() => {
                           const range = dateUtils.getDateRangePreset(preset);
-                          updateParameters({ dateRange: { ...range, preset } });
+                          updateParameters({ dateRange: { ...range, preset: preset as ReportParameters['dateRange']['preset'] } });
                         }}
                         className="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors text-sm capitalize"
                       >

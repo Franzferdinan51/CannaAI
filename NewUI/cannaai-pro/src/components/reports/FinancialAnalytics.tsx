@@ -68,7 +68,7 @@ import {
 } from 'lucide-react';
 
 import {
-  FinancialAnalytics,
+  FinancialAnalytics as FinancialAnalyticsData,
   FinancialPeriod,
   RevenueData,
   CostData,
@@ -100,8 +100,8 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   comparisonMode = false
 }) => {
   // State management
-  const [financialData, setFinancialData] = useState<FinancialAnalytics | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'>(period.type);
+  const [financialData, setFinancialData] = useState<FinancialAnalyticsData | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<FinancialPeriod['type']>(period.type);
   const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'costs' | 'profit' | 'roi'>('revenue');
   const [viewMode, setViewMode] = useState<'overview' | 'detailed' | 'forecasts' | 'kpis'>('overview');
   const [isLoading, setIsLoading] = useState(true);
@@ -118,7 +118,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
     try {
       const data = await analyticsApi.getFinancial({
         dateRange: period,
-        type: selectedPeriod
+        type: selectedPeriod === 'daily' || selectedPeriod === 'weekly' ? 'monthly' : selectedPeriod
       });
 
       if (data) {
@@ -137,7 +137,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   };
 
   // Generate mock financial data
-  const generateMockFinancialData = (): FinancialAnalytics => {
+  const generateMockFinancialData = (): FinancialAnalyticsData => {
     const generateMonthlyData = () => {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const currentMonth = new Date().getMonth();

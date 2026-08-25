@@ -21,8 +21,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
+const Separator: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div role="separator" className={`h-px w-full bg-gray-800 ${className}`} />
+);
+
+const ScrollArea: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = '' }) => (
+  <div className={`overflow-auto ${className}`}>{children}</div>
+);
 
 // Import plant subcomponents
 import PlantGrid from './components/PlantGrid';
