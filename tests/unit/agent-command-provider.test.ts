@@ -83,7 +83,11 @@ describe('AgentCommandProvider Hermes proxy resilience', () => {
         return {
           ok: true,
           status: 200,
-          json: async () => ({ model: 'hermes-agent', choices: [{ message: { content: 'Native Hermes vision answer' } }] }),
+          json: async () => ({ model: 'hermes-agent', choices: [{ message: { content: [
+            { type: 'text', text: 'Native Hermes ' },
+            { type: 'image', image_url: 'ignored-in-text-result' },
+            { type: 'text', text: 'vision answer' },
+          ] } }] }),
         } as Response;
       }
       return { ok: false, status: 404, statusText: 'Not Found', json: async () => ({}) } as Response;

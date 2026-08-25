@@ -36,6 +36,18 @@ function contentFromParts(parts: string[]): string {
   return parts.join('').trim();
 }
 
+function textFromAgentContent(content: unknown, reasoningContent?: unknown): string {
+  if (Array.isArray(content)) {
+    return content
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('')
+      .trim();
+  }
+  if (typeof content === 'string' && content.trim()) return content.trim();
+  return typeof reasoningContent === 'string' ? reasoningContent.trim() : '';
+}
+
 export function normalizeAgentImage(image: unknown): string | undefined {
   if (typeof image !== 'string') return undefined;
   const value = image.trim();
@@ -186,7 +198,8 @@ export class AgentCommandProvider extends BaseProvider {
         if (!response.ok) {
           throw new Error(`Hermes ${provider} proxy error ${response.status}: ${body?.error?.message || body?.message || response.statusText}`);
         }
-        const content = String(body?.choices?.[0]?.message?.content || '').trim();
+        const message = body?.choices?.[0]?.message;
+        const content = textFromAgentContent(message?.content, message?.reasoning_content);
         if (!content) throw new Error(`Hermes ${provider} returned an empty response`);
         return { content, model: body.model || model, usage: body.usage };
       } catch (error: any) {
@@ -271,10 +284,8 @@ export class AgentCommandProvider extends BaseProvider {
     if (!response.ok) {
       throw new Error(`Hermes API error ${response.status}: ${body?.error?.message || body?.message || response.statusText}`);
     }
-    const rawContent = body?.choices?.[0]?.message?.content;
-    const content = Array.isArray(rawContent)
-      ? rawContent.filter((part: any) => part?.type === 'text' && typeof part?.text === 'string').map((part: any) => part.text).join('')
-      : String(rawContent || '').trim();
+    const responseMessage = body?.choices?.[0]?.message;
+    const content = textFromAgentContent(responseMessage?.content, responseMessage?.reasoning_content);
     if (!content) throw new Error('Hermes API returned an empty response');
     return { content: content.trim(), model: body.model || model, usage: body.usage };
   }
