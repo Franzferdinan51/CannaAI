@@ -102,15 +102,20 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
   const getSensorValue = (sensorType: SensorType): number | string => {
     if (!lastSensorData) return '--';
 
+    const format = (value: unknown, suffix = '') =>
+      typeof value === 'number' && Number.isFinite(value) ? `${Math.round(value)}${suffix}` : '--';
+    const formatDecimal = (value: unknown) =>
+      typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '--';
+
     switch (sensorType) {
-      case 'temperature': return `${Math.round(lastSensorData.temperature)}°F`;
-      case 'humidity': return `${Math.round(lastSensorData.humidity)}%`;
-      case 'ph': return (lastSensorData.ph ?? lastSensorData.pH).toFixed(2);
-      case 'ec': return (lastSensorData.ec ?? lastSensorData.EC).toFixed(2);
-      case 'co2': return `${Math.round(lastSensorData.co2 ?? lastSensorData.CO2)} ppm`;
-      case 'vpd': return (lastSensorData.vpd ?? lastSensorData.VPD).toFixed(2);
-      case 'soil_moisture': return `${Math.round(lastSensorData.soilMoisture || 0)}%`;
-      case 'light_intensity': return `${Math.round(lastSensorData.lightIntensity || 0)} PPFD`;
+      case 'temperature': return format(lastSensorData.temperature, '°F');
+      case 'humidity': return format(lastSensorData.humidity, '%');
+      case 'ph': return formatDecimal(lastSensorData.ph ?? lastSensorData.pH);
+      case 'ec': return formatDecimal(lastSensorData.ec ?? lastSensorData.EC);
+      case 'co2': return format(lastSensorData.co2 ?? lastSensorData.CO2, ' ppm');
+      case 'vpd': return formatDecimal(lastSensorData.vpd ?? lastSensorData.VPD);
+      case 'soil_moisture': return format(lastSensorData.soilMoisture, '%');
+      case 'light_intensity': return format(lastSensorData.lightIntensity, ' PPFD');
       default: return '--';
     }
   };

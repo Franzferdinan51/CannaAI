@@ -170,24 +170,14 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
   const testSensor = async () => {
     setTestInProgress(true);
     try {
-      // Simulate sensor test
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setTestResults({
-        status: 'success',
-        responseTime: 145,
-        accuracy: 98.5,
-        signalStrength: -42,
-        batteryLevel: 87,
-        lastReading: {
-          value: 23.4,
-          timestamp: new Date().toISOString(),
-          quality: 'good'
-        }
-      });
-    } catch (error) {
       setTestResults({
         status: 'error',
-        message: 'Failed to communicate with sensor'
+        message: 'Live sensor testing is unavailable until a connected sensor agent provides a test endpoint.'
+      });
+    } catch {
+      setTestResults({
+        status: 'error',
+        message: 'Unable to test this sensor.'
       });
     } finally {
       setTestInProgress(false);
