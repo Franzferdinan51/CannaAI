@@ -13,8 +13,9 @@ type Session = { provider: AuthProvider; command: string; args: string[]; starte
 
 function commandPath(command: string): string {
   // LaunchAgents have a minimal PATH. These are the only binaries we invoke.
-  return command === 'openclaw' ? (process.env.OPENCLAW_BIN || '/opt/homebrew/bin/openclaw') :
-    (process.env.HERMES_BIN || '/Users/duckets/.local/bin/hermes');
+  return command === 'openclaw'
+    ? (process.env.OPENCLAW_BIN || process.env.OPENCLAW_AGENT_COMMAND || 'openclaw')
+    : (process.env.HERMES_BIN || 'hermes');
 }
 
 async function readSessions(): Promise<Record<string, Session>> {

@@ -24,7 +24,11 @@ function timeoutSignal(milliseconds: number): AbortSignal {
 
 function commandPath(provider: AgentCommandProviderName, configured?: string): string {
   if (configured) return configured;
-  return provider === 'openclaw' ? '/opt/homebrew/bin/openclaw' : '/Users/duckets/.local/bin/hermes';
+  // Resolve through PATH by default. Hard-coding one developer's install
+  // path caused false outages for npm/pnpm and service-manager installs.
+  return provider === 'openclaw'
+    ? process.env.OPENCLAW_BIN || process.env.OPENCLAW_AGENT_COMMAND || 'openclaw'
+    : process.env.HERMES_BIN || 'hermes';
 }
 
 function contentFromParts(parts: string[]): string {
