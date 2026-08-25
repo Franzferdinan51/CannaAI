@@ -1,10 +1,5 @@
-import { NextResponse } from 'next/server';
+import { unavailableFeature } from '@/lib/unavailable-feature';
 
-export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
-  return NextResponse.json({
-    success: true,
-    message: `Automation action received`,
-    result: { ...body, processedAt: new Date().toISOString() }
-  });
+export async function POST() {
+  return unavailableFeature('Automation actions');
 }
