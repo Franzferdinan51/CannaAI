@@ -51,7 +51,7 @@ async function runProviderAnalysis(
   text: string,
   images: string[],
   config: ModelConfig
-): Promise<{ provider: string; analysis: PlantHealthAnalysis; confidence: number }> {
+): Promise<{ provider: string; analysis: PlantHealthAnalysis; confidence: number } | null> {
   try {
     let analysis: PlantHealthAnalysis | null = null;
 
@@ -131,18 +131,9 @@ async function runProviderAnalysis(
     };
   } catch (error) {
     console.error(`Provider ${provider} failed:`, error);
-    // Return fallback analysis
-    return {
-      provider,
-      analysis: {
-        summary: `${provider} analysis failed`,
-        entities: [],
-        keyInsights: [],
-        sentiment: 'unknown',
-        flaggedIssues: []
-      },
-      confidence: 0
-    };
+    // Failed providers are excluded from consensus. A synthetic empty
+    // analysis would be indistinguishable from real model evidence.
+    return null;
   }
 }
 
@@ -291,9 +282,14 @@ export async function runConsensusMode(
   console.log(`[SWARM CONSENSUS] Running ${providers.length} providers in parallel...`);
 
   // Run all providers in parallel
-  const results = await Promise.all(
+  const providerResults = await Promise.all(
     providers.map(provider => runProviderAnalysis(provider, text, images, config))
   );
+  const results = providerResults.filter((result): result is NonNullable<typeof result> => result !== null);
+
+  if (results.length === 0) {
+    throw new Error("All providers failed in consensus mode");
+  }
 
   const finalAnalysis = mergeAnalyses(results);
   const consensusLevel = calculateConsensusLevel(results);
@@ -337,7 +333,7 @@ export async function runDistributedMode(
   for (const provider of providers) {
     try {
       const result = await runProviderAnalysis(provider, text, images, config);
-      results.push(result);
+      if (result) results.push(result);
 
       // In distributed mode, we can stop at first success if we just want speed
       // But for quality, let's use multiple if available

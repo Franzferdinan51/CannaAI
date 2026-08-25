@@ -18,6 +18,7 @@ export interface ChatMessage {
 export interface ChatResponse {
   response: string;
   provider: string;
+  available: boolean;
   references: string[];
   hasContext: boolean;
   contextDocs: number;
@@ -27,7 +28,9 @@ export interface ChatResponse {
  * Select chat provider based on config
  */
 function selectChatProvider(config: ModelConfig): string {
-  const priority = ['gemini', 'openrouter', 'lmstudio', 'lmstudio2', 'lmstudio3', 'lmstudio4'];
+  // Local LM Studio is the primary runtime. Cloud providers remain available
+  // as explicit fallbacks when configured, but should never win by default.
+  const priority = ['lmstudio', 'lmstudio2', 'lmstudio3', 'lmstudio4', 'openrouter', 'gemini'];
 
   for (const provider of priority) {
     if (provider === 'gemini' && config.enabled.gemini && config.geminiKey) {
@@ -148,6 +151,8 @@ export async function ragChat(
 
   // Step 3: Run chat
   let responseText: string;
+  let responseProvider = provider;
+  let available = true;
 
   try {
     switch (provider) {
@@ -217,12 +222,45 @@ export async function ragChat(
   } catch (error) {
     console.error(`[RAG CHAT] Provider ${provider} failed:`, error);
 
-    // Fallback to next available provider
-    if (provider !== 'gemini' && config.enabled.gemini && config.geminiKey) {
-      responseText = await cultivationRagChat(query, relevantDocs, history, 'gemini-1.5-flash', config.geminiKey);
-    } else {
-      responseText = "I apologize, but I'm having trouble accessing the knowledge base right now. Please try again.";
+    // Keep fallback order local-first and report the provider that actually
+    // answered. A failed provider must never be presented as a successful one.
+    const fallbackProviders = ['lmstudio', 'lmstudio2', 'lmstudio3', 'lmstudio4', 'openrouter', 'gemini']
+      .filter(candidate => candidate !== provider);
+
+    for (const fallbackProvider of fallbackProviders) {
+      try {
+        if (fallbackProvider === 'gemini' && config.enabled.gemini && config.geminiKey) {
+          responseText = await cultivationRagChat(query, relevantDocs, history, 'gemini-1.5-flash', config.geminiKey);
+        } else if (fallbackProvider === 'openrouter' && config.enabled.openrouter && config.openRouterKey) {
+          responseText = await openrouterRagChat(query, relevantDocs, history, config.openRouterKey, config.openRouterModel);
+        } else if (fallbackProvider === 'lmstudio' && config.enabled.lmstudio && config.lmStudioEndpoint) {
+          responseText = await localRagChat(query, relevantDocs, history, config.lmStudioEndpoint, config.lmStudioModel);
+        } else if (fallbackProvider === 'lmstudio2' && config.enabled.lmstudio2 && config.lmStudioEndpoint2) {
+          responseText = await localRagChat(query, relevantDocs, history, config.lmStudioEndpoint2, config.lmStudioModel2);
+        } else if (fallbackProvider === 'lmstudio3' && config.enabled.lmstudio3 && config.lmStudioEndpoint3) {
+          responseText = await localRagChat(query, relevantDocs, history, config.lmStudioEndpoint3, config.lmStudioModel3);
+        } else if (fallbackProvider === 'lmstudio4' && config.enabled.lmstudio4 && config.lmStudioEndpoint4) {
+          responseText = await localRagChat(query, relevantDocs, history, config.lmStudioEndpoint4, config.lmStudioModel4);
+        } else {
+          continue;
+        }
+        responseProvider = fallbackProvider;
+        return {
+          response: responseText,
+          provider: responseProvider,
+          available: true,
+          references: extractReferences(responseText, relevantDocs),
+          hasContext: relevantDocs.length > 0,
+          contextDocs: relevantDocs.length
+        };
+      } catch (fallbackError) {
+        console.error(`[RAG CHAT] Fallback provider ${fallbackProvider} failed:`, fallbackError);
+      }
     }
+
+    responseText = "I apologize, but I'm having trouble accessing the knowledge base right now. Please try again.";
+    responseProvider = 'unavailable';
+    available = false;
   }
 
   // Step 4: Extract references
@@ -230,7 +268,8 @@ export async function ragChat(
 
   return {
     response: responseText,
-    provider,
+    provider: responseProvider,
+    available,
     references,
     hasContext: relevantDocs.length > 0,
     contextDocs: relevantDocs.length

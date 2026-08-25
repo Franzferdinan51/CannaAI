@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       success: true,
       response: response.response,
       provider: response.provider,
+      available: response.available,
       references: response.references,
       hasContext: response.hasContext,
       contextDocs: response.contextDocs,

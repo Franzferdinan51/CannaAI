@@ -74,16 +74,22 @@ async function runVerification(
   const verifier = config.preferredVerifier;
 
   if (verifier === 'auto') {
-    // Auto-select: prefer Gemini for search capability, then local models
+    // Auto-select local models first. Verification must work without cloud
+    // credentials and should use the same local vision runtime as primary AI.
+    const localCandidates = [
+      ['lmstudio', config.lmStudioEndpoint, config.lmStudioModel],
+      ['lmstudio2', config.lmStudioEndpoint2, config.lmStudioModel2],
+      ['lmstudio3', config.lmStudioEndpoint3, config.lmStudioModel3],
+      ['lmstudio4', config.lmStudioEndpoint4, config.lmStudioModel4],
+    ] as const;
+    for (const [provider, endpoint, model] of localCandidates) {
+      if (config.enabled[provider] && endpoint) {
+        const analysis = await analyzeWithLMStudio(text, images, endpoint, primaryAnalysis.flaggedIssues?.[0], model);
+        if (analysis) return { analysis, provider };
+      }
+    }
     if (config.enabled.gemini && config.geminiKey) {
-      const analysis = await analyzePlantHealth(
-        text,
-        images,
-        config.geminiKey,
-        config.geminiModel,
-        primaryAnalysis.flaggedIssues?.[0], // Verify first critical issue
-        true // Use search if available
-      );
+      const analysis = await analyzePlantHealth(text, images, config.geminiKey, config.geminiModel, primaryAnalysis.flaggedIssues?.[0], true);
       return { analysis, provider: 'gemini (with search)' };
     }
   }
@@ -134,7 +140,18 @@ async function runVerification(
     }
   }
 
-  // Fallback to any available provider
+  // Fallback to any available provider, keeping local models first.
+  for (const [provider, endpoint, model] of [
+    ['lmstudio', config.lmStudioEndpoint, config.lmStudioModel],
+    ['lmstudio2', config.lmStudioEndpoint2, config.lmStudioModel2],
+    ['lmstudio3', config.lmStudioEndpoint3, config.lmStudioModel3],
+    ['lmstudio4', config.lmStudioEndpoint4, config.lmStudioModel4],
+  ] as const) {
+    if (config.enabled[provider] && endpoint) {
+      const analysis = await analyzeWithLMStudio(text, images, endpoint, primaryAnalysis.flaggedIssues?.[0], model);
+      if (analysis) return { analysis, provider: `${provider} (fallback)` };
+    }
+  }
   if (config.enabled.gemini && config.geminiKey) {
     const analysis = await analyzePlantHealth(
       text,
@@ -216,9 +233,12 @@ export async function runDualCheckPipeline(
 
   // Use specified primary provider or first available
   if (!primaryProvider) {
-    if (config.enabled.gemini && config.geminiKey) primaryProvider = 'gemini';
-    else if (config.enabled.lmstudio && config.lmStudioEndpoint) primaryProvider = 'lmstudio';
+    if (config.enabled.lmstudio && config.lmStudioEndpoint) primaryProvider = 'lmstudio';
+    else if (config.enabled.lmstudio2 && config.lmStudioEndpoint2) primaryProvider = 'lmstudio2';
+    else if (config.enabled.lmstudio3 && config.lmStudioEndpoint3) primaryProvider = 'lmstudio3';
+    else if (config.enabled.lmstudio4 && config.lmStudioEndpoint4) primaryProvider = 'lmstudio4';
     else if (config.enabled.openrouter && config.openRouterKey) primaryProvider = 'openrouter';
+    else if (config.enabled.gemini && config.geminiKey) primaryProvider = 'gemini';
     else throw new Error("No AI providers configured");
   }
 
@@ -237,13 +257,20 @@ export async function runDualCheckPipeline(
       };
       break;
     case 'lmstudio':
-      primaryAnalysis = await analyzeWithLMStudio(text, images, config.lmStudioEndpoint, undefined, config.lmStudioModel) || {
-        summary: 'Analysis failed',
-        entities: [],
-        keyInsights: [],
-        sentiment: 'unknown',
-        flaggedIssues: []
-      };
+      primaryAnalysis = await analyzeWithLMStudio(text, images, config.lmStudioEndpoint, undefined, config.lmStudioModel) ||
+        (() => { throw new Error('LM Studio primary analysis returned no result'); })();
+      break;
+    case 'lmstudio2':
+      primaryAnalysis = await analyzeWithLMStudio(text, images, config.lmStudioEndpoint2, undefined, config.lmStudioModel2) ||
+        (() => { throw new Error('LM Studio 2 primary analysis returned no result'); })();
+      break;
+    case 'lmstudio3':
+      primaryAnalysis = await analyzeWithLMStudio(text, images, config.lmStudioEndpoint3, undefined, config.lmStudioModel3) ||
+        (() => { throw new Error('LM Studio 3 primary analysis returned no result'); })();
+      break;
+    case 'lmstudio4':
+      primaryAnalysis = await analyzeWithLMStudio(text, images, config.lmStudioEndpoint4, undefined, config.lmStudioModel4) ||
+        (() => { throw new Error('LM Studio 4 primary analysis returned no result'); })();
       break;
     default:
       throw new Error(`Unknown provider: ${primaryProvider}`);
