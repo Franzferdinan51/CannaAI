@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import { sendNotification, broadcastNotification, NotificationData } from './notifications';
+import { sendNotification, NotificationData } from './notifications';
 
 // Queue item interface
 interface QueueItem {
@@ -31,17 +31,25 @@ export async function queueNotification(
 
   const queueId = `queue_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  // If scheduled, we can store it in a scheduled_notifications table
-  // For now, we'll just send it immediately if scheduledAt is in the past or not set
   if (!options.scheduledAt || options.scheduledAt <= new Date()) {
     // Send immediately
     await sendNotification(data);
     return { queueId };
-  } else {
-    // TODO: Store scheduled notification in database
-    console.log(`[QUEUE] Scheduling notification for ${options.scheduledAt.toISOString()}`);
-    return { queueId };
   }
+
+  const queuedItem = await prisma.notificationQueueItem.create({
+    data: {
+      payload: JSON.parse(JSON.stringify(data)),
+      scheduledAt: options.scheduledAt,
+      priority: options.priority || 'normal',
+      maxAttempts: options.maxAttempts || 3,
+      status: 'pending',
+    },
+    select: { id: true },
+  });
+
+  console.log(`[QUEUE] Scheduled notification ${queuedItem.id} for ${options.scheduledAt.toISOString()}`);
+  return { queueId: queuedItem.id };
 }
 
 // Bulk send notifications
@@ -112,19 +120,45 @@ export function stopQueueProcessor(): void {
 }
 
 // Process the notification queue
-async function processQueue(): Promise<void> {
+export async function processQueue(now: Date = new Date()): Promise<void> {
   try {
-    // Check for scheduled notifications that need to be sent
-    const scheduledNotifications = await prisma.notification.findMany({
+    const scheduledNotifications = await prisma.notificationQueueItem.findMany({
       where: {
-        // Add a field to track if notification is scheduled
-        // For now, we'll just process pending notifications
+        status: 'pending',
+        scheduledAt: { lte: now },
       },
+      orderBy: { scheduledAt: 'asc' },
       take: 20
     });
 
+    for (const item of scheduledNotifications) {
+      const attempt = item.attempts + 1;
+      await prisma.notificationQueueItem.update({
+        where: { id: item.id },
+        data: { status: 'processing', attempts: attempt },
+      });
+
+      try {
+        await sendNotification(item.payload as unknown as NotificationData);
+        await prisma.notificationQueueItem.update({
+          where: { id: item.id },
+          data: { status: 'completed', lastError: null },
+        });
+      } catch (error) {
+        const lastError = error instanceof Error ? error.message : 'Unknown notification delivery error';
+        await prisma.notificationQueueItem.update({
+          where: { id: item.id },
+          data: {
+            status: attempt >= item.maxAttempts ? 'failed' : 'pending',
+            lastError,
+          },
+        });
+        console.error(`[QUEUE] Failed notification ${item.id} (attempt ${attempt}):`, lastError);
+      }
+    }
+
     if (scheduledNotifications.length > 0) {
-      console.log(`[QUEUE] Processing ${scheduledNotifications.length} notifications`);
+      console.log(`[QUEUE] Processed ${scheduledNotifications.length} scheduled notifications`);
     }
   } catch (error: any) {
     if (error.code === 'P2021') {
@@ -143,22 +177,10 @@ export async function getQueueStatistics(): Promise<{
   failed: number;
 }> {
   const [pending, processing, completed, failed] = await Promise.all([
-    prisma.notification.count({
-      where: {
-        acknowledged: false
-      }
-    }),
-    0, // Currently processing count
-    prisma.notification.count({
-      where: {
-        acknowledged: true
-      }
-    }),
-    prisma.notificationDelivery.count({
-      where: {
-        status: 'failed'
-      }
-    })
+    prisma.notificationQueueItem.count({ where: { status: 'pending' } }),
+    prisma.notificationQueueItem.count({ where: { status: 'processing' } }),
+    prisma.notificationQueueItem.count({ where: { status: 'completed' } }),
+    prisma.notificationQueueItem.count({ where: { status: 'failed' } }),
   ]);
 
   return { pending, processing, completed, failed };

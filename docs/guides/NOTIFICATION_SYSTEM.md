@@ -144,6 +144,7 @@ model NotificationPreference {
    - Delivery monitoring and statistics
 
 3. **Queue Service** (`src/lib/notification-queue.ts`)
+   - Durable scheduled-notification processing via `NotificationQueueItem`
    - Asynchronous processing
    - Batching and deduplication
    - Failed delivery retry
@@ -538,7 +539,8 @@ await reportSystemFailure(
 
 ### Notification Queue Processor
 
-- Processes queued notifications
+- Persists future notifications before they are due
+- Processes due notifications and records attempts, completion, and failure state
 - Handles batching and deduplication
 - Runs every 5 seconds
 - Monitors system health

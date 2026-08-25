@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { scheduleWebhookDelivery as enqueueWebhookDelivery } from './webhooks';
 import crypto from 'crypto';
 
 // Notification types
@@ -456,20 +457,20 @@ export async function sendNotification(data: NotificationData): Promise<{
 
   // Send to other channels based on preferences
   if (data.channels.includes('email') && (preferences?.emailEnabled ?? true)) {
-    // TODO: Get actual email from user preferences (no User model yet — pass through data or use default)
-    const result = await sendEmail('user@example.com', data.title, data.message, data);
+    const recipient = typeof data.metadata?.email === 'string' ? data.metadata.email : '';
+    const result = await sendEmail(recipient, data.title, data.message, data);
     deliveries.push(result);
   }
 
   if (data.channels.includes('sms') && (preferences?.smsEnabled ?? false)) {
-    // TODO: Get actual phone number from user preferences
-    const result = await sendSMS('+1234567890', `${data.title}: ${data.message}`);
+    const phone = typeof data.metadata?.phone === 'string' ? data.metadata.phone : '';
+    const result = await sendSMS(phone, `${data.title}: ${data.message}`);
     deliveries.push(result);
   }
 
   if (data.channels.includes('push') && (preferences?.pushEnabled ?? true)) {
-    // TODO: Get actual push token from user preferences
-    const result = await sendPushNotification('push_token', data.title, data.message);
+    const token = typeof data.metadata?.pushToken === 'string' ? data.metadata.pushToken : '';
+    const result = await sendPushNotification(token, data.title, data.message);
     deliveries.push(result);
   }
 
@@ -572,8 +573,7 @@ async function scheduleWebhookDelivery(
   eventType: string,
   data: NotificationData
 ): Promise<void> {
-  // This will be implemented in the webhook service
-  console.log(`[WEBHOOK] Scheduling delivery for webhook ${webhookId}`);
+  await enqueueWebhookDelivery(webhookId, notificationId, eventType as any, data);
 }
 
 // Send notification to all users based on type
