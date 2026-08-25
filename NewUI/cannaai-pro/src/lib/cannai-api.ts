@@ -15,6 +15,7 @@ interface AnalysisRequest {
   medium?: string;
   growthStage?: string;
   plantImage?: string;
+  model?: string;
   pestDiseaseFocus?: string;
   urgency?: string;
   additionalNotes?: string;

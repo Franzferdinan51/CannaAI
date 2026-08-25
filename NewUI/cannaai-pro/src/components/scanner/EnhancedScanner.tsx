@@ -7,6 +7,7 @@ import {
   Info, AlertCircle, Plus, Minus, Save, Trash2, Download, Grid, List
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useSettingsStore } from '../settings/store';
 import toast from 'react-hot-toast';
 
 // Import modular components
@@ -35,6 +36,7 @@ import {
 } from '../../types/scanner';
 
 const EnhancedScanner: React.FC = () => {
+  const configuredLMStudioModel = useSettingsStore((state) => state.settings?.lmStudio?.model || '');
   // State management
   const [images, setImages] = useState<PlantImage[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
@@ -192,7 +194,8 @@ const EnhancedScanner: React.FC = () => {
     try {
       const analysisPayload = {
         ...formData,
-        plantImage: currentImage || undefined
+        plantImage: currentImage || undefined,
+        model: configuredLMStudioModel.trim() || undefined
       };
 
       const response = await api.analyze(analysisPayload);
