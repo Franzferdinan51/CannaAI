@@ -24,11 +24,17 @@ npm run typecheck:frontend
 npm run typecheck:local-ai
 npm run typecheck:server
 npm run typecheck:next-pages
+npm run typecheck:source
+npm run typecheck:tests
 ```
 
 `typecheck:server` covers the custom server, middleware, API routes, and
 provider/library code used by the active Next.js backend. `typecheck:next-pages`
 follows the active Next.js pages and their imported UI components.
+`typecheck:source` covers the complete maintained `src/` and custom-server
+source graph while excluding archived and separately-built UI trees.
+`typecheck:tests` validates Jest setup and test sources with the explicit Jest
+type definitions used by the test runner.
 
 ## ✅ Tests That Pass Now:
 

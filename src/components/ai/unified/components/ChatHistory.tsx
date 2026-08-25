@@ -1,4 +1,5 @@
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { History, Star, X } from 'lucide-react';
 import { ChatHistory as ChatHistoryType } from '../types/assistant';

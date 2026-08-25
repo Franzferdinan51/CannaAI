@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 import { CalendarIcon, Download, FileText, FileSpreadsheet, FileImage, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -192,7 +192,7 @@ export function ExportWizard({ onClose, onExportComplete }: ExportWizardProps) {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {dateRange.start ? format(dateRange.start, 'PPP') : 'Start date'}
+                          {dateRange.start ? formatDate(dateRange.start, 'PPP') : 'Start date'}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -215,7 +215,7 @@ export function ExportWizard({ onClose, onExportComplete }: ExportWizardProps) {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {dateRange.end ? format(dateRange.end, 'PPP') : 'End date'}
+                          {dateRange.end ? formatDate(dateRange.end, 'PPP') : 'End date'}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -270,7 +270,7 @@ export function ExportWizard({ onClose, onExportComplete }: ExportWizardProps) {
                   {dateRange.start && dateRange.end && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date Range:</span>
-                      <span>{format(dateRange.start, 'PPP')} - {format(dateRange.end, 'PPP')}</span>
+                      <span>{formatDate(dateRange.start, 'PPP')} - {formatDate(dateRange.end, 'PPP')}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
@@ -317,7 +317,7 @@ export function ExportWizard({ onClose, onExportComplete }: ExportWizardProps) {
         <div className="flex justify-between mt-2">
           <span className="text-sm text-muted-foreground">Step {step} of {totalSteps}</span>
           {exportJobId && (
-            <Badge variant="success">Export Created: {exportJobId.substring(0, 8)}...</Badge>
+            <Badge className="bg-green-600 text-white">Export Created: {exportJobId.substring(0, 8)}...</Badge>
           )}
         </div>
       </CardHeader>

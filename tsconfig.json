@@ -31,5 +31,16 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "legacy",
+    "NewUI",
+    "tests",
+    "scripts",
+    "openclaw-bridge",
+    "jest.setup.ts",
+    "logger.ts",
+    "rate-limit.middleware.ts",
+    "redis-client.ts"
+  ]
 }

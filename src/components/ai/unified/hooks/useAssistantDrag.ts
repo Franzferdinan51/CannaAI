@@ -68,6 +68,7 @@ export const useAssistantDrag = (isOpen: boolean, isMinimized: boolean) => {
         document.removeEventListener('touchcancel', handleEnd);
       };
     }
+    return undefined;
   }, [isDragging, dragStart]);
 
   return {

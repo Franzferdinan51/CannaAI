@@ -16,7 +16,7 @@ const mockCheckOpenClaw = jest.fn();
 const mockCheckBailian = jest.fn();
 const mockCheckOpenRouter = jest.fn();
 const mockCheckLMStudio = jest.fn();
-const mockDetectAvailableProviders = jest.fn();
+const mockDetectAvailableProviders = jest.fn<() => Promise<unknown>>();
 
 // Mock the provider detection module
 jest.mock('@/lib/ai-provider-detection', () => ({
@@ -77,7 +77,7 @@ describe('Vision Fallback Chain', () => {
     });
 
     // Mock successful OpenRouter response with vision
-    const mockExecuteWithOpenRouter = jest.fn().mockResolvedValue({
+    const mockExecuteWithOpenRouter = jest.fn<() => Promise<{ success: boolean; result: string; provider: string; model: string; visionUsed: boolean }>>().mockResolvedValue({
       success: true,
       result: 'Plant analysis with vision',
       provider: 'openrouter',
@@ -87,15 +87,15 @@ describe('Vision Fallback Chain', () => {
 
     // Verify vision models are configured
     expect(VISION_MODELS.length).toBeGreaterThan(0);
-    expect(VISION_MODELS.find(m => m.recommended)).toBeDefined();
-    expect(VISION_MODELS.find(m => m.recommended)?.id).toBe('qwen-vl-max');
+    expect(VISION_MODELS.find(m => (m as { recommended?: boolean }).recommended)).toBeDefined();
+    expect(VISION_MODELS.find(m => (m as { recommended?: boolean }).recommended)?.id).toBe('qwen-vl-max');
   });
 
   it('should use qwen-vl-max-latest for Bailian when image provided', async () => {
     const { executeWithBailian } = await import('@/lib/ai-provider-bailian');
 
     // Mock Bailian response
-    const mockBailianExecute = jest.fn().mockResolvedValue({
+    const mockBailianExecute = jest.fn<(options: { image: string; prompt: string }) => Promise<{ success: boolean; result: string; provider: string; model: string; visionUsed: boolean }>>().mockResolvedValue({
       success: true,
       result: 'Vision analysis from Bailian',
       provider: 'bailian',
@@ -157,7 +157,7 @@ describe('OpenRouter Provider Configuration', () => {
     const bestModel = getBestVisionModel();
     expect(bestModel).toBeDefined();
 
-    const recommendedModel = VISION_MODELS.find(m => m.recommended);
+    const recommendedModel = VISION_MODELS.find(m => (m as { recommended?: boolean }).recommended);
     expect(recommendedModel).toBeDefined();
     expect(recommendedModel?.id).toBe('qwen-vl-max');
   });

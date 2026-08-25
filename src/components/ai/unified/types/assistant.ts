@@ -11,7 +11,7 @@ export interface Message {
   isSuggestion?: boolean;
   messageType?: 'analysis' | 'recommendation' | 'alert' | 'diagnosis' | 'general' | 'proactive' | 'prediction' | 'autonomous';
   confidence?: number;
-  urgency?: 'low' | 'medium' | 'high' | 'critical';
+  urgency?: 'low' | 'medium' | 'high' | 'critical' | 'urgent';
   image?: string;
   actionPlan?: ActionPlan;
   autonomousAction?: AutonomousAction;

@@ -57,11 +57,11 @@ export function StrainGraph({ data }: { data: StrainRelationship[] }) {
 
   // Physics Loop
   useEffect(() => {
-    if (nodes.length === 0) return;
+    if (nodes.length === 0) return undefined;
 
     let animationFrameId: number;
     const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     const update = () => {
       // Physics (Skip if paused)

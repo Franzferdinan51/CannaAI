@@ -511,7 +511,7 @@ export default function UnifiedAIAssistant({
 
   // Page snapshot and event tracking
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
 
     const updateSnapshot = (extrasBuilder?: (prev: PageSnapshot) => Partial<PageSnapshot>) => {
       setPageSnapshot(prev => {
@@ -555,7 +555,7 @@ export default function UnifiedAIAssistant({
 
   // Autonomous monitoring and analysis
   useEffect(() => {
-    if (!agenticEnabled || !isOpen) return;
+    if (!agenticEnabled || !isOpen) return undefined;
 
     const interval = setInterval(() => {
       performAutonomousAnalysis();
@@ -959,6 +959,7 @@ export default function UnifiedAIAssistant({
         document.removeEventListener('touchcancel', handleEnd);
       };
     }
+    return undefined;
   }, [isDragging, dragStart]);
 
   // Send message to AI
@@ -1528,7 +1529,7 @@ export default function UnifiedAIAssistant({
   };
 
   const runAutonomousAnalysis = async () => {
-    if (!agenticEnabled) return;
+    if (!agenticEnabled) return undefined;
 
     const currentTime = new Date();
 
@@ -1585,7 +1586,7 @@ export default function UnifiedAIAssistant({
         content: `📋 Created automated action plan: ${actionPlan.title}`,
         timestamp: new Date(),
         messageType: 'autonomous',
-        urgency: actionPlan.priority,
+        urgency: actionPlan.priority === 'urgent' ? 'critical' : actionPlan.priority,
         actionPlan
       };
 
@@ -1641,7 +1642,7 @@ export default function UnifiedAIAssistant({
 
   // Run autonomous analysis periodically
   useEffect(() => {
-    if (!agenticEnabled) return;
+    if (!agenticEnabled) return undefined;
 
     const interval = setInterval(() => {
       runAutonomousAnalysis();

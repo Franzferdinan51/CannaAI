@@ -480,7 +480,14 @@ export async function convertImageFormat(
 /**
  * Get image statistics for analysis
  */
-export function getImageStatistics(processedResult: ProcessedImageResult) {
+export function getImageStatistics(
+  processedResult: {
+    metadata: Pick<ImageMetadata, 'format' | 'width' | 'height' | 'hasAlpha' | 'colorSpace' | 'channels'>;
+    originalSize: number;
+    compressedSize: number;
+    compressionRatio: number;
+  }
+) {
   const { metadata, originalSize, compressedSize, compressionRatio } = processedResult;
 
   return {

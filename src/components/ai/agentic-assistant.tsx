@@ -188,6 +188,7 @@ export default function AgenticAIAssistant({
         document.removeEventListener('touchcancel', handleEnd);
       };
     }
+    return undefined;
   }, [isDragging, dragStart]);
 
   // Send message to AI

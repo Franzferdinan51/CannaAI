@@ -61,10 +61,10 @@ import {
 import {
   useAssistantState,
   useAssistantDrag
-} from './ai/unified/hooks';
-import { PlantContextCard } from './ai/unified/components';
-import { allModes } from './ai/unified/constants/modes';
-import { quickActions } from './ai/unified/constants/quick-actions';
+} from './unified/hooks';
+import { PlantContextCard } from './unified/components';
+import { allModes } from './unified/constants/modes';
+import { quickActions } from './unified/constants/quick-actions';
 import {
   Message,
   ChatMode,
@@ -79,7 +79,7 @@ import {
   MultiQuiz,
   PatternAnalysis,
   UnifiedAIAssistantProps
-} from './ai/unified/types/assistant';
+} from './unified/types/assistant';
 
 // ========================================
 // MAIN COMPONENT
@@ -114,6 +114,7 @@ export default function UnifiedAIAssistant({
 
   // Chat mode state
   const [chatMode, setChatMode] = useState<ChatMode>('chat');
+  const [isLoading, setIsLoading] = useState(false);
   const [showModeSelector, setShowModeSelector] = useState(false);
 
   // Plant context state

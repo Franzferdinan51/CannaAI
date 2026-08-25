@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { Message, ChatMode, PageContext, PageSnapshot, PlantContext, AgenticContext, EnvironmentalData, AgenticTrigger } from '../types/assistant';
 
 export const useAssistantChat = (
@@ -9,7 +10,8 @@ export const useAssistantChat = (
   autonomousActions: any[],
   agenticTriggers: AgenticTrigger[],
   agenticEnabled: boolean,
-  chatMode: ChatMode
+  chatMode: ChatMode,
+  setMessages: Dispatch<SetStateAction<Message[]>>
 ) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,11 +24,12 @@ export const useAssistantChat = (
       e.preventDefault();
       sendMessage();
     }
+    return undefined;
   }, [input, isLoading]);
 
   // Send message to AI
   const sendMessage = useCallback(async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading) return undefined;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -36,12 +39,6 @@ export const useAssistantChat = (
     };
 
     let latestMessages: Message[] = [];
-
-    // This will be set by the parent component
-    const setMessages = (callback: (prev: Message[]) => Message[]) => {
-      const result = callback([]); // Placeholder - will be replaced by parent
-      return result;
-    };
 
     setMessages(prev => {
       const next = [...prev, userMessage];

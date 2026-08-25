@@ -143,6 +143,8 @@ npm run typecheck:frontend
 npm run typecheck:local-ai
 npm run typecheck:server
 npm run typecheck:next-pages
+npm run typecheck:source
+npm run typecheck:tests
 npm run build
 npm test -- --runInBand
 ```

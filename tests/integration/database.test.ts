@@ -91,7 +91,7 @@ describe('Database Operations', () => {
 
       expect(updatedPlant.stage).toBe('harvest');
       expect(updatedPlant.notes).toBe('Ready for harvest');
-      expect(updatedPlant.health?.score).toBe(95);
+      expect((updatedPlant.health as { score?: number } | null)?.score).toBe(95);
     });
 
     test('should delete a plant', async () => {
@@ -279,7 +279,7 @@ describe('Database Operations', () => {
       expect(analysis.id).toBeDefined();
       expect(analysis.plantId).toBe(plant.id);
       expect(analysis.provider).toBe('openrouter');
-      expect(analysis.result.diagnosis).toBe('Nitrogen deficiency');
+      expect((analysis.result as { diagnosis?: string }).diagnosis).toBe('Nitrogen deficiency');
     });
 
     test('should retrieve analyses by plant ID', async () => {
@@ -305,7 +305,7 @@ describe('Database Operations', () => {
       });
 
       expect(analyses).toHaveLength(3);
-      expect(analyses[0].result.diagnosis).toBe('Diagnosis 1');
+      expect((analyses[0].result as { diagnosis?: string }).diagnosis).toBe('Diagnosis 1');
     });
 
     test('should query analyses by provider', async () => {

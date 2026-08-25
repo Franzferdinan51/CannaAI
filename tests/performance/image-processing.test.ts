@@ -180,7 +180,9 @@ test.describe('Image Processing Performance', () => {
   });
 
   test('should prevent memory leaks with image uploads', async ({ page }) => {
-    const initialMemory = await page.evaluate(() => performance.memory?.usedJSHeapSize || 0);
+    const initialMemory = await page.evaluate(() =>
+      (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0
+    );
 
     // Upload and process many images
     for (let i = 0; i < 10; i++) {
@@ -203,7 +205,9 @@ test.describe('Image Processing Performance', () => {
       }
     });
 
-    const finalMemory = await page.evaluate(() => performance.memory?.usedJSHeapSize || 0);
+    const finalMemory = await page.evaluate(() =>
+      (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0
+    );
     const memoryIncrease = finalMemory - initialMemory;
 
     // Memory increase should be reasonable (< 100MB)
@@ -269,7 +273,7 @@ test.describe('Image Processing Performance', () => {
     await page.click('[data-testid="analyze-tab"]');
 
     const largeImagePath = 'tests/fixtures/large-image.jpg';
-    await page.setInputFiles('input[type="file"][name="plantImage"]', imagePath);
+    await page.setInputFiles('input[type="file"][name="plantImage"]', largeImagePath);
 
     await expect(page.locator('[data-testid="image-preview"]')).toBeVisible();
 
@@ -288,7 +292,7 @@ test.describe('Image Processing Performance', () => {
     await page.click('[data-testid="analyze-tab"]');
 
     const testImagePath = 'tests/fixtures/high-quality-image.jpg';
-    await page.setInputFiles('input[type="file"][name="plantImage"]', imagePath);
+    await page.setInputFiles('input[type="file"][name="plantImage"]', testImagePath);
 
     await expect(page.locator('[data-testid="image-preview"]')).toBeVisible();
 
