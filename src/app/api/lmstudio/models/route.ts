@@ -459,70 +459,14 @@ export async function GET(request: NextRequest) {
                      !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
     if (isNetlify) {
-      console.log('Running on serverless platform - returning demo data');
+      console.log('Running on serverless platform - LM Studio is unavailable');
       return NextResponse.json({
-        status: 'demo',
-        message: 'LM Studio access is not available on serverless platforms. This is demo data.',
+        status: 'unavailable',
+        message: 'LM Studio access is not available on serverless platforms.',
         lmStudioRunning: false,
         isServerless: true,
-        models: [
-          {
-            id: 'demo_llava_vision',
-            name: 'LLaVA Vision (Demo)',
-            filename: 'llava-v1.5-7b-q4_demo.gguf',
-            author: 'Demo',
-            filepath: '/demo/path/llava-v1.5-7b-q4_demo.gguf',
-            relativePath: 'demo/path/llava-v1.5-7b-q4_demo.gguf',
-            fullPath: 'demo / path',
-            size: 4100000000,
-            sizeFormatted: '4.1 GB',
-            sizeGB: 4.1,
-            sizeMB: 4100.0,
-            modified: new Date().toISOString(),
-            provider: 'lmstudio-demo',
-            type: 'gguf',
-            capabilities: ['text-generation', 'vision', 'image-analysis', 'plant-analysis'],
-            quantization: 'Q4_K_M',
-            contextLength: 4096,
-            metadata: {
-              source: 'Demo Data - Serverless Platform',
-              platform: 'serverless',
-              version: '1.0.0',
-              note: 'This is demo data. Real LM Studio models require local deployment.'
-            }
-          },
-          {
-            id: 'demo_cannabis_expert',
-            name: 'Cannabis Expert (Demo)',
-            filename: 'cannabis-expert-13b-q5_demo.gguf',
-            author: 'Demo',
-            filepath: '/demo/path/cannabis-expert-13b-q5_demo.gguf',
-            relativePath: 'demo/path/cannabis-expert-13b-q5_demo.gguf',
-            fullPath: 'demo / path',
-            size: 8500000000,
-            sizeFormatted: '8.5 GB',
-            sizeGB: 8.5,
-            sizeMB: 8500.0,
-            modified: new Date().toISOString(),
-            provider: 'lmstudio-demo',
-            type: 'gguf',
-            capabilities: ['text-generation', 'plant-analysis', 'classification', 'analysis'],
-            quantization: 'Q5_K_M',
-            contextLength: 8192,
-            metadata: {
-              source: 'Demo Data - Serverless Platform',
-              platform: 'serverless',
-              version: '1.0.0',
-              note: 'This is demo data. Real LM Studio models require local deployment.'
-            }
-          }
-        ],
-        summary: {
-          total: 2,
-          vision: 1,
-          textOnly: 1,
-          plantAnalysis: 2
-        },
+        models: [],
+        summary: { total: 0, vision: 0, textOnly: 0, plantAnalysis: 0 },
         timestamp: new Date().toISOString(),
         deploymentInfo: {
           platform: 'Serverless (Netlify/Vercel)',
@@ -538,7 +482,7 @@ export async function GET(request: NextRequest) {
             'Self-hosted server with full access'
           ]
         }
-      });
+      }, { status: 503 });
     }
 
     console.log('Platform:', process.platform);
