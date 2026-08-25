@@ -43,6 +43,11 @@ jest.mock('next/server', () => {
         status: 200,
         statusText: 'OK',
       })),
+      json: jest.fn(() => ({
+        headers: new MockHeaders(),
+        status: 403,
+        statusText: 'Forbidden',
+      })),
     },
     NextRequest: class {},
   };
