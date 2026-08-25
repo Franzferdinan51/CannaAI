@@ -52,7 +52,9 @@ const createDefaultSettings = (): Settings => ({
   lmStudio: {
     url: 'http://localhost:1234',
     apiKey: '',
-    model: 'llama-3-8b-instruct',
+    // Blank means discover the currently available LM Studio chat model.
+    // A configured value is treated as an explicit model override.
+    model: '',
     connected: false,
   },
   openRouter: {
