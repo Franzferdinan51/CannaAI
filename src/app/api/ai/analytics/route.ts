@@ -18,7 +18,13 @@ export async function GET(request: NextRequest) {
 
     // Calculate performance metrics
     const totalRequests = providerStatus.reduce((sum, p) => sum + p.metrics.totalRequests, 0);
-    const averageLatency = providerStatus.reduce((sum, p) => sum + p.metrics.averageLatency, 0) / providerStatus.length;
+    const totalSuccessfulRequests = providerStatus.reduce(
+      (sum, p) => sum + p.metrics.totalRequests * (p.metrics.successRate / 100),
+      0,
+    );
+    const averageLatency = totalRequests > 0
+      ? providerStatus.reduce((sum, p) => sum + p.metrics.averageLatency * p.metrics.totalRequests, 0) / totalRequests
+      : 0;
     const totalCost = costSummary.total;
 
     // Performance recommendations
@@ -28,7 +34,9 @@ export async function GET(request: NextRequest) {
         requestsPerProvider: providerStatus.map(p => ({
           provider: p.name,
           requests: p.metrics.totalRequests,
-          percentage: ((p.metrics.totalRequests / totalRequests) * 100).toFixed(1) + '%'
+          percentage: totalRequests > 0
+            ? `${((p.metrics.totalRequests / totalRequests) * 100).toFixed(1)}%`
+            : '0.0%'
         }))
       },
       latency: {
@@ -40,8 +48,12 @@ export async function GET(request: NextRequest) {
         }))
       },
       reliability: {
-        overallSuccessRate: '98.5%', // Calculated
-        errorRate: providerStatus.reduce((sum, p) => sum + p.health.errorRate, 0) / providerStatus.length,
+        overallSuccessRate: totalRequests > 0
+          ? `${((totalSuccessfulRequests / totalRequests) * 100).toFixed(1)}%`
+          : '0.0%',
+        errorRate: totalRequests > 0
+          ? providerStatus.reduce((sum, p) => sum + p.metrics.errorCount, 0) / totalRequests * 100
+          : 0,
         byProvider: providerStatus.map(p => ({
           provider: p.name,
           successRate: p.health.successRate,
@@ -69,10 +81,11 @@ export async function GET(request: NextRequest) {
 
     // Usage patterns
     const usagePatterns = {
-      peakHours: ['10:00-12:00', '14:00-16:00'], // Simulated
+      // Request timestamps are not retained by the provider metrics layer.
+      peakHours: [],
       mostUsedProvider: providerStatus.sort((a, b) => b.metrics.totalRequests - a.metrics.totalRequests)[0]?.name || 'N/A',
-      averageRequestSize: '1.2KB', // Simulated
-      streamingUsage: '35%' // Simulated
+      averageRequestSize: 'unavailable',
+      streamingUsage: 'unavailable'
     };
 
     // Recommendations
