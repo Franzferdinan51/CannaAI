@@ -63,13 +63,13 @@ const PlantSearch: React.FC<PlantSearchProps> = ({
 
   const hasActiveFilters = Object.keys(filter).some(key => {
     const value = filter[key as keyof PlantFilter];
-    return value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true);
+    return key !== 'includeArchived' && value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true);
   });
 
   const getFilterCount = () => {
     return Object.keys(filter).filter(key => {
       const value = filter[key as keyof PlantFilter];
-      return value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true);
+      return key !== 'includeArchived' && value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true);
     }).length;
   };
 

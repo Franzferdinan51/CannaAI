@@ -319,6 +319,7 @@ export interface PlantFilter {
   ageRange?: { min: number; max: number };
   healthRange?: { min: number; max: number };
   isActive?: boolean;
+  includeArchived?: boolean;
   hasImages?: boolean;
   hasIssues?: boolean;
   sortBy?: PlantSortField;

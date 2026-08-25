@@ -103,7 +103,7 @@ const Plants: React.FC = () => {
 
     try {
       const [plantsResponse, strainsResponse, inventoryResponse] = await Promise.all([
-        plantsAPI.getPlants(),
+        plantsAPI.getPlants({ isActive: showArchivedPlants ? undefined : true, includeArchived: showArchivedPlants }),
         plantsAPI.getStrains(),
         plantsAPI.getPlantInventory()
       ]);
@@ -123,7 +123,7 @@ const Plants: React.FC = () => {
         error: error instanceof Error ? error.message : 'Failed to load data'
       }));
     }
-  }, []);
+  }, [showArchivedPlants]);
 
   useEffect(() => {
     loadInitialData();
@@ -211,7 +211,7 @@ const Plants: React.FC = () => {
   };
 
   const handleSearch = async (query: string) => {
-    const newFilter = { ...state.filter, search: query };
+    const newFilter = { ...state.filter, search: query, includeArchived: showArchivedPlants };
     setState(prev => ({ ...prev, filter: newFilter, isLoading: true }));
 
     try {
