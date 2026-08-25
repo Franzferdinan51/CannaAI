@@ -454,72 +454,122 @@ function createStructuredTrichomeResponse(textResponse: string, provider: string
 function enhanceTrichomeAnalysis(analysisResult: any, deviceInfo: any, options: any): any {
   const enhanced = { ...analysisResult };
 
+  const unknownMaturity = {
+    stage: 'unknown',
+    percentage: null,
+    confidence: 0,
+    recommendation: 'Not available; the model did not provide structured maturity data.'
+  };
+  const unknownDistribution = {
+    clear: null,
+    cloudy: null,
+    amber: null,
+    density: 'unknown'
+  };
+  const unknownReadiness = {
+    ready: null,
+    recommendation: 'Not available; the model did not provide harvest-readiness data.',
+    estimatedHarvestTime: 'Unknown',
+    peakDays: null
+  };
+  const unknownMetrics = {
+    trichomeDensity: null,
+    averageTrichomeLength: null,
+    pistilHealth: null
+  };
+  const unknownStrain = {
+    morphology: 'Unknown',
+    trichomeProfile: 'Unknown',
+    growthPattern: 'Unknown'
+  };
+  const unknownTechnical = {
+    imageQuality: 'unknown',
+    magnificationLevel: 'Unknown',
+    focusQuality: 'unknown',
+    lightingCondition: 'unknown'
+  };
+
   // Ensure required fields exist
   if (!enhanced.overallMaturity) {
+    enhanced.overallMaturity = unknownMaturity;
+  } else {
     enhanced.overallMaturity = {
-      stage: 'unknown',
-      percentage: null,
-      confidence: 0,
-      recommendation: 'Not available; the model did not provide structured maturity data.'
+      ...unknownMaturity,
+      ...enhanced.overallMaturity,
+      stage: enhanced.overallMaturity.stage || 'unknown',
+      confidence: Number.isFinite(Number(enhanced.overallMaturity.confidence))
+        ? Number(enhanced.overallMaturity.confidence)
+        : 0
     };
   }
 
   if (!enhanced.trichomeDistribution) {
+    enhanced.trichomeDistribution = unknownDistribution;
+  } else {
     enhanced.trichomeDistribution = {
-      clear: null,
-      cloudy: null,
-      amber: null,
-      density: 'unknown'
+      ...unknownDistribution,
+      ...enhanced.trichomeDistribution,
+      density: enhanced.trichomeDistribution.density || 'unknown'
     };
   }
 
   if (!enhanced.harvestReadiness) {
+    enhanced.harvestReadiness = unknownReadiness;
+  } else {
     enhanced.harvestReadiness = {
-      ready: null,
-      recommendation: 'Not available; the model did not provide harvest-readiness data.',
-      estimatedHarvestTime: 'Unknown',
-      peakDays: null
+      ...unknownReadiness,
+      ...enhanced.harvestReadiness,
+      ready: typeof enhanced.harvestReadiness.ready === 'boolean'
+        ? enhanced.harvestReadiness.ready
+        : null,
+      estimatedHarvestTime: enhanced.harvestReadiness.estimatedHarvestTime || 'Unknown'
     };
   }
 
-  if (!enhanced.detailedFindings) {
-    enhanced.detailedFindings = [];
-  }
+  enhanced.detailedFindings = Array.isArray(enhanced.detailedFindings)
+    ? enhanced.detailedFindings.filter((finding: any) => finding && typeof finding === 'object').map((finding: any) => ({
+      type: finding.type || 'unknown',
+      description: finding.description || 'No structured finding description was provided.',
+      severity: finding.severity || 'unknown',
+      confidence: Number.isFinite(Number(finding.confidence)) ? Number(finding.confidence) : 0,
+      location: finding.location || 'Unknown'
+    }))
+    : [];
 
   if (!enhanced.metrics) {
-    enhanced.metrics = {
-      trichomeDensity: 100,
-      averageTrichomeLength: 150,
-      pistilHealth: 80
-    };
+    enhanced.metrics = unknownMetrics;
+  } else {
+    enhanced.metrics = { ...unknownMetrics, ...enhanced.metrics };
   }
 
   if (!enhanced.strainCharacteristics) {
-    enhanced.strainCharacteristics = {
-      morphology: 'Unknown',
-      trichomeProfile: 'Unknown',
-      growthPattern: 'Unknown'
-    };
+    enhanced.strainCharacteristics = unknownStrain;
+  } else {
+    enhanced.strainCharacteristics = { ...unknownStrain, ...enhanced.strainCharacteristics };
   }
 
   if (!enhanced.technicalAnalysis) {
-    enhanced.technicalAnalysis = {
-      imageQuality: 'unknown',
-      magnificationLevel: 'Unknown',
-      focusQuality: 'unknown',
-      lightingCondition: 'unknown'
-    };
+    enhanced.technicalAnalysis = unknownTechnical;
+  } else {
+    enhanced.technicalAnalysis = { ...unknownTechnical, ...enhanced.technicalAnalysis };
   }
 
-  if (!enhanced.recommendations) {
+  if (!Array.isArray(enhanced.recommendations) || enhanced.recommendations.length === 0) {
     enhanced.recommendations = ['Review the preserved provider response manually.'];
   }
 
   // Validate trichome distribution adds to 100%
-  const total = Number(enhanced.trichomeDistribution.clear)
-    + Number(enhanced.trichomeDistribution.cloudy)
-    + Number(enhanced.trichomeDistribution.amber);
-  if (Number.isFinite(total) && total > 0 && Math.abs(total - 100) > 5) {
+  const rawDistributionValues = [
+    enhanced.trichomeDistribution.clear,
+    enhanced.trichomeDistribution.cloudy,
+    enhanced.trichomeDistribution.amber
+  ];
+  const hasCompleteDistribution = rawDistributionValues.every(
+    (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))
+  );
+  const distributionValues = rawDistributionValues.map(Number);
+  const total = distributionValues.reduce((sum, value) => sum + value, 0);
+  if (hasCompleteDistribution && total > 0 && Math.abs(total - 100) > 5) {
     // Normalize percentages
     enhanced.trichomeDistribution.clear = (enhanced.trichomeDistribution.clear / total) * 100;
     enhanced.trichomeDistribution.cloudy = (enhanced.trichomeDistribution.cloudy / total) * 100;

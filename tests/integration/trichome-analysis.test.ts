@@ -442,6 +442,48 @@ describe('/api/trichome-analysis Integration Tests', () => {
       );
     });
 
+    test('should preserve uncertainty when the model returns sparse nested objects', async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [{
+            message: {
+              content: JSON.stringify({
+                overallMaturity: { stage: 'cloudy' },
+                trichomeDistribution: { cloudy: 70 },
+                harvestReadiness: { recommendation: 'Needs another look' },
+                metrics: { trichomeDensity: 42 },
+                detailedFindings: [{ type: 'trichome' }]
+              })
+            }
+          }]
+        })
+      });
+
+      const request = createMockRequest('POST', '/api/trichome-analysis', {
+        imageData: createValidImageDataUrl('jpeg', 1024, 768),
+        deviceInfo: {
+          deviceId: 'microscope-sparse',
+          deviceType: 'USB Microscope',
+          mode: 'microscope',
+          resolution: { width: 1024, height: 768 },
+          magnification: 100
+        }
+      });
+
+      const response = await handler(request);
+      const data = await response.json();
+      const analysis = data.analysis.trichomeAnalysis;
+
+      expect(response.status).toBe(200);
+      expect(analysis.overallMaturity.confidence).toBe(0);
+      expect(analysis.trichomeDistribution.clear).toBeNull();
+      expect(analysis.harvestReadiness.ready).toBeNull();
+      expect(analysis.metrics.averageTrichomeLength).toBeNull();
+      expect(analysis.detailedFindings[0].confidence).toBe(0);
+      expect(analysis.strainCharacteristics.morphology).toBe('Unknown');
+    });
+
     test('should include recommendations based on analysis', async () => {
       // Mock AI provider response
       (fetch as jest.Mock).mockResolvedValueOnce({
