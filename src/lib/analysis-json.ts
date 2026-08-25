@@ -384,15 +384,19 @@ function generateUrgencyReasons(urgency: string, data: any): string[] {
 }
 
 function generateHealthScoreBreakdown(healthScore: number): any {
-  const base = healthScore || 75;
-  const varScore = (s: number) => Math.max(0, Math.min(100, s + Math.floor(Math.random() * 10) - 5));
+  const base = Number.isFinite(healthScore) ? Math.max(0, Math.min(100, healthScore)) : 0;
+  const score = (offset: number) => Math.max(0, Math.min(100, base + offset));
+  const entry = (value: number, category: string) => ({
+    score: value,
+    rationale: getRationaleForScore(value, category),
+  });
   return {
-    vigor: { score: varScore(base), rationale: getRationaleForScore(varScore(base), 'vigor') },
-    leafCondition: { score: varScore(base - 5), rationale: getRationaleForScore(varScore(base - 5), 'leafCondition') },
-    pestFree: { score: varScore(base + 5), rationale: getRationaleForScore(varScore(base + 5), 'pestFree') },
-    environmentOptimal: { score: varScore(base), rationale: getRationaleForScore(varScore(base), 'environmentOptimal') },
-    growthStageAppropriate: { score: varScore(base + 5), rationale: getRationaleForScore(varScore(base + 5), 'growthStageAppropriate') },
-    rootHealth: { score: varScore(base), rationale: getRationaleForScore(varScore(base), 'rootHealth') }
+    vigor: entry(score(0), 'vigor'),
+    leafCondition: entry(score(-5), 'leafCondition'),
+    pestFree: entry(score(5), 'pestFree'),
+    environmentOptimal: entry(score(0), 'environmentOptimal'),
+    growthStageAppropriate: entry(score(5), 'growthStageAppropriate'),
+    rootHealth: entry(score(0), 'rootHealth')
   };
 }
 
