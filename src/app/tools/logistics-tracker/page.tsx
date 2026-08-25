@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,61 +34,44 @@ interface SupplyItem {
 }
 
 export default function LogisticsTracker() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [nutrients, setNutrients] = useState<NutrientItem[]>([]);
+  const [seeds, setSeeds] = useState<SeedItem[]>([]);
+  const [supplies, setSupplies] = useState<SupplyItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample data
-  const [nutrients] = useState<NutrientItem[]>([
-    {
-      id: '1',
-      name: 'Advanced Nutrients Cal-Mag',
-      brand: 'Advanced Nutrients',
-      currentStock: 25.5,
-      minStock: 15,
-      unit: 'L'
-    },
-    {
-      id: '2',
-      name: 'General Hydroponics FloraMicro',
-      brand: 'General Hydroponics',
-      currentStock: 8.3,
-      minStock: 10,
-      unit: 'L'
-    }
-  ]);
+  useEffect(() => {
+    let cancelled = false;
 
-  const [seeds] = useState<SeedItem[]>([
-    {
-      id: '1',
-      name: 'Blue Dream',
-      strain: 'Blue Dream',
-      quantity: 50,
-      supplier: 'Premium Seeds'
-    },
-    {
-      id: '2',
-      name: 'Girl Scout Cookies',
-      strain: 'GSC',
-      quantity: 25,
-      supplier: 'Elite Genetics'
-    }
-  ]);
+    const loadInventory = async () => {
+      try {
+        const response = await fetch('/api/inventory');
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success !== true) {
+          throw new Error(payload.error || 'Inventory storage is unavailable');
+        }
 
-  const [supplies] = useState<SupplyItem[]>([
-    {
-      id: '1',
-      name: '5 Gallon Fabric Pots',
-      category: 'Containers',
-      currentStock: 45,
-      minStock: 20
-    },
-    {
-      id: '2',
-      name: 'LED Grow Lights',
-      category: 'Equipment',
-      currentStock: 2,
-      minStock: 4
-    }
-  ]);
+        const inventory = payload.data?.inventory || payload.data || {};
+        if (!cancelled) {
+          setNutrients(Array.isArray(inventory.nutrients) ? inventory.nutrients : []);
+          setSeeds(Array.isArray(inventory.seeds) ? inventory.seeds : []);
+          setSupplies(Array.isArray(inventory.supplies) ? inventory.supplies : []);
+          setError(null);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : 'Inventory storage is unavailable');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void loadInventory();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const totalItems = nutrients.length + seeds.length + supplies.length;
   const lowStockItems = [
@@ -117,6 +100,21 @@ export default function LogisticsTracker() {
               </Button>
             </Link>
           </div>
+
+          {loading && (
+            <Card className="mb-6 bg-slate-800/50 border-slate-600">
+              <CardContent className="p-4 text-slate-300">Loading inventory…</CardContent>
+            </Card>
+          )}
+
+          {error && !loading && (
+            <Card className="mb-6 bg-yellow-950/30 border-yellow-700">
+              <CardContent className="p-4">
+                <p className="font-medium text-yellow-300">Inventory data unavailable</p>
+                <p className="mt-1 text-sm text-yellow-100/80">{error}. No sample inventory is shown.</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
