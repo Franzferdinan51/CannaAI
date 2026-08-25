@@ -57,7 +57,7 @@
     "test:explainability": "node --import tsx scripts/run-explainability-lane.ts",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
-    "test:server": "NODE_ENV=test next dev -p 3000",
+    "test:server": "NODE_ENV=test next dev --webpack -p 3000",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:visual && npm run test:performance && npm run test:security",
     "setup": "npm install && cd NewUI/cannaai-pro && npm install",
     "setup:backend": "npm install && npm run db:generate",

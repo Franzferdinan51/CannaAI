@@ -135,7 +135,7 @@ jobs:
         run: npm run build
 
       - name: Run performance tests
-        run: npm test -- --testPathPattern=performance
+        run: npm run test:performance
 
       - name: Upload performance results
         uses: actions/upload-artifact@v4
