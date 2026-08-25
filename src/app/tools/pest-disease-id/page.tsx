@@ -264,23 +264,62 @@ export default function PestDiseaseIdentifier() {
   };
 
   // Analyze uploaded image
-  const analyzeImage = (imageData: string) => {
+  const analyzeImage = async (imageData: string) => {
     setIsAnalyzing(true);
     setAnalysisResult('Analyzing image for pest and disease indicators...');
 
-    // Simulate AI analysis
-    setTimeout(() => {
-      const findings = [
-        'Possible nutrient deficiency detected - Yellowing between veins suggests magnesium deficiency',
-        'Potential early signs of powdery mildew - White patches detected on leaf surfaces',
-        'Spider mite activity suspected - Small speckling pattern observed',
-        'Healthy plant tissue - No significant issues detected',
-        'Environmental stress indicators - Leaf curling suggests heat or water stress'
-      ];
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plantImage: imageData,
+          strain: 'Unknown',
+          leafSymptoms: 'Identify visible pests, diseases, nutrient deficiencies, and environmental stress indicators.',
+          growthStage: 'unspecified',
+          medium: 'unspecified',
+          additionalNotes: 'This is a pest and disease identification request. Distinguish observed evidence from uncertainty and do not invent findings.',
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        const message = typeof data.error === 'string'
+          ? data.error
+          : data.error?.message || data.details || `Analysis failed (${response.status})`;
+        throw new Error(message);
+      }
 
-      setAnalysisResult(findings[Math.floor(Math.random() * findings.length)]);
+      const analysis = data.analysis || {};
+      const issues = Array.isArray(analysis.detectedIssues)
+        ? analysis.detectedIssues
+        : Array.isArray(analysis.identifiedIssues)
+          ? analysis.identifiedIssues
+          : [];
+      const issueText = issues
+        .map((issue: any) => typeof issue === 'string' ? issue : issue.name || issue.issue || issue.description)
+        .filter(Boolean)
+        .join('; ');
+      const recommendationValue = analysis.recommendations;
+      const recommendationText = Array.isArray(recommendationValue)
+        ? recommendationValue.join('; ')
+        : recommendationValue && typeof recommendationValue === 'object'
+          ? [recommendationValue.immediate, recommendationValue.shortTerm, recommendationValue.longTerm]
+            .flatMap((value: unknown) => Array.isArray(value) ? value : value ? [value] : [])
+            .join('; ')
+          : typeof recommendationValue === 'string' ? recommendationValue : '';
+
+      const parts = [
+        analysis.diagnosis || analysis.summary,
+        issueText ? `Observed concerns: ${issueText}` : '',
+        recommendationText ? `Recommendations: ${recommendationText}` : '',
+        analysis.confidence !== undefined ? `Confidence: ${analysis.confidence}%` : '',
+      ].filter(Boolean);
+      setAnalysisResult(parts.join('\n\n') || 'The AI provider returned no usable analysis. Please retry with a clearer image.');
+    } catch (error) {
+      setAnalysisResult(`Analysis unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
       setIsAnalyzing(false);
-    }, 2000);
+    }
   };
 
   // Add new treatment record
