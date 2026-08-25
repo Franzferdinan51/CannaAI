@@ -89,11 +89,13 @@ interface PlantGrowthAnalyticsProps {
   timeRange?: { start: Date; end: Date };
 }
 
+const EMPTY_FILTER_IDS: string[] = [];
+
 export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
   className = '',
-  plantIds = [],
-  strainIds = [],
-  roomIds = [],
+  plantIds = EMPTY_FILTER_IDS,
+  strainIds = EMPTY_FILTER_IDS,
+  roomIds = EMPTY_FILTER_IDS,
   timeRange
 }) => {
   // State management
@@ -256,6 +258,17 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
     return { color: 'text-red-400', bg: 'bg-red-400/10', label: 'Poor' };
   };
 
+  const averageMetric = (getValue: (plant: PlantGrowthAnalyticsData) => number) => {
+    if (filteredPlants.length === 0) return null;
+    return filteredPlants.reduce((sum, plant) => sum + getValue(plant), 0) / filteredPlants.length;
+  };
+
+  const averageHealthScore = averageMetric((plant) => plant.healthScore);
+  const averageGrowthRate = averageMetric((plant) => plant.growthRate);
+  const predictedYield = filteredPlants.length === 0
+    ? null
+    : filteredPlants.reduce((sum, plant) => sum + plant.yieldPrediction.estimated, 0);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -360,9 +373,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
               <Heart className="w-6 h-6 text-blue-400" />
             </div>
             <span className="text-2xl font-bold text-white">
-              {numberUtils.formatNumber(
-                filteredPlants.reduce((sum, plant) => sum + plant.healthScore, 0) / filteredPlants.length, 1
-              )}
+              {averageHealthScore === null ? '—' : numberUtils.formatNumber(averageHealthScore, 1)}
             </span>
           </div>
           <p className="text-sm text-gray-400">Avg Health Score</p>
@@ -374,9 +385,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
               <TrendingUp className="w-6 h-6 text-purple-400" />
             </div>
             <span className="text-2xl font-bold text-white">
-              {numberUtils.formatNumber(
-                filteredPlants.reduce((sum, plant) => sum + plant.growthRate, 0) / filteredPlants.length, 1
-              )}
+              {averageGrowthRate === null ? '—' : numberUtils.formatNumber(averageGrowthRate, 1)}
             </span>
           </div>
           <p className="text-sm text-gray-400">Avg Growth Rate</p>
@@ -388,9 +397,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
               <Award className="w-6 h-6 text-yellow-400" />
             </div>
             <span className="text-2xl font-bold text-white">
-              {numberUtils.formatNumber(
-                filteredPlants.reduce((sum, plant) => sum + plant.yieldPrediction.estimated, 0), 1
-              )}
+              {predictedYield === null ? '—' : numberUtils.formatNumber(predictedYield, 1)}
             </span>
           </div>
           <p className="text-sm text-gray-400">Predicted Yield</p>
