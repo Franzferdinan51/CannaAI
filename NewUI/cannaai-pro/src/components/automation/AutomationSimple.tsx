@@ -8,6 +8,9 @@ const AutomationSimple: React.FC = () => {
         <Bot className="w-16 h-16 mx-auto mb-4 text-emerald-400" />
         <h2 className="text-2xl font-bold mb-2">Automation System</h2>
         <p className="text-gray-400 mb-6">Environmental controls and automation for your cultivation</p>
+        <div className="mb-8 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Live automation telemetry and actions are unavailable until a supported device controller is connected.
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
@@ -19,15 +22,15 @@ const AutomationSimple: React.FC = () => {
             <div className="space-y-2 text-left">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Temperature:</span>
-                <span className="text-emerald-400 font-medium">75°F</span>
+                <span className="text-gray-400 font-medium">Not measured</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Humidity:</span>
-                <span className="text-blue-400 font-medium">60%</span>
+                <span className="text-gray-400 font-medium">Not measured</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Status:</span>
-                <span className="text-green-400 font-medium">Optimal</span>
+                <span className="text-amber-300 font-medium">Unavailable</span>
               </div>
             </div>
           </div>
@@ -41,15 +44,15 @@ const AutomationSimple: React.FC = () => {
             <div className="space-y-2 text-left">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Last Watering:</span>
-                <span className="text-emerald-400 font-medium">2h ago</span>
+                <span className="text-gray-400 font-medium">Not recorded</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Next Scheduled:</span>
-                <span className="text-yellow-400 font-medium">In 6h</span>
+                <span className="text-gray-400 font-medium">Not scheduled</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">pH Level:</span>
-                <span className="text-cyan-400 font-medium">6.2</span>
+                <span className="text-gray-400 font-medium">Not measured</span>
               </div>
             </div>
           </div>
@@ -63,15 +66,15 @@ const AutomationSimple: React.FC = () => {
             <div className="space-y-2 text-left">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Current Stage:</span>
-                <span className="text-emerald-400 font-medium">Vegetative</span>
+                <span className="text-gray-400 font-medium">Not available</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Light Hours:</span>
-                <span className="text-blue-400 font-medium">18/6</span>
+                <span className="text-gray-400 font-medium">Not configured</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Intensity:</span>
-                <span className="text-orange-400 font-medium">75%</span>
+                <span className="text-gray-400 font-medium">Not measured</span>
               </div>
             </div>
           </div>
@@ -85,15 +88,15 @@ const AutomationSimple: React.FC = () => {
             <div className="space-y-2 text-left">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">CO2 Level:</span>
-                <span className="text-emerald-400 font-medium">450 ppm</span>
+                <span className="text-gray-400 font-medium">Not measured</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Air Flow:</span>
-                <span className="text-blue-400 font-medium">Active</span>
+                <span className="text-gray-400 font-medium">Not measured</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">Filter Status:</span>
-                <span className="text-green-400 font-medium">Good</span>
+                <span className="text-gray-400 font-medium">Not measured</span>
               </div>
             </div>
           </div>
@@ -107,8 +110,8 @@ const AutomationSimple: React.FC = () => {
             </div>
             <p className="text-sm text-gray-400 mb-4">Manage automation schedules</p>
             <div className="text-left">
-              <div className="text-2xl font-bold text-emerald-400 mb-1">12</div>
-              <div className="text-xs text-gray-400">Active Schedules</div>
+              <div className="text-2xl font-bold text-gray-400 mb-1">—</div>
+              <div className="text-xs text-gray-400">No schedule data</div>
             </div>
           </div>
 
@@ -119,8 +122,8 @@ const AutomationSimple: React.FC = () => {
             </div>
             <p className="text-sm text-gray-400 mb-4">View automation history</p>
             <div className="text-left">
-              <div className="text-2xl font-bold text-blue-400 mb-1">247</div>
-              <div className="text-xs text-gray-400">Actions Today</div>
+              <div className="text-2xl font-bold text-gray-400 mb-1">—</div>
+              <div className="text-xs text-gray-400">No activity data</div>
             </div>
           </div>
 
@@ -131,8 +134,8 @@ const AutomationSimple: React.FC = () => {
             </div>
             <p className="text-sm text-gray-400 mb-4">Safety monitoring and alerts</p>
             <div className="text-left">
-              <div className="text-2xl font-bold text-green-400 mb-1">All Clear</div>
-              <div className="text-xs text-gray-400">No Active Alerts</div>
+              <div className="text-2xl font-bold text-gray-400 mb-1">—</div>
+              <div className="text-xs text-gray-400">Alerts not measured</div>
             </div>
           </div>
         </div>
