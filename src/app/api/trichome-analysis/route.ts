@@ -70,8 +70,8 @@ interface TrichomeAnalysis {
   technicalAnalysis: {
     imageQuality: 'excellent' | 'good' | 'fair' | 'poor';
     magnificationLevel: string;
-    focusQuality: 'sharp' | 'adequate' | 'blurry';
-    lightingCondition: 'optimal' | 'adequate' | 'poor';
+    focusQuality: 'sharp' | 'adequate' | 'blurry' | 'unknown';
+    lightingCondition: 'optimal' | 'adequate' | 'poor' | 'unknown';
   };
   recommendations: string[];
 }
@@ -145,8 +145,8 @@ export async function POST(request: NextRequest) {
         technicalAnalysis: {
           imageQuality: assessImageQuality(processedImageInfo, deviceInfo),
           magnificationLevel: determineMagnificationLevel(deviceInfo),
-          focusQuality: assessFocusQuality(imageData),
-          lightingCondition: assessLightingCondition(imageData)
+          focusQuality: assessFocusQuality(),
+          lightingCondition: assessLightingCondition()
         },
         recommendations: generateTrichomeRecommendations(trichomeResult, deviceInfo)
       };
@@ -341,8 +341,8 @@ You are a world-renowned cannabis cultivation expert specializing in trichome an
   "technicalAnalysis": {
     "imageQuality": "excellent|good|fair|poor",
     "magnificationLevel": "Assessment of magnification appropriateness",
-    "focusQuality": "sharp|adequate|blurry",
-    "lightingCondition": "optimal|adequate|poor"
+    "focusQuality": "sharp|adequate|blurry|unknown",
+    "lightingCondition": "optimal|adequate|poor|unknown"
   },
   "recommendations": [
     "Actionable recommendation 1",
@@ -440,8 +440,8 @@ function createStructuredTrichomeResponse(textResponse: string, provider: string
     technicalAnalysis: {
       imageQuality: 'good',
       magnificationLevel: 'Adequate for analysis',
-      focusQuality: 'adequate',
-      lightingCondition: 'adequate'
+      focusQuality: 'unknown',
+      lightingCondition: 'unknown'
     },
     recommendations: [
       'Review complete AI analysis above',
@@ -508,8 +508,8 @@ function enhanceTrichomeAnalysis(analysisResult: any, deviceInfo: any, options: 
     enhanced.technicalAnalysis = {
       imageQuality: 'good',
       magnificationLevel: 'Adequate',
-      focusQuality: 'adequate',
-      lightingCondition: 'adequate'
+      focusQuality: 'unknown',
+      lightingCondition: 'unknown'
     };
   }
 
@@ -559,14 +559,16 @@ function determineMagnificationLevel(deviceInfo: any): string {
   return 'Very Low (<100x)';
 }
 
-function assessFocusQuality(imageData: string): 'sharp' | 'adequate' | 'blurry' {
-  // In a real implementation, this would analyze image sharpness
-  return Math.random() > 0.3 ? 'sharp' : 'adequate';
+function assessFocusQuality(): 'unknown' {
+  // Focus analysis is not implemented. Never present a random classification
+  // as a measurement of the uploaded image.
+  return 'unknown';
 }
 
-function assessLightingCondition(imageData: string): 'optimal' | 'adequate' | 'poor' {
-  // In a real implementation, this would analyze lighting
-  return Math.random() > 0.4 ? 'optimal' : 'adequate';
+function assessLightingCondition(): 'unknown' {
+  // Lighting analysis is not implemented. The AI result may still describe
+  // visible lighting limitations when it has evidence to do so.
+  return 'unknown';
 }
 
 function generateMaturityRecommendation(analysis: any): string {
