@@ -143,4 +143,19 @@ describe('/api/lmstudio legacy local endpoint', () => {
       modelCount: 1,
     }));
   });
+
+  test('health check fails over to the alternate loopback endpoint', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockRejectedValueOnce(new Error('connect ECONNREFUSED ::1:1234'))
+      .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }));
+
+    const result = await GET();
+
+    expect(result.status).toBe(200);
+    expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      success: true,
+      environment: expect.objectContaining({ lmStudioUrl: 'http://127.0.0.1:1234' }),
+    }));
+  });
 });

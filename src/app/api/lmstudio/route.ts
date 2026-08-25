@@ -366,24 +366,34 @@ export async function GET() {
   try {
     console.log('🔍 Performing LM Studio health check...');
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for health check
+    let response: Response | undefined;
+    let activeLMStudioUrl = LM_STUDIO_URL;
+    let lastHealthError = 'LM Studio is not responding';
+    for (const candidate of getLMStudioEndpointCandidates()) {
+      try {
+        const candidateResponse = await fetch(`${candidate}/v1/models`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000),
+          headers: lmStudioHeaders()
+        });
+        if (candidateResponse.ok) {
+          response = candidateResponse;
+          activeLMStudioUrl = candidate;
+          break;
+        }
+        lastHealthError = `HTTP ${candidateResponse.status}: ${candidateResponse.statusText}`;
+      } catch (healthError) {
+        lastHealthError = healthError instanceof Error ? healthError.message : lastHealthError;
+      }
+    }
 
-    const response = await fetch(`${LM_STUDIO_URL}/v1/models`, {
-      method: 'GET',
-      signal: controller.signal,
-      headers: lmStudioHeaders()
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
+    if (!response) {
       return NextResponse.json({
         success: false,
         status: 'unhealthy',
         provider: 'lmstudio-local',
         error: 'LM Studio is not running or not responding',
-        details: `HTTP ${response.status}: ${response.statusText}`,
+        details: lastHealthError,
         troubleshooting: [
           'Start LM Studio application',
           'Check if API server is enabled in LM Studio settings',
@@ -392,7 +402,7 @@ export async function GET() {
         ],
         environment: {
           isDevelopment,
-          lmStudioUrl: LM_STUDIO_URL
+          lmStudioUrl: activeLMStudioUrl
         },
         timestamp: new Date().toISOString()
       }, { status: 503 });
@@ -418,7 +428,7 @@ export async function GET() {
         environment: {
           isDevelopment,
           isServerless: false,
-          lmStudioUrl: LM_STUDIO_URL
+          lmStudioUrl: activeLMStudioUrl
         },
         timestamp: new Date().toISOString()
       }, { status: 503 });
@@ -433,7 +443,7 @@ export async function GET() {
       environment: {
         isDevelopment,
         isServerless: false,
-        lmStudioUrl: LM_STUDIO_URL
+        lmStudioUrl: activeLMStudioUrl
       },
       timestamp: new Date().toISOString()
     });
