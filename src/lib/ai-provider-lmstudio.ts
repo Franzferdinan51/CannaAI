@@ -263,7 +263,7 @@ export async function getAvailableModels(forceRefresh = false): Promise<string[]
   return [];
 }
 
-async function getNativeVisionModelIds(): Promise<string[]> {
+async function getNativeVisionModelIds(): Promise<string[] | null> {
   const baseUrl = cacheBaseUrl || getLMStudioBaseUrl();
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
@@ -271,10 +271,10 @@ async function getNativeVisionModelIds(): Promise<string[]> {
       headers: getHeaders(),
       signal: createTimeoutSignal(5000),
     });
-    if (!response.ok) return [];
+    if (!response.ok) return null;
 
     const data = await response.json();
-    if (!Array.isArray(data?.models)) return [];
+    if (!Array.isArray(data?.models)) return null;
 
     const ids = new Set<string>();
     for (const model of data.models) {
@@ -289,22 +289,34 @@ async function getNativeVisionModelIds(): Promise<string[]> {
     }
     return Array.from(ids);
   } catch {
-    return [];
+    return null;
   }
 }
 
-export async function getVisionModels(): Promise<string[]> {
+async function getVisionModelCatalog(): Promise<{
+  models: string[];
+  metadataAvailable: boolean;
+}> {
   const models = await getAvailableModels();
-  if (models.length === 0) return [];
+  if (models.length === 0) return { models: [], metadataAvailable: false };
 
-  const nativeVision = new Set(await getNativeVisionModelIds());
-  const explicitMatches = models.filter(id => nativeVision.has(id));
-  if (explicitMatches.length > 0) return explicitMatches;
+  const nativeVision = await getNativeVisionModelIds();
+  if (nativeVision !== null) {
+    return {
+      models: models.filter(id => nativeVision.includes(id)),
+      metadataAvailable: true,
+    };
+  }
 
-  // Native capability metadata is unavailable on some older LM Studio builds.
-  // Fall back to conservative model-name hints rather than claiming every
-  // local text model is vision-capable.
-  return models.filter(looksLikeVisionModel);
+  // Older LM Studio builds may not expose native capability metadata.
+  return {
+    models: models.filter(looksLikeVisionModel),
+    metadataAvailable: false,
+  };
+}
+
+export async function getVisionModels(): Promise<string[]> {
+  return (await getVisionModelCatalog()).models;
 }
 
 export async function getTextModels(): Promise<string[]> {
@@ -319,17 +331,29 @@ function getConfiguredModel(type: 'vision' | 'text'): string {
 }
 
 async function resolveModel(type: 'vision' | 'text', explicitModel?: string): Promise<string> {
-  if (explicitModel?.trim()) return explicitModel.trim();
+  const requested = explicitModel?.trim();
+  if (requested && type === 'text') return requested;
 
   const configured = getConfiguredModel(type).trim();
   const available = await getAvailableModels();
 
   if (type === 'vision') {
-    if (configured && (available.length === 0 || available.includes(configured))) {
-      return configured;
+    const visionCatalog = await getVisionModelCatalog();
+    const candidate = requested || configured;
+
+    if (candidate && (available.length === 0 || available.includes(candidate))) {
+      if (available.length === 0 || visionCatalog.models.includes(candidate) || !visionCatalog.metadataAvailable) {
+        return candidate;
+      }
     }
 
-    const visionModels = await getVisionModels();
+    if (requested && available.length > 0 && visionCatalog.metadataAvailable && visionCatalog.models.length === 0) {
+      throw new Error(
+        `LM Studio model "${requested}" is advertised as text-only and cannot process images.`,
+      );
+    }
+
+    const visionModels = visionCatalog.models;
     if (visionModels.length > 0) return visionModels[0];
 
     if (configured && available.length === 0) return configured;

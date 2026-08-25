@@ -101,4 +101,25 @@ describe('legacy LM Studio runtime configuration', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  test('rejects an explicitly selected native text-only model for image requests', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'text-only-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          models: [{ key: 'text-only-model', type: 'llm', capabilities: { vision: false } }],
+        }),
+      } as Response);
+
+    await expect(executeWithLMStudio(
+      [{ role: 'user', content: 'Inspect this leaf' }],
+      { model: 'text-only-model', image: 'data:image/jpeg;base64,abc123', useVision: true },
+    )).rejects.toThrow('advertised as text-only');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
