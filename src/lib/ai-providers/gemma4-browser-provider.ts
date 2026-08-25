@@ -86,7 +86,8 @@ export class Gemma4BrowserProvider extends BaseProvider {
         errorRate: available ? 0 : 100,
         lastCheck: new Date(),
         consecutiveFailures: 0,
-        successRate: available ? 100 : 0,
+        // Availability is not request success; no usage has occurred yet.
+        successRate: 0,
       };
     } catch (error) {
       return {

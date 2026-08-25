@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
         health: {
           status: p.isAvailable ? 'healthy' : 'unhealthy',
           latency: 0,
-          successRate: p.isAvailable ? 100 : 0,
+          successRate: 0,
           lastError: p.isAvailable ? null : p.reason,
         },
         cost: { input: 0, output: 0, currency: 'USD' },
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
         capabilities: p.capabilities,
         performance: {
           latency: p.health?.latency ?? 0,
-          successRate: p.health?.successRate ?? (isHealthy ? 100 : 0),
+          successRate: p.health?.successRate ?? 0,
           throughput: p.metrics?.totalRequests ?? 0,
         },
         pricing: p.cost,

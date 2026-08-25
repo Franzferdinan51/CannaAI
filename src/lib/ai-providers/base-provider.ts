@@ -205,7 +205,7 @@ export abstract class BaseProvider {
       totalTokens: 0,
       totalCost: 0,
       averageLatency: 0,
-      successRate: 100,
+      successRate: 0,
       errorCount: 0,
       timeoutCount: 0,
       averageResponseTime: 0,
