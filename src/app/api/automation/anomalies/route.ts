@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  sendNotification as dispatchNotification,
+  type DeliveryChannel,
+  type SeverityLevel,
+} from '@/lib/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -144,19 +149,24 @@ async function checkAndTriggerNotifications(anomaly: any) {
 
       // Check if anomaly matches conditions
       if (matchesConditions(anomaly, conditions)) {
-        // Send notification
-        const channels = JSON.parse(rule.channels);
+        const channels = parseNotificationChannels(rule.channels);
+        if (channels.length === 0) continue;
 
-        for (const channel of Object.keys(channels)) {
-          if (channels[channel]) {
-            await sendNotification(channel, {
-              title: `Anomaly Detected: ${anomaly.metric}`,
-              message: `Plant ${anomaly.plant?.name || 'Unknown'}: ${anomaly.metric} is ${anomaly.currentValue} (threshold: ${anomaly.threshold})`,
-              severity: anomaly.severity,
-              type: 'anomaly'
-            });
-          }
-        }
+        await dispatchNotification({
+          type: 'system_alert',
+          title: `Anomaly Detected: ${anomaly.metric}`,
+          message: `Plant ${anomaly.plant?.name || 'Unknown'}: ${anomaly.metric} is ${anomaly.currentValue} (threshold: ${anomaly.threshold})`,
+          severity: normalizeSeverity(anomaly.severity),
+          channels,
+          plantId: anomaly.plantId,
+          metadata: {
+            anomalyId: anomaly.id,
+            anomalyType: anomaly.type,
+            metric: anomaly.metric,
+            currentValue: anomaly.currentValue,
+            threshold: anomaly.threshold,
+          },
+        });
       }
     }
   } catch (error) {
@@ -183,17 +193,40 @@ function matchesConditions(anomaly: any, conditions: any): boolean {
   return true;
 }
 
-async function sendNotification(channel: string, data: any) {
-  // Create notification in database
-  await prisma.notification.create({
-    data: {
-      type: data.type,
-      title: data.title,
-      message: data.message,
-      metadata: data
-    }
-  });
+function parseNotificationChannels(serializedChannels: string): DeliveryChannel[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(serializedChannels);
+  } catch {
+    return [];
+  }
 
-  // TODO: Send via actual channel (email, SMS, push, etc.)
-  console.log(`Notification sent via ${channel}:`, data);
+  const values = Array.isArray(parsed)
+    ? parsed
+    : parsed && typeof parsed === 'object'
+      ? Object.entries(parsed)
+          .filter(([, enabled]) => enabled === true)
+          .map(([channel]) => channel)
+      : [];
+
+  const supportedChannels: DeliveryChannel[] = [
+    'in_app',
+    'push',
+    'email',
+    'sms',
+    'webhook',
+    'discord',
+    'slack',
+  ];
+
+  return values.filter((channel): channel is DeliveryChannel =>
+    typeof channel === 'string' && supportedChannels.includes(channel as DeliveryChannel)
+  );
+}
+
+function normalizeSeverity(value: unknown): SeverityLevel {
+  if (value === 'info' || value === 'warning' || value === 'critical' || value === 'emergency') {
+    return value;
+  }
+  return 'warning';
 }
