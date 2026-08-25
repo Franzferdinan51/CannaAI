@@ -272,6 +272,7 @@ export function ChatMessage({
               variant="ghost"
               size="sm"
               onClick={() => setShowActionsMenu(!showActionsMenu)}
+              aria-label="Open message actions"
               className="text-gray-400 hover:text-white h-6 w-6 p-0"
             >
               <MoreVertical className="h-3 w-3" />

@@ -257,6 +257,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Core state
   const [messages, setMessages] = useState<IChatMessage[]>([]);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [hasLoadedConversations, setHasLoadedConversations] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<ChatConversation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -283,10 +284,10 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
 
   // Save conversations to localStorage when they change
   useEffect(() => {
-    if (settings.privacy.saveHistory) {
+    if (hasLoadedConversations && settings.privacy.saveHistory) {
       saveConversationsToStorage();
     }
-  }, [conversations, settings.privacy.saveHistory]);
+  }, [conversations, hasLoadedConversations, settings.privacy.saveHistory]);
 
   // Load data from localStorage
   const loadDataFromStorage = useCallback(() => {
@@ -310,22 +311,25 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
             : []
         }));
         setConversations(conversationsWithDates);
+        setHasLoadedConversations(true);
 
-        // Load current conversation
-        if (initialConversation) {
-          switchConversation(initialConversation);
-        } else {
-          // Switch to most recent conversation
-          const mostRecent = conversationsWithDates
-            .filter((c: ChatConversation) => !c.isArchived)
-            .sort((a: ChatConversation, b: ChatConversation) =>
-              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-            )[0];
-          if (mostRecent) {
-            switchConversation(mostRecent.id);
-          }
+        // Select from the freshly parsed list. Calling switchConversation here
+        // would use the callback from the previous render, whose conversations
+        // array is still empty during the initial storage load.
+        const selectedConversation = initialConversation
+          ? conversationsWithDates.find((conversation: ChatConversation) => conversation.id === initialConversation)
+          : conversationsWithDates
+              .filter((conversation: ChatConversation) => !conversation.isArchived)
+              .sort((a: ChatConversation, b: ChatConversation) =>
+                new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+              )[0];
+        if (selectedConversation) {
+          setCurrentConversation(selectedConversation);
+          setMessages(selectedConversation.messages || []);
         }
       }
+
+      if (!savedConversations) setHasLoadedConversations(true);
 
       // Load notifications
       const savedNotifications = localStorage.getItem('cannai-chat-notifications');
@@ -657,8 +661,6 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   }, [settings.features.enableImageAnalysis]);
 
   // Switch conversation
-  // The callback is referenced by the storage loader below; keep its stable identity.
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const switchConversation = useCallback((conversationId: string) => {
     const conversation = conversations.find(c => c.id === conversationId);
     if (conversation) {
