@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
+import { getLMStudioApiKey, getLMStudioEndpointCandidates } from '@/lib/ai-provider-lmstudio';
 import { isServerless, isDevelopment } from '@/lib/ai-provider-detection';
 
 // Export configuration for dual-mode compatibility
@@ -36,9 +36,9 @@ function normalizeImageUrl(image: unknown): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
-async function discoverVisionModelIds(): Promise<Set<string> | null> {
+async function discoverVisionModelIds(baseUrl = LM_STUDIO_URL): Promise<Set<string> | null> {
   try {
-    const response = await fetch(`${LM_STUDIO_URL}/api/v1/models`, {
+    const response = await fetch(`${baseUrl}/api/v1/models`, {
       signal: AbortSignal.timeout(3000),
       headers: lmStudioHeaders(),
     });
@@ -125,34 +125,39 @@ export async function POST(request: NextRequest) {
     // `auto` sentinel on every release; chat completions need a real model ID.
     console.log('🔍 Checking LM Studio availability at', LM_STUDIO_URL);
     let advertisedModels: Array<{ id?: string }> = [];
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second health check timeout
+    let activeLMStudioUrl = LM_STUDIO_URL;
+    let lastHealthError = 'connection refused';
+    let discovered = false;
 
-    try {
-      const healthCheck = await fetch(`${LM_STUDIO_URL}/v1/models`, {
-        method: 'GET',
-        signal: controller.signal,
-        headers: lmStudioHeaders()
-      });
+    for (const candidate of getLMStudioEndpointCandidates()) {
+      try {
+        const healthCheck = await fetch(`${candidate}/v1/models`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000),
+          headers: lmStudioHeaders()
+        });
+        if (!healthCheck.ok) {
+          lastHealthError = `LM Studio health check failed: ${healthCheck.status} ${healthCheck.statusText}`;
+          continue;
+        }
 
-      clearTimeout(timeoutId);
-
-      if (!healthCheck.ok) {
-        throw new Error(`LM Studio health check failed: ${healthCheck.status} ${healthCheck.statusText}`);
+        const modelsData = await healthCheck.json();
+        advertisedModels = Array.isArray(modelsData?.data) ? modelsData.data : [];
+        activeLMStudioUrl = candidate;
+        discovered = true;
+        console.log(`✅ LM Studio is running with ${advertisedModels.length} models available at ${candidate}`);
+        break;
+      } catch (healthError) {
+        lastHealthError = healthError instanceof Error ? healthError.message : lastHealthError;
       }
+    }
 
-      const modelsData = await healthCheck.json();
-      advertisedModels = Array.isArray(modelsData?.data) ? modelsData.data : [];
-      console.log(`✅ LM Studio is running with ${advertisedModels.length} models available`);
-
-    } catch (healthError) {
-      clearTimeout(timeoutId);
-      const errorMessage = healthError instanceof Error ? healthError.message : 'Unknown error';
+    if (!discovered) {
 
       return NextResponse.json({
         success: false,
         error: 'LM Studio is not available',
-        message: errorMessage,
+        message: lastHealthError,
         troubleshooting: [
           'Make sure LM Studio application is running on your computer',
           'Verify LM Studio is running on the correct port (default: 1234)',
@@ -220,7 +225,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (normalizedImage) {
-      const visionModelIds = await discoverVisionModelIds();
+      const visionModelIds = await discoverVisionModelIds(activeLMStudioUrl);
       if (visionModelIds && !visionModelIds.has(selectedModel)) {
         return NextResponse.json({
           success: false,
@@ -238,7 +243,7 @@ export async function POST(request: NextRequest) {
     const lmStudioTimeoutId = setTimeout(() => lmStudioController.abort(), LM_STUDIO_TIMEOUT);
 
     try {
-      const lmStudioResponse = await fetch(`${LM_STUDIO_URL}/v1/chat/completions`, {
+      const lmStudioResponse = await fetch(`${activeLMStudioUrl}/v1/chat/completions`, {
         method: 'POST',
         headers: lmStudioHeaders(true),
         body: JSON.stringify({
