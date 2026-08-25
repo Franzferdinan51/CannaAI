@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { applySecurityHeaders, securityHeadersConfig } from '@/lib/security-headers';
 
+export function isSensitiveMutation(pathname: string, method: string): boolean {
+  return method !== 'GET' && method !== 'OPTIONS' && (
+    pathname === '/api/backup/create' ||
+    pathname === '/api/backup/restore' ||
+    pathname === '/api/db/health' ||
+    pathname === '/api/automation/engine' ||
+    pathname === '/api/import/execute' ||
+    pathname === '/api/migration/import'
+  );
+}
+
 export function proxy(request: NextRequest) {
   const response = NextResponse.next();
 
@@ -23,8 +34,10 @@ export function proxy(request: NextRequest) {
   // - Production without allowlist: no origin is echoed (safest default).
   if (isApi) {
     const publicApiPaths = new Set(['/api/health', '/api/health-check', '/api/version']);
+    const sensitiveMutation = isSensitiveMutation(request.nextUrl.pathname, request.method);
     const requireApiToken = process.env.CANNAAI_REQUIRE_AUTH === 'true'
-      || process.env.NODE_ENV === 'production';
+      || process.env.NODE_ENV === 'production'
+      || sensitiveMutation;
 
     // Browser CORS preflights do not carry the eventual Authorization header.
     // They may validate the allowlist here; the actual request remains gated.
