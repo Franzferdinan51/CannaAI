@@ -8,6 +8,19 @@ import { withRequest } from '@/lib/logger';
 export const dynamic = 'auto';
 export const revalidate = false;
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<null>((resolve) => {
+      timer = setTimeout(() => resolve(null), timeoutMs);
+      timer.unref?.();
+    });
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 // Get contextual prompt based on agentic mode
 function getContextualPrompt(mode: string, context: any, sensorData: any, message: string): string {
   const baseContext = `Current page context: ${context?.title || 'CannaAI Pro'} (${context?.page || 'unknown'})
@@ -109,10 +122,7 @@ export async function POST(request: NextRequest) {
     // primary was healthy.
     let providerDetection;
     try {
-      providerDetection = await Promise.race([
-        detectAvailableProviders(),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 25000)),
-      ]);
+      providerDetection = await withTimeout(detectAvailableProviders(), 25000);
     } catch {
       providerDetection = null;
     }
@@ -279,10 +289,7 @@ async function streamChatResponse(args: {
   // close, so the client knows to retry the non-streaming endpoint.
   let providerDetection: any;
   try {
-    providerDetection = await Promise.race([
-      detectAvailableProviders(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 25000)),
-    ]);
+    providerDetection = await withTimeout(detectAvailableProviders(), 25000);
   } catch {
     providerDetection = null;
   }
