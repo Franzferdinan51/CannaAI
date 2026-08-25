@@ -5,12 +5,19 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
+  analysisHistory: {
+    create: jest.fn(),
+  },
 };
 
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }));
+jest.mock('@/lib/ai', () => ({
+  analyzePlantHealth: jest.fn(),
+}));
 
 import { PUT } from '@/app/api/automation/photo-capture/route';
-import { executeCapture } from '@/lib/photo-capture-service';
+import { executeCapture, triggerAnalysisAfterCapture } from '@/lib/photo-capture-service';
+import { analyzePlantHealth } from '@/lib/ai';
 
 describe('/api/automation/photo-capture', () => {
   beforeEach(() => {
@@ -87,5 +94,39 @@ describe('/api/automation/photo-capture', () => {
         }),
       }),
     }));
+  });
+
+  it('runs connected-agent images through the real local-first analysis path', async () => {
+    (analyzePlantHealth as jest.Mock).mockResolvedValue({
+      diagnosis: 'Possible nutrient stress',
+      confidence: 0.72,
+      recommendations: ['Review recent feed'],
+      urgency: 'medium',
+      potentialIssues: ['nutrient stress'],
+      suggestedActions: ['Review recent feed'],
+      nextSteps: ['Capture a follow-up image'],
+    });
+    mockPrisma.analysisHistory.create.mockResolvedValue({ id: 'history-1' });
+
+    await triggerAnalysisAfterCapture('plant-1', 'data:image/jpeg;base64,abc', {
+      taskId: 'task-1',
+      capturedAt: '2026-08-25T16:00:00.000Z',
+      deviceInfo: { agent: 'hermes', device: 'pixel' },
+      strain: 'Test cultivar',
+      symptoms: ['curling leaves'],
+    });
+
+    expect(analyzePlantHealth).toHaveBeenCalledWith(
+      'data:image/jpeg;base64,abc',
+      expect.objectContaining({ strain: 'Test cultivar', symptoms: ['curling leaves'] }),
+    );
+    expect(mockPrisma.analysisHistory.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        plantId: 'plant-1',
+        analysisType: 'automated_photo',
+        data: expect.objectContaining({ diagnosis: 'Possible nutrient stress' }),
+        metadata: expect.objectContaining({ captureTask: 'task-1' }),
+      }),
+    });
   });
 });

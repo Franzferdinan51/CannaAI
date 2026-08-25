@@ -171,7 +171,10 @@ export async function PUT(request: NextRequest) {
 
     // If capture was successful and has image data, trigger analysis
     if (imageData && task.plantId) {
-      triggerAnalysisAfterCapture(task.plantId, imageData, task.data).catch(err =>
+      triggerAnalysisAfterCapture(task.plantId, imageData, {
+        ...asJsonRecord(task.data),
+        taskId: task.id
+      }).catch(err =>
         console.error('Post-capture analysis error:', err)
       );
     }

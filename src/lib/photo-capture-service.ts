@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { analyzePlantHealth } from '@/lib/ai';
 
 function asJsonRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -42,27 +43,64 @@ export async function executeCapture(taskId: string) {
 
 export async function triggerAnalysisAfterCapture(plantId: string, imageData: string, captureData: any) {
   try {
-    const rules = await prisma.automationRule.findMany({
-      where: { plantId, enabled: true, type: 'trigger' }, include: { trigger: true }
+    // A connected phone/microscope capture is an explicit user/agent request.
+    // Run the real local-first vision path even when no legacy automation rule
+    // exists; the old implementation only inserted a history placeholder.
+    await executeAnalysisAction(plantId, imageData, captureData, {
+      ...(asJsonRecord(captureData?.analysisConfig)),
+      source: 'agent_photo_capture'
     });
-    for (const rule of rules) {
-      if (rule.trigger?.type !== 'manual') continue;
-      for (const action of rule.actions as any[]) {
-        if (action.type === 'analyze') await executeAnalysisAction(plantId, imageData, captureData, action.config);
-      }
-    }
   } catch (error) {
     console.error('Post-capture analysis error:', error);
+    await prisma.analysisHistory.create({
+      data: {
+        plantId,
+        analysisType: 'automated_photo_error',
+        data: {
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'AI analysis failed'
+        },
+        metadata: {
+          source: 'auto_capture',
+          capturedAt: captureData?.capturedAt || null
+        }
+      }
+    }).catch((historyError) => console.error('Failed to persist capture analysis error:', historyError));
   }
 }
 
-async function executeAnalysisAction(plantId: string, _imageData: string, captureData: any, _config: any) {
+async function executeAnalysisAction(plantId: string, imageData: string, captureData: any, config: any) {
+  const analysis = await analyzePlantHealth(imageData, {
+    strain: captureData?.strain,
+    growthStage: captureData?.growthStage,
+    medium: captureData?.medium,
+    temperature: typeof captureData?.temperature === 'number' ? captureData.temperature : undefined,
+    humidity: typeof captureData?.humidity === 'number' ? captureData.humidity : undefined,
+    phLevel: typeof captureData?.phLevel === 'number' ? captureData.phLevel : undefined,
+    symptoms: Array.isArray(captureData?.symptoms) ? captureData.symptoms : undefined
+  });
+
   await prisma.analysisHistory.create({
     data: {
       plantId,
-      analysisType: 'photo',
-      data: { capturedAt: captureData.capturedAt, deviceInfo: captureData.deviceInfo, analysisType: 'automated_photo_capture' },
-      metadata: { source: 'auto_capture', captureTask: captureData.taskId }
+      analysisType: 'automated_photo',
+      data: {
+        diagnosis: analysis.diagnosis,
+        confidence: analysis.confidence,
+        recommendations: analysis.recommendations,
+        urgency: analysis.urgency,
+        potentialIssues: analysis.potentialIssues,
+        suggestedActions: analysis.suggestedActions,
+        nextSteps: analysis.nextSteps
+      },
+      metadata: {
+        source: config?.source || 'auto_capture',
+        capturedAt: captureData?.capturedAt || null,
+        deviceInfo: captureData?.deviceInfo || null,
+        captureTask: captureData?.taskId || null
+      }
     }
   });
+
+  return analysis;
 }
