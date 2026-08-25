@@ -257,6 +257,7 @@ const Settings: React.FC = () => {
               {/* Export Button */}
               <div className="relative group">
                 <button
+                  type="button"
                   onClick={() => handleExport('json')}
                   aria-label="Export settings"
                   className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
@@ -266,12 +267,14 @@ const Settings: React.FC = () => {
                 </button>
                 <div className="absolute top-full right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                   <button
+                    type="button"
                     onClick={() => handleExport('json')}
                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-t-lg"
                   >
                     Export as JSON
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleExport('csv')}
                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-b-lg"
                   >
@@ -282,6 +285,7 @@ const Settings: React.FC = () => {
 
               {/* Import Button */}
               <button
+                type="button"
                 onClick={() => setShowImportDialog(true)}
                 aria-label="Import settings"
                 className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
@@ -292,6 +296,7 @@ const Settings: React.FC = () => {
 
               {/* Reset Button */}
               <button
+                type="button"
                 onClick={() => setShowResetDialog(true)}
                 aria-label="Reset settings to defaults"
                 className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
@@ -420,11 +425,12 @@ const Settings: React.FC = () => {
 
               <div className="flex justify-end gap-3">
                 <Dialog.Close asChild>
-                  <button className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                  <button type="button" className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
                     Cancel
                   </button>
                 </Dialog.Close>
                 <button
+                  type="button"
                   onClick={handleReset}
                   className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
                 >
@@ -461,11 +467,12 @@ const Settings: React.FC = () => {
 
               <div className="flex justify-end gap-3">
                 <Dialog.Close asChild>
-                  <button className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                  <button type="button" className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
                     Cancel
                   </button>
                 </Dialog.Close>
                 <button
+                  type="button"
                   onClick={handleImport}
                   disabled={!importFile}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 text-white rounded-lg transition-colors"

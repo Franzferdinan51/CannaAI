@@ -457,8 +457,8 @@ const AIProviderCard: React.FC = () => {
                           <Key className="w-4 h-4 text-purple-300" />
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'start'); }} className="flex-1 px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm">{isOAuthProvider(provider.id) ? 'Connect OAuth' : 'Connect / Check'}</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'status'); }} className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm">Check</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'start'); }} className="flex-1 px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm">{isOAuthProvider(provider.id) ? 'Connect OAuth' : 'Connect / Check'}</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'status'); }} className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm">Check</button>
                         </div>
                         {authState[provider.id]?.message && <p className="text-xs text-gray-300">{authState[provider.id].message}</p>}
                       </div>
@@ -642,6 +642,7 @@ const AIProviderCard: React.FC = () => {
             LM Studio Setup
           </h3>
           <button
+            type="button"
             onClick={() => setActiveTab('lm-studio')}
             className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
           >

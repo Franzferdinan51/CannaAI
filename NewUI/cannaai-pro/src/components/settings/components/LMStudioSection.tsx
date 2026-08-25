@@ -297,6 +297,7 @@ const LMStudioSection: React.FC = () => {
               {capabilities.map((capability) => (
                 <button
                   key={capability.value}
+                  type="button"
                   onClick={() => setFilterCapability(capability.value)}
                   className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${
                     filterCapability === capability.value
