@@ -458,6 +458,8 @@ export async function POST(request: NextRequest) {
       imageBase64: imageBase64ForAI,
       strain, growthStage, medium, leafSymptoms,
       phLevel, temperature, humidity,
+      model: requestedModel,
+      baseUrl: requestedBaseUrl,
     });
     const cached = analyzeCache.get<any>(cacheKey);
     if (cached) {

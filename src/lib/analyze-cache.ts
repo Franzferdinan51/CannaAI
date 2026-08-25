@@ -2,7 +2,8 @@
  * Result cache for /api/analyze
  *
  * Keyed on a SHA-1 of the image (if present) PLUS a normalized signature of
- * the text inputs (strain, growth stage, medium, symptoms, ph, env). Cached
+ * the text inputs (strain, growth stage, medium, symptoms, ph, env) and the
+ * requested local model/endpoint. Cached
  * entries are bounded by TTL and total size so they cannot leak memory.
  *
  * Caching is opportunistic: cache hits return instantly with a `cached: true`
@@ -21,6 +22,8 @@ export interface AnalyzeCacheKey {
   phLevel?: string | number;
   temperature?: string | number;
   humidity?: string | number;
+  model?: string;
+  baseUrl?: string;
 }
 
 export interface CacheEntry<T = unknown> {
@@ -88,6 +91,8 @@ class AnalyzeCache {
       norm(input.phLevel),
       norm(input.temperature),
       norm(input.humidity),
+      norm(input.model),
+      norm(input.baseUrl),
     ].join('|');
   }
 
