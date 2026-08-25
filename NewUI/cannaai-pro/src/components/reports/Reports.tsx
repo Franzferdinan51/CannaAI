@@ -418,6 +418,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
           </div>
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={loadReports}
               className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors"
             >
@@ -425,6 +426,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
               Refresh
             </button>
             <button
+              type="button"
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
             >
@@ -595,6 +597,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
           <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p>No reports found</p>
           <button
+            type="button"
             onClick={() => setShowCreateModal(true)}
             className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
           >
