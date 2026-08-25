@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+function debugEndpointsEnabled(): boolean {
+  return process.env.NODE_ENV === 'development' || process.env.CANNAAI_ENABLE_DEBUG_ENDPOINTS === 'true';
+}
+
 export async function POST(request: NextRequest) {
+  if (!debugEndpointsEnabled()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   console.log('🚀 POST /api/analyze-test - Simple test endpoint');
 
   try {

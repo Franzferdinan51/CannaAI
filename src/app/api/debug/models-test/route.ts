@@ -6,6 +6,10 @@ const lmStudioHeaders = () => {
   return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
 };
 
+function debugEndpointsEnabled(): boolean {
+  return process.env.NODE_ENV === 'development' || process.env.CANNAAI_ENABLE_DEBUG_ENDPOINTS === 'true';
+}
+
 // Export configuration for dual-mode compatibility
 // This diagnostic performs live localhost requests and is runtime-only.
 // Prevent Next from executing it during static generation.
@@ -14,6 +18,10 @@ export const runtime = 'nodejs';
 export const revalidate = false;
 
 export async function GET(request: NextRequest) {
+  if (!debugEndpointsEnabled()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
   if (isStaticExport) {

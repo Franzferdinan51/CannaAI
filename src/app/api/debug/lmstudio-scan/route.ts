@@ -18,6 +18,10 @@ const TEST_PATHS = [
   path.join(process.env.HOME || '', '.local', 'share', 'LM-Studio', 'models'),
 ];
 
+function debugEndpointsEnabled(): boolean {
+  return process.env.NODE_ENV === 'development' || process.env.CANNAAI_ENABLE_DEBUG_ENDPOINTS === 'true';
+}
+
 async function scanDirectory(dirPath: string, depth: number = 0): Promise<any> {
   const maxDepth = 5;
   if (depth > maxDepth) {
@@ -112,6 +116,10 @@ async function checkLMStudioRunning() {
 }
 
 export async function GET(request: NextRequest) {
+  if (!debugEndpointsEnabled()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
   if (isStaticExport) {
