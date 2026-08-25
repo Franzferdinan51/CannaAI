@@ -141,6 +141,7 @@ legacy/ and docs/archive Historical material; not imported by the active app
 npm run lint
 npm run typecheck:frontend
 npm run typecheck:local-ai
+npm run typecheck:server
 npm run build
 npm test -- --runInBand
 ```

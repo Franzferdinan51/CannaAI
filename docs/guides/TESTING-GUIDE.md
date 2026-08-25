@@ -14,6 +14,20 @@ This suite covers:
 - Explainability field coverage for `urgencyReasons`, `healthScoreBreakdown`, `detectedIssues`, and `prioritizedActionPlan`
 - `503` setup guidance when no AI provider is available
 
+## Supported typechecks
+
+Run the active application checks separately from the preserved historical
+UI branches:
+
+```bash
+npm run typecheck:frontend
+npm run typecheck:local-ai
+npm run typecheck:server
+```
+
+`typecheck:server` covers the custom server, middleware, API routes, and
+provider/library code used by the active Next.js backend.
+
 ## ✅ Tests That Pass Now:
 
 ### 1. Python Bridge Script

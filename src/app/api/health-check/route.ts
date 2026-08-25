@@ -17,6 +17,16 @@ function withHealthTimeout<T>(promise: Promise<T>, fallback: T, timeoutMs: numbe
   });
 }
 
+type HealthComponent = {
+  status: string;
+  transport?: string;
+  source?: string;
+  error?: string;
+  models?: number;
+  modelsLoaded?: number | null;
+  latency?: number | null;
+};
+
 async function checkPrisma() {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -89,12 +99,14 @@ export async function GET() {
     // OpenClaw's supported status command starts a CLI process and can take
     // several seconds even with --no-probe on macOS launchd installations.
     // Five seconds produced false outages for a running Gateway.
-    withHealthTimeout(checkOpenClaw(), { status: 'unreachable', transport: 'acp', error: 'health check timed out' }, 10000),
-    withHealthTimeout(checkHermes(), { status: 'unreachable', error: 'health check timed out' }, 5000),
+    withHealthTimeout<HealthComponent>(checkOpenClaw(), { status: 'unreachable', transport: 'acp', error: 'health check timed out' }, 10000),
+    withHealthTimeout<HealthComponent>(checkHermes(), { status: 'unreachable', error: 'health check timed out' }, 5000),
   ]);
 
-  const core = [db, lmstudio, openclaw];
-  const monitored = hermes.status === 'unconfigured' ? core : [...core, hermes];
+  const core: Array<{ status: string }> = [db, lmstudio, openclaw];
+  const monitored: Array<{ status: string }> = hermes.status === 'unconfigured'
+    ? core
+    : [...core, hermes];
   const allUp = monitored.every((s) => s.status === 'ok');
   const degraded = monitored.some((s) => s.status === 'ok');
 
