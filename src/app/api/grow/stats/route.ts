@@ -16,8 +16,11 @@ export async function GET() {
     data: {
       activePlants: plants,
       totalHarvests: harvests,
-      avgYield: 120,
-      efficiency: 92,
+      // These metrics require persisted harvest and sensor history. Do not
+      // present hard-coded values as if they were measured in this install.
+      avgYield: null,
+      efficiency: null,
+      unavailableMetrics: ['avgYield', 'efficiency'],
     }
   });
 }
