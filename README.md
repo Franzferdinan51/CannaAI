@@ -49,18 +49,23 @@ LM Studio is the default local provider for text and vision. Start its OpenAI-co
 
 ```dotenv
 LM_STUDIO_BASE_URL="http://127.0.0.1:1234/v1"
-LM_STUDIO_VISION_MODEL="ornith-1.5-35b-a3b"
-LM_STUDIO_TEXT_MODEL="ornith-1.5-35b-a3b"
+# Optional when LM Studio server authentication is enabled:
+# LM_STUDIO_API_KEY="your-local-lm-studio-token"
+# Optional explicit model overrides; omit them for automatic discovery:
+# LM_STUDIO_VISION_MODEL="ornith-1.5-35b-a3b"
+# LM_STUDIO_TEXT_MODEL="ornith-1.5-35b-a3b"
 ```
 
 `LM_STUDIO_URL` is also accepted for compatibility. If a model name is not configured, CannaAI can discover available models from `/v1/models`; an explicitly configured model must actually be loaded in LM Studio. For vision, the selected model and projector must support image input. CannaAI accepts data URLs and raw base64 image payloads at `/api/analyze`, including photos submitted by a remote agent.
+
+When LM Studio authentication is enabled, CannaAI also reads `LM_STUDIO_API_KEY`, `LM_API_TOKEN`, or LM Studio's local token file. Do not paste the token into committed files or shell history. An authenticated catalog check is:
 
 With the LM Studio CLI, the equivalent checks are:
 
 ```bash
 lms server start
 lms ls
-curl http://127.0.0.1:1234/v1/models
+curl -H "Authorization: Bearer $LM_API_TOKEN" http://127.0.0.1:1234/v1/models
 ```
 
 The `lms` commands are optional; CannaAI communicates with LM Studio over its local OpenAI-compatible HTTP API.
@@ -68,10 +73,12 @@ The `lms` commands are optional; CannaAI communicates with LM Studio over its lo
 Useful checks:
 
 ```bash
-curl http://127.0.0.1:1234/v1/models
+curl -H "Authorization: Bearer $LM_API_TOKEN" http://127.0.0.1:1234/v1/models
 curl http://localhost:3000/api/health-check
 curl http://localhost:3000/api/ai/providers
 ```
+
+If authentication is disabled, the bearer header can be omitted. The model catalog and health routes report authentication failures as unavailable rather than claiming that LM Studio is healthy.
 
 If LM Studio is stopped or no model is loaded, CannaAI reports the provider as unavailable and keeps the rest of the application usable.
 
