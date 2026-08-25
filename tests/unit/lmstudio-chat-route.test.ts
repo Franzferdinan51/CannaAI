@@ -47,6 +47,7 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
   test('attaches a supplied image to the latest user message when messages are provided', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
+      .mockResolvedValueOnce(response({ models: [{ key: 'ornith-1.5-35b-a3b', capabilities: { vision: true } }] }))
       .mockResolvedValueOnce(response({
         model: 'ornith-1.5-35b-a3b',
         choices: [{ message: { content: 'vision answer' }, finish_reason: 'stop' }],
@@ -62,7 +63,7 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     } as any);
 
     expect(result.status).toBe(200);
-    const requestBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
     expect(requestBody.messages).toEqual([{
       role: 'user',
       content: [
@@ -75,20 +76,39 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
   test('normalizes raw base64 images when the route creates the user message', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(modelsResponse([{ id: 'ornith-1.5-35b-a3b' }]))
+      .mockResolvedValueOnce(response({ models: [{ key: 'ornith-1.5-35b-a3b', capabilities: { vision: true } }] }))
       .mockResolvedValueOnce(completionResponse('vision answer'));
 
-    const response = await POST(requestWithBody({
+    const result = await POST(requestWithBody({
       prompt: 'Inspect this plant',
       image: 'ZmFrZS1pbWFnZQ==',
       model: 'ornith-1.5-35b-a3b',
     }) as any);
 
-    expect(response.status).toBe(200);
-    const body = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(result.status).toBe(200);
+    const body = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
     expect(body.messages[0].content).toEqual([
       { type: 'text', text: 'Inspect this plant' },
       { type: 'image_url', image_url: { url: 'data:image/png;base64,ZmFrZS1pbWFnZQ==' } },
     ]);
+  });
+
+  test('rejects an advertised text-only model for image requests', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'text-only-model' }]))
+      .mockResolvedValueOnce(response({ models: [{ key: 'text-only-model', capabilities: { vision: false } }] }));
+
+    const result = await POST(requestWithBody({
+      prompt: 'Inspect this plant',
+      image: 'ZmFrZS1pbWFnZQ==',
+      model: 'text-only-model',
+    }) as any);
+
+    expect(result.status).toBe(503);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      code: 'LM_STUDIO_MODEL_NOT_VISION_CAPABLE',
+    }));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   test('returns unavailable when LM Studio advertises no runnable chat model', async () => {

@@ -86,6 +86,40 @@ async function discoverLMStudio(): Promise<{
   return null;
 }
 
+async function discoverVisionModelIds(baseUrl: string): Promise<Set<string> | null> {
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/models`, {
+      signal: createTimeoutSignal(3000),
+      headers: lmStudioHeaders(),
+    });
+    if (!response.ok) return null;
+
+    const payload = await response.json().catch(() => ({}));
+    if (!Array.isArray(payload?.models)) return null;
+
+    const modelsWithMetadata = payload.models.filter((model: any) => (
+      typeof model?.capabilities?.vision === 'boolean'
+    ));
+    if (modelsWithMetadata.length === 0) return null;
+
+    const visionIds = new Set<string>();
+    for (const model of modelsWithMetadata) {
+      if (model.capabilities.vision !== true) continue;
+      for (const id of [model.key, model.id]) {
+        if (typeof id === 'string' && id.trim()) visionIds.add(id.trim());
+      }
+      for (const instance of model.loaded_instances || []) {
+        if (typeof instance?.id === 'string' && instance.id.trim()) visionIds.add(instance.id.trim());
+      }
+    }
+    return visionIds;
+  } catch {
+    // Older LM Studio builds may not expose the native catalog. The
+    // OpenAI-compatible endpoint remains the source of truth in that case.
+    return null;
+  }
+}
+
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
 export const revalidate = false;
@@ -157,6 +191,18 @@ export async function POST(request: NextRequest) {
         code: 'LM_STUDIO_NO_CHAT_MODEL',
         message: 'Load a chat model in LM Studio and retry.',
       }, { status: 503 });
+    }
+
+    if (image) {
+      const visionModelIds = await discoverVisionModelIds(discovered.baseUrl);
+      if (visionModelIds && !visionModelIds.has(selectedModel)) {
+        return NextResponse.json({
+          error: `LM Studio model "${selectedModel}" is not advertised as vision-capable`,
+          code: 'LM_STUDIO_MODEL_NOT_VISION_CAPABLE',
+          model: selectedModel,
+          visionModels: Array.from(visionModelIds),
+        }, { status: 503 });
+      }
     }
 
     // Preserve an already-normalized OpenAI-compatible message list. This is
