@@ -5,6 +5,8 @@
 ### 1. Install All Dependencies
 ```bash
 npm run setup
+npm run db:generate
+npm run db:push
 ```
 
 ### 2. Start Development Environment

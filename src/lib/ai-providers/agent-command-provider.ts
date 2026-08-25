@@ -89,12 +89,16 @@ export class AgentCommandProvider extends BaseProvider {
   async isAvailable(): Promise<boolean> {
     try {
       if (this.provider === 'openclaw') {
-        // The gateway status RPC can take 10–12 seconds while the authenticated
-        // local gateway completes its handshake. Keep this bounded, but do not
-        // turn a healthy slow handshake into a false unavailable state.
-        const { stdout } = await execFileAsync(this.command, ['gateway', 'status', '--json'], { timeout: 15000, maxBuffer: 2 * 1024 * 1024 });
+        // The full status command performs an RPC probe that can take tens of
+        // seconds on a healthy Gateway. Detection only needs the service state;
+        // ACP execution performs the authenticated request-level proof later.
+        // `--no-probe` avoids reporting a running Gateway as unavailable just
+        // because the diagnostic CLI probe is slow.
+        const { stdout } = await execFileAsync(this.command, ['gateway', 'status', '--json', '--no-probe'], { timeout: 15000, maxBuffer: 2 * 1024 * 1024 });
         const parsed = JSON.parse(stdout);
-        return parsed?.rpc?.ok === true || parsed?.gateway?.service?.runtime?.status === 'running';
+        return parsed?.rpc?.ok === true
+          || parsed?.service?.runtime?.status === 'running'
+          || parsed?.gateway?.service?.runtime?.status === 'running';
       }
       if (await this.isHermesApiAvailable()) return true;
       for (const provider of this.hermesProxyCandidates()) {

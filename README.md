@@ -19,6 +19,7 @@ From the repository root:
 npm run setup
 cp .env.example .env.local
 npm run db:generate
+npm run db:push
 npm run dev
 ```
 

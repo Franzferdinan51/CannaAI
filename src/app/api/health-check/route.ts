@@ -86,7 +86,10 @@ export async function GET() {
   const [db, lmstudio, openclaw, hermes] = await Promise.all([
     checkPrisma(),
     checkLMStudio(),
-    withHealthTimeout(checkOpenClaw(), { status: 'unreachable', transport: 'acp', error: 'health check timed out' }, 5000),
+    // OpenClaw's supported status command starts a CLI process and can take
+    // several seconds even with --no-probe on macOS launchd installations.
+    // Five seconds produced false outages for a running Gateway.
+    withHealthTimeout(checkOpenClaw(), { status: 'unreachable', transport: 'acp', error: 'health check timed out' }, 10000),
     withHealthTimeout(checkHermes(), { status: 'unreachable', error: 'health check timed out' }, 5000),
   ]);
 
