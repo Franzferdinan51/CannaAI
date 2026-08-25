@@ -205,9 +205,13 @@ export class ProviderManager {
         console.error(`Health check failed for ${providerName}:`, error);
       } finally {
         // Schedule next check
+        const healthCheckTimer = setTimeout(check, this.healthCheckInterval);
+        // Health polling is background work and must not keep a short-lived
+        // CLI, test worker, or serverless process alive by itself.
+        healthCheckTimer.unref?.();
         this.healthChecks.set(
           providerName,
-          setTimeout(check, this.healthCheckInterval)
+          healthCheckTimer
         );
       }
     };
