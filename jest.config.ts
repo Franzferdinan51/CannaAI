@@ -2,6 +2,8 @@ import type { Config } from 'jest';
 
 const config: Config = {
   preset: 'ts-jest',
+  // Test discovery must not crawl archived UI trees under legacy/.
+  roots: ['<rootDir>/tests'],
   testEnvironment: 'jsdom',
   globalSetup: '<rootDir>/tests/global-setup.js',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
@@ -72,7 +74,9 @@ const config: Config = {
     '^.+\\.(ts|tsx)$': [
       'ts-jest',
       {
-        tsconfig: '<rootDir>/tsconfig.json'
+        // Keep Jest on the maintained test graph. The broad Next tsconfig
+        // causes ts-jest to scan archived legacy UI files before test startup.
+        tsconfig: '<rootDir>/tsconfig.tests-check.json'
       }
     ]
   },

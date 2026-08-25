@@ -1,7 +1,10 @@
 /** @jest-environment node */
 
 jest.mock('@/lib/prisma', () => ({
-  prisma: { $queryRaw: jest.fn().mockResolvedValue([]) },
+  prisma: {
+    $queryRaw: jest.fn().mockResolvedValue([]),
+    $queryRawUnsafe: jest.fn().mockResolvedValue([]),
+  },
 }));
 jest.mock('@/lib/ai-provider-lmstudio', () => ({
   checkLMStudio: jest.fn(),
