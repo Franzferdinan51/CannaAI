@@ -71,7 +71,7 @@ async function runVerification(
   images: string[],
   config: ModelConfig
 ): Promise<{ analysis: PlantHealthAnalysis; provider: string } | null> {
-  const verifier = config.preferredVerifier;
+  const verifier = config.preferredVerifier || 'auto';
 
   if (verifier === 'auto') {
     // Auto-select local models first. Verification must work without cloud
@@ -83,18 +83,22 @@ async function runVerification(
       ['lmstudio4', config.lmStudioEndpoint4, config.lmStudioModel4],
     ] as const;
     for (const [provider, endpoint, model] of localCandidates) {
-      if (config.enabled[provider] && endpoint) {
-        const analysis = await analyzeWithLMStudio(text, images, endpoint, primaryAnalysis.flaggedIssues?.[0], model);
-        if (analysis) return { analysis, provider };
+      if (config.enabled?.[provider] && endpoint) {
+        try {
+          const analysis = await analyzeWithLMStudio(text, images, endpoint, primaryAnalysis.flaggedIssues?.[0], model);
+          if (analysis) return { analysis, provider };
+        } catch (error) {
+          console.error(`[DUAL-CHECK] ${provider} verifier failed; trying the next local model`, error);
+        }
       }
     }
-    if (config.enabled.gemini && config.geminiKey) {
+    if (config.enabled?.gemini && config.geminiKey) {
       const analysis = await analyzePlantHealth(text, images, config.geminiKey, config.geminiModel, primaryAnalysis.flaggedIssues?.[0], true);
       return { analysis, provider: 'gemini (with search)' };
     }
   }
 
-  if (verifier === 'gemini' && config.enabled.gemini && config.geminiKey) {
+  if (verifier === 'gemini' && config.enabled?.gemini && config.geminiKey) {
     const analysis = await analyzePlantHealth(
       text,
       images,
@@ -106,7 +110,7 @@ async function runVerification(
     return { analysis, provider: 'gemini' };
   }
 
-  if (verifier === 'openrouter' && config.enabled.openrouter && config.openRouterKey) {
+  if (verifier === 'openrouter' && config.enabled?.openrouter && config.openRouterKey) {
     const analysis = await analyzeWithOpenRouter(
       text,
       images,
@@ -147,12 +151,16 @@ async function runVerification(
     ['lmstudio3', config.lmStudioEndpoint3, config.lmStudioModel3],
     ['lmstudio4', config.lmStudioEndpoint4, config.lmStudioModel4],
   ] as const) {
-    if (config.enabled[provider] && endpoint) {
-      const analysis = await analyzeWithLMStudio(text, images, endpoint, primaryAnalysis.flaggedIssues?.[0], model);
-      if (analysis) return { analysis, provider: `${provider} (fallback)` };
+    if (config.enabled?.[provider] && endpoint) {
+      try {
+        const analysis = await analyzeWithLMStudio(text, images, endpoint, primaryAnalysis.flaggedIssues?.[0], model);
+        if (analysis) return { analysis, provider: `${provider} (fallback)` };
+      } catch (error) {
+        console.error(`[DUAL-CHECK] ${provider} fallback verifier failed`, error);
+      }
     }
   }
-  if (config.enabled.gemini && config.geminiKey) {
+  if (config.enabled?.gemini && config.geminiKey) {
     const analysis = await analyzePlantHealth(
       text,
       images,
@@ -233,12 +241,12 @@ export async function runDualCheckPipeline(
 
   // Use specified primary provider or first available
   if (!primaryProvider) {
-    if (config.enabled.lmstudio && config.lmStudioEndpoint) primaryProvider = 'lmstudio';
-    else if (config.enabled.lmstudio2 && config.lmStudioEndpoint2) primaryProvider = 'lmstudio2';
-    else if (config.enabled.lmstudio3 && config.lmStudioEndpoint3) primaryProvider = 'lmstudio3';
-    else if (config.enabled.lmstudio4 && config.lmStudioEndpoint4) primaryProvider = 'lmstudio4';
-    else if (config.enabled.openrouter && config.openRouterKey) primaryProvider = 'openrouter';
-    else if (config.enabled.gemini && config.geminiKey) primaryProvider = 'gemini';
+    if (config.enabled?.lmstudio && config.lmStudioEndpoint) primaryProvider = 'lmstudio';
+    else if (config.enabled?.lmstudio2 && config.lmStudioEndpoint2) primaryProvider = 'lmstudio2';
+    else if (config.enabled?.lmstudio3 && config.lmStudioEndpoint3) primaryProvider = 'lmstudio3';
+    else if (config.enabled?.lmstudio4 && config.lmStudioEndpoint4) primaryProvider = 'lmstudio4';
+    else if (config.enabled?.openrouter && config.openRouterKey) primaryProvider = 'openrouter';
+    else if (config.enabled?.gemini && config.geminiKey) primaryProvider = 'gemini';
     else throw new Error("No AI providers configured");
   }
 

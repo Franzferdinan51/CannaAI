@@ -33,10 +33,10 @@ function selectChatProvider(config: ModelConfig): string {
   const priority = ['lmstudio', 'lmstudio2', 'lmstudio3', 'lmstudio4', 'openrouter', 'gemini'];
 
   for (const provider of priority) {
-    if (provider === 'gemini' && config.enabled.gemini && config.geminiKey) {
+    if (provider === 'gemini' && config.enabled?.gemini && config.geminiKey) {
       return 'gemini';
     }
-    if (provider === 'openrouter' && config.enabled.openrouter && config.openRouterKey) {
+    if (provider === 'openrouter' && config.enabled?.openrouter && config.openRouterKey) {
       return 'openrouter';
     }
     if (provider.startsWith('lmstudio')) {
@@ -44,7 +44,7 @@ function selectChatProvider(config: ModelConfig): string {
         provider === 'lmstudio2' ? config.lmStudioEndpoint2 :
         provider === 'lmstudio3' ? config.lmStudioEndpoint3 :
         config.lmStudioEndpoint4;
-      if (config.enabled[provider as keyof typeof config.enabled] && endpoint) {
+      if (config.enabled?.[provider as keyof typeof config.enabled] && endpoint) {
         return provider;
       }
     }
@@ -229,17 +229,17 @@ export async function ragChat(
 
     for (const fallbackProvider of fallbackProviders) {
       try {
-        if (fallbackProvider === 'gemini' && config.enabled.gemini && config.geminiKey) {
+        if (fallbackProvider === 'gemini' && config.enabled?.gemini && config.geminiKey) {
           responseText = await cultivationRagChat(query, relevantDocs, history, 'gemini-1.5-flash', config.geminiKey);
-        } else if (fallbackProvider === 'openrouter' && config.enabled.openrouter && config.openRouterKey) {
+        } else if (fallbackProvider === 'openrouter' && config.enabled?.openrouter && config.openRouterKey) {
           responseText = await openrouterRagChat(query, relevantDocs, history, config.openRouterKey, config.openRouterModel);
-        } else if (fallbackProvider === 'lmstudio' && config.enabled.lmstudio && config.lmStudioEndpoint) {
+        } else if (fallbackProvider === 'lmstudio' && config.enabled?.lmstudio && config.lmStudioEndpoint) {
           responseText = await localRagChat(query, relevantDocs, history, config.lmStudioEndpoint, config.lmStudioModel);
-        } else if (fallbackProvider === 'lmstudio2' && config.enabled.lmstudio2 && config.lmStudioEndpoint2) {
+        } else if (fallbackProvider === 'lmstudio2' && config.enabled?.lmstudio2 && config.lmStudioEndpoint2) {
           responseText = await localRagChat(query, relevantDocs, history, config.lmStudioEndpoint2, config.lmStudioModel2);
-        } else if (fallbackProvider === 'lmstudio3' && config.enabled.lmstudio3 && config.lmStudioEndpoint3) {
+        } else if (fallbackProvider === 'lmstudio3' && config.enabled?.lmstudio3 && config.lmStudioEndpoint3) {
           responseText = await localRagChat(query, relevantDocs, history, config.lmStudioEndpoint3, config.lmStudioModel3);
-        } else if (fallbackProvider === 'lmstudio4' && config.enabled.lmstudio4 && config.lmStudioEndpoint4) {
+        } else if (fallbackProvider === 'lmstudio4' && config.enabled?.lmstudio4 && config.lmStudioEndpoint4) {
           responseText = await localRagChat(query, relevantDocs, history, config.lmStudioEndpoint4, config.lmStudioModel4);
         } else {
           continue;

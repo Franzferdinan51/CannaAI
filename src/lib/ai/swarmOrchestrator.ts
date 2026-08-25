@@ -28,17 +28,18 @@ export interface SwarmResult {
 function getActiveProviders(config: ModelConfig): string[] {
   const providers: string[] = [];
 
-  if (config.enabled.gemini && config.geminiKey) providers.push('gemini');
-  if (config.enabled.openrouter && config.openRouterKey) providers.push('openrouter');
-  if (config.enabled.lmstudio && config.lmStudioEndpoint) providers.push('lmstudio');
-  if (config.enabled.lmstudio2 && config.lmStudioEndpoint2) providers.push('lmstudio2');
-  if (config.enabled.lmstudio3 && config.lmStudioEndpoint3) providers.push('lmstudio3');
-  if (config.enabled.lmstudio4 && config.lmStudioEndpoint4) providers.push('lmstudio4');
+  if (config.enabled?.gemini && config.geminiKey) providers.push('gemini');
+  if (config.enabled?.openrouter && config.openRouterKey) providers.push('openrouter');
+  if (config.enabled?.lmstudio && config.lmStudioEndpoint) providers.push('lmstudio');
+  if (config.enabled?.lmstudio2 && config.lmStudioEndpoint2) providers.push('lmstudio2');
+  if (config.enabled?.lmstudio3 && config.lmStudioEndpoint3) providers.push('lmstudio3');
+  if (config.enabled?.lmstudio4 && config.lmStudioEndpoint4) providers.push('lmstudio4');
 
   // Sort by priority
   return providers.sort((a, b) => {
-    const aIndex = config.priority.indexOf(a as any);
-    const bIndex = config.priority.indexOf(b as any);
+    const priority = Array.isArray(config.priority) ? config.priority : [];
+    const aIndex = priority.indexOf(a as any);
+    const bIndex = priority.indexOf(b as any);
     return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
   });
 }
