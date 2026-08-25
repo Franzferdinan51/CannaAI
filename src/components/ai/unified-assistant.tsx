@@ -1173,14 +1173,10 @@ export default function UnifiedAIAssistant({
   };
 
   const handleCameraCapture = () => {
-    // Simulate camera capture - in real implementation, would access device camera
-    const simulatedImage = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
-    setCapturedImage(simulatedImage);
     setCameraActive(false);
-
-    // Auto-trigger analysis when image is captured
-    setChatMode('analysis');
-    setInput('Analyze this plant image for health issues and recommendations.');
+    // On mobile this opens the device camera; on desktop it opens the normal
+    // image picker. The selected image is handled by the shared upload path.
+    fileInputRef.current?.click();
   };
 
   const triggerImageUpload = () => {
@@ -2617,6 +2613,7 @@ export default function UnifiedAIAssistant({
                     <input
                       type="file"
                       accept="image/*"
+                      capture="environment"
                       ref={fileInputRef}
                       className="hidden"
                       onChange={handleImageUploadChange}
