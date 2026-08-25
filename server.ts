@@ -10,6 +10,7 @@ if (loadEnvFile) {
 }
 import { setupSocket } from '@/lib/socket';
 import { createServer } from 'http';
+import { networkInterfaces } from 'node:os';
 import { Server } from 'socket.io';
 import { WebSocketServer } from 'ws';
 import next from 'next';
@@ -299,7 +300,6 @@ async function createCustomServer() {
       console.log(`   • Network: http://0.0.0.0:${currentPort}`);
 
       // Get local IP addresses for better guidance
-      const { networkInterfaces } = require('os');
       const nets = networkInterfaces();
 
       console.log(`\n🌐 Available on your network:`);
@@ -344,14 +344,13 @@ async function createCustomServer() {
       const maybeExit = () => {
         if (httpClosed && ioClosed) {
           // Drain Prisma so SQLite WAL is flushed before the process dies.
-          try {
-            const { prisma } = require('./src/lib/prisma');
-            prisma.$disconnect()
-              .catch((e: any) => console.warn('Prisma disconnect failed:', e?.message))
-              .finally(() => process.exit(0));
-          } catch {
-            process.exit(0);
-          }
+          import('./src/lib/prisma')
+            .then(({ prisma }) => prisma.$disconnect())
+            .catch((e: unknown) => {
+              const message = e instanceof Error ? e.message : String(e);
+              console.warn('Prisma disconnect failed:', message);
+            })
+            .finally(() => process.exit(0));
         }
       };
 

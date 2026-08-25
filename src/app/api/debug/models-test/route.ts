@@ -7,7 +7,10 @@ const lmStudioHeaders = () => {
 };
 
 // Export configuration for dual-mode compatibility
-export const dynamic = 'auto';
+// This diagnostic performs live localhost requests and is runtime-only.
+// Prevent Next from executing it during static generation.
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 export const revalidate = false;
 
 export async function GET(request: NextRequest) {

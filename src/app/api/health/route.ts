@@ -3,7 +3,10 @@ import { detectAvailableProviders } from '@/lib/ai-provider-detection';
 import { getAnalyzeCache } from '@/lib/analyze-cache';
 
 // Export configuration for dual-mode compatibility
-export const dynamic = 'auto';
+// Health reflects the current process and provider state; never freeze it at
+// build time or cache a stale provider snapshot.
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 export const revalidate = false;
 
 export async function GET() {

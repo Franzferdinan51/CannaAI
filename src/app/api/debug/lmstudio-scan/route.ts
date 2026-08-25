@@ -4,7 +4,10 @@ import path from 'path';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 
 // Export configuration for dual-mode compatibility
-export const dynamic = 'auto';
+// This endpoint inspects the host filesystem and a live LM Studio service.
+// It must never run during a production build or be served as a frozen page.
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 export const revalidate = false;
 
 // Test paths for LM Studio
