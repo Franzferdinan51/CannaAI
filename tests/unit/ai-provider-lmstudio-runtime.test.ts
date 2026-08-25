@@ -58,6 +58,25 @@ describe('legacy LM Studio runtime configuration', () => {
     expect(body.model).toBe('my-local-model');
   });
 
+  test('does not auto-select a reranker as a chat model', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'qwen3-reranker-0.6b' }, { id: 'my-local-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'local answer' } }] }),
+        text: async () => '',
+      } as Response);
+
+    await executeWithLMStudio([{ role: 'user', content: 'hello' }]);
+
+    const completionCall = fetchMock.mock.calls[1];
+    const body = JSON.parse(String((completionCall[1] as RequestInit).body));
+    expect(body.model).toBe('my-local-model');
+  });
+
   test('uses the loopback endpoint that answered model discovery for inference', async () => {
     process.env.LM_STUDIO_MODEL = 'ornith-1.5-35b-a3b';
     const fetchMock = jest.spyOn(global, 'fetch')

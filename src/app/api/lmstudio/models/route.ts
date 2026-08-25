@@ -101,7 +101,14 @@ export function normalizeRemoteModels(models: any[]): any[] {
       ? String(model.key || model.id).trim()
       : '';
     const lowerId = id.toLowerCase();
-    if (!id || lowerId.includes('embedding') || lowerId.includes('reranker') || lowerId.includes('embed-')) {
+    if (
+      !id ||
+      model?.type === 'embedding' ||
+      model?.type === 'reranker' ||
+      lowerId.includes('embedding') ||
+      lowerId.includes('reranker') ||
+      lowerId.includes('embed-')
+    ) {
       continue;
     }
 

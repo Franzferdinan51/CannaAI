@@ -21,6 +21,18 @@ function normalizeImageUrl(image: unknown): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function isNonChatModel(entry: any): boolean {
+  const id = String(entry?.id || '').toLowerCase();
+  return Boolean(
+    entry?.type === 'embedding' ||
+    entry?.type === 'reranker' ||
+    id.includes('embedding') ||
+    id.includes('embed-') ||
+    id.endsWith('-embed') ||
+    id.includes('reranker'),
+  );
+}
+
 function attachImageToLatestUserMessage(messages: any[], image: unknown): any[] {
   const normalizedImage = normalizeImageUrl(image);
   if (!normalizedImage) return messages;
@@ -165,8 +177,8 @@ export async function POST(request: NextRequest) {
 
     // Get available models from LM Studio to find the requested model
     const availableModels = discovered.models.filter((entry: any) => {
-        const id = String(entry?.id || '').toLowerCase();
-        return id && !id.includes('embedding') && !id.includes('embed-') && !id.endsWith('-embed');
+        const id = String(entry?.id || '').trim();
+        return id && !isNonChatModel(entry);
       });
 
     // Accept both the legacy `modelId` field and the OpenAI-compatible `model`

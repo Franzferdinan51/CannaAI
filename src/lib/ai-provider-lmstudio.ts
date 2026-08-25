@@ -126,7 +126,7 @@ function normalizeImageUrl(image?: string): string | undefined {
 
 function isEmbeddingModel(id: string): boolean {
   const value = id.toLowerCase();
-  return value.includes('embedding') || value.includes('embed-') || value.endsWith('-embed');
+  return value.includes('embedding') || value.includes('embed-') || value.endsWith('-embed') || value.includes('reranker');
 }
 
 function looksLikeVisionModel(id: string): boolean {
