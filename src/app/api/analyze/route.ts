@@ -506,8 +506,8 @@ export async function POST(request: NextRequest) {
           'No AI providers are configured. Please connect an AI provider to use plant analysis.',
           {
             recommendations: [
-              'Configure Alibaba Bailian API key (PRIMARY - qwen3.5-plus)',
-              'Set up LM Studio for local development (non-serverless only)',
+              'Start LM Studio and load a local chat or vision model (recommended)',
+              'Connect OpenClaw or Hermes for agent fallback, or configure a cloud provider',
               'Visit Settings to configure your AI provider'
             ],
             availableProviders: [],
