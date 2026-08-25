@@ -203,27 +203,49 @@ export class ClientAIService {
   }
 
   private async callLMStudio(prompt: string, context?: any): Promise<AIResponse> {
-    // Check if LM Studio is running on localhost
+    const baseUrl = this.config.lmStudio.url.replace(/\/$/, '').replace(/\/v1\/?$/, '');
+    const headers: HeadersInit = this.config.lmStudio.apiKey
+      ? { Authorization: `Bearer ${this.config.lmStudio.apiKey}` }
+      : {};
+
+    // LM Studio's supported compatibility probe is /v1/models. The /health
+    // endpoint is not available in every LM Studio release and made a healthy
+    // local server look offline in the browser client.
+    let advertisedModels: Array<{ id?: string }> = [];
     try {
-      const healthCheck = await fetch(`${this.config.lmStudio.url}/health`, {
+      const modelsResponse = await fetch(`${baseUrl}/v1/models`, {
         method: 'GET',
         signal: AbortSignal.timeout(3000),
+        headers,
       });
 
-      if (!healthCheck.ok) {
-        throw new Error('LM Studio not responding');
+      if (!modelsResponse.ok) {
+        throw new Error(`LM Studio model discovery failed: ${modelsResponse.status}`);
       }
+
+      const modelsPayload = await modelsResponse.json();
+      advertisedModels = Array.isArray(modelsPayload?.data) ? modelsPayload.data : [];
     } catch (error) {
-      throw new Error('Cannot connect to LM Studio - make sure it\'s running');
+      throw new Error(`Cannot connect to LM Studio: ${error instanceof Error ? error.message : 'model discovery failed'}`);
     }
 
-    const response = await fetch(`${this.config.lmStudio.url}/v1/chat/completions`, {
+    const configuredModel = this.config.lmStudio.model.trim();
+    const selectedModel = configuredModel && advertisedModels.some(model => model.id === configuredModel)
+      ? configuredModel
+      : advertisedModels.find(model => typeof model.id === 'string' && !model.id.toLowerCase().includes('embedding'))?.id;
+
+    if (!selectedModel) {
+      throw new Error('LM Studio is connected, but no runnable chat model was advertised. Load a model and retry.');
+    }
+
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...headers,
       },
       body: JSON.stringify({
-        model: this.config.lmStudio.model,
+        model: selectedModel,
         messages: [
           {
             role: 'user',
@@ -245,7 +267,7 @@ export class ClientAIService {
     return {
       success: true,
       response: aiResponse,
-      model: this.config.lmStudio.model,
+      model: data.model || selectedModel,
       provider: 'LM Studio',
     };
   }
