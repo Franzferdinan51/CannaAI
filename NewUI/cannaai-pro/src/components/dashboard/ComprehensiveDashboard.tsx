@@ -405,7 +405,7 @@ const ComprehensiveDashboard: React.FC = () => {
                         <div className="space-y-2">
                           <Label className="text-gray-300">Strain</Label>
                           <Select value={formData.strain} onValueChange={(val) => setFormData(prev => ({ ...prev, strain: val }))}>
-                            <SelectTrigger className="bg-[#0f1419] border-gray-700 text-gray-200">
+                            <SelectTrigger aria-label="Select plant strain" className="bg-[#0f1419] border-gray-700 text-gray-200">
                               <SelectValue placeholder="Select Strain" />
                             </SelectTrigger>
                             <SelectContent className="bg-[#1a1f2e] border-gray-700">
