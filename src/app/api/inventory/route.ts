@@ -1,20 +1,16 @@
-import { unavailableFeature } from '@/lib/unavailable-feature';
-
-export const dynamic = 'auto';
-export const revalidate = false;
+import { unavailableApiResponse } from '@/lib/unavailable-api';
 
 export async function GET() {
-  return unavailableFeature('Inventory');
+  return unavailableApiResponse('Inventory records');
 }
-
 export async function POST() {
-  return unavailableFeature('Inventory');
+  return unavailableApiResponse('Inventory records');
 }
 
 export async function PUT() {
-  return unavailableFeature('Inventory');
+  return unavailableApiResponse('Inventory records');
 }
 
 export async function DELETE() {
-  return unavailableFeature('Inventory');
+  return unavailableApiResponse('Inventory records');
 }

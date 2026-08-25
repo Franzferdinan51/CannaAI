@@ -15,6 +15,9 @@ jest.mock('@/lib/prisma', () => ({
 
 import { GET as exportAnalytics } from '@/app/api/analytics/export/route';
 import { GET as getInsights } from '@/app/api/ai-insights/route';
+import { GET as getInventory } from '@/app/api/inventory/route';
+import { POST as runAutomationAction } from '@/app/api/automation/action/route';
+import { POST as runSimpleAnalysis } from '@/app/api/analyze-simple/route';
 
 describe('API input validation', () => {
   beforeEach(() => {
@@ -39,5 +42,14 @@ describe('API input validation', () => {
     const response = await getInsights(new Request('http://localhost/api/ai-insights?hours=0'));
     expect(response.status).toBe(400);
     expect(mockFindMany).not.toHaveBeenCalled();
+  });
+
+  it('does not claim unsupported legacy features succeeded', async () => {
+    for (const response of [await getInventory(), await runAutomationAction(), await runSimpleAnalysis()]) {
+      expect(response.status).toBe(503);
+      const body = await response.json();
+      expect(body.success).toBe(false);
+      expect(body.available).toBe(false);
+    }
   });
 });

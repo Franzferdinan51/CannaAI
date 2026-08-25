@@ -1,12 +1,8 @@
-import { unavailableFeature } from '@/lib/unavailable-feature';
-
-export const dynamic = 'auto';
-export const revalidate = false;
+import { unavailableApiResponse } from '@/lib/unavailable-api';
 
 export async function GET() {
-  return unavailableFeature('Harvest records');
+  return unavailableApiResponse('Harvest records');
 }
-
 export async function POST() {
-  return unavailableFeature('Harvest records');
+  return unavailableApiResponse('Harvest records');
 }

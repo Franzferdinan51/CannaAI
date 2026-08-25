@@ -1,5 +1,5 @@
-import { unavailableFeature } from '@/lib/unavailable-feature';
+import { unavailableApiResponse } from '@/lib/unavailable-api';
 
 export async function GET() {
-  return unavailableFeature('Canopy measurements');
+  return unavailableApiResponse('Canopy measurements');
 }
