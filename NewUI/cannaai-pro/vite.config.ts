@@ -48,6 +48,10 @@ export default defineConfig(({ mode }) => {
         },
       },
       optimizeDeps: {
+        // Vite 6's build-time dependency discovery can deadlock the esbuild
+        // service on this large mixed ESM/CommonJS graph. The explicit
+        // imports below remain available to Vite without the discovery pass.
+        noDiscovery: true,
         include: [
           'react',
           'react-dom',
