@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSocket } from '../lib/socket';
+import { apiUrl } from '../lib/api';
 import { SensorData, NotificationData } from '../lib/socket';
 
 interface SocketContextType {
@@ -57,13 +58,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const acknowledgeNotification = async (id: string) => {
-    const response = await fetch(`/api/notifications/${encodeURIComponent(id)}/acknowledge`, { method: 'POST' });
+    const response = await fetch(apiUrl(`/notifications/${encodeURIComponent(id)}/acknowledge`), { method: 'POST' });
     if (!response.ok) throw new Error('Failed to acknowledge notification');
     setNotifications(prev => prev.map(item => item.id === id ? { ...item, acknowledged: true } : item));
   };
 
   const deleteNotification = async (id: string) => {
-    const response = await fetch(`/api/notifications/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const response = await fetch(apiUrl(`/notifications/${encodeURIComponent(id)}`), { method: 'DELETE' });
     if (!response.ok) throw new Error('Failed to delete notification');
     setNotifications(prev => prev.filter(item => item.id !== id));
   };
