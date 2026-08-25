@@ -174,6 +174,16 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
     return 'bg-red-500';
   };
 
+  const exportSensors = () => {
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), sensors: filteredSensors, rooms: roomConfigs }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sensor-dashboard-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className={`flex-1 overflow-y-auto p-6 bg-gray-900 ${className}`}>
       {/* Header */}
@@ -292,7 +302,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
           </button>
 
           {/* Export Button */}
-          <button className="flex items-center gap-2 px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700">
+          <button type="button" onClick={exportSensors} aria-label="Export sensor dashboard" className="flex items-center gap-2 px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700">
             <Download className="w-4 h-4" />
             Export
           </button>

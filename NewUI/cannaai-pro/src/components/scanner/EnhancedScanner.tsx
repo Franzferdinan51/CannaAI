@@ -113,6 +113,17 @@ const EnhancedScanner: React.FC = () => {
 
   const selectedImage = images.find(img => img.id === selectedId);
 
+  const downloadReport = () => {
+    if (!selectedImage) return;
+    const blob = new Blob([JSON.stringify(selectedImage, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `plant-analysis-${selectedImage.id}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Update scanner stats when images change
   useEffect(() => {
     const stats = calculateScannerStats(images);
@@ -710,7 +721,7 @@ const EnhancedScanner: React.FC = () => {
 
                       {/* Actions */}
                       <div className="flex gap-2 pt-4 border-t border-gray-700">
-                        <button className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1">
+                        <button type="button" onClick={downloadReport} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1">
                           <FileText className="w-3 h-3" />
                           Report
                         </button>
