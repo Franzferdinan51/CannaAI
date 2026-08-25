@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { randomUUID } from 'node:crypto';
 import { ClientSideConnection, PROTOCOL_VERSION, ndJsonStream } from '@agentclientprotocol/sdk';
 import { BaseProvider, AIRequest, AIResponse } from './base-provider';
 
@@ -390,8 +391,8 @@ export class AgentCommandProvider extends BaseProvider {
           if (!match) throw new Error('OpenClaw ACP only supports base64 data URLs or remote image URLs');
           const mimeType = match[1];
           const extension = mimeType.split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'bin';
-          const filePath = path.join(os.tmpdir(), `cannaai-acp-${process.pid}-${Date.now()}.${extension}`);
-          await writeFile(filePath, Buffer.from(match[2], 'base64'), { mode: 0o600 });
+          const filePath = path.join(os.tmpdir(), `cannaai-acp-${randomUUID()}.${extension}`);
+          await writeFile(filePath, Buffer.from(match[2], 'base64'), { flag: 'wx', mode: 0o600 });
           tempFiles.push(filePath);
           prompt.push({ type: 'resource_link', uri: pathToFileURL(filePath).href, name: `plant-image.${extension}`, mimeType });
         }
