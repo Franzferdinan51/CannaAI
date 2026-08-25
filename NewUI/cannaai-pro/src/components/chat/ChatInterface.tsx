@@ -142,6 +142,7 @@ export function ChatInterface({
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showConversationManager, setShowConversationManager] = useState(false);
   const [messageSearch, setMessageSearch] = useState('');
   const [filteredMessages, setFilteredMessages] = useState(messages);
@@ -342,6 +343,7 @@ export function ChatInterface({
             variant="ghost"
             size="sm"
             onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? 'Hide chat sidebar' : 'Show chat sidebar'}
             className="text-gray-400 hover:text-white"
           >
             <Menu className="w-4 h-4" />
@@ -402,6 +404,7 @@ export function ChatInterface({
                     variant="ghost"
                     size="sm"
                     onClick={handleVoiceToggle}
+                    aria-label={isVoiceListening ? 'Stop voice input' : 'Start voice input'}
                     className={`${
                       isVoiceListening ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-white'
                     }`}
@@ -424,6 +427,7 @@ export function ChatInterface({
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowTemplates(!showTemplates)}
+                  aria-label="Toggle quick templates"
                   className="text-gray-400 hover:text-white"
                 >
                   <Hash className="w-4 h-4" />
@@ -442,6 +446,8 @@ export function ChatInterface({
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  aria-label="Show notifications"
                   className="text-gray-400 hover:text-white relative"
                 >
                   <AlertTriangle className="w-4 h-4" />
@@ -459,7 +465,7 @@ export function ChatInterface({
           {/* More Actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+              <Button variant="ghost" size="sm" aria-label="Open chat actions" className="text-gray-400 hover:text-white">
                 <ChevronDown className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -490,6 +496,20 @@ export function ChatInterface({
           </DropdownMenu>
         </div>
       </div>
+
+      {showNotifications && (
+        <div className="absolute right-4 top-16 z-30 w-80 rounded-xl border border-gray-700 bg-gray-800 p-4 shadow-2xl" role="status" aria-label="Notifications panel">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-semibold text-white">Notifications</h2>
+            <button type="button" onClick={() => setShowNotifications(false)} aria-label="Close notifications" className="text-sm text-gray-400 hover:text-white">Close</button>
+          </div>
+          {notifications.length === 0 ? (
+            <p className="text-sm text-gray-400">No notifications.</p>
+          ) : (
+            <div className="space-y-2">{notifications.slice(0, 8).map((notification) => <div key={notification.id} className="rounded-lg bg-gray-900 p-3 text-sm text-gray-300">{notification.message}</div>)}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 
