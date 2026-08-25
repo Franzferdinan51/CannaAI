@@ -213,6 +213,10 @@ export default function FloatingAIAssistant({
         context
       );
 
+      if (!response.success) {
+        throw new Error(response.error || 'The configured AI provider returned no response.');
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
