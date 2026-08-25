@@ -15,26 +15,30 @@ function normalizeBaseUrl(endpoint: string): string {
   return withProtocol.replace(/\/v1\/?$/i, '').replace(/\/$/, '');
 }
 
+async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Test connection to LM Studio
  */
 export async function testLMStudioConnection(endpoint: string): Promise<{ success: boolean; error?: string; models?: string[] }> {
   try {
     const baseUrl = normalizeBaseUrl(endpoint);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch(`${baseUrl}/v1/models`, {
+    const response = await fetchWithTimeout(`${baseUrl}/v1/models`, {
       method: 'GET',
-      signal: controller.signal,
       mode: 'cors',
       credentials: 'omit',
       headers: {
         'Accept': 'application/json'
       }
-    });
-
-    clearTimeout(timeoutId);
+    }, 5000);
 
     if (response.ok) {
       const data = await response.json();
@@ -63,12 +67,12 @@ export async function testLMStudioConnection(endpoint: string): Promise<{ succes
  */
 async function getAvailableModel(baseUrl: string): Promise<string | null> {
   try {
-    const response = await fetch(`${baseUrl}/v1/models`, {
+    const response = await fetchWithTimeout(`${baseUrl}/v1/models`, {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
       headers: { 'Accept': 'application/json' }
-    });
+    }, 5000);
 
     if (response.ok) {
       const data = await response.json();

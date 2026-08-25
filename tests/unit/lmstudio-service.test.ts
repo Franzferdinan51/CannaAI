@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 
-import { analyzeWithLMStudio } from '@/lib/ai/lmstudioService';
+import { analyzeWithLMStudio, testLMStudioConnection } from '@/lib/ai/lmstudioService';
 
 describe('legacy LM Studio vision client', () => {
   afterEach(() => {
@@ -52,5 +52,19 @@ describe('legacy LM Studio vision client', () => {
     await analyzeWithLMStudio('Inspect this plant', [], 'http://localhost:1234/v1/', undefined, 'vision-model');
 
     expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/chat/completions');
+  });
+
+  test('uses a bounded model discovery request for a /v1 endpoint', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ id: 'ornith-1.5-35b-a3b' }] }),
+    } as Response);
+
+    await expect(testLMStudioConnection('http://localhost:1234/v1')).resolves.toEqual({
+      success: true,
+      models: ['ornith-1.5-35b-a3b'],
+    });
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
+    expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
   });
 });
