@@ -96,11 +96,16 @@ const Plants: React.FC = () => {
   const [showPlantForm, setShowPlantForm] = useState(false);
   const [editingPlant, setEditingPlant] = useState<Plant | null>(null);
   const inventoryFileInput = useRef<HTMLInputElement>(null);
+  const plantLoadInFlight = useRef(false);
   const [autoRefreshPlants, setAutoRefreshPlants] = useState(true);
   const [showArchivedPlants, setShowArchivedPlants] = useState(false);
 
   // Load initial data
   const loadInitialData = useCallback(async () => {
+    // Do not let the interval start another set of requests while a slow
+    // local database/service is still resolving the previous refresh.
+    if (plantLoadInFlight.current) return;
+    plantLoadInFlight.current = true;
     setState(prev => ({ ...prev, isLoading: true, error: undefined }));
 
     try {
@@ -137,6 +142,8 @@ const Plants: React.FC = () => {
         isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to load data'
       }));
+    } finally {
+      plantLoadInFlight.current = false;
     }
   }, [showArchivedPlants]);
 
