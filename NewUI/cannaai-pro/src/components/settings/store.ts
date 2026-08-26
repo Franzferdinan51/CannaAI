@@ -284,10 +284,14 @@ export const useSettingsStore = create<SettingsStore>()(
 
         resetSettings: async () => {
           const defaultSettings = createDefaultSettings();
-          set({
-            settings: defaultSettings,
-            hasChanges: true
-          });
+          set({ isSaving: true, error: '', success: '' });
+          try {
+            await settingsAPI.batchUpdateSettings(defaultSettings);
+            set({ settings: defaultSettings, defaultSettings: { ...defaultSettings }, hasChanges: false, isSaving: false, success: 'Settings reset to defaults' });
+          } catch (error) {
+            set({ isSaving: false, error: error instanceof Error ? error.message : 'Failed to reset settings' });
+            throw error;
+          }
         },
 
         updateSettings: (updates) => {

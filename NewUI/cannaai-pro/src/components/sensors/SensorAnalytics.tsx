@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -86,6 +86,7 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
   const [refreshInterval, setRefreshInterval] = useState(60000); // 1 minute
   const [analyticsData, setAnalyticsData] = useState<SensorAnalyticsData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const getUnit = (sensorType: SensorType): string => {
     switch (sensorType) {
@@ -105,27 +106,40 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
   };
 
   // Load analytics data
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const data = await Promise.all(sensors.map((sensor) => sensorAPI.getSensorAnalytics(sensor.id, timeframe)));
-        setAnalyticsData(data);
-      } catch (error) {
-        console.error('Failed to load analytics data:', error);
-        setAnalyticsData([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const data = await Promise.all(sensors.map((sensor) => sensorAPI.getSensorAnalytics(sensor.id, timeframe)));
+      setAnalyticsData(data);
+    } catch (error) {
+      console.error('Failed to load analytics data:', error);
+      setAnalyticsData([]);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load sensor analytics');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sensors, timeframe]);
 
-    loadData();
+  useEffect(() => {
+    void loadData();
 
     if (autoRefresh) {
       const interval = setInterval(loadData, refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [sensors, timeframe, autoRefresh, refreshInterval]);
+  }, [loadData, autoRefresh, refreshInterval]);
+
+  const anomalyPoints = useMemo(() => analyticsData.flatMap((analytic) => {
+    const values = analytic.data.map(point => point.value).filter(Number.isFinite);
+    if (values.length < 3) return [];
+    const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const deviation = Math.sqrt(values.reduce((sum, value) => sum + (value - average) ** 2, 0) / values.length);
+    const threshold = deviation * 2;
+    return analytic.data
+      .filter(point => point.quality === 'poor' || (threshold > 0 && Math.abs(point.value - average) > threshold))
+      .map(point => ({ ...point, sensorId: analytic.sensorId }));
+  }), [analyticsData]);
 
   // Prepare chart data
   const chartData = useMemo(() => {
@@ -174,7 +188,8 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
       statistics: analytic.statistics,
       alerts: analytic.alerts,
       dataQuality: analytic.dataQuality,
-      dataPoints: analytic.data.length
+      dataPoints: analytic.data.length,
+      data: analytic.data
     }));
 
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -201,13 +216,20 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg ${autoRefresh ? 'bg-emerald-900/30 border border-emerald-700/50 text-emerald-400' : 'bg-gray-800 border border-gray-700 text-gray-400'}`}
             >
               <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
               {autoRefresh ? 'Auto Refresh' : 'Manual'}
             </button>
+            {!autoRefresh && (
+              <button type="button" onClick={() => void loadData()} disabled={isLoading} aria-label="Refresh sensor analytics" className="p-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 disabled:opacity-50">
+                <RefreshCw className={isLoading ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
+              </button>
+            )}
             <button
+              type="button"
               onClick={exportData}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
@@ -216,6 +238,23 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
             </button>
           </div>
         </div>
+
+        {loadError && (
+          <div role="alert" className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-red-800/60 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+            <span>{loadError}</span>
+            <button type="button" onClick={() => void loadData()} className="text-red-300 underline hover:text-white">Retry</button>
+          </div>
+        )}
+
+        {showAnomalies && anomalyPoints.length > 0 && (
+          <div className="mb-6 rounded-xl border border-amber-800/60 bg-amber-950/20 p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-amber-200">Detected anomalies</h3>
+              <span className="text-xs text-amber-300">{anomalyPoints.length} data point{anomalyPoints.length === 1 ? '' : 's'}</span>
+            </div>
+            <p className="mt-1 text-sm text-amber-100/70">Poor-quality or statistically unusual readings in the selected timeframe.</p>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-4 mb-6">
