@@ -384,7 +384,8 @@ async function getProviderModels(provider: string) {
     if (provider === 'lm-studio') {
       // Get LM Studio models - doesn't need API key
       const baseUrl = String(settings.lmStudio.url || 'http://localhost:1234')
-        .replace(/\/v1\/?$/i, '')
+        .replace(/\/(?:api\/)?v1\/?$/i, '')
+        .replace(/\/api\/?$/i, '')
         .replace(/\/$/, '');
       const apiKey = settings.lmStudio.apiKey || getLMStudioApiKey();
       let data: any = null;
@@ -833,7 +834,8 @@ async function testAIConnection(provider: string) {
       // LM Studio may require its local bearer token (newer LM Studio
       // versions do), so use the same authenticated probe as model discovery.
       const baseUrl = String(settings.lmStudio.url || 'http://localhost:1234')
-        .replace(/\/v1\/?$/i, '')
+        .replace(/\/(?:api\/)?v1\/?$/i, '')
+        .replace(/\/api\/?$/i, '')
         .replace(/\/$/, '');
       const apiKey = settings.lmStudio.apiKey || getLMStudioApiKey();
       const response = await fetch(`${baseUrl}/v1/models`, {

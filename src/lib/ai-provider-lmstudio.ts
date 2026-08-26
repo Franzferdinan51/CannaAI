@@ -13,7 +13,8 @@ function isServerlessEnv(): boolean {
 function normalizeBaseUrl(value?: string): string {
   return (value || 'http://localhost:1234')
     .trim()
-    .replace(/\/v1\/?$/, '')
+    .replace(/\/(?:api\/)?v1\/?$/i, '')
+    .replace(/\/api\/?$/i, '')
     .replace(/\/$/, '');
 }
 

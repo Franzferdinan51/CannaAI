@@ -25,7 +25,10 @@ async function withSettingsLookupTimeout<T>(operation: Promise<T>): Promise<T | 
 }
 
 function normalizeLMStudioBaseUrl(value: string): string {
-  return value.replace(/\/v1\/?$/, '').replace(/\/$/, '');
+  return value
+    .replace(/\/(?:api\/)?v1\/?$/i, '')
+    .replace(/\/api\/?$/i, '')
+    .replace(/\/$/, '');
 }
 
 async function getRemoteLMStudioConfig(urlOverride?: string): Promise<{ baseUrl: string; apiKey?: string; candidates: string[] }> {

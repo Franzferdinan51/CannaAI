@@ -71,7 +71,7 @@ describe('legacy LM Studio runtime configuration', () => {
 
     await expect(executeWithLMStudio(
       [{ role: 'user', content: 'hello' }],
-      { baseUrl: 'http://192.168.1.50:1234' },
+      { baseUrl: 'http://192.168.1.50:1234/api/v1' },
     )).resolves.toBe('remote answer');
 
     expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
