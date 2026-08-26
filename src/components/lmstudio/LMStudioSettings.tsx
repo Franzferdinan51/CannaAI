@@ -68,9 +68,22 @@ export function LMStudioSettings() {
     void loadSettings();
   }, []);
 
+  const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 15000) => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
+
   const loadSettings = async () => {
     try {
-      const response = await fetch('/api/settings');
+      const response = await fetchWithTimeout('/api/settings');
+      if (!response.ok) {
+        throw new Error(`Settings request failed (${response.status})`);
+      }
       const data = await response.json();
       if (data.success) {
         const configuredUrl = data.settings.lmStudio?.url || 'http://localhost:1234';
@@ -89,10 +102,14 @@ export function LMStudioSettings() {
       setIsLoading(true);
       setError('');
 
-      const response = await fetch(`/api/lmstudio/models?url=${encodeURIComponent(url)}`);
+      const response = await fetchWithTimeout(
+        `/api/lmstudio/models?url=${encodeURIComponent(url)}`,
+        {},
+        10000
+      );
       const data: LMStudioResponse = await response.json();
 
-      if (data.status === 'success') {
+      if (response.ok && data.status === 'success') {
         // Deduplicate models by ID
         const uniqueModels = Array.from(
           new Map(data.models.map(model => [model.id, model])).values()
@@ -101,10 +118,14 @@ export function LMStudioSettings() {
         setLmStudioRunning(data.lmStudioRunning);
         setSummary(data.summary);
       } else {
-        setError(data.error || 'Failed to load models');
+        setError(data.error || `LM Studio model request failed (${response.status})`);
       }
     } catch (error) {
-      setError('Failed to connect to LM Studio scanner');
+      setError(error instanceof DOMException && error.name === 'AbortError'
+        ? 'LM Studio model request timed out'
+        : error instanceof Error
+          ? error.message
+          : 'Failed to connect to LM Studio scanner');
       console.error('Error loading models:', error);
     } finally {
       setIsLoading(false);
@@ -120,7 +141,7 @@ export function LMStudioSettings() {
   const handleSaveUrl = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/settings', {
+      const response = await fetchWithTimeout('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -130,7 +151,7 @@ export function LMStudioSettings() {
         })
       });
       const data = await response.json();
-      if (!data.success) {
+      if (!response.ok || !data.success) {
         setError(data.error || 'Failed to save URL');
       }
     } catch (error) {
@@ -147,7 +168,7 @@ export function LMStudioSettings() {
       setIsSaving(true);
       setError('');
       try {
-        const response = await fetch('/api/settings', {
+      const response = await fetchWithTimeout('/api/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
