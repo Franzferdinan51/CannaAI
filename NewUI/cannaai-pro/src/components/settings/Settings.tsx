@@ -310,6 +310,7 @@ const Settings: React.FC = () => {
               {/* Save Button */}
               {hasChanges && (
                 <motion.button
+                  type="button"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   onClick={handleSave}
@@ -462,7 +463,10 @@ const Settings: React.FC = () => {
                 <input
                   type="file"
                   accept=".json"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    setImportFile(e.target.files?.[0] || null);
+                    e.target.value = '';
+                  }}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-emerald-600 file:text-white hover:file:bg-emerald-500"
                 />
               </div>
