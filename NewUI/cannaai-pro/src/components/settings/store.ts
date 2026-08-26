@@ -255,7 +255,15 @@ export const useSettingsStore = create<SettingsStore>()(
               isLoading: false
             });
           } catch (error) {
+            const cachedSettings = get().settings;
+            const fallbackSettings = cachedSettings || createDefaultSettings();
             set({
+              // Keep Settings usable when the backend is unavailable on a
+              // fresh install. Never replace an existing cached snapshot.
+              settings: fallbackSettings,
+              defaultSettings: cachedSettings ? get().defaultSettings : fallbackSettings,
+              selectedProvider: fallbackSettings.aiProvider,
+              hasChanges: false,
               error: error instanceof Error ? error.message : 'Failed to load settings',
               isLoading: false
             });
