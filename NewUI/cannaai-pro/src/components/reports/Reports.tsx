@@ -102,6 +102,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Form states
   const [newReport, setNewReport] = useState<Partial<Report>>({
@@ -137,12 +138,14 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
 
   const loadReports = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const data = await reportsApi.getReports();
       setReports(data.reports);
     } catch (error) {
       console.error('Failed to load reports:', error);
       setReports([]);
+      setLoadError(error instanceof Error ? error.message : 'Unable to load reports');
     } finally {
       setIsLoading(false);
     }
@@ -598,13 +601,14 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
       ) : filteredReports.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>No reports found</p>
+          <p>{loadError ? 'Reports are unavailable' : 'No reports found'}</p>
+          {loadError && <p className="mt-2 text-sm text-red-300">{loadError}</p>}
           <button
             type="button"
-            onClick={() => setShowCreateModal(true)}
+            onClick={loadError ? loadReports : () => setShowCreateModal(true)}
             className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
           >
-            Create Your First Report
+            {loadError ? 'Retry' : 'Create Your First Report'}
           </button>
         </div>
       ) : viewMode === 'grid' ? (

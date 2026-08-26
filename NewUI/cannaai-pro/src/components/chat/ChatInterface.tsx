@@ -622,6 +622,10 @@ export function ChatInterface({
               onArchive={(id) => archiveConversation(id)}
               onDelete={(id) => deleteConversation(id)}
               onStar={(id) => starConversation(id)}
+              onExport={handleExportChat}
+              onImport={handleImportChat}
+              onSettingsClick={() => setShowSettings(true)}
+              onAnalyticsClick={() => setShowAnalytics(true)}
               analytics={analytics}
               settings={settings}
             />

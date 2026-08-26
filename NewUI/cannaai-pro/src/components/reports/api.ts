@@ -70,7 +70,7 @@ export const reportsApi = {
       return { reports: (response.data.reports || []).map(normalizeReport), total: response.data.total || 0 };
     } catch (error) {
       console.error('Failed to fetch reports:', error);
-      return { reports: [], total: 0 };
+      throw error instanceof Error ? error : new Error('Failed to fetch reports');
     }
   },
 
