@@ -332,7 +332,7 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
   ];
 
   return (
-    <div className="flex-1 flex flex-col bg-[#0f1419] text-gray-100">
+    <div className="relative flex flex-1 flex-col bg-[#0f1419] text-gray-100">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-h-16 px-4 sm:px-6 py-3 border-b border-gray-800 bg-[#181b21]/90 backdrop-blur-sm sticky top-0 z-40">
         <div className="flex min-w-0 items-center space-x-3 sm:space-x-4">
@@ -357,7 +357,7 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
       </div>
 
       {showNotifications && (
-        <div id="dashboard-notifications" className="absolute right-6 top-16 z-50 w-80 rounded-xl border border-gray-700 bg-[#181b21] p-4 shadow-2xl" role="region" aria-label="Dashboard notifications panel">
+        <div id="dashboard-notifications" className="absolute right-4 top-16 z-50 w-[calc(100vw-2rem)] max-w-80 rounded-xl border border-gray-700 bg-[#181b21] p-4 shadow-2xl sm:right-6" role="region" aria-label="Dashboard notifications panel">
           <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close dashboard notifications" onClick={() => setShowNotifications(false)} className="text-sm text-gray-400 hover:text-white">Close</button></div>
           {notifications.length === 0 ? <p className="text-sm text-gray-400">No notifications.</p> : <div className="space-y-2">{notifications.map((notification) => <div key={notification.id} className="rounded-lg bg-[#0f1419] p-3 text-sm text-gray-300"><p>{notification.message}</p><p className="mt-1 text-xs text-gray-500">{notification.time}</p></div>)}</div>}
         </div>
@@ -379,9 +379,9 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
         </Button>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Sidebar */}
-        <aside id="dashboard-navigation" className={`${showMobileMenu ? 'block' : 'hidden'} lg:block w-64 border-r border-gray-800 bg-[#181b21] overflow-y-auto`}>
+        <aside id="dashboard-navigation" className={`${showMobileMenu ? 'block' : 'hidden'} w-full shrink-0 border-b border-gray-800 bg-[#181b21] overflow-y-auto lg:block lg:w-64 lg:border-b-0 lg:border-r`}>
           <nav className="p-4 space-y-2" aria-label="Dashboard sections">
             {dashboardItems.map((item) => (
               <button
@@ -404,7 +404,7 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
             ))}
           </nav>
 
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
+          <div className="sticky bottom-0 border-t border-gray-800 bg-[#181b21] p-4">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs text-emerald-400">System Online</span>
@@ -413,7 +413,7 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 max-w-7xl mx-auto">
             {/* Overview Dashboard */}
             {activeDashboard === 'overview' && (
