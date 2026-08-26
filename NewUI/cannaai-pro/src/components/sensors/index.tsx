@@ -78,8 +78,8 @@ const Sensors: React.FC<SensorsProps> = ({
       const [sensorsResult, roomsResult] = await Promise.allSettled([
         // Local SQLite may be cold after the first request. Do not turn a
         // valid but slow local response into a misleading empty dashboard.
-        withTimeout(sensorAPI.sensors.getSensors(), 20000),
-        withTimeout(sensorAPI.rooms.getRooms(), 20000),
+        withTimeout(sensorAPI.sensors.getSensors(), 60000),
+        withTimeout(sensorAPI.rooms.getRooms(), 60000),
       ]);
 
       const sensorsData = sensorsResult.status === 'fulfilled' ? sensorsResult.value : [];
