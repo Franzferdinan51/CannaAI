@@ -435,6 +435,16 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
                   <div
                     key={plant.plantId}
                     onClick={() => setSelectedPlant(plant)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedPlant(plant);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selectedPlant?.plantId === plant.plantId}
+                    aria-label={`Select ${plant.strain}`}
                     className={`bg-[#1A1D23] border rounded-xl p-4 cursor-pointer transition-all duration-200 hover:border-gray-600 ${
                       selectedPlant?.plantId === plant.plantId ? 'border-emerald-500' : 'border-gray-800'
                     }`}
@@ -499,6 +509,15 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
                         <tr
                           key={plant.plantId}
                           onClick={() => setSelectedPlant(plant)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedPlant(plant);
+                            }
+                          }}
+                          tabIndex={0}
+                          aria-selected={selectedPlant?.plantId === plant.plantId}
+                          aria-label={`Select ${plant.strain}`}
                           className={`cursor-pointer hover:bg-[#252A33]/50 ${
                             selectedPlant?.plantId === plant.plantId ? 'bg-emerald-500/10' : ''
                           }`}

@@ -331,6 +331,16 @@ export const AutomationHistory: React.FC<AutomationHistoryProps> = ({
                       getStatusColor(log.status)
                     }`}
                     onClick={() => setSelectedLog(log)}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedLog(log);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View automation event ${log.action}`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center space-x-3">

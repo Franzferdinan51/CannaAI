@@ -189,6 +189,19 @@ const PlantSearch: React.FC<PlantSearchProps> = ({
                             : [...currentStages, stage as GrowthStage];
                           updateFilter('stages', newStages.length > 0 ? newStages : undefined);
                         }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            const currentStages = filter.stages || [];
+                            const newStages = currentStages.includes(stage as GrowthStage)
+                              ? currentStages.filter(s => s !== stage)
+                              : [...currentStages, stage as GrowthStage];
+                            updateFilter('stages', newStages.length > 0 ? newStages : undefined);
+                          }
+                        }}
+                        role="checkbox"
+                        aria-checked={filter.stages?.includes(stage as GrowthStage) || false}
+                        tabIndex={0}
                       >
                         {stage.replace('-', ' ')}
                       </Badge>
@@ -225,6 +238,19 @@ const PlantSearch: React.FC<PlantSearchProps> = ({
                             : [...currentStatuses, status as HealthStatus];
                           updateFilter('healthStatuses', newStatuses.length > 0 ? newStatuses : undefined);
                         }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            const currentStatuses = filter.healthStatuses || [];
+                            const newStatuses = currentStatuses.includes(status as HealthStatus)
+                              ? currentStatuses.filter(s => s !== status)
+                              : [...currentStatuses, status as HealthStatus];
+                            updateFilter('healthStatuses', newStatuses.length > 0 ? newStatuses : undefined);
+                          }
+                        }}
+                        role="checkbox"
+                        aria-checked={filter.healthStatuses?.includes(status as HealthStatus) || false}
+                        tabIndex={0}
                       >
                         {status}
                       </Badge>
