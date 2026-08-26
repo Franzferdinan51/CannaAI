@@ -198,7 +198,9 @@ async function analyzeTrichomes(
   console.log('🔬 Starting AI-powered trichome analysis...');
 
   // Enhanced AI provider detection
-  const providerDetection = await detectAvailableProviders();
+  // Prefer a healthy local vision model immediately. If LM Studio is not
+  // available, detection retains the normal fallback chain for this route.
+  const providerDetection = await detectAvailableProviders({ fastLocal: true });
   console.log(`📡 AI provider detected: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
 
   // Check if AI providers are available
