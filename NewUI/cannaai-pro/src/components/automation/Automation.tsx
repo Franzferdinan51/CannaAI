@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Bot,
   Activity,
@@ -166,6 +167,7 @@ const Automation: React.FC<AutomationProps> = ({
   className = '',
   initialView = 'dashboard'
 }) => {
+  const navigate = useNavigate();
   // State management
   const [activeView, setActiveView] = useState<AutomationProps['initialView']>(initialView);
   const [selectedSystem, setSelectedSystem] = useState<string | null>(null);
@@ -381,7 +383,7 @@ const Automation: React.FC<AutomationProps> = ({
                 {isGlobalEnabled ? 'Enabled' : 'Disabled'}
               </span>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
