@@ -260,14 +260,16 @@ const Settings: React.FC = () => {
                   type="button"
                   onClick={() => handleExport('json')}
                   aria-label="Export settings"
+                  aria-haspopup="menu"
                   className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
                   title="Export Settings"
                 >
                   <Download className="w-4 h-4 text-gray-300" />
                 </button>
-                <div className="absolute top-full right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div role="menu" className="absolute top-full right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50">
                   <button
                     type="button"
+                    role="menuitem"
                     aria-label="Export settings as JSON"
                     onClick={() => handleExport('json')}
                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-t-lg"
@@ -276,6 +278,7 @@ const Settings: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    role="menuitem"
                     aria-label="Export settings as CSV"
                     onClick={() => handleExport('csv')}
                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-b-lg"
