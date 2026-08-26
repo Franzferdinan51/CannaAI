@@ -71,6 +71,7 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
   });
   const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
   const [selectedAlerts, setSelectedAlerts] = useState<Set<string>>(new Set());
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Alert statistics
   const alertStats = useMemo(() => {
@@ -165,10 +166,12 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
 
   // Acknowledge alert
   const acknowledgeAlert = async (alertId: string) => {
+    setActionError(null);
     try {
       await acknowledgeNotification(alertId);
     } catch (error) {
       console.error('Failed to acknowledge alert:', error);
+      setActionError(error instanceof Error ? error.message : 'Unable to acknowledge this alert.');
     }
   };
 
@@ -181,10 +184,12 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
 
   // Delete alert
   const deleteAlert = async (alertId: string) => {
+    setActionError(null);
     try {
       await deleteNotification(alertId);
     } catch (error) {
       console.error('Failed to delete alert:', error);
+      setActionError(error instanceof Error ? error.message : 'Unable to delete this alert.');
     }
   };
 
@@ -404,7 +409,7 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
               type="button"
               onClick={acknowledgeAllAlerts}
               className="px-3 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700"
-              disabled={filteredNotifications.filter(n => !n.acknowledged).length === 0}
+              disabled={!isConnected || filteredNotifications.filter(n => !n.acknowledged).length === 0}
             >
               Acknowledge All
             </button>
@@ -417,6 +422,12 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
             </button>
           </div>
         </div>
+
+        {actionError && (
+          <div role="alert" className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {actionError} Check the connection and try again.
+          </div>
+        )}
 
         {/* Alerts List */}
         <div className="space-y-3">
@@ -442,6 +453,7 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
                 onToggleExpand={() => setExpandedAlert(expandedAlert === notification.id ? null : notification.id)}
                 onAcknowledge={() => acknowledgeAlert(notification.id)}
                 onDelete={() => deleteAlert(notification.id)}
+                actionsDisabled={!isConnected}
                 getAlertIcon={getAlertIcon}
                 getSeverityColor={getSeverityColor}
               />
@@ -496,6 +508,7 @@ interface AlertCardProps {
   onToggleExpand: () => void;
   onAcknowledge: () => void;
   onDelete: () => void;
+  actionsDisabled: boolean;
   getAlertIcon: (type: string, severity: AlertSeverity) => React.ReactNode;
   getSeverityColor: (severity: AlertSeverity) => string;
 }
@@ -508,6 +521,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
   onToggleExpand,
   onAcknowledge,
   onDelete,
+  actionsDisabled,
   getAlertIcon,
   getSeverityColor
 }) => {
@@ -599,6 +613,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
                   e.stopPropagation();
                   onAcknowledge();
                 }}
+                disabled={actionsDisabled}
                 className="p-1 text-emerald-400 hover:bg-emerald-900/30 rounded"
                 title="Acknowledge"
               >
@@ -608,11 +623,12 @@ const AlertCard: React.FC<AlertCardProps> = ({
             <button
               type="button"
               aria-label={`Delete alert ${notification.title || notification.id}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                disabled={actionsDisabled}
+                className="p-1 text-red-400 hover:bg-red-900/30 rounded"
               title="Delete"
             >
               <Trash2 className="w-4 h-4" />
@@ -662,7 +678,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
                     {notification.actions.map((action, index) => (
                       <button
                         key={index}
-                        disabled={action.action !== 'acknowledge'}
+                        disabled={actionsDisabled || action.action !== 'acknowledge'}
                         className={`px-3 py-1 text-xs rounded ${
                           action.style === 'primary' ? 'bg-emerald-600 text-white' :
                           action.style === 'danger' ? 'bg-red-600 text-white' :
