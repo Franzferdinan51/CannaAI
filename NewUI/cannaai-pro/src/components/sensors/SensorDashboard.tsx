@@ -67,6 +67,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
   const [acknowledgedNotificationIds, setAcknowledgedNotificationIds] = useState<Set<string>>(new Set());
+  const [alertActionError, setAlertActionError] = useState<string | null>(null);
   const chartRefreshRate = useSettingsStore(state => state.settings?.display.chartRefreshRate ?? 30);
   const refreshInterval = Math.max(1, Number(chartRefreshRate) || 30) * 1000;
   const sensorConfigs = sensors;
@@ -369,6 +370,11 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
               Active Alerts
             </h3>
             <div className="space-y-2">
+              {alertActionError && (
+                <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                  {alertActionError} Check the connection and try again.
+                </div>
+              )}
               {notifications.filter(n => !n.acknowledged && !acknowledgedNotificationIds.has(n.id)).slice(0, 3).map((notification) => (
                 <div key={notification.id} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border-l-4 border-l-yellow-400">
                   <div className="flex items-center gap-3">
@@ -383,6 +389,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
                     <button
                       type="button"
                       onClick={async () => {
+                        setAlertActionError(null);
                         setAcknowledgedNotificationIds((current) => new Set(current).add(notification.id));
                         try {
                           await alertAPI.acknowledgeNotification(notification.id);
@@ -393,6 +400,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
                             return next;
                           });
                           console.error('Failed to acknowledge notification:', error);
+                          setAlertActionError(error instanceof Error ? error.message : 'Unable to acknowledge this alert.');
                         }
                       }}
                       className="text-xs text-emerald-400 hover:text-emerald-300"
