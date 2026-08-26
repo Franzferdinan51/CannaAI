@@ -177,36 +177,45 @@ const EnhancedScanner: React.FC = () => {
   };
 
   // Analysis handler
-  const handleAnalysis = async () => {
-    if (!formData.strain) {
+  const handleAnalysis = async (imageToReanalyze?: PlantImage) => {
+    const analysisForm = imageToReanalyze?.formData || formData;
+    const imageData = imageToReanalyze?.url || currentImage;
+
+    if (!analysisForm.strain) {
       toast.error('Please select a strain');
       return;
     }
 
-    if (!formData.leafSymptoms && !currentImage) {
+    if (!analysisForm.leafSymptoms && !imageData) {
       toast.error('Please provide symptoms or upload an image');
       return;
     }
 
     setIsAnalyzing(true);
 
-    const newImage: PlantImage = {
+    const targetImage: PlantImage = imageToReanalyze || {
       id: Date.now().toString(),
-      url: currentImage || '/placeholder-plant.png',
+      url: imageData || '/placeholder-plant.png',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'Processing',
       batchId: generateBatchId(),
-      strain: formData.strain,
-      formData: { ...formData }
+      strain: analysisForm.strain,
+      formData: { ...analysisForm }
     };
 
-    setImages(prev => [newImage, ...prev]);
-    setSelectedId(newImage.id);
+    if (imageToReanalyze) {
+      setImages(prev => prev.map(img => img.id === targetImage.id
+        ? { ...img, status: 'Processing', error: undefined }
+        : img));
+    } else {
+      setImages(prev => [targetImage, ...prev]);
+    }
+    setSelectedId(targetImage.id);
 
     try {
       const analysisPayload = {
-        ...formData,
-        plantImage: currentImage || undefined,
+        ...analysisForm,
+        plantImage: imageData || undefined,
         model: configuredLMStudioModel.trim() || undefined,
         baseUrl: configuredLMStudioUrl.trim() || undefined,
       };
@@ -215,7 +224,7 @@ const EnhancedScanner: React.FC = () => {
 
       if (response.success) {
         setImages(prev => prev.map(img => {
-          if (img.id === newImage.id) {
+          if (img.id === targetImage.id) {
             return {
               ...img,
               status: getHealthStatus(response.analysis.healthScore),
@@ -233,7 +242,7 @@ const EnhancedScanner: React.FC = () => {
     } catch (error: any) {
       console.error('Analysis failed:', error);
       setImages(prev => prev.map(img => {
-        if (img.id === newImage.id) {
+        if (img.id === targetImage.id) {
           return {
             ...img,
             status: 'Error',
@@ -243,7 +252,7 @@ const EnhancedScanner: React.FC = () => {
         return img;
       }));
 
-      toast.error(error.message || 'Analysis failed. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'Analysis failed. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -596,7 +605,7 @@ const EnhancedScanner: React.FC = () => {
                 <button
                   type="button"
                   aria-label="Analyze plant"
-                  onClick={handleAnalysis}
+                  onClick={() => handleAnalysis()}
                   disabled={isAnalyzing || !formData.strain || (!formData.leafSymptoms && !currentImage)}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 >
@@ -750,7 +759,7 @@ const EnhancedScanner: React.FC = () => {
                         <button
                           type="button"
                           aria-label="Re-analyze selected plant image"
-                          onClick={handleAnalysis}
+                          onClick={() => handleAnalysis(selectedImage)}
                           className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
                         >
                           <RefreshCw className="w-3 h-3" />
