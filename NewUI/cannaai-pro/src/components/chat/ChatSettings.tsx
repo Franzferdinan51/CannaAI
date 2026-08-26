@@ -123,12 +123,12 @@ export function ChatSettings({
     <div className={`bg-gray-800 rounded-lg ${className}`}>
       {/* Header */}
       <div className="p-6 border-b border-gray-700">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Settings className="w-6 h-6 text-emerald-400" />
             <h2 className="text-2xl font-bold text-white">Chat Settings</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {onResetSettings && (
               <Button
                 variant="outline"
@@ -182,9 +182,9 @@ export function ChatSettings({
         </div>
       </div>
 
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {/* Tabs */}
-        <div className="w-64 border-r border-gray-700 p-4">
+        <div className="w-full border-b border-gray-700 p-3 md:w-64 md:shrink-0 md:border-b-0 md:border-r md:p-4">
           <div className="space-y-1">
             {tabs.map(tab => (
               <button
@@ -205,7 +205,7 @@ export function ChatSettings({
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6">
+        <div className="min-w-0 flex-1 p-4 sm:p-6">
           <AnimatePresence mode="wait">
             {/* AI Providers Tab */}
             {activeTab === 'providers' && (

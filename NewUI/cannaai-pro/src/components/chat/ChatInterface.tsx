@@ -356,8 +356,8 @@ export function ChatInterface({
 
   // Render functions
   const renderHeader = () => (
-    <div className="border-b border-gray-700 bg-gray-900 p-4">
-      <div className="flex items-center justify-between">
+    <div className="border-b border-gray-700 bg-gray-900 p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-3">
           <Button
             variant="ghost"
@@ -403,7 +403,7 @@ export function ChatInterface({
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -411,7 +411,7 @@ export function ChatInterface({
               placeholder="Search messages..."
               value={messageSearch}
               onChange={(e) => debouncedSearch(e.target.value)}
-              className="pl-10 bg-gray-800 border-gray-700 text-white w-64"
+              className="w-[min(16rem,45vw)] min-w-0 pl-10 bg-gray-800 border-gray-700 text-white"
             />
           </div>
 
@@ -601,7 +601,7 @@ export function ChatInterface({
   );
 
   return (
-    <div className={`flex min-w-0 h-screen overflow-hidden bg-gray-900 ${className}`}>
+    <div className={`relative flex min-h-0 min-w-0 h-full overflow-hidden bg-gray-900 ${className}`}>
       {/* Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -609,7 +609,7 @@ export function ChatInterface({
             initial={{ width: 0 }}
             animate={{ width: 320 }}
             exit={{ width: 0 }}
-            className="bg-gray-800 border-r border-gray-700"
+            className="absolute inset-y-0 left-0 z-30 w-[min(20rem,85vw)] max-w-[85vw] bg-gray-800 border-r border-gray-700 shadow-2xl md:relative md:inset-auto md:z-auto md:max-w-none md:shadow-none"
           >
             <ChatSidebar
               conversations={conversations}
