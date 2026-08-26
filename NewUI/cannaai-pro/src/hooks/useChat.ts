@@ -898,8 +898,11 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         body: JSON.stringify({
           message: 'Test message',
           testProvider: provider,
+          providerSettings: settings.providers,
           model: provider === 'lmstudio' ? settings.providers.lmStudio.model : settings.providers.openRouter.model,
-          baseUrl: provider === 'lmstudio' ? settings.providers.lmStudio.url : undefined,
+          baseUrl: provider === 'lmstudio'
+            ? settings.providers.lmStudio.url
+            : settings.providers.openRouter.baseUrl,
         }),
         signal: createTimeoutSignal(5000),
       });
