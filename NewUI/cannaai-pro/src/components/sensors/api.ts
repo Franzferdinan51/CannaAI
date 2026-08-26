@@ -220,7 +220,8 @@ export const sensorAPI = {
     if (options.timeframe) params.append('timeframe', options.timeframe);
     if (options.resolution) params.append('resolution', options.resolution);
 
-    return apiRequest<SensorData[]>(`${API_ENDPOINTS.SENSOR_DATA(id)}?${params}`);
+    const payload = await apiRequest<any>(`${API_ENDPOINTS.SENSOR_DATA(id)}?${params}`);
+    return Array.isArray(payload) ? payload : payload?.data || [];
   },
 
   // Get sensor analytics
@@ -280,23 +281,23 @@ export const roomAPI = {
 
   // Get room by ID
   async getRoom(id: string): Promise<RoomConfig> {
-    return apiRequest<RoomConfig>(API_ENDPOINTS.ROOM(id));
+    return normalizeRooms(await apiRequest<any>(API_ENDPOINTS.ROOM(id)))[0];
   },
 
   // Create new room
   async createRoom(room: Omit<RoomConfig, 'id'>): Promise<RoomConfig> {
-    return apiRequest<RoomConfig>(API_ENDPOINTS.ROOMS, {
+    return normalizeRooms(await apiRequest<any>(API_ENDPOINTS.ROOMS, {
       method: 'POST',
       body: JSON.stringify(room),
-    });
+    }))[0];
   },
 
   // Update room
   async updateRoom(id: string, updates: Partial<RoomConfig>): Promise<RoomConfig> {
-    return apiRequest<RoomConfig>(API_ENDPOINTS.ROOM(id), {
+    return normalizeRooms(await apiRequest<any>(API_ENDPOINTS.ROOM(id), {
       method: 'PUT',
       body: JSON.stringify(updates),
-    });
+    }))[0];
   },
 
   // Delete room
@@ -308,7 +309,7 @@ export const roomAPI = {
 
   // Get room sensors
   async getRoomSensors(id: string): Promise<SensorConfig[]> {
-    return apiRequest<SensorConfig[]>(API_ENDPOINTS.ROOM_SENSORS(id));
+    return normalizeSensors(await apiRequest<any>(API_ENDPOINTS.ROOM_SENSORS(id)));
   },
 };
 
@@ -316,7 +317,8 @@ export const roomAPI = {
 export const dataAPI = {
   // Get latest sensor data
   async getLatestData(): Promise<Record<string, SensorData>> {
-    return apiRequest<Record<string, SensorData>>(API_ENDPOINTS.DATA_LATEST);
+    const payload = await apiRequest<any>(API_ENDPOINTS.DATA_LATEST);
+    return payload?.data || payload || {};
   },
 
   // Get historical data
@@ -349,7 +351,8 @@ export const dataAPI = {
       searchParams.append('roomId', params.roomId);
     }
 
-    return apiRequest<any>(`${API_ENDPOINTS.DATA_HISTORY}?${searchParams}`);
+    const payload = await apiRequest<any>(`${API_ENDPOINTS.DATA_HISTORY}?${searchParams}`);
+    return payload?.data ? payload : { data: [], metadata: { sensors: [], timeframe: params.timeframe, resolution: params.resolution || '1h', totalPoints: 0 } };
   },
 
   // Export data
@@ -391,23 +394,26 @@ export const alertAPI = {
       ? `${API_ENDPOINTS.ALERTS}?${searchParams}`
       : API_ENDPOINTS.ALERTS;
 
-    return apiRequest<SensorAlert[]>(url);
+    const payload = await apiRequest<any>(url);
+    return Array.isArray(payload) ? payload : payload?.data || [];
   },
 
   // Create alert
   async createAlert(alert: Omit<SensorAlert, 'id'>): Promise<SensorAlert> {
-    return apiRequest<SensorAlert>(API_ENDPOINTS.ALERTS, {
+    const payload = await apiRequest<any>(API_ENDPOINTS.ALERTS, {
       method: 'POST',
       body: JSON.stringify(alert),
     });
+    return payload?.data || payload;
   },
 
   // Update alert
   async updateAlert(id: string, updates: Partial<SensorAlert>): Promise<SensorAlert> {
-    return apiRequest<SensorAlert>(API_ENDPOINTS.ALERT(id), {
+    const payload = await apiRequest<any>(API_ENDPOINTS.ALERT(id), {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
+    return payload?.data || payload;
   },
 
   // Delete alert
@@ -434,7 +440,8 @@ export const alertAPI = {
       ? `${API_ENDPOINTS.NOTIFICATIONS}?${searchParams}`
       : API_ENDPOINTS.NOTIFICATIONS;
 
-    return apiRequest<NotificationData[]>(url);
+    const payload = await apiRequest<any>(url);
+    return Array.isArray(payload) ? payload : payload?.data || [];
   },
 
   // Acknowledge notification
