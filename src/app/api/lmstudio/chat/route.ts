@@ -73,11 +73,11 @@ function createTimeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
-async function discoverLMStudio(): Promise<{
+async function discoverLMStudio(configuredBaseUrl?: string): Promise<{
   baseUrl: string;
   models: any[];
 } | null> {
-  for (const baseUrl of getLMStudioEndpointCandidates()) {
+  for (const baseUrl of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     try {
       const healthResponse = await fetch(`${baseUrl}/v1/models`, {
         signal: createTimeoutSignal(3000),
@@ -170,13 +170,15 @@ export async function POST(request: NextRequest) {
       maxTokens = 512,
       modelId,
       model,
+      baseUrl,
       messages: requestedMessages,
       stream = false
     } = body;
 
     // Check every local loopback candidate. On macOS, localhost may resolve
     // to IPv6 while LM Studio is listening only on IPv4 (or vice versa).
-    const discovered = await discoverLMStudio();
+    const requestedBaseUrl = typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined;
+    const discovered = await discoverLMStudio(requestedBaseUrl);
     if (!discovered) {
       return NextResponse.json(
         {

@@ -45,6 +45,22 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     expect(fetchMock.mock.calls[2][1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
+  test('uses an explicitly configured LM Studio base URL for inference', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'ornith-1.5-35b-a3b' }]))
+      .mockResolvedValueOnce(completionResponse('remote local answer'));
+
+    const result = await POST(requestWithBody({
+      prompt: 'Inspect this plant',
+      model: 'ornith-1.5-35b-a3b',
+      baseUrl: 'http://192.168.1.50:1234/v1',
+    }) as any);
+
+    expect(result.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
+    expect(fetchMock.mock.calls[1][0]).toBe('http://192.168.1.50:1234/v1/chat/completions');
+  });
+
   test('attaches a supplied image to the latest user message when messages are provided', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
