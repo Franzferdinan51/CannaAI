@@ -45,6 +45,12 @@ function createTimeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
+function normalizeImageUrl(image: string): string {
+  const value = image.trim();
+  if (/^data:/i.test(value) || /^https?:\/\//i.test(value)) return value;
+  return `data:image/jpeg;base64,${value.replace(/^data:[^,]+,/, '').replace(/\s/g, '')}`;
+}
+
 // Vision-capable models prioritized by cost-effectiveness for plant analysis
 export const VISION_MODELS = [
   {
@@ -225,28 +231,26 @@ export async function executeWithOpenRouter(params: {
       }
     }
 
-    const isVisionModel = VISION_MODELS.some(m => m.id === selectedModel);
-
     // Build messages array
     const messages: any[] = [{
       role: 'system',
       content: 'You are an expert cannabis cultivation specialist with deep knowledge of plant physiology, nutrient deficiencies, pests, diseases, and strain-specific characteristics. You provide detailed, accurate analysis with clear reasoning and visual assessment when images are provided.'
     }];
 
-    if (image && isVisionModel) {
-      // Vision-capable request
+    if (image) {
+      // Preserve every supplied image. The configured model may be a valid
+      // custom vision model that is not present in CannaAI's recommendation
+      // list; dropping the image based on that list silently produced a
+      // text-only answer.
       messages.push({
         role: 'user',
         content: [
-          { type: 'image_url', image_url: { url: image } },
+          { type: 'image_url', image_url: { url: normalizeImageUrl(image) } },
           { type: 'text', text: prompt }
         ]
       });
       console.log(`👁️ OpenRouter: Using vision model "${selectedModel}" for plant image analysis`);
     } else {
-      if (image && !isVisionModel) {
-        console.warn('⚠️ OpenRouter: Image provided but using text-only model - visual analysis unavailable');
-      }
       // Text-only request
       messages.push({
         role: 'user',
