@@ -284,7 +284,13 @@ const Plants: React.FC = () => {
       const parsed = JSON.parse(await file.text());
       const importedPlants = Array.isArray(parsed) ? parsed : parsed?.plants;
       if (!Array.isArray(importedPlants)) throw new Error('The file must contain a plants array.');
-      setState((prev) => ({ ...prev, plants: importedPlants, success: `Loaded ${importedPlants.length} plants from the import file.`, error: undefined }));
+      const result = await plantsAPI.importPlants(file);
+      await loadInitialData();
+      setState((prev) => ({
+        ...prev,
+        success: `Imported ${result.imported} plants${result.errors.length ? ` (${result.errors.length} skipped)` : ''}.`,
+        error: result.errors.length ? result.errors.join('; ') : undefined
+      }));
     } catch (error) {
       setState((prev) => ({ ...prev, error: error instanceof Error ? error.message : 'Invalid inventory file', success: undefined }));
     }
