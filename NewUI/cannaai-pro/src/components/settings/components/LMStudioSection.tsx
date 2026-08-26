@@ -51,8 +51,11 @@ const LMStudioSection: React.FC = () => {
   }, [settings?.lmStudio?.url]);
 
   useEffect(() => {
-    loadLMStudioModels();
-  }, [loadLMStudioModels]);
+    const configuredUrl = settings?.lmStudio?.url?.trim();
+    if (configuredUrl) {
+      void loadLMStudioModels(configuredUrl);
+    }
+  }, [loadLMStudioModels, settings?.lmStudio?.url]);
 
   const handleUrlChange = (url: string) => {
     setDraftUrl(url);
@@ -177,7 +180,7 @@ const LMStudioSection: React.FC = () => {
             <button
               type="button"
               aria-label="Refresh LM Studio models"
-              onClick={() => loadLMStudioModels()}
+              onClick={() => void loadLMStudioModels(draftUrl.trim() || undefined)}
               disabled={isLoading}
               className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
             >
