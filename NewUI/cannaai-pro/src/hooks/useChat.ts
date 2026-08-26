@@ -582,7 +582,9 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         addNotification({
           type: 'error',
           title: 'AI Error',
-          message: data.error?.message || 'Failed to get AI response',
+          message: typeof data.error === 'string'
+            ? data.error
+            : data.error?.userMessage || data.error?.message || 'Failed to get AI response',
           actionable: true,
           action: {
             label: 'Check Settings',

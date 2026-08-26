@@ -102,4 +102,25 @@ describe('/api/chat vision routing', () => {
       expect.objectContaining({ image: 'data:image/jpeg;base64,abc123' }),
     );
   });
+
+  test('uses the requested LM Studio URL when testing a provider', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true } as Response);
+
+    const result = await POST({
+      url: 'http://localhost/api/chat',
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        message: 'Test message',
+        testProvider: 'lmstudio',
+        baseUrl: 'http://192.168.1.50:1234/v1',
+      }),
+    } as any);
+
+    expect(result.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://192.168.1.50:1234/v1/models',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    fetchMock.mockRestore();
+  });
 });

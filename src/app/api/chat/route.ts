@@ -26,13 +26,13 @@ function normalizeProviderName(provider: unknown): 'lmstudio' | 'openrouter' | n
   return value === 'lmstudio' ? 'lmstudio' : value === 'openrouter' ? 'openrouter' : null;
 }
 
-async function probeRequestedProvider(provider: unknown, providerSettings: any): Promise<boolean> {
+async function probeRequestedProvider(provider: unknown, providerSettings: any, urlOverride?: unknown): Promise<boolean> {
   const normalized = normalizeProviderName(provider);
   if (!normalized) return false;
   const config = providerSettings?.[normalized === 'lmstudio' ? 'lmStudio' : 'openRouter'] || {};
   const configuredUrl = normalized === 'lmstudio'
-    ? config.url || 'http://localhost:1234'
-    : config.baseUrl || 'https://openrouter.ai/api/v1';
+    ? urlOverride || config.url || 'http://localhost:1234'
+    : urlOverride || config.baseUrl || 'https://openrouter.ai/api/v1';
   const baseUrl = String(configuredUrl).replace(/\/$/, '').replace(/\/v1$/, '');
   const headers: Record<string, string> = {};
   if (typeof config.apiKey === 'string' && config.apiKey.trim()) {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
   if (earlyBody.testProvider) {
     const provider = normalizeProviderName(earlyBody.testProvider);
-    const available = await probeRequestedProvider(provider, earlyBody.providerSettings);
+    const available = await probeRequestedProvider(provider, earlyBody.providerSettings, earlyBody.baseUrl);
     return NextResponse.json(
       { success: available, provider: provider || earlyBody.testProvider },
       { status: available ? 200 : 503 },
