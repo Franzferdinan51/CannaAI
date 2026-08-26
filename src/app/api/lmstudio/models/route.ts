@@ -69,9 +69,12 @@ function buildLMStudioConfig(options: {
     : [
         options.configuredUrl,
         options.fileUrl,
-        options.providerUrl,
         'http://127.0.0.1:1234',
         'http://localhost:1234',
+        // An agent-managed endpoint is still useful, but should not delay a
+        // local LM Studio instance when the agent config contains a stale
+        // address.
+        options.providerUrl,
       ];
   const candidates = Array.from(new Set(
     sources
@@ -89,17 +92,28 @@ async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
   const { apiKey, candidates } = await getRemoteLMStudioConfig(urlOverride);
 
   for (const candidate of candidates) {
-    try {
-      const response = await fetch(`${candidate}/api/v1/models`, {
-        headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
-        signal: AbortSignal.timeout(5000)
-      });
-      if (!response.ok) continue;
+    // LM Studio exposes the OpenAI-compatible catalog at /v1/models and its
+    // native catalog at /api/v1/models. Support both so version/configuration
+    // differences do not surface as a generic browser network error.
+    for (const endpoint of [`${candidate}/v1/models`, `${candidate}/api/v1/models`]) {
+      try {
+        const response = await fetch(endpoint, {
+          headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+          signal: AbortSignal.timeout(2500)
+        });
+        if (!response.ok) continue;
 
-      const payload = await response.json();
-      return normalizeRemoteModels(Array.isArray(payload.models) ? payload.models : []);
-    } catch {
-      // Try the next configured/local endpoint before falling back to disk scan.
+        const payload = await response.json();
+        const models = Array.isArray(payload.models)
+          ? payload.models
+          : Array.isArray(payload.data)
+            ? payload.data
+            : [];
+        return normalizeRemoteModels(models);
+      } catch {
+        // Try the next API shape/configured endpoint before falling back to
+        // the local disk catalog.
+      }
     }
   }
 

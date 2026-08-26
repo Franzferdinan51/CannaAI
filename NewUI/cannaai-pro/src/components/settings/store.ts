@@ -424,12 +424,20 @@ export const useSettingsStore = create<SettingsStore>()(
           set({ isSaving: true, error: '' });
           try {
             await settingsAPI.saveLMStudioUrl({ ...settings.lmStudio, url });
+            const nextSettings = {
+              ...settings,
+              lmStudio: { ...settings.lmStudio, url }
+            };
+            const { defaultSettings } = get();
+            const nextDefaults = defaultSettings
+              ? { ...defaultSettings, lmStudio: { ...defaultSettings.lmStudio, url } }
+              : nextSettings;
             set({
-              settings: {
-                ...settings,
-                lmStudio: { ...settings.lmStudio, url }
-              },
-              hasChanges: true,
+              settings: nextSettings,
+              defaultSettings: nextDefaults,
+              // The URL was persisted by this action. Preserve the dirty
+              // state only for unrelated edits made in the same session.
+              hasChanges: JSON.stringify(nextSettings) !== JSON.stringify(nextDefaults),
               isSaving: false,
               success: 'LM Studio URL saved'
             });
@@ -477,7 +485,9 @@ export const useSettingsStore = create<SettingsStore>()(
         validateProviderConfig: (provider, config) => {
           switch (provider) {
             case 'lm-studio':
-              return !!config.url && !!config.model;
+              // An empty model means automatic discovery: LM Studio may have
+              // any loaded chat/vision model, so selecting one is optional.
+              return !!config.url;
             case 'openrouter':
             case 'openai':
             case 'gemini':
