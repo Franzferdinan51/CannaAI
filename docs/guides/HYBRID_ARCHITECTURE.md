@@ -4,7 +4,7 @@ This project uses a hybrid architecture with separate frontend and backend servi
 
 ## Architecture Overview
 
-- **Frontend**: New UI built with Vite + React (Port 5173)
+- **Frontend**: New UI built with Vite + React (Port 5174 in development; 5173 for the root production preview command)
 - **Backend**: Next.js API server with Socket.IO (Port 3000)
 
 ## Development Scripts
@@ -52,18 +52,16 @@ npm run db:reset     # Reset database to initial state
 
 ## Port Configuration
 
-- **Frontend (Vite)**: http://localhost:5173
+- **Frontend (Vite)**: http://localhost:5174 during development
 - **Backend (Next.js)**: http://localhost:3000
 
 ## API Communication
 
-The frontend communicates with the backend through:
-- HTTP API calls to http://localhost:3000/api/*
-- WebSocket connections to http://localhost:3000 for real-time data
+The frontend communicates with the backend through same-origin `/api/*` requests. Vite proxies those requests to the backend, using `VITE_API_URL`, `CANNAAI_BACKEND_URL`, or the backend `PORT` value (default 3000). This avoids browser host/CORS mismatches while preserving custom-port deployments.
 
 ## CORS Configuration
 
-The backend is configured to accept connections from both ports (3000 and 5173) during development, including support for:
+The backend is configured to accept connections from the local development ports (3000, 5173, and 5174) during development, including support for:
 - Local network access (192.168.x.x, 10.x.x.x)
 - Tailscale network (100.x.x.x)
 - Custom hostnames

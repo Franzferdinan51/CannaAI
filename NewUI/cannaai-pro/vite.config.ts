@@ -4,6 +4,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    const configuredBackend = env.VITE_API_URL || env.CANNAAI_BACKEND_URL;
+    const backendTarget = (configuredBackend || `http://127.0.0.1:${env.PORT || '3000'}`)
+      .replace(/\/api\/?$/, '')
+      .replace(/\/$/, '');
     return {
       server: {
         port: 5174,
@@ -13,7 +17,7 @@ export default defineConfig(({ mode }) => {
         // them to the CannaAI backend during local development.
         proxy: {
           '/api': {
-            target: 'http://127.0.0.1:3001',
+            target: backendTarget,
             changeOrigin: true,
             ws: true,
           },
@@ -24,7 +28,7 @@ export default defineConfig(({ mode }) => {
         allowedHosts: ['localhost', '127.0.0.1'],
         proxy: {
           '/api': {
-            target: 'http://127.0.0.1:3001',
+            target: backendTarget,
             changeOrigin: true,
             ws: true,
           },

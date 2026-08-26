@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-Run the backend separately with `npm run dev:backend` from the repository root. The frontend uses port `5173` and the backend uses port `3000` by default.
+Run the backend separately with `npm run dev:backend` from the repository root. The Vite development server uses port `5174`; the backend uses port `3000` by default. Set `PORT` (and, when needed, `CANNAAI_BACKEND_URL`) for another backend port.
 
 ## Quality gates
 
@@ -27,7 +27,7 @@ The active typecheck follows the application entry point through `src/App.tsx`; 
 
 ## Configuration
 
-Set `VITE_API_URL` when the backend is not available at the default local address. See the repository [environment example](../../.env.example) for backend/provider configuration. Local AI inference is configured in the CannaAI Settings screen and is health-checked through the backend.
+Set `VITE_API_URL` when the frontend should call a backend at a different origin. For a same-machine custom backend port, `CANNAAI_BACKEND_URL` configures the Vite proxy target. See the repository [environment example](../../.env.example) for backend/provider configuration. Local AI inference is configured in the CannaAI Settings screen and is health-checked through the backend.
 
 ## Active areas
 
