@@ -15,6 +15,16 @@ function normalizeLMStudioBaseUrl(value: string): string {
 }
 
 async function getRemoteLMStudioConfig(urlOverride?: string): Promise<{ baseUrl: string; apiKey?: string; candidates: string[] }> {
+  // A URL supplied by the Settings screen is authoritative. Do not wait on
+  // the optional Prisma-backed settings record before probing it; a locked or
+  // slow local database must not turn a direct LM Studio test into a timeout.
+  if (urlOverride?.trim()) {
+    return buildLMStudioConfig({
+      urlOverride,
+      apiKey: process.env.LM_STUDIO_API_KEY || getLMStudioApiKey(),
+    });
+  }
+
   let fileUrl = '';
   try {
     const envText = readFileSync(path.join(process.cwd(), '.env.local'), 'utf8');
@@ -489,7 +499,8 @@ export async function GET(request: NextRequest) {
     console.log('Local AppData:', process.env.LOCALAPPDATA);
 
     const { searchParams } = new URL(request.url);
-    const remoteModels = await getRemoteModels(searchParams.get('url') || undefined);
+    const urlOverride = searchParams.get('url') || undefined;
+    const remoteModels = await getRemoteModels(urlOverride);
     if (remoteModels) {
       return NextResponse.json({
         status: 'success',
@@ -503,6 +514,21 @@ export async function GET(request: NextRequest) {
         },
         timestamp: new Date().toISOString(),
         source: 'remote-api'
+      });
+    }
+
+    // An explicit URL is a connection test, not a request for a full local
+    // filesystem scan. Return promptly when that endpoint is unavailable.
+    if (urlOverride) {
+      return NextResponse.json({
+        status: 'unavailable',
+        lmStudioRunning: false,
+        available: false,
+        message: 'LM Studio is not reachable at the configured URL.',
+        models: [],
+        summary: { total: 0, vision: 0, textOnly: 0, plantAnalysis: 0 },
+        timestamp: new Date().toISOString(),
+        source: 'remote-api',
       });
     }
 
