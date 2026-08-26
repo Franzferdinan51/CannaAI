@@ -26,6 +26,10 @@ const api = axios.create({
   },
 });
 
+// Analytics is an optional dashboard surface. Keep a slow or unavailable
+// analytics endpoint from making the whole tab look unresponsive.
+const analyticsRequestConfig = { timeout: 8000 };
+
 const normalizeReport = (report: any): Report => ({
   ...report,
   createdAt: new Date(report.createdAt),
@@ -239,7 +243,7 @@ export const analyticsApi = {
     rooms?: string[];
   }): Promise<AnalyticsData | null> {
     try {
-      const response = await api.get('/analytics/overview', { params });
+      const response = await api.get('/analytics/overview', { params, ...analyticsRequestConfig });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch overview analytics:', error);
@@ -256,7 +260,7 @@ export const analyticsApi = {
     growthStages?: string[];
   }): Promise<PlantGrowthAnalytics[]> {
     try {
-      const response = await api.get('/analytics/plants/growth', { params });
+      const response = await api.get('/analytics/plants/growth', { params, ...analyticsRequestConfig });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch plant growth analytics:', error);
@@ -271,7 +275,7 @@ export const analyticsApi = {
     metrics?: string[];
   }): Promise<EnvironmentalAnalytics[]> {
     try {
-      const response = await api.get('/analytics/environmental', { params });
+      const response = await api.get('/analytics/environmental', { params, ...analyticsRequestConfig });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch environmental analytics:', error);
@@ -285,7 +289,7 @@ export const analyticsApi = {
     type?: 'monthly' | 'quarterly' | 'yearly';
   }): Promise<FinancialAnalytics | null> {
     try {
-      const response = await api.get('/analytics/financial', { params });
+      const response = await api.get('/analytics/financial', { params, ...analyticsRequestConfig });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch financial analytics:', error);
@@ -300,7 +304,7 @@ export const analyticsApi = {
     dateRange: { start: Date; end: Date };
   }): Promise<YieldAnalytics | null> {
     try {
-      const response = await api.get('/analytics/yield', { params });
+      const response = await api.get('/analytics/yield', { params, ...analyticsRequestConfig });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch yield analytics:', error);
@@ -311,7 +315,7 @@ export const analyticsApi = {
   // Get real-time metrics
   async getRealTimeMetrics(): Promise<any> {
     try {
-      const response = await api.get('/analytics/realtime');
+      const response = await api.get('/analytics/realtime', analyticsRequestConfig);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch real-time metrics:', error);
@@ -326,7 +330,7 @@ export const analyticsApi = {
     dateRange?: { start: Date; end: Date };
   }): Promise<any[]> {
     try {
-      const response = await api.get('/analytics/insights', { params });
+      const response = await api.get('/analytics/insights', { params, ...analyticsRequestConfig });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch insights:', error);
@@ -341,7 +345,7 @@ export const analyticsApi = {
     confidence?: number;
   }): Promise<any[]> {
     try {
-      const response = await api.get('/analytics/predictions', { params });
+      const response = await api.get('/analytics/predictions', { params, ...analyticsRequestConfig });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch predictions:', error);

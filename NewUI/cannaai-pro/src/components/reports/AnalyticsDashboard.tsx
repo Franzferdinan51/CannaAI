@@ -126,25 +126,21 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     try {
       const dateRange = dateUtils.getDateRangePreset(selectedTimeRange);
 
-      // Load overview analytics
-      const overviewData = await analyticsApi.getOverview({ dateRange });
-      setAnalyticsData(overviewData);
-
-      // Load other analytics data
-      const [plantData, envData, financeData, yieldDataResponse] = await Promise.all([
+      // Keep the dashboard responsive by loading independent panels together.
+      const [overviewData, plantData, envData, financeData, yieldDataResponse, insightsData] = await Promise.all([
+        analyticsApi.getOverview({ dateRange }),
         analyticsApi.getPlantGrowth({ dateRange }),
         analyticsApi.getEnvironmental({ dateRange }),
         analyticsApi.getFinancial({ dateRange }),
-        analyticsApi.getYield({ dateRange })
+        analyticsApi.getYield({ dateRange }),
+        analyticsApi.getInsights({ dateRange })
       ]);
 
+      setAnalyticsData(overviewData);
       setPlantGrowthData(plantData);
       setEnvironmentalData(envData);
       setFinancialData(financeData);
       setYieldData(yieldDataResponse);
-
-      // Load insights
-      const insightsData = await analyticsApi.getInsights({ dateRange });
       setInsights(insightsData);
 
     } catch (error) {
@@ -239,8 +235,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex min-h-96 flex-col items-center justify-center gap-3 text-center" role="status" aria-live="polite">
         <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
+        <p className="text-sm text-gray-400">Loading analytics…</p>
+        <p className="text-xs text-gray-500">Unavailable data will be shown as empty rather than blocking the page.</p>
       </div>
     );
   }
@@ -255,6 +253,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             {(['1h', '6h', '24h', '7d', '30d', '90d'] as const).map((range) => (
               <button
                 key={range}
+                type="button"
+                aria-pressed={selectedTimeRange === range}
                 onClick={() => setSelectedTimeRange(range)}
                 className={`px-4 py-2 text-sm font-medium transition-colors first:rounded-l-lg last:rounded-r-lg ${
                   selectedTimeRange === range
@@ -276,6 +276,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             {(['line', 'area', 'bar'] as const).map((type) => (
               <button
                 key={type}
+                type="button"
+                aria-pressed={chartType === type}
                 onClick={() => setChartType(type)}
                 className={`px-3 py-2 text-sm font-medium capitalize transition-colors first:rounded-l-lg last:rounded-r-lg ${
                   chartType === type
@@ -290,6 +292,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
           {/* Auto Refresh Toggle */}
           <button
+            type="button"
+            aria-pressed={autoRefreshEnabled}
             onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               autoRefreshEnabled
@@ -302,6 +306,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           </button>
 
           <button
+            type="button"
+            aria-pressed={showInsights}
             onClick={() => setShowInsights(!showInsights)}
             className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-400 rounded-lg hover:bg-gray-600 hover:text-white transition-colors"
           >
