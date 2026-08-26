@@ -1,10 +1,27 @@
 import { prisma } from './prisma';
 
-export async function ensureSeedData() {
+let seedPromise: Promise<void> | null = null;
+
+export async function ensureSeedData(): Promise<void> {
   // Never manufacture plants, sensor readings, or health scores in a real
   // installation. Demo data is available only through an explicit opt-in so
   // empty production databases accurately report an empty state.
   if (process.env.CANNAAI_DEMO_SEED_DATA !== 'true') return;
+
+  // Several API routes are loaded together by the dashboard and Plants page.
+  // Share one initialization promise so concurrent requests cannot interleave
+  // check-then-create operations against SQLite.
+  if (seedPromise) return seedPromise;
+
+  seedPromise = seedDemoData();
+  try {
+    await seedPromise;
+  } finally {
+    seedPromise = null;
+  }
+}
+
+async function seedDemoData(): Promise<void> {
 
   const roomCount = await prisma.room.count();
   if (roomCount === 0) {
