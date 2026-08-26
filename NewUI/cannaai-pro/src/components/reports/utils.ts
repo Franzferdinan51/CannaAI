@@ -189,7 +189,8 @@ export const exportUtils = {
 
     // Clean up URL
     if (url.startsWith('blob:')) {
-      URL.revokeObjectURL(url);
+      // Allow the download navigation to begin before releasing the blob.
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
     }
   },
 

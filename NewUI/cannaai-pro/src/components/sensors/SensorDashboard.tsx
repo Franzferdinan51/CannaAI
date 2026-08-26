@@ -224,7 +224,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
     link.href = url;
     link.download = `sensor-dashboard-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   return (

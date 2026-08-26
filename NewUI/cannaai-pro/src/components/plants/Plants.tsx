@@ -293,7 +293,8 @@ const Plants: React.FC = () => {
     link.href = url;
     link.download = `plant-inventory-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    // Releasing the blob in the same task can cancel downloads in Chromium.
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   const importInventory = async (event: React.ChangeEvent<HTMLInputElement>) => {

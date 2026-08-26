@@ -164,7 +164,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     link.href = url;
     link.download = `analytics-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   const toggleFullscreen = () => {

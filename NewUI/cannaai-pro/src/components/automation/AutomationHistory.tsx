@@ -180,7 +180,7 @@ export const AutomationHistory: React.FC<AutomationHistoryProps> = ({
     a.href = url;
     a.download = `automation_logs_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   return (

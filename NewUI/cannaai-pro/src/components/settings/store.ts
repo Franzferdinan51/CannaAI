@@ -481,7 +481,8 @@ export const useSettingsStore = create<SettingsStore>()(
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Let the browser start the download before releasing the blob.
+            window.setTimeout(() => URL.revokeObjectURL(url), 0);
 
             set({ success: `Settings exported as ${format.toUpperCase()}` });
           } catch (error) {

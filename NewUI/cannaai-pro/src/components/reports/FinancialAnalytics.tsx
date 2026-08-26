@@ -143,7 +143,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
     link.href = url;
     link.download = `financial-analytics-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   const toggleFullscreen = () => {

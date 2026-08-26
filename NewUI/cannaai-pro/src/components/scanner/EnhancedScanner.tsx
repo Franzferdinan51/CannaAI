@@ -144,7 +144,7 @@ const EnhancedScanner: React.FC = () => {
     link.href = url;
     link.download = `plant-analysis-${selectedImage.id}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   // Update scanner stats when images change

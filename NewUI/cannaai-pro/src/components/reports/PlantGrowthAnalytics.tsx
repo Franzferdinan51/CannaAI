@@ -276,7 +276,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
     link.href = url;
     link.download = `plant-growth-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   if (isLoading) {
