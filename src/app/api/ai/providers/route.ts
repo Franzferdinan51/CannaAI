@@ -10,6 +10,19 @@ import { detectAvailableProviders } from '@/lib/ai-provider-detection';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+async function withProviderDetectionTimeout<T>(operation: Promise<T>, timeoutMs: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<null>((resolve) => {
+      timer = setTimeout(() => resolve(null), timeoutMs);
+      timer.unref?.();
+    });
+    return await Promise.race([operation, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const unifiedAI = getUnifiedAI();
@@ -20,8 +33,11 @@ export async function GET(request: NextRequest) {
     // This is non-fatal: if detection throws we still return the registry view.
     let liveProviders: Array<{ provider: string; isAvailable: boolean; reason: string }> = [];
     try {
-      const detected = await detectAvailableProviders();
-      liveProviders = (detected.all || []).map((r: any) => ({
+      const detected = await withProviderDetectionTimeout(
+        detectAvailableProviders({ fastLocal: true }),
+        10000,
+      );
+      liveProviders = (detected?.all || []).map((r: any) => ({
         provider: r.provider,
         isAvailable: !!r.isAvailable,
         reason: r.reason || (r.isAvailable ? 'connected' : 'unavailable'),
