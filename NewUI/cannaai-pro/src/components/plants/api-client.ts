@@ -249,7 +249,7 @@ class PlantsAPIClient {
 
   async getStrain(id: string): Promise<PlantStrain> {
     try {
-      const response: AxiosResponse<PlantAPIResponse> = await this.api.get(`/api/strains/${id}`);
+      const response: AxiosResponse<PlantAPIResponse> = await this.api.get(`/api/strains?id=${encodeURIComponent(id)}`);
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to fetch strain');
@@ -279,7 +279,7 @@ class PlantsAPIClient {
 
   async updateStrain(id: string, updates: Partial<PlantStrain>): Promise<PlantStrain> {
     try {
-      const response: AxiosResponse<PlantAPIResponse> = await this.api.put(`/api/strains/${id}`, updates);
+      const response: AxiosResponse<PlantAPIResponse> = await this.api.put('/api/strains', { ...updates, id });
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to update strain');

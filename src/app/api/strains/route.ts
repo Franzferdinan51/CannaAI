@@ -60,7 +60,7 @@ const defaultStrains = [
 // In-memory storage for strains (in production, use database)
 let strains = [...defaultStrains];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
   if (isStaticExport) {
@@ -73,6 +73,15 @@ export async function GET() {
   }
 
   try {
+    const id = request.nextUrl.searchParams.get('id');
+    if (id) {
+      const strain = strains.find((candidate) => candidate.id === id);
+      if (!strain) {
+        return NextResponse.json({ success: false, error: 'Strain not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, data: strain, strain });
+    }
+
     return NextResponse.json({
       success: true,
       strains,
