@@ -1,5 +1,6 @@
 // Enhanced Socket.IO Service for Comprehensive Sensor System
 import { io, Socket } from 'socket.io-client';
+import { API_ORIGIN } from './api-origin';
 
 // Enhanced sensor data interface matching our comprehensive sensor system
 export interface EnhancedSensorData {
@@ -91,9 +92,10 @@ class EnhancedSocketService {
     }
 
     // Determine server URL based on environment
-    const serverUrl = process.env.NODE_ENV === 'production'
-      ? window.location.origin
-      : `http://${window.location.hostname}:3001`;
+    // Use the same origin in Vite so the configured proxy handles both
+    // polling and websocket upgrades. VITE_API_URL remains available for
+    // deployments that intentionally point the frontend at another origin.
+    const serverUrl = API_ORIGIN || window.location.origin;
 
     console.log(`🔌 Connecting to enhanced Socket.IO server at: ${serverUrl}`);
 

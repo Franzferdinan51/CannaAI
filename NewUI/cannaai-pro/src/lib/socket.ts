@@ -13,7 +13,7 @@ export function resolveWebSocketUrl(endpoint: string, baseUrl?: string): string 
 
 export function getSocketBaseUrl(): string {
   const configured = (globalThis as typeof globalThis & { __VITE_API_URL__?: string }).__VITE_API_URL__;
-  const base = API_ORIGIN;
+  const base = API_ORIGIN || window.location.origin;
   return configured ? new URL(configured, base).toString().replace(/\/$/, '') : base;
 }
 
