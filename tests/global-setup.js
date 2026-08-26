@@ -16,6 +16,11 @@ module.exports = async function globalSetup() {
       cwd: rootDir,
       env,
       stdio: 'pipe',
+      // The Prisma schema engine can hang indefinitely on a broken local
+      // installation. Test setup must fail over to the deterministic SQLite
+      // migration instead of holding every Jest invocation forever.
+      timeout: 10000,
+      killSignal: 'SIGTERM',
     });
     return;
   } catch (prismaError) {
