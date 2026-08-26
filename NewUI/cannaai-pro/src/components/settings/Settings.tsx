@@ -111,14 +111,14 @@ const Settings: React.FC = () => {
 
   useEffect(() => {
     if (error) {
-      toast.error(error);
+      toast.error(error, { id: 'settings-error' });
       clearError();
     }
   }, [error, clearError]);
 
   useEffect(() => {
     if (success) {
-      toast.success(success);
+      toast.success(success, { id: 'settings-success' });
       clearSuccess();
     }
   }, [success, clearSuccess]);
@@ -139,10 +139,8 @@ const Settings: React.FC = () => {
     try {
       await resetSettings();
       setShowResetDialog(false);
-      toast.success('Settings reset to defaults');
     } catch (error) {
       console.error('Failed to reset settings:', error);
-      toast.error('Failed to reset settings');
     }
   };
 
