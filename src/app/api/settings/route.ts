@@ -99,11 +99,27 @@ const defaultSettings = {
 let settings: any = { ...defaultSettings };
 let settingsLoaded = false;
 let settingsRecordId = 1;
+const SETTINGS_DATABASE_TIMEOUT_MS = 2000;
+
+async function withSettingsDatabaseTimeout<T>(operation: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`Settings database operation timed out after ${SETTINGS_DATABASE_TIMEOUT_MS}ms`)), SETTINGS_DATABASE_TIMEOUT_MS);
+      timer.unref?.();
+    });
+    return await Promise.race([operation, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 async function loadSettings(): Promise<void> {
   if (settingsLoaded) return;
   try {
-    const stored = await prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } });
+    const stored = await withSettingsDatabaseTimeout(
+      prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } }),
+    );
     if (stored?.config && typeof stored.config === 'object' && !Array.isArray(stored.config)) {
       settings = safeMergeSettings(defaultSettings, stored.config);
       if (settings.lmStudio?.model === 'llama-3-8b-instruct') {
@@ -121,11 +137,13 @@ async function loadSettings(): Promise<void> {
 
 async function persistSettings(): Promise<boolean> {
   try {
-    await prisma.automationSetting.upsert({
-      where: { id: settingsRecordId },
-      update: { config: settings },
-      create: { id: settingsRecordId, config: settings },
-    });
+    await withSettingsDatabaseTimeout(
+      prisma.automationSetting.upsert({
+        where: { id: settingsRecordId },
+        update: { config: settings },
+        create: { id: settingsRecordId, config: settings },
+      }),
+    );
     return true;
   } catch (error) {
     console.warn('[SETTINGS] Could not persist settings; retaining process-local changes:', error);
