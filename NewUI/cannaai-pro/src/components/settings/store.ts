@@ -33,7 +33,7 @@ interface SettingsStore extends SettingsUIState {
   loadProviderModels: (provider: AIProviderType) => Promise<void>;
 
   // LM Studio actions
-  loadLMStudioModels: (url?: string) => Promise<void>;
+  loadLMStudioModels: (url?: string) => Promise<boolean>;
   saveLMStudioUrl: (url: string) => Promise<void>;
 
   // Utility actions
@@ -407,11 +407,13 @@ export const useSettingsStore = create<SettingsStore>()(
           try {
             const response = await settingsAPI.getLMStudioModels(url);
             set({ lmStudioData: response, isLoading: false });
+            return true;
           } catch (error) {
             set({
               error: error instanceof Error ? error.message : 'Failed to load LM Studio models',
               isLoading: false
             });
+            return false;
           }
         },
 

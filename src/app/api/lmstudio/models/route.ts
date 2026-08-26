@@ -6,6 +6,7 @@ import { promisify } from 'util';
 import { existsSync, readFileSync } from 'fs';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { normalizeRemoteModels } from '@/lib/lmstudio-models';
+import { prisma } from '@/lib/prisma';
 
 const execAsync = promisify(exec);
 
@@ -13,14 +14,25 @@ function normalizeLMStudioBaseUrl(value: string): string {
   return value.replace(/\/v1\/?$/, '').replace(/\/$/, '');
 }
 
-function getRemoteLMStudioConfig(urlOverride?: string): { baseUrl: string; apiKey?: string; candidates: string[] } {
+async function getRemoteLMStudioConfig(urlOverride?: string): Promise<{ baseUrl: string; apiKey?: string; candidates: string[] }> {
   let fileUrl = '';
   try {
     const envText = readFileSync(path.join(process.cwd(), '.env.local'), 'utf8');
     fileUrl = envText.match(/^LM_STUDIO_(?:URL|BASE_URL)\s*=\s*["']?([^"'\n]+)["']?/m)?.[1]?.trim() || '';
   } catch { /* optional local env file */ }
-  const configuredUrl = process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || fileUrl;
-  const configuredKey = process.env.LM_STUDIO_API_KEY || getLMStudioApiKey();
+  let storedUrl = '';
+  let storedApiKey = '';
+  try {
+    const stored = await prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } });
+    const storedConfig = stored?.config as { lmStudio?: { url?: unknown; apiKey?: unknown } } | null;
+    storedUrl = typeof storedConfig?.lmStudio?.url === 'string' ? storedConfig.lmStudio.url.trim() : '';
+    storedApiKey = typeof storedConfig?.lmStudio?.apiKey === 'string' ? storedConfig.lmStudio.apiKey.trim() : '';
+  } catch {
+    // Settings persistence is optional for static/development installs.
+  }
+
+  const configuredUrl = process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || storedUrl || fileUrl;
+  const configuredKey = storedApiKey || process.env.LM_STUDIO_API_KEY || getLMStudioApiKey();
   const configPath = process.env.OPENCLAW_CONFIG_PATH ||
     (process.env.HOME ? path.join(process.env.HOME, '.openclaw', 'openclaw.json') : '');
 
@@ -74,7 +86,7 @@ function buildLMStudioConfig(options: {
 }
 
 async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
-  const { apiKey, candidates } = getRemoteLMStudioConfig(urlOverride);
+  const { apiKey, candidates } = await getRemoteLMStudioConfig(urlOverride);
 
   for (const candidate of candidates) {
     try {

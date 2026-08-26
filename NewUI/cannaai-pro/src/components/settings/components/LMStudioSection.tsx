@@ -65,8 +65,12 @@ const LMStudioSection: React.FC = () => {
   const handleTestConnection = async () => {
     const url = draftUrl.trim();
     if (!url) return;
-    await saveLMStudioUrl(url);
-    await loadLMStudioModels(url);
+    // Probe the entered endpoint first. Persisting settings is secondary and
+    // must not turn a healthy local LM Studio connection into a false error.
+    const connected = await loadLMStudioModels(url);
+    if (connected) {
+      await saveLMStudioUrl(url);
+    }
   };
 
   const getCapabilityIcon = (capability: ModelCapability) => {
