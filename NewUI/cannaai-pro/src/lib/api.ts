@@ -1,5 +1,8 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import type { AnalysisResponse, Strain } from '../types/scanner';
+import { API_ORIGIN, apiUrl } from './api-origin';
+
+export { API_ORIGIN, apiUrl } from './api-origin';
 
 export interface ChatApiResponse {
   response: string;
@@ -21,11 +24,6 @@ export interface ApiError {
   status?: number;
   data?: any;
 }
-
-export const API_ORIGIN = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
-  ? `${window.location.protocol}//${window.location.hostname}:3001`
-  : 'http://localhost:3001');
-export const apiUrl = (path: string): string => `${API_ORIGIN}/api${path.startsWith('/') ? path : `/${path}`}`;
 
 class ApiClient {
   private client: AxiosInstance;

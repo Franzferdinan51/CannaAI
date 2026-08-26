@@ -19,6 +19,7 @@ import {
   PlantAction,
   SearchFacets
 } from './types';
+import { API_ORIGIN } from '../../lib/api-origin';
 
 const emptySearchFacets = (): SearchFacets => ({
   strains: [], stages: [], healthStatuses: [], locations: [], tags: [],
@@ -42,9 +43,7 @@ const emptyPlantInventory = (): PlantInventory => ({
 });
 
 // API base URL - adjust as needed for your environment
-const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
-  ? `${window.location.protocol}//${window.location.hostname}:3001`
-  : 'http://localhost:3001');
+const API_BASE_URL = API_ORIGIN;
 
 const PLANTS_REQUEST_TIMEOUT_MS = 10000;
 

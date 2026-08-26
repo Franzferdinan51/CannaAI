@@ -12,11 +12,10 @@ import {
   ExportFormat,
   ReportsApiResponse
 } from './types';
+import { API_ORIGIN } from '../../lib/api-origin';
 
 // API Configuration
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
-  ? `${window.location.protocol}//${window.location.hostname}:3001`
-  : 'http://localhost:3001')}/api`;
+const API_BASE_URL = `${API_ORIGIN}/api`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

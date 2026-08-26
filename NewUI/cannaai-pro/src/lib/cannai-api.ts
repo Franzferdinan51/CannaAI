@@ -1,9 +1,8 @@
 import axios from 'axios';
+import { API_ORIGIN } from './api-origin';
 
 // API base URL - adjust this to match your backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined'
-  ? `${window.location.protocol}//${window.location.hostname}:3001`
-  : 'http://localhost:3001');
+const API_BASE_URL = API_ORIGIN;
 
 // Types for API responses
 interface AnalysisRequest {
@@ -317,7 +316,7 @@ export const debounce = <T extends (...args: any[]) => void>(
   };
 };
 
-export default {
+const cannaiApi = {
   analyzePlant,
   getStrains,
   addStrain,
@@ -334,3 +333,5 @@ export default {
   formatFileSize,
   debounce,
 };
+
+export default cannaiApi;

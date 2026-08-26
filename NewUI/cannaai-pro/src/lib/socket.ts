@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { useCallback, useSyncExternalStore } from 'react';
 import { resolveWebSocketUrl as resolveWebSocketUrlWithoutVite } from './websocket-url';
+import { API_ORIGIN } from './api-origin';
 
 export function resolveWebSocketUrl(endpoint: string, baseUrl?: string): string {
   return resolveWebSocketUrlWithoutVite(
@@ -12,7 +13,7 @@ export function resolveWebSocketUrl(endpoint: string, baseUrl?: string): string 
 
 export function getSocketBaseUrl(): string {
   const configured = (globalThis as typeof globalThis & { __VITE_API_URL__?: string }).__VITE_API_URL__;
-  const base = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001';
+  const base = API_ORIGIN;
   return configured ? new URL(configured, base).toString().replace(/\/$/, '') : base;
 }
 

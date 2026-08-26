@@ -10,7 +10,11 @@ export function resolveWebSocketUrl(
   baseUrl?: string,
   token?: string,
 ): string {
-  const fallback = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001';
+  const fallback = typeof window === 'undefined'
+    ? 'http://localhost:3000'
+    : ['5173', '5174', '5175', '5176'].includes(window.location.port)
+      ? `${window.location.protocol}//${window.location.hostname}:3001`
+      : window.location.origin;
   const base = baseUrl || (typeof window !== 'undefined' ? window.location.href : fallback);
   const resolved = new URL(endpoint, base);
 
