@@ -264,16 +264,16 @@ const PlantSearch: React.FC<PlantSearchProps> = ({
                     Strains
                   </Label>
                   <Select
-                    value={filter.strainIds?.[0] || ''}
+                    value={filter.strainIds?.[0] || '__all__'}
                     onValueChange={(value) => {
-                      updateFilter('strainIds', value ? [value] : undefined);
+                      updateFilter('strainIds', value === '__all__' ? undefined : [value]);
                     }}
                   >
                     <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white">
                       <SelectValue placeholder="All strains" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#0f1419] border-gray-700">
-                      <SelectItem value="">All strains</SelectItem>
+                      <SelectItem value="__all__">All strains</SelectItem>
                       {strains.map(strain => (
                         <SelectItem key={strain.id} value={strain.id} className="text-white">
                           {strain.name}
