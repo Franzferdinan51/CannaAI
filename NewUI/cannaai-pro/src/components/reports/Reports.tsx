@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 // Import sub-components
 import { AnalyticsDashboard } from './AnalyticsDashboard';
@@ -281,7 +282,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
     try {
       const report = await reportsApi.createReport(newReport);
       if (report) {
-        setReports([report, ...reports]);
+        setReports(current => [report, ...current]);
         setShowCreateModal(false);
         setNewReport({
           name: '',
@@ -301,9 +302,13 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
             includeImages: false
           }
         });
+        toast.success('Report created');
+      } else {
+        throw new Error('The report could not be created.');
       }
     } catch (error) {
       console.error('Failed to create report:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create report');
     }
   };
 
@@ -313,9 +318,13 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
       const generated = await reportsApi.generateReport(reportId);
       if (generated) {
         setReports(current => current.map(report => report.id === reportId ? generated : report));
+        toast.success('Report generated');
+      } else {
+        throw new Error('The report could not be generated.');
       }
     } catch (error) {
       console.error('Failed to generate report:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate report');
     }
   };
 
@@ -330,9 +339,13 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
         const filename = exportUtils.generateFilename(report, options.format);
         exportUtils.downloadFile(downloadUrl, filename);
         setShowExportModal(false);
+        toast.success('Report export started');
+      } else {
+        throw new Error('The report export could not be created.');
       }
     } catch (error) {
       console.error('Failed to export report:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to export report');
     }
   };
 
@@ -343,10 +356,14 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
     try {
       const success = await reportsApi.deleteReport(reportId);
       if (success) {
-        setReports(reports.filter(r => r.id !== reportId));
+        setReports(current => current.filter(r => r.id !== reportId));
+        toast.success('Report deleted');
+      } else {
+        throw new Error('The report could not be deleted.');
       }
     } catch (error) {
       console.error('Failed to delete report:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete report');
     }
   };
 
@@ -355,10 +372,14 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
     try {
       const duplicated = await reportsApi.duplicateReport(reportId);
       if (duplicated) {
-        setReports([duplicated, ...reports]);
+        setReports(current => [duplicated, ...current]);
+        toast.success('Report duplicated');
+      } else {
+        throw new Error('The report could not be duplicated.');
       }
     } catch (error) {
       console.error('Failed to duplicate report:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate report');
     }
   };
 
