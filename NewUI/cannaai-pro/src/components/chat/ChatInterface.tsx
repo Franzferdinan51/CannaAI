@@ -318,19 +318,41 @@ export function ChatInterface({
     }
   };
 
-  const handleCopyMessage = (message: IChatMessage) => {
-    navigator.clipboard.writeText(message.content);
-    toast.success('Message copied to clipboard');
+  const handleCopyMessage = async (message: IChatMessage) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message.content);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = message.content;
+        textArea.setAttribute('readonly', '');
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        const copied = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (!copied) throw new Error('Clipboard copy was rejected');
+      }
+      toast.success('Message copied to clipboard');
+    } catch (error) {
+      console.warn('Unable to copy chat message:', error);
+      toast.error('Unable to copy message');
+    }
   };
 
   const handleShareMessage = (message: IChatMessage) => {
     if (navigator.share) {
-      navigator.share({
+      void navigator.share({
         title: 'CannaAI Chat Message',
         text: message.content
+      }).catch((error: unknown) => {
+        if ((error as DOMException)?.name !== 'AbortError') {
+          void handleCopyMessage(message);
+        }
       });
     } else {
-      handleCopyMessage(message);
+      void handleCopyMessage(message);
     }
   };
 
