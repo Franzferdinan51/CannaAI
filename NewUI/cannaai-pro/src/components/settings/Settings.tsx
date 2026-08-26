@@ -268,6 +268,7 @@ const Settings: React.FC = () => {
                 <div className="absolute top-full right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                   <button
                     type="button"
+                    aria-label="Export settings as JSON"
                     onClick={() => handleExport('json')}
                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-t-lg"
                   >
@@ -275,6 +276,7 @@ const Settings: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    aria-label="Export settings as CSV"
                     onClick={() => handleExport('csv')}
                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-b-lg"
                   >
