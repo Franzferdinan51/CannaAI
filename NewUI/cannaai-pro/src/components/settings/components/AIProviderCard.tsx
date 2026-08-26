@@ -389,7 +389,24 @@ const AIProviderCard: React.FC = () => {
                     ? `border-emerald-500/50 ${colors.bg}`
                     : 'border-gray-700 hover:border-gray-600'
                 }`}
-                onClick={() => handleProviderSelect(provider.id)}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                onClick={(event) => {
+                  // Keep card selection from hijacking nested form controls.
+                  // Inputs, selectors, links, and action buttons own their
+                  // clicks and must not switch the active provider.
+                  const target = event.target as HTMLElement;
+                  if (target.closest('button, input, textarea, select, [role="combobox"], a')) return;
+                  void handleProviderSelect(provider.id);
+                }}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    void handleProviderSelect(provider.id);
+                  }
+                }}
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">

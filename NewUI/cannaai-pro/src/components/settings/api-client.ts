@@ -43,11 +43,13 @@ class SettingsAPIClient {
   private handleError(error: any): Error {
     if (error.response) {
       // Server responded with error status
-      const message = error.response.data?.error || error.response.statusText || 'Server error';
+      const message = error.response.data?.error || error.response.data?.message || error.response.statusText || 'Server error';
       return new Error(`API Error (${error.response.status}): ${message}`);
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || /timeout/i.test(error.message || '')) {
+      return new Error('Request timed out. Confirm the local service is running and try again.');
     } else if (error.request) {
       // Request was made but no response received
-      return new Error('Network error: Unable to connect to server');
+      return new Error('Network error: Unable to reach the CannaAI server. Confirm it is running and try again.');
     } else {
       // Something else happened
       return new Error(`Request error: ${error.message}`);

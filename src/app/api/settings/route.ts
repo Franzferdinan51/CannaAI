@@ -806,7 +806,10 @@ async function testAIConnection(provider: string) {
         headers: {
           'Content-Type': 'application/json',
           ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
-        }
+        },
+        // A local server can be reachable but still stop responding while a
+        // model is loading. Always release the Settings button in that case.
+        signal: AbortSignal.timeout(8000)
       });
 
       if (response.ok) {
