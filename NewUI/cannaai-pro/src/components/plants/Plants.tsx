@@ -684,6 +684,21 @@ const Plants: React.FC = () => {
               <PlantForm
                 plant={editingPlant || undefined}
                 strains={state.strains}
+                onRemoveExistingImage={async (imageId) => {
+                  if (!editingPlant) return;
+                  await plantsAPI.deletePlantImage(editingPlant.id, imageId);
+                  setState(prev => ({
+                    ...prev,
+                    plants: prev.plants.map(plant => plant.id === editingPlant.id
+                      ? { ...plant, images: plant.images.filter(image => image.id !== imageId) }
+                      : plant
+                    )
+                  }));
+                  setEditingPlant(prev => prev
+                    ? { ...prev, images: prev.images.filter(image => image.id !== imageId) }
+                    : prev
+                  );
+                }}
                 onSubmit={(formData) => {
                   if (editingPlant) {
                     // Image uploads are handled by the create multipart route;

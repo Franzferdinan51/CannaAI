@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import toast from 'react-hot-toast';
 
 // Import icons
 import {
@@ -36,7 +37,14 @@ interface PlantFormProps {
   strains: PlantStrain[];
   onSubmit: (data: PlantFormData) => void;
   onCancel: () => void;
+  onRemoveExistingImage?: (imageId: string) => Promise<void>;
   isLoading?: boolean;
+}
+
+interface ImagePreview {
+  url: string;
+  id?: string;
+  file?: File;
 }
 
 const PlantForm: React.FC<PlantFormProps> = ({
@@ -44,6 +52,7 @@ const PlantForm: React.FC<PlantFormProps> = ({
   strains,
   onSubmit,
   onCancel,
+  onRemoveExistingImage,
   isLoading = false
 }) => {
   const [formData, setFormData] = useState<PlantFormData>({
@@ -62,7 +71,8 @@ const PlantForm: React.FC<PlantFormProps> = ({
   });
 
   const [newTag, setNewTag] = useState('');
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
+  const [removingImageId, setRemovingImageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (plant) {
@@ -80,9 +90,9 @@ const PlantForm: React.FC<PlantFormProps> = ({
         }
       });
 
-      if (plant.images && plant.images.length > 0) {
-        setImagePreviews(plant.images.map(img => img.url));
-      }
+      setImagePreviews((plant.images || []).map(img => ({ id: img.id, url: img.url })));
+    } else {
+      setImagePreviews([]);
     }
   }, [plant]);
 
@@ -116,16 +126,35 @@ const PlantForm: React.FC<PlantFormProps> = ({
     }));
 
     // Create previews
-    const newPreviews = files.map(file => URL.createObjectURL(file));
+    const newPreviews = files.map(file => ({ file, url: URL.createObjectURL(file) }));
     setImagePreviews(prev => [...prev, ...newPreviews]);
+    e.target.value = '';
   };
 
-  const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  const removeImage = async (preview: ImagePreview, index: number) => {
+    if (preview.id) {
+      if (!onRemoveExistingImage || removingImageId) return;
+      setRemovingImageId(preview.id);
+      try {
+        await onRemoveExistingImage(preview.id);
+        setImagePreviews(prev => prev.filter(item => item.id !== preview.id));
+        toast.success('Plant image removed');
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to remove plant image');
+      } finally {
+        setRemovingImageId(null);
+      }
+      return;
+    }
+
+    if (preview.file) {
+      URL.revokeObjectURL(preview.url);
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter(file => file !== preview.file)
+      }));
+    }
+    setImagePreviews(prev => prev.filter((_, previewIndex) => previewIndex !== index));
   };
 
   const addTag = () => {
@@ -378,16 +407,18 @@ const PlantForm: React.FC<PlantFormProps> = ({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {imagePreviews.map((preview, index) => (
-              <div key={index} className="relative group">
+              <div key={preview.id || preview.url} className="relative group">
                 <img
-                  src={preview}
+                  src={preview.url}
                   alt={`Plant image ${index + 1}`}
                   className="w-full h-24 object-cover rounded-lg border border-gray-700"
                 />
                 <button
                   type="button"
                   aria-label={`Remove plant image ${index + 1}`}
-                  onClick={() => removeImage(index)}
+                  onClick={() => void removeImage(preview, index)}
+                  disabled={Boolean(removingImageId)}
+                  title={preview.id && removingImageId === preview.id ? 'Removing image…' : 'Remove image'}
                   className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <X className="w-3 h-3" />
