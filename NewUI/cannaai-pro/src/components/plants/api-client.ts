@@ -453,7 +453,8 @@ class PlantsAPIClient {
         throw new Error(response.data.error || 'Failed to fetch plant tasks');
       }
 
-      return response.data.data || [];
+      const payload = response.data.data;
+      return Array.isArray(payload) ? payload : payload?.tasks || [];
     } catch (error) {
       console.error('Failed to fetch plant tasks:', error);
       throw error instanceof Error ? error : new Error('Unknown error fetching plant tasks');
@@ -502,6 +503,18 @@ class PlantsAPIClient {
     } catch (error) {
       console.error('Failed to complete plant task:', error);
       throw error instanceof Error ? error : new Error('Unknown error completing plant task');
+    }
+  }
+
+  async deletePlantTask(id: string): Promise<void> {
+    try {
+      const response: AxiosResponse<PlantAPIResponse> = await this.api.delete(`/api/tasks/${id}`);
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to delete plant task');
+      }
+    } catch (error) {
+      console.error('Failed to delete plant task:', error);
+      throw error instanceof Error ? error : new Error('Unknown error deleting plant task');
     }
   }
 
