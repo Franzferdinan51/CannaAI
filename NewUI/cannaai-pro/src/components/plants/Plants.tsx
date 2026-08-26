@@ -659,9 +659,21 @@ const Plants: React.FC = () => {
               <PlantForm
                 plant={editingPlant || undefined}
                 strains={state.strains}
-                onSubmit={handleCreatePlant}
-                onCancel={() => setShowPlantForm(false)}
-                isLoading={state.isCreating}
+                onSubmit={(formData) => {
+                  if (editingPlant) {
+                    // Image uploads are handled by the create multipart route;
+                    // do not send File objects to the JSON update endpoint.
+                    const { images: _images, ...updates } = formData;
+                    void handleUpdatePlant(editingPlant.id, updates as Partial<Plant>);
+                  } else {
+                    void handleCreatePlant(formData);
+                  }
+                }}
+                onCancel={() => {
+                  setShowPlantForm(false);
+                  setEditingPlant(null);
+                }}
+                isLoading={state.isCreating || state.isUpdating}
               />
             </motion.div>
           </motion.div>

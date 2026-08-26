@@ -15,9 +15,17 @@ export async function GET(_: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   const { id } = await params;
   const updates = await request.json();
+  const data: Record<string, unknown> = {};
+  if (typeof updates.name === 'string') data.name = updates.name.trim();
+  if (typeof updates.type === 'string') data.type = updates.type.trim();
+  if (typeof updates.enabled === 'boolean') data.enabled = updates.enabled;
+  if (typeof updates.locationId === 'string') data.locationId = updates.locationId.trim() || null;
+  if (updates.calibration && typeof updates.calibration === 'object' && !Array.isArray(updates.calibration)) {
+    data.calibration = updates.calibration;
+  }
   const updated = await prisma.sensor.update({
     where: { id },
-    data: { ...updates }
+    data,
   }).catch(() => null);
   if (!updated) return NextResponse.json({ success: false, error: 'Sensor not found' }, { status: 404 });
   return NextResponse.json({ success: true, data: updated });

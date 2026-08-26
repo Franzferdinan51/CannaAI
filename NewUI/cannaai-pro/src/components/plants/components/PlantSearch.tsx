@@ -90,6 +90,8 @@ const PlantSearch: React.FC<PlantSearchProps> = ({
               />
             </div>
             <Button
+              type="button"
+              aria-label="Search plants"
               onClick={handleSearch}
               disabled={isLoading}
               className="bg-emerald-600 hover:bg-emerald-500 text-white"
@@ -101,6 +103,8 @@ const PlantSearch: React.FC<PlantSearchProps> = ({
               )}
             </Button>
             <Button
+              type="button"
+              aria-label="Toggle advanced plant filters"
               variant="outline"
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               className="border-gray-700 text-gray-300 relative"

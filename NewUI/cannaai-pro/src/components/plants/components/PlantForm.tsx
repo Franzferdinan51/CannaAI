@@ -71,9 +71,9 @@ const PlantForm: React.FC<PlantFormProps> = ({
         strainId: plant.strainId,
         stage: plant.stage,
         plantedDate: plant.plantedDate,
-        locationId: plant.location.id,
-        notes: plant.notes,
-        tags: plant.tags,
+        locationId: plant.location?.id || (plant as Plant & { locationId?: string }).locationId || '',
+        notes: plant.notes || '',
+        tags: plant.tags || [],
         images: [],
         metadata: {
           ...plant.metadata

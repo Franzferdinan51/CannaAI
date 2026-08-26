@@ -210,7 +210,7 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">
-              {sensor ? 'Edit Sensor' : 'Add New Sensor'}
+              {sensor?.id ? 'Edit Sensor' : 'Add New Sensor'}
             </h2>
             <p className="text-sm text-gray-400">
               Configure sensor settings, alerts, and calibration

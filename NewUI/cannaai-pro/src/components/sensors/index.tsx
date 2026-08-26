@@ -55,6 +55,7 @@ const Sensors: React.FC<SensorsProps> = ({
   const [sensors, setSensors] = useState<SensorConfig[]>([]);
   const [rooms, setRooms] = useState<RoomConfig[]>([]);
   const [selectedSensor, setSelectedSensor] = useState<SensorConfig | null>(null);
+  const [isCreatingSensor, setIsCreatingSensor] = useState(false);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +103,7 @@ const Sensors: React.FC<SensorsProps> = ({
   // Handle sensor configuration save
   const handleSensorSave = async (sensor: SensorConfig) => {
     try {
-      if (selectedSensor) {
+      if (selectedSensor && !isCreatingSensor) {
         // Update existing sensor
         await sensorAPI.sensors.updateSensor(sensor.id, sensor);
         setSensors(prev => prev.map(s => s.id === sensor.id ? sensor : s));
@@ -112,6 +113,7 @@ const Sensors: React.FC<SensorsProps> = ({
         setSensors(prev => [...prev, newSensor]);
       }
       setSelectedSensor(null);
+      setIsCreatingSensor(false);
       setActiveView('dashboard');
     } catch (err) {
       console.error('Failed to save sensor:', err);
@@ -126,6 +128,7 @@ const Sensors: React.FC<SensorsProps> = ({
       setSensors(prev => prev.filter(s => s.id !== sensorId));
       if (selectedSensor?.id === sensorId) {
         setSelectedSensor(null);
+        setIsCreatingSensor(false);
       }
     } catch (err) {
       console.error('Failed to delete sensor:', err);
@@ -146,6 +149,7 @@ const Sensors: React.FC<SensorsProps> = ({
   const handleSensorSelect = (sensorId: string) => {
     const sensor = sensors.find(s => s.id === sensorId);
     if (sensor) {
+      setIsCreatingSensor(false);
       setSelectedSensor(sensor);
       setActiveView('config');
     }
@@ -361,6 +365,7 @@ const Sensors: React.FC<SensorsProps> = ({
                 onSave={handleSensorSave}
                 onCancel={() => {
                   setSelectedSensor(null);
+                  setIsCreatingSensor(false);
                   setActiveView('dashboard');
                 }}
                 rooms={rooms}
@@ -373,16 +378,20 @@ const Sensors: React.FC<SensorsProps> = ({
                     <p className="text-gray-400">Manage and configure your sensor network</p>
                   </div>
                   <button
-                    onClick={() => setSelectedSensor({
-                      id: '',
-                      name: '',
-                      type: 'temperature',
-                      location: '',
-                      roomName: rooms[0]?.name || '',
-                      enabled: true,
-                      alerts: [],
-                      dataHistory: []
-                    })}
+                    onClick={() => {
+                      setIsCreatingSensor(true);
+                      setSelectedSensor({
+                        id: '',
+                        name: '',
+                        type: 'temperature',
+                        location: '',
+                        roomName: rooms[0]?.name || '',
+                        enabled: true,
+                        alerts: [],
+                        dataHistory: []
+                      });
+                    }}
+                    type="button"
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                   >
                     <Plus className="w-4 h-4" />
@@ -429,16 +438,21 @@ const Sensors: React.FC<SensorsProps> = ({
                     <h3 className="text-lg font-medium text-gray-400 mb-2">No sensors configured</h3>
                     <p className="text-gray-500 mb-4">Add your first sensor to start monitoring</p>
                     <button
-                      onClick={() => setSelectedSensor({
-                        id: '',
-                        name: '',
-                        type: 'temperature',
-                        location: '',
-                        roomName: rooms[0]?.name || '',
-                        enabled: true,
-                        alerts: [],
-                        dataHistory: []
-                      })}
+                      type="button"
+                      onClick={() => {
+                        setIsCreatingSensor(true);
+                        setSelectedSensor({
+                          id: '',
+                          name: '',
+                          type: 'temperature',
+                          location: '',
+                          roomName: rooms[0]?.name || '',
+                          enabled: true,
+                          alerts: [],
+                          dataHistory: []
+                        });
+                        setActiveView('config');
+                      }}
                       className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                     >
                       Add First Sensor

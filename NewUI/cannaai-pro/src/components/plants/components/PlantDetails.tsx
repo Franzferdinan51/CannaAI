@@ -52,13 +52,13 @@ const PlantDetails: React.FC<PlantDetailsProps> = ({
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-lg bg-[#0f1419] p-4"><p className="text-xs text-gray-400">Growth stage</p><p className="mt-1 text-white capitalize">{plant.stage}</p></div>
-            <div className="rounded-lg bg-[#0f1419] p-4"><p className="text-xs text-gray-400">Health score</p><p className="mt-1 text-emerald-400">{plant.health.score.toFixed(1)}% ({plant.health.status})</p></div>
+            <div className="rounded-lg bg-[#0f1419] p-4"><p className="text-xs text-gray-400">Health score</p><p className="mt-1 text-emerald-400">{Number(plant.health?.score ?? 0).toFixed(1)}% ({plant.health?.status || 'unknown'})</p></div>
             <div className="rounded-lg bg-[#0f1419] p-4"><p className="text-xs text-gray-400">Age</p><p className="mt-1 text-white">{plant.age} days</p></div>
-            <div className="rounded-lg bg-[#0f1419] p-4"><p className="text-xs text-gray-400">Location</p><p className="mt-1 text-white">{plant.location.name}</p></div>
+            <div className="rounded-lg bg-[#0f1419] p-4"><p className="text-xs text-gray-400">Location</p><p className="mt-1 text-white">{plant.location?.name || 'Unassigned'}</p></div>
           </div>
           {plant.notes && <p className="mt-4 text-sm text-gray-400">{plant.notes}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
-            {plant.tags.map((tag) => <span key={tag} className="rounded-full bg-gray-800 px-2 py-1 text-xs text-gray-300">{tag}</span>)}
+            {(plant.tags || []).map((tag) => <span key={tag} className="rounded-full bg-gray-800 px-2 py-1 text-xs text-gray-300">{tag}</span>)}
           </div>
         </CardContent>
       </Card>

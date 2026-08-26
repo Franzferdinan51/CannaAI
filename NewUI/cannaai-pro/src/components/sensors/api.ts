@@ -19,6 +19,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefin
 const API_ENDPOINTS = {
   // Sensor CRUD
   SENSORS: '/api/sensors',
+  SENSOR_CONFIG: '/api/sensors/config',
   SENSOR: (id: string) => `/api/sensors/${id}`,
   SENSOR_DATA: (id: string) => `/api/sensors/${id}/data`,
   SENSOR_ANALYTICS: (id: string) => `/api/sensors/${id}/analytics`,
@@ -181,18 +182,20 @@ export const sensorAPI = {
 
   // Create new sensor
   async createSensor(sensor: Omit<SensorConfig, 'id'>): Promise<SensorConfig> {
-    return apiRequest<SensorConfig>(API_ENDPOINTS.SENSORS, {
+    const response = await apiRequest<{ success: boolean; data: any }>(API_ENDPOINTS.SENSOR_CONFIG, {
       method: 'POST',
       body: JSON.stringify(sensor),
     });
+    return normalizeSensors({ readings: [response.data] })[0];
   },
 
   // Update sensor
   async updateSensor(id: string, updates: Partial<SensorConfig>): Promise<SensorConfig> {
-    return apiRequest<SensorConfig>(API_ENDPOINTS.SENSOR(id), {
+    const response = await apiRequest<{ success: boolean; data: any }>(API_ENDPOINTS.SENSOR(id), {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
+    return normalizeSensors({ readings: [response.data] })[0];
   },
 
   // Delete sensor

@@ -128,6 +128,14 @@ const PlantGrid: React.FC<PlantGridProps> = ({
               !plant.isActive ? 'opacity-60' : ''
             }`}
             onClick={() => onSelect(plant)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSelect(plant);
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             {/* Plant Image */}
             <div className="relative h-48 bg-gray-900 overflow-hidden">
@@ -160,6 +168,8 @@ const PlantGrid: React.FC<PlantGridProps> = ({
               {/* Action Buttons */}
               <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
                 <Button
+                  type="button"
+                  aria-label={`Analyze ${plant.name}`}
                   size="sm"
                   variant="secondary"
                   className="bg-black/70 hover:bg-black/90 text-white p-2"
@@ -171,6 +181,8 @@ const PlantGrid: React.FC<PlantGridProps> = ({
                   <Activity className="w-4 h-4" />
                 </Button>
                 <Button
+                  type="button"
+                  aria-label={`Edit ${plant.name}`}
                   size="sm"
                   variant="secondary"
                   className="bg-black/70 hover:bg-black/90 text-white p-2"
@@ -182,6 +194,8 @@ const PlantGrid: React.FC<PlantGridProps> = ({
                   <Edit className="w-4 h-4" />
                 </Button>
                 <Button
+                  type="button"
+                  aria-label={`Delete ${plant.name}`}
                   size="sm"
                   variant="secondary"
                   className="bg-red-900/70 hover:bg-red-900/90 text-white p-2"
