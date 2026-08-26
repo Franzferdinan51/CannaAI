@@ -38,6 +38,7 @@ interface AutomationSchedulingProps {
   rooms: RoomConfig[];
   automationStatus: AutomationStatus;
   onScheduleUpdate: (schedule: Partial<AutomationSchedule>) => void;
+  onRunSchedule?: (schedule: AutomationSchedule) => void;
   disabled?: boolean;
   className?: string;
 }
@@ -46,6 +47,7 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
   rooms,
   automationStatus,
   onScheduleUpdate,
+  onRunSchedule,
   disabled = false,
   className = ''
 }) => {
@@ -56,6 +58,7 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
 
   const [editingSchedule, setEditingSchedule] = useState<AutomationSchedule | null>(null);
   const [showNewSchedule, setShowNewSchedule] = useState(false);
+  const [newScheduleTemplate, setNewScheduleTemplate] = useState<Partial<AutomationSchedule> | null>(null);
 
   const cronPresets = [
     { label: 'Every Hour', value: '0 * * * *' },
@@ -169,13 +172,20 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
               {activeSchedules} Active
             </Badge>
 
-            <Dialog open={showNewSchedule} onOpenChange={setShowNewSchedule}>
+            <Dialog
+              open={showNewSchedule}
+              onOpenChange={(open) => {
+                setShowNewSchedule(open);
+                if (!open) setNewScheduleTemplate(null);
+              }}
+            >
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   className="border-slate-700 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
                   disabled={disabled}
+                  onClick={() => setNewScheduleTemplate(null)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   New Schedule
@@ -186,7 +196,9 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
                   <DialogTitle className="text-slate-100">Create New Schedule</DialogTitle>
                 </DialogHeader>
                 <ScheduleForm
+                  key={newScheduleTemplate?.name || 'new-schedule'}
                   schedule={null}
+                  initialValues={newScheduleTemplate || undefined}
                   onSave={handleSaveSchedule}
                   onCancel={() => setShowNewSchedule(false)}
                 />
@@ -286,15 +298,18 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
                       Edit
                     </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-slate-700 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
-                      disabled={disabled}
-                    >
-                      <Play className="w-3 h-3 mr-1" />
-                      Run Now
-                    </Button>
+                    {onRunSchedule && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-slate-700 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
+                        onClick={() => onRunSchedule(schedule)}
+                        disabled={disabled}
+                      >
+                        <Play className="w-3 h-3 mr-1" />
+                        Run Now
+                      </Button>
+                    )}
 
                     <Button
                       variant="destructive"
@@ -320,28 +335,32 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
                 name: 'Standard Veg',
                 description: '18/6 light cycle, watering every 6 hours',
                 icon: '🌱',
+                system: 'lighting' as const,
                 schedules: ['18/6 lighting', '6-hour watering']
               },
               {
                 name: 'Standard Flower',
                 description: '12/12 light cycle, watering every 12 hours',
                 icon: '🌸',
+                system: 'lighting' as const,
                 schedules: ['12/12 lighting', '12-hour watering']
               },
               {
                 name: 'Auto Watering',
                 description: 'Moisture-based watering schedules',
                 icon: '💧',
+                system: 'watering' as const,
                 schedules: ['Smart watering']
               },
               {
                 name: 'Energy Saving',
                 description: 'Optimized for minimal power usage',
                 icon: '⚡',
+                system: 'general' as const,
                 schedules: ['Energy optimized']
               }
             ].map((template, index) => (
-              <Card key={index} className="border-slate-800 bg-slate-900/40 cursor-pointer hover:bg-slate-800/60 transition-colors">
+              <Card key={index} className="border-slate-800 bg-slate-900/40 transition-colors">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl mb-2">{template.icon}</div>
                   <h4 className="font-medium text-slate-100 mb-1">{template.name}</h4>
@@ -351,6 +370,20 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
                     size="sm"
                     className="w-full border-slate-700 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
                     disabled={disabled}
+                    onClick={() => {
+                      setEditingSchedule(null);
+                      setNewScheduleTemplate({
+                        name: template.name,
+                        system: template.system,
+                        schedule: template.system === 'lighting'
+                          ? (template.name === 'Standard Flower' ? '0 */12 * * *' : '0 */6 * * *')
+                          : '0 */6 * * *',
+                        enabled: true,
+                        priority: 1,
+                        actions: [],
+                      });
+                      setShowNewSchedule(true);
+                    }}
                   >
                     Apply Template
                   </Button>
@@ -367,17 +400,18 @@ export const AutomationScheduling: React.FC<AutomationSchedulingProps> = ({
 // Schedule Form Component
 const ScheduleForm: React.FC<{
   schedule: AutomationSchedule | null;
+  initialValues?: Partial<AutomationSchedule>;
   onSave: (schedule: AutomationSchedule) => void;
   onCancel: () => void;
-}> = ({ schedule, onSave, onCancel }) => {
+}> = ({ schedule, initialValues, onSave, onCancel }) => {
   const [formData, setFormData] = useState<Partial<AutomationSchedule>>({
-    name: '',
-    system: 'watering',
-    enabled: true,
-    schedule: '0 6 * * *',
-    timezone: 'UTC',
-    actions: [],
-    priority: 1
+    name: initialValues?.name || '',
+    system: initialValues?.system || 'watering',
+    enabled: initialValues?.enabled ?? true,
+    schedule: initialValues?.schedule || '0 6 * * *',
+    timezone: initialValues?.timezone || 'UTC',
+    actions: initialValues?.actions || [],
+    priority: initialValues?.priority || 1
   });
 
   const [selectedPreset, setSelectedPreset] = useState('0 6 * * *');
