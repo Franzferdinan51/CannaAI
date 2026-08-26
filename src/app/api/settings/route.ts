@@ -844,7 +844,8 @@ async function testAIConnection(provider: string) {
           'Content-Type': 'application/json',
           'HTTP-Referer': 'http://localhost:3000',
           'X-Title': 'CannaAI Pro'
-        }
+        },
+        signal: AbortSignal.timeout(10000)
       });
 
       if (response.ok) {
@@ -876,7 +877,8 @@ async function testAIConnection(provider: string) {
         headers: {
           'Authorization': `Bearer ${settings.openai.apiKey}`,
           'Content-Type': 'application/json'
-        }
+        },
+        signal: AbortSignal.timeout(10000)
       });
 
       if (response.ok) {
