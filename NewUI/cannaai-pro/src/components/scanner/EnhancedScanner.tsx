@@ -96,6 +96,14 @@ const EnhancedScanner: React.FC = () => {
 
   useEffect(() => () => stopCamera(), [stopCamera]);
 
+  // The video element is mounted only after cameraActive changes. Attach the
+  // stream after that render so capture works reliably in Chrome and Safari.
+  useEffect(() => {
+    if (cameraActive && videoRef.current && cameraStreamRef.current) {
+      videoRef.current.srcObject = cameraStreamRef.current;
+    }
+  }, [cameraActive]);
+
   // Form state
   const [formData, setFormData] = useState<AnalysisFormData>({
     strain: '',
@@ -377,7 +385,10 @@ const EnhancedScanner: React.FC = () => {
                   type="file"
                   className="hidden"
                   accept="image/*"
-                  onChange={handleFileUpload}
+                  onChange={(event) => {
+                    void handleFileUpload(event);
+                    event.target.value = '';
+                  }}
                 />
               </div>
             )}

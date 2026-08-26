@@ -123,6 +123,12 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
     }
   }, [selectedDeviceId]);
 
+  useEffect(() => {
+    if (isActive && videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [isActive, stream]);
+
   if (devices.length === 0) {
     return (
       <div className={`bg-gray-900 rounded-lg p-8 text-center ${className}`}>
@@ -166,6 +172,8 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
               <div className="flex justify-center items-center gap-4">
                 <button
+                  type="button"
+                  aria-label="Capture photo"
                   onClick={capturePhoto}
                   disabled={isLoading}
                   className="w-16 h-16 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
@@ -174,6 +182,8 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
                 </button>
                 {devices.length > 1 && (
                   <button
+                    type="button"
+                    aria-label="Switch camera"
                     onClick={switchCamera}
                     className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
                   >
@@ -188,6 +198,8 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
             <Camera className="w-16 h-16 text-gray-600 mb-4" />
             <p className="text-gray-400 text-center mb-4">Camera preview</p>
             <button
+              type="button"
+              aria-label="Start camera"
               onClick={startCamera}
               disabled={isLoading}
               className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
@@ -213,6 +225,8 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
         <div className="flex items-center justify-between text-sm text-gray-400">
           <span>Camera active</span>
           <button
+            type="button"
+            aria-label="Stop camera"
             onClick={stopCamera}
             className="flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors"
           >
