@@ -208,6 +208,7 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
           />
         </div>
         <button
+          type="button"
           onClick={() => setShowCustomForm(!showCustomForm)}
           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
         >
@@ -342,6 +343,7 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
 
           <div className="flex justify-end space-x-2">
             <button
+              type="button"
               onClick={() => {
                 setShowCustomForm(false);
                 resetCustomForm();
@@ -351,6 +353,7 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleAddCustomStrain}
               disabled={isLoading}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 text-white rounded text-sm font-medium transition-colors"

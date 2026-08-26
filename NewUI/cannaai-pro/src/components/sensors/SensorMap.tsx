@@ -437,6 +437,9 @@ const SensorMap: React.FC<SensorMapProps> = ({
             {(['map', 'list', 'grid'] as const).map(mode => (
               <button
                 key={mode}
+                type="button"
+                aria-pressed={viewMode === mode}
+                aria-label={`Switch to sensor ${mode} view`}
                 onClick={() => setViewMode(mode)}
                 className={`flex items-center gap-2 px-4 py-2 capitalize first:rounded-l-lg last:rounded-r-lg ${
                   viewMode === mode ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'

@@ -249,6 +249,7 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onSettingsClick}
               className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700"
             >
@@ -364,6 +365,7 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
 
           {/* Show Acknowledged Toggle */}
           <button
+            type="button"
             onClick={() => setShowAcknowledged(!showAcknowledged)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg ${showAcknowledged ? 'bg-emerald-900/30 border border-emerald-700/50' : 'bg-gray-800 border border-gray-700'}`}
           >
@@ -381,6 +383,8 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
                   {selectedAlerts.size} selected
                 </span>
                 <button
+                  type="button"
+                  aria-label="Clear selected sensor alerts"
                   onClick={clearSelection}
                   className="text-sm text-gray-400 hover:text-white"
                 >
@@ -389,12 +393,15 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
               </>
             )}
             <button
+              type="button"
+              aria-label="Select all visible sensor alerts"
               onClick={selectAllVisibleAlerts}
               className="px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg hover:bg-gray-700"
             >
               Select All
             </button>
             <button
+              type="button"
               onClick={acknowledgeAllAlerts}
               className="px-3 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700"
               disabled={filteredNotifications.filter(n => !n.acknowledged).length === 0}
@@ -402,6 +409,7 @@ const SensorAlerts: React.FC<SensorAlertsProps> = ({
               Acknowledge All
             </button>
             <button
+              type="button"
               onClick={exportAlerts}
               className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
             >
@@ -574,6 +582,8 @@ const AlertCard: React.FC<AlertCardProps> = ({
           <div className="flex items-center gap-2 ml-4">
             {!notification.acknowledged && (
               <button
+                type="button"
+                aria-label={`Acknowledge alert ${notification.title || notification.id}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onAcknowledge();
@@ -585,6 +595,8 @@ const AlertCard: React.FC<AlertCardProps> = ({
               </button>
             )}
             <button
+              type="button"
+              aria-label={`Delete alert ${notification.title || notification.id}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
@@ -595,6 +607,8 @@ const AlertCard: React.FC<AlertCardProps> = ({
               <Trash2 className="w-4 h-4" />
             </button>
             <button
+              type="button"
+              aria-label={`${isExpanded ? 'Collapse' : 'Expand'} alert ${notification.title || notification.id}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleExpand();

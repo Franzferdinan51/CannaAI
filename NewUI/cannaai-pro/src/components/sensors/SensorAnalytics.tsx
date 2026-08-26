@@ -265,6 +265,8 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
             {(['1h', '6h', '24h', '7d', '30d', '90d'] as const).map(tf => (
               <button
                 key={tf}
+                type="button"
+                aria-pressed={timeframe === tf}
                 onClick={() => setTimeframe(tf)}
                 className={`px-4 py-2 ${timeframe === tf ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'} first:rounded-l-lg last:rounded-r-lg`}
               >
@@ -282,6 +284,8 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
             {(['line', 'area', 'bar'] as const).map(type => (
               <button
                 key={type}
+                type="button"
+                aria-pressed={chartType === type}
                 onClick={() => setChartType(type)}
                 className={`px-3 py-2 capitalize ${chartType === type ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'} first:rounded-l-lg last:rounded-r-lg`}
               >

@@ -387,6 +387,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <div className="flex gap-3 pt-4 border-t border-gray-700">
           {onDownloadReport && (
             <button
+              type="button"
               onClick={onDownloadReport}
               className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
@@ -397,6 +398,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
           {onReanalyze && (
             <button
+              type="button"
               onClick={onReanalyze}
               className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
