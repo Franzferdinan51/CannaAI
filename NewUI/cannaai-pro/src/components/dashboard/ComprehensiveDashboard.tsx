@@ -655,7 +655,7 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                     </CardHeader>
                     <CardContent>
                       <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={240} initialDimension={{ width: 1, height: 240 }}>
                           <AreaChart data={environmentalTrendsData}>
                             <defs>
                               <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
@@ -743,7 +743,7 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                   </CardHeader>
                   <CardContent>
                     <div className="h-[400px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={320} initialDimension={{ width: 1, height: 320 }}>
                         <LineChart data={environmentalTrendsData}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
                           <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} />
