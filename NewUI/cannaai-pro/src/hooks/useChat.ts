@@ -442,14 +442,13 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         abortControllerRef.current.abort();
       }
 
-      abortControllerRef.current = new AbortController();
+      const requestController = new AbortController();
+      abortControllerRef.current = requestController;
       cancelRequestedRef.current = false;
       // Keep the UI recoverable when a local model is unloaded, crashes, or
       // never completes. The server has its own provider timeout, but fetch
       // itself otherwise leaves the composer disabled indefinitely.
-      const requestTimeout = setTimeout(() => {
-        abortControllerRef.current?.abort();
-      }, 180000);
+      const requestTimeout = setTimeout(() => requestController.abort(), 180000);
 
       try {
         const response = await fetch(apiUrl('/chat'), {
@@ -478,7 +477,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
             baseUrl: settings.providers.lmStudio.url.trim() || undefined,
             primaryProvider: settings.providers.lmStudio.enabled ? 'lmstudio' : undefined
           }),
-          signal: abortControllerRef.current.signal
+          signal: requestController.signal
         });
 
         const data = await response.json().catch(() => ({
