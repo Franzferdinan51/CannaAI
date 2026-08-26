@@ -90,7 +90,9 @@ export function ChatSettings({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: 'Connection test',
-          testProvider: provider
+          testProvider: provider,
+          model: provider === 'lm-studio' ? settings.providers.lmStudio.model : settings.providers.openRouter.model,
+          baseUrl: provider === 'lm-studio' ? settings.providers.lmStudio.url : undefined,
         })
       });
 

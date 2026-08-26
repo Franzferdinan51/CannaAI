@@ -864,7 +864,9 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         headers: { 'Content-Type': 'application/json', ...apiAuthHeaders() },
         body: JSON.stringify({
           message: 'Test message',
-          testProvider: provider
+          testProvider: provider,
+          model: provider === 'lmstudio' ? settings.providers.lmStudio.model : settings.providers.openRouter.model,
+          baseUrl: provider === 'lmstudio' ? settings.providers.lmStudio.url : undefined,
         })
       });
 
@@ -872,7 +874,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
     } catch {
       return false;
     }
-  }, []);
+  }, [settings]);
 
   // Switch AI provider
   const switchProvider = useCallback(async (provider: string): Promise<boolean> => {

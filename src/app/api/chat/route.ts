@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = earlyBody;
-    const { message, image, mode = 'chat', context, sensorData, model, baseUrl, primaryProvider } = body;
+    const { message, image, mode = 'chat', context, sensorData, model, baseUrl, primaryProvider, testProvider } = body;
 
     // Validate required fields
     if (!message) {
@@ -165,7 +165,9 @@ export async function POST(request: NextRequest) {
 
     try {
       const aiResult = await executeChatWithFallback(contextPrompt, {
-        primaryProvider: typeof primaryProvider === 'string' && primaryProvider.trim()
+        primaryProvider: typeof testProvider === 'string' && testProvider.trim()
+          ? testProvider.trim()
+          : typeof primaryProvider === 'string' && primaryProvider.trim()
           ? primaryProvider.trim()
           : providerDetection.primary.provider === 'fallback' ? undefined : providerDetection.primary.provider,
         model: typeof model === 'string' && model.trim() ? model.trim() : undefined,
@@ -178,6 +180,21 @@ export async function POST(request: NextRequest) {
       const fallbackUsed = aiResult.provider === 'fallback';
       const fallbackReason = aiResult.fallbackReason || '';
       console.log(`✅ Chat completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
+
+      // A provider test must validate the provider the user selected. A
+      // successful fallback response is useful for chat, but would otherwise
+      // make a broken OpenRouter/LM Studio connection look healthy.
+      if (typeof testProvider === 'string' && testProvider.trim()) {
+        const expectedProvider = testProvider.trim().toLowerCase().replace('-', '').replace('_', '');
+        if (usedProvider !== expectedProvider) {
+          return NextResponse.json({
+            success: false,
+            error: `The requested provider is unavailable; response came from ${usedProvider}.`,
+            provider: usedProvider,
+            fallback: { used: true, reason: `Requested ${testProvider}, used ${usedProvider}` },
+          }, { status: 503 });
+        }
+      }
 
       const totalTime = Date.now() - startTime;
       const chatMetadata = chatResult && typeof chatResult === 'object' ? chatResult : {};
