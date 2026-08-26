@@ -338,10 +338,10 @@ const EnhancedScanner: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-8">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Plant Health Scanner</h1>
             <p className="text-gray-400">AI-powered plant analysis with strain detection</p>
@@ -428,7 +428,7 @@ const EnhancedScanner: React.FC = () => {
                     className="w-full h-64 object-cover"
                   />
                 </div>
-                <div className="flex justify-center gap-4">
+                <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                   <button
                     type="button"
                     aria-label="Capture plant photo"
@@ -459,7 +459,7 @@ const EnhancedScanner: React.FC = () => {
                     className="w-full h-64 object-contain"
                   />
                 </div>
-                <div className="flex justify-center gap-4">
+                <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                   <button
                     type="button"
                     aria-label="Remove selected plant image"
@@ -637,7 +637,7 @@ const EnhancedScanner: React.FC = () => {
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-4 pt-4">
+              <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:gap-4">
                 <button
                   type="button"
                   aria-label="Analyze plant"
@@ -787,7 +787,7 @@ const EnhancedScanner: React.FC = () => {
                       )}
 
                       {/* Actions */}
-                      <div className="flex gap-2 pt-4 border-t border-gray-700">
+                      <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 sm:flex-row">
                         <button type="button" onClick={downloadReport} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1">
                           <FileText className="w-3 h-3" />
                           Report
