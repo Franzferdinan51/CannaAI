@@ -94,6 +94,7 @@ export function ChatMessage({
   const [isBookmarked, setIsBookmarked] = useState(Boolean(message.metadata?.bookmarked));
   const [isFlagged, setIsFlagged] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   const messageRef = useRef<HTMLDivElement>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
@@ -145,21 +146,50 @@ export function ChatMessage({
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
-    onCopy?.(message);
+  const handleCopy = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message.content);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = message.content;
+        textArea.setAttribute('readonly', '');
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        const copied = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (!copied) throw new Error('Clipboard copy was rejected');
+      }
+      setCopyStatus('copied');
+      onCopy?.(message);
+      window.setTimeout(() => setCopyStatus('idle'), 1800);
+    } catch (error) {
+      console.warn('Unable to copy chat message:', error);
+      setCopyStatus('failed');
+      window.setTimeout(() => setCopyStatus('idle'), 2500);
+    }
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (onShare) {
       onShare(message);
     } else if (navigator.share) {
-      navigator.share({
-        title: 'CannaAI Chat Message',
-        text: message.content
-      });
+      try {
+        await navigator.share({
+          title: 'CannaAI Chat Message',
+          text: message.content
+        });
+      } catch (error) {
+        // User cancellation is normal; other failures should still leave a
+        // useful copy path instead of making Share appear to do nothing.
+        if ((error as DOMException)?.name !== 'AbortError') {
+          await handleCopy();
+        }
+      }
     } else {
-      handleCopy();
+      await handleCopy();
     }
   };
 
@@ -292,10 +322,11 @@ export function ChatMessage({
                   <button
                     type="button"
                     onClick={handleCopy}
+                    aria-label="Copy message"
                     className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                   >
                     <Copy className="w-4 h-4" />
-                    Copy
+                    {copyStatus === 'copied' ? 'Copied' : copyStatus === 'failed' ? 'Copy failed' : 'Copy'}
                   </button>
 
                   <button
