@@ -236,6 +236,7 @@ interface UseChatReturn {
 
   // Actions
   sendMessage: (content: string, image?: string, attachments?: FileAttachment[]) => Promise<void>;
+  cancelRequest: () => void;
   updateMessage: (messageId: string, updates: Partial<IChatMessage>) => void;
   deleteMessage: (messageId: string) => void;
   createConversation: (title: string) => ChatConversation | null;
@@ -276,6 +277,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
+  const cancelRequestedRef = useRef(false);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -441,6 +443,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       }
 
       abortControllerRef.current = new AbortController();
+      cancelRequestedRef.current = false;
       // Keep the UI recoverable when a local model is unloaded, crashes, or
       // never completes. The server has its own provider timeout, but fetch
       // itself otherwise leaves the composer disabled indefinitely.
@@ -589,7 +592,9 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       const errorMessage: IChatMessage = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: error instanceof DOMException && error.name === 'AbortError'
+        content: cancelRequestedRef.current
+          ? 'The AI request was cancelled.'
+          : error instanceof DOMException && error.name === 'AbortError'
           ? 'The AI request timed out. Confirm LM Studio is running with the selected model loaded, then try again.'
           : 'Connection to the AI service failed. Check the provider status in Settings and try again.',
         timestamp: new Date()
@@ -599,8 +604,10 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
 
       addNotification({
         type: 'error',
-        title: 'Connection Error',
-        message: error instanceof DOMException && error.name === 'AbortError'
+        title: cancelRequestedRef.current ? 'Request Cancelled' : 'Connection Error',
+        message: cancelRequestedRef.current
+          ? 'The AI request was cancelled.'
+          : error instanceof DOMException && error.name === 'AbortError'
           ? 'The AI request timed out'
           : 'Failed to connect to AI service'
       });
@@ -616,8 +623,15 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
     } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
+      cancelRequestedRef.current = false;
     }
   }, [currentConversation, sensorData, messages, settings]);
+
+  const cancelRequest = useCallback(() => {
+    if (!abortControllerRef.current) return;
+    cancelRequestedRef.current = true;
+    abortControllerRef.current.abort();
+  }, []);
 
   // Update message
   const updateMessage = useCallback((messageId: string, updates: Partial<IChatMessage>) => {
@@ -1097,6 +1111,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
 
     // Actions
     sendMessage,
+    cancelRequest,
     updateMessage,
     deleteMessage,
     createConversation,

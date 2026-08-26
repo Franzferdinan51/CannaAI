@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send,
-  Loader2,
   Camera,
   Image as ImageIcon,
   FileText,
@@ -28,7 +27,8 @@ import {
   Info,
   ChevronUp,
   Plus,
-  Minus
+  Minus,
+  Square
 } from 'lucide-react';
 
 import { ChatTemplate, FileAttachment } from './types';
@@ -37,6 +37,7 @@ import { Button } from '../ui/button';
 
 interface ChatInputProps {
   onSend: (content: string, image?: string, attachments?: FileAttachment[]) => void;
+  onCancel?: () => void;
   onTypingStart?: () => void;
   onTypingStop?: () => void;
   onImageUpload?: (file: File) => void;
@@ -56,6 +57,7 @@ interface ChatInputProps {
 
 export function ChatInput({
   onSend,
+  onCancel,
   onTypingStart,
   onTypingStop,
   onImageUpload,
@@ -232,8 +234,7 @@ export function ChatInput({
     });
   };
 
-  // These callbacks are intentionally stable because they are passed to file input and drag/drop handlers.
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+  // Keep upload handlers stable for file input and drag/drop callbacks.
   const handleImageUpload = useCallback((file: File) => {
     const validation = validateAttachment(file, 'image');
     if (!validation.valid) {
@@ -250,7 +251,6 @@ export function ChatInput({
     onImageUpload?.(file);
   }, [onImageUpload]);
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const handleFileUpload = useCallback(async (file: File) => {
     const validation = validateAttachment(file, 'file');
     if (!validation.valid) {
@@ -609,13 +609,16 @@ export function ChatInput({
 
             {/* Send button */}
             <Button
-              onClick={handleSend}
-              aria-label="Send message"
-              disabled={isLoading || (!input.trim() && !selectedImage && attachedFiles.length === 0)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white disabled:bg-gray-700 disabled:cursor-not-allowed"
+              onClick={isLoading ? onCancel : handleSend}
+              aria-label={isLoading ? 'Cancel request' : 'Send message'}
+              title={isLoading ? 'Cancel request' : 'Send message'}
+              disabled={isLoading ? !onCancel : (!input.trim() && !selectedImage && attachedFiles.length === 0)}
+              className={isLoading
+                ? 'bg-red-600 hover:bg-red-500 text-white disabled:bg-gray-700 disabled:cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white disabled:bg-gray-700 disabled:cursor-not-allowed'}
             >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Square className="w-4 h-4" />
               ) : (
                 <Send className="w-4 h-4" />
               )}

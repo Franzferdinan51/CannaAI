@@ -119,6 +119,7 @@ export function ChatInterface({
 
     // Actions
     sendMessage,
+    cancelRequest,
     updateMessage,
     deleteMessage,
     createConversation,
@@ -640,6 +641,7 @@ export function ChatInterface({
 
         <ChatInput
           onSend={handleSendMessage}
+          onCancel={cancelRequest}
           onTypingStart={handleTypingStart}
           isLoading={isLoading}
           isVoiceEnabled={settings?.features?.enableVoiceInput}
