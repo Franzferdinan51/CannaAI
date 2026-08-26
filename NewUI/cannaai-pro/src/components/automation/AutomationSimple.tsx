@@ -12,6 +12,17 @@ const systems = [
   { name: 'Air Quality', detail: 'CO₂ and circulation monitoring', icon: Wind, color: 'text-cyan-300' },
 ];
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const nativeTimeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof nativeTimeout === 'function') return nativeTimeout(timeoutMs);
+
+  const controller = new AbortController();
+  window.setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+}
+
 export default function AutomationSimple() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<AutomationTab>('overview');
@@ -19,7 +30,9 @@ export default function AutomationSimple() {
   const refresh = useCallback(async () => {
     setState((current) => ({ ...current, loading: true, error: null }));
     try {
-      const response = await fetch(apiUrl('/automation'));
+      const response = await fetch(apiUrl('/automation'), {
+        signal: createTimeoutSignal(15000),
+      });
       if (!response.ok) throw new Error(`Automation status returned ${response.status}`);
       const payload = await response.json();
       setState({ config: payload.data || {}, checkedAt: new Date(), loading: false, error: null });

@@ -17,6 +17,17 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const nativeTimeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof nativeTimeout === 'function') return nativeTimeout(timeoutMs);
+
+  const controller = new AbortController();
+  window.setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+}
+
 export const useSocketContext = () => {
   const context = useContext(SocketContext);
   if (!context) {
@@ -58,13 +69,19 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const acknowledgeNotification = async (id: string) => {
-    const response = await fetch(apiUrl(`/notifications/${encodeURIComponent(id)}/acknowledge`), { method: 'POST' });
+    const response = await fetch(apiUrl(`/notifications/${encodeURIComponent(id)}/acknowledge`), {
+      method: 'POST',
+      signal: createTimeoutSignal(10000),
+    });
     if (!response.ok) throw new Error('Failed to acknowledge notification');
     setNotifications(prev => prev.map(item => item.id === id ? { ...item, acknowledged: true } : item));
   };
 
   const deleteNotification = async (id: string) => {
-    const response = await fetch(apiUrl(`/notifications/${encodeURIComponent(id)}`), { method: 'DELETE' });
+    const response = await fetch(apiUrl(`/notifications/${encodeURIComponent(id)}`), {
+      method: 'DELETE',
+      signal: createTimeoutSignal(10000),
+    });
     if (!response.ok) throw new Error('Failed to delete notification');
     setNotifications(prev => prev.filter(item => item.id !== id));
   };
