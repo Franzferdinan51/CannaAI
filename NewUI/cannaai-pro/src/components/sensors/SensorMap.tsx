@@ -588,6 +588,16 @@ const SensorMap: React.FC<SensorMapProps> = ({
                         setSelectedSensor(sensor.id);
                         onSensorSelect?.(sensor.id);
                       }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedSensor(sensor.id);
+                          onSensorSelect?.(sensor.id);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Configure ${sensor.name}`}
                     >
                       <div className="flex items-center gap-3">
                         {getSensorIcon(sensor.type)}
@@ -629,6 +639,16 @@ const SensorMap: React.FC<SensorMapProps> = ({
                   setSelectedSensor(sensor.id);
                   onSensorSelect?.(sensor.id);
                 }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelectedSensor(sensor.id);
+                    onSensorSelect?.(sensor.id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Configure ${sensor.name}`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">

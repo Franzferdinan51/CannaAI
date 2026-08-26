@@ -373,6 +373,16 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
               onStrainSelect(strain.name);
               setSelectedStrainInfo(strain);
             }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onStrainSelect(strain.name);
+                setSelectedStrainInfo(strain);
+              }
+            }}
+            role="option"
+            aria-selected={selectedStrain === strain.name}
+            tabIndex={0}
             className={`p-3 rounded-lg border cursor-pointer transition-all ${
               selectedStrain === strain.name
                 ? 'border-emerald-500 bg-emerald-500/10'

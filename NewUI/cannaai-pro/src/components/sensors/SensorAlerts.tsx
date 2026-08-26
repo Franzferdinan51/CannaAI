@@ -529,6 +529,17 @@ const AlertCard: React.FC<AlertCardProps> = ({
         isSelected ? 'ring-2 ring-emerald-500' : ''
       } ${notification.acknowledged ? 'opacity-60' : ''}`}
       onClick={onToggleExpand}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onToggleExpand();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-expanded={isExpanded}
+      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} alert ${notification.title}`}
     >
       <div className="p-4">
         <div className="flex items-start justify-between">

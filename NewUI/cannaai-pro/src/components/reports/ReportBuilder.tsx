@@ -562,6 +562,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Choose a Template</h3>
               <button
+                type="button"
                 onClick={() => setShowTemplates(false)}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
               >
@@ -574,6 +575,15 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
                 <div
                   key={template.id}
                   onClick={() => applyTemplate(template)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      applyTemplate(template);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Use ${template.name} template`}
                   className="bg-[#252A33] border border-gray-700 rounded-lg p-4 cursor-pointer hover:border-emerald-500 transition-colors"
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -854,6 +864,16 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
                     <div
                       className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#252A33]/50 transition-colors"
                       onClick={() => toggleSectionExpansion(section.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          toggleSectionExpansion(section.id);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={expandedSections.has(section.id)}
+                      aria-label={`${expandedSections.has(section.id) ? 'Collapse' : 'Expand'} ${section.title}`}
                     >
                       <div className="flex items-center gap-3">
                         <ChevronDown
