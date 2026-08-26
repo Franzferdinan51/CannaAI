@@ -59,6 +59,7 @@ import type {
   RoomConfig,
 } from './types';
 import { sensorAPI } from './api';
+import { useSettingsStore } from '../settings/store';
 
 interface SensorAnalyticsProps {
   className?: string;
@@ -83,10 +84,11 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
   const [showStatistics, setShowStatistics] = useState(true);
   const [showAnomalies, setShowAnomalies] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(60000); // 1 minute
   const [analyticsData, setAnalyticsData] = useState<SensorAnalyticsData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const chartRefreshRate = useSettingsStore(state => state.settings?.display.chartRefreshRate ?? 30);
+  const refreshInterval = Math.max(1, Number(chartRefreshRate) || 30) * 1000;
 
   const getUnit = (sensorType: SensorType): string => {
     switch (sensorType) {

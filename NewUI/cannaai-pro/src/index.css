@@ -99,3 +99,22 @@
 .bg-cannaai-input {
   background-color: #0f1115;
 }
+
+/* Display preferences are applied at the app shell so they remain active
+ * while the user moves between routes. */
+[data-cannaai-animations="false"] *,
+[data-cannaai-animations="false"] *::before,
+[data-cannaai-animations="false"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+[data-cannaai-compact="true"] main {
+  --cannaai-content-padding: 1rem;
+}
+
+[data-cannaai-compact="true"] main .p-6 {
+  padding: var(--cannaai-content-padding);
+}

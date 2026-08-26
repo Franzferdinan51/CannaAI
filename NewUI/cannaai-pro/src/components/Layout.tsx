@@ -6,6 +6,7 @@ import {
   Activity, FileText, MessageSquare, Settings, Zap, ChevronRight,
   Camera, AlertTriangle, BrainCircuit, Plus, Search
 } from "lucide-react";
+import { useSettingsStore } from './settings/store';
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -29,6 +30,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const location = useLocation();
   const navigate = useNavigate();
+  const displaySettings = useSettingsStore(state => state.settings?.display);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.cannaaiCompact = displaySettings?.compactMode ? 'true' : 'false';
+    root.dataset.cannaaiAnimations = displaySettings?.animationsEnabled === false ? 'false' : 'true';
+    return () => {
+      delete root.dataset.cannaaiCompact;
+      delete root.dataset.cannaaiAnimations;
+    };
+  }, [displaySettings?.compactMode, displaySettings?.animationsEnabled]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
