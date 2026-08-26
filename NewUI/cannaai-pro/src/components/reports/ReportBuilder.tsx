@@ -208,6 +208,15 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
     }));
   };
 
+  const updateFilter = (key: 'rooms' | 'plants' | 'strains', value: string) => {
+    updateParameters({
+      filters: {
+        ...report.parameters?.filters,
+        [key]: value.split(',').map((item) => item.trim()).filter(Boolean),
+      },
+    });
+  };
+
   // Update report layout
   const updateLayout = (updates: Partial<ReportLayout>) => {
     setReport(prev => ({
@@ -317,7 +326,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
     try {
       const options: ExportOptions = {
         format,
-        includeCharts: report.parameters?.includeCharts || true,
+        includeCharts: report.parameters?.includeCharts ?? true,
         includeRawData: false,
         includeMetadata: true
       };
@@ -783,6 +792,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
                       <input
                         type="text"
                         placeholder="Select rooms (optional)"
+                        aria-label="Filter report by rooms"
+                        value={(report.parameters?.filters?.rooms || []).join(', ')}
+                        onChange={(event) => updateFilter('rooms', event.target.value)}
                         className="w-full px-4 py-2 bg-[#1A1D23] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
@@ -792,6 +804,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
                       <input
                         type="text"
                         placeholder="Select plants (optional)"
+                        aria-label="Filter report by plants"
+                        value={(report.parameters?.filters?.plants || []).join(', ')}
+                        onChange={(event) => updateFilter('plants', event.target.value)}
                         className="w-full px-4 py-2 bg-[#1A1D23] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
@@ -801,6 +816,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
                       <input
                         type="text"
                         placeholder="Select strains (optional)"
+                        aria-label="Filter report by strains"
+                        value={(report.parameters?.filters?.strains || []).join(', ')}
+                        onChange={(event) => updateFilter('strains', event.target.value)}
                         className="w-full px-4 py-2 bg-[#1A1D23] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
                       />
                     </div>

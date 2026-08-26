@@ -129,6 +129,14 @@ const Plants: React.FC = () => {
     loadInitialData();
   }, [loadInitialData]);
 
+  useEffect(() => {
+    if (!autoRefreshPlants) return;
+    const refreshTimer = window.setInterval(() => {
+      void loadInitialData();
+    }, 60_000);
+    return () => window.clearInterval(refreshTimer);
+  }, [autoRefreshPlants, loadInitialData]);
+
   // Event handlers
   const handleCreatePlant = async (formData: PlantFormData) => {
     setState(prev => ({ ...prev, isCreating: true, error: undefined }));
@@ -553,11 +561,21 @@ const Plants: React.FC = () => {
                       )
                     }));
                   }}
-                  onStrainDelete={(strainId) => {
-                    setState(prev => ({
-                      ...prev,
-                      strains: prev.strains.filter(strain => strain.id !== strainId)
-                    }));
+                  onStrainDelete={async (strainId) => {
+                    if (!window.confirm('Remove this strain from the library?')) return;
+                    try {
+                      await plantsAPI.deleteStrain(strainId);
+                      setState(prev => ({
+                        ...prev,
+                        strains: prev.strains.filter(strain => strain.id !== strainId),
+                        success: 'Strain removed successfully'
+                      }));
+                    } catch (error) {
+                      setState(prev => ({
+                        ...prev,
+                        error: error instanceof Error ? error.message : 'Failed to remove strain'
+                      }));
+                    }
                   }}
                 />
               )}
