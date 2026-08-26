@@ -3,6 +3,7 @@ import { maskSettings, safeMergeSettings } from '@/lib/settings-security';
 import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
 import { providerAuthStatus } from '@/lib/provider-auth';
 import { prisma } from '@/lib/prisma';
+import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -367,11 +368,12 @@ async function getProviderModels(provider: string) {
       const baseUrl = String(settings.lmStudio.url || 'http://localhost:1234')
         .replace(/\/v1\/?$/i, '')
         .replace(/\/$/, '');
+      const apiKey = settings.lmStudio.apiKey || getLMStudioApiKey();
       const response = await fetch(`${baseUrl}/v1/models`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-          // No API key needed for LM Studio
+          'Content-Type': 'application/json',
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
         },
         signal: AbortSignal.timeout(5000)
       });
@@ -793,11 +795,17 @@ async function testAIConnection(provider: string) {
       };
     }
     if (provider === 'lm-studio') {
-      // Test LM Studio connection - no API key needed
-      const response = await fetch(`${settings.lmStudio.url}/v1/models`, {
+      // LM Studio may require its local bearer token (newer LM Studio
+      // versions do), so use the same authenticated probe as model discovery.
+      const baseUrl = String(settings.lmStudio.url || 'http://localhost:1234')
+        .replace(/\/v1\/?$/i, '')
+        .replace(/\/$/, '');
+      const apiKey = settings.lmStudio.apiKey || getLMStudioApiKey();
+      const response = await fetch(`${baseUrl}/v1/models`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
         }
       });
 

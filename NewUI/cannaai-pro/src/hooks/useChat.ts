@@ -617,7 +617,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [currentConversation, sensorData, messages]);
+  }, [currentConversation, sensorData, messages, settings]);
 
   // Update message
   const updateMessage = useCallback((messageId: string, updates: Partial<IChatMessage>) => {
@@ -711,17 +711,19 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
 
   // Archive conversation
   const archiveConversation = useCallback((conversationId: string) => {
+    const conversation = conversations.find((item) => item.id === conversationId);
+    const isArchived = !conversation?.isArchived;
     setConversations(prev => prev.map(conv =>
       conv.id === conversationId
-        ? { ...conv, isArchived: true, updatedAt: new Date() }
+        ? { ...conv, isArchived, updatedAt: new Date() }
         : conv
     ));
 
-    if (currentConversation?.id === conversationId) {
+    if (isArchived && currentConversation?.id === conversationId) {
       setCurrentConversation(null);
       setMessages([]);
     }
-  }, [currentConversation]);
+  }, [conversations, currentConversation]);
 
   // Star conversation
   const starConversation = useCallback((conversationId: string) => {

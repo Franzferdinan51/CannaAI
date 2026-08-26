@@ -151,7 +151,9 @@ export function ChatMessage({
   };
 
   const handleShare = () => {
-    if (navigator.share) {
+    if (onShare) {
+      onShare(message);
+    } else if (navigator.share) {
       navigator.share({
         title: 'CannaAI Chat Message',
         text: message.content
@@ -159,7 +161,6 @@ export function ChatMessage({
     } else {
       handleCopy();
     }
-    onShare?.(message);
   };
 
   const handleBookmark = () => {
@@ -433,7 +434,7 @@ export function ChatMessage({
 
     return (
       <div className="space-y-3">
-        <div className="whitespace-pre-wrap text-gray-200"><SafeMarkdown content={message.content} /></div>
+        <div className="whitespace-pre-wrap text-gray-200"><SafeMarkdown content={isExpanded || message.content.length <= 500 ? message.content : `${message.content.slice(0, 500)}…`} /></div>
 
         {/* Image Attachment */}
         {message.image && (
@@ -602,6 +603,8 @@ export function ChatMessage({
             {/* Expand/Collapse Button */}
             {message.content.length > 500 && (
               <button
+                type="button"
+                aria-label={isExpanded ? 'Show less' : 'Show more'}
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
               >

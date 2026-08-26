@@ -440,6 +440,15 @@ export function ChatSidebar({
                   onConversationSelect(conversation.id);
                   setSelectedConversation(null);
                 }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onConversationSelect(conversation.id);
+                    setSelectedConversation(null);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 {/* Conversation content */}
                 <div className="flex items-start justify-between">
@@ -478,7 +487,7 @@ export function ChatSidebar({
                           selectedConversation === conversation.id ? null : conversation.id
                         );
                       }}
-                      className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>

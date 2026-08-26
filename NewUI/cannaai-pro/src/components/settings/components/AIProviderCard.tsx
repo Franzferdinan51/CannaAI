@@ -471,8 +471,8 @@ const AIProviderCard: React.FC = () => {
                       </label>
                       <input
                         type="url"
-                        value={config.baseUrl || provider.baseUrl || ''}
-                        onChange={(e) => handleConfigChange(provider.id, 'baseUrl', e.target.value)}
+                        value={provider.id === 'lm-studio' ? (config.url || provider.baseUrl || '') : (config.baseUrl || provider.baseUrl || '')}
+                        onChange={(e) => handleConfigChange(provider.id, provider.id === 'lm-studio' ? 'url' : 'baseUrl', e.target.value)}
                         placeholder="API base URL"
                         className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                       />
