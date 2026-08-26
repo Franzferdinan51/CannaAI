@@ -221,9 +221,11 @@ class SettingsAPIClient {
   /**
    * Get AI providers status
    */
-  async getAIProvidersStatus(): Promise<any> {
+  async getAIProvidersStatus(baseUrl?: string): Promise<any> {
     try {
-      const response: AxiosResponse<any> = await this.api.get('/api/ai/providers');
+      const response: AxiosResponse<any> = await this.api.get('/api/ai/providers', {
+        params: baseUrl?.trim() ? { baseUrl: baseUrl.trim() } : undefined,
+      });
       return response.data;
     } catch (error) {
       console.error('Failed to get AI providers status:', error);

@@ -33,8 +33,9 @@ export async function GET(request: NextRequest) {
     // This is non-fatal: if detection throws we still return the registry view.
     let liveProviders: Array<{ provider: string; isAvailable: boolean; reason: string }> = [];
     try {
+      const configuredBaseUrl = request.nextUrl.searchParams.get('baseUrl')?.trim() || undefined;
       const detected = await withProviderDetectionTimeout(
-        detectAvailableProviders({ fastLocal: true }),
+        detectAvailableProviders({ fastLocal: true, lmStudioBaseUrl: configuredBaseUrl }),
         10000,
       );
       liveProviders = (detected?.all || []).map((r: any) => ({
