@@ -42,6 +42,17 @@ function apiAuthHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const timeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof timeout === 'function') return timeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+}
+
 // Default settings
 const defaultSettings: ChatSettings = {
   providers: {
@@ -370,7 +381,10 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Check AI connection
   const checkConnection = useCallback(async () => {
     try {
-      const response = await fetch(apiUrl('/chat'), { headers: apiAuthHeaders() });
+      const response = await fetch(apiUrl('/chat'), {
+        headers: apiAuthHeaders(),
+        signal: createTimeoutSignal(5000),
+      });
       const data = await response.json();
 
       if (data.success && data.currentProvider !== 'fallback') {
