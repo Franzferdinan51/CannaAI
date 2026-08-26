@@ -165,6 +165,7 @@ const Chat: React.FC = () => {
             disabled={isLoading}
           />
           <button
+            type="button"
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isLoading}
             className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"

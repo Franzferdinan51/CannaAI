@@ -187,6 +187,7 @@ export function ChatSettings({
           <div className="space-y-1">
             {tabs.map(tab => (
               <button
+                type="button"
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${

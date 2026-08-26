@@ -290,6 +290,7 @@ export function ChatMessage({
                 >
                   {/* Basic Actions */}
                   <button
+                    type="button"
                     onClick={handleCopy}
                     className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                   >
@@ -298,6 +299,7 @@ export function ChatMessage({
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleShare}
                     className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                   >
@@ -306,6 +308,7 @@ export function ChatMessage({
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleBookmark}
                     className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                   >
@@ -316,6 +319,7 @@ export function ChatMessage({
                   {/* Voice Actions */}
                   {onSpeak && (
                     <button
+                      type="button"
                       onClick={handleSpeak}
                       className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                     >
@@ -327,6 +331,7 @@ export function ChatMessage({
                   {/* Rating Actions */}
                   <div className="border-t border-gray-700 my-1" />
                   <button
+                    type="button"
                     onClick={() => setShowRating(!showRating)}
                     className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                   >
@@ -335,6 +340,7 @@ export function ChatMessage({
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => handleFlag('inappropriate')}
                     className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                   >
@@ -346,6 +352,7 @@ export function ChatMessage({
                   {message.role === 'assistant' && (
                     <>
                       <button
+                        type="button"
                         onClick={handleAnalyze}
                         className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                       >
@@ -354,8 +361,9 @@ export function ChatMessage({
                       </button>
 
                       {onRegenerate && (
-                        <button
-                          onClick={handleRegenerate}
+                      <button
+                        type="button"
+                        onClick={handleRegenerate}
                           className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                         >
                           <RefreshCw className="w-4 h-4" />
@@ -370,6 +378,7 @@ export function ChatMessage({
                     <>
                       <div className="border-t border-gray-700 my-1" />
                       <button
+                        type="button"
                         onClick={() => setIsEditing(true)}
                         className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                       >
@@ -378,6 +387,7 @@ export function ChatMessage({
                       </button>
 
                       <button
+                        type="button"
                         onClick={handleDelete}
                         className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
                       >
