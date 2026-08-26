@@ -45,6 +45,17 @@ import { ChatSettings as IChatSettings } from './types';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const nativeTimeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof nativeTimeout === 'function') return nativeTimeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+}
+
 interface ChatSettingsProps {
   settings: IChatSettings;
   onSettingsChange: (settings: IChatSettings) => void;
@@ -93,8 +104,11 @@ export function ChatSettings({
           testProvider: provider,
           providerSettings: settings.providers,
           model: provider === 'lm-studio' ? settings.providers.lmStudio.model : settings.providers.openRouter.model,
-          baseUrl: provider === 'lm-studio' ? settings.providers.lmStudio.url : undefined,
-        })
+          baseUrl: provider === 'lm-studio'
+            ? settings.providers.lmStudio.url
+            : settings.providers.openRouter.baseUrl,
+        }),
+        signal: createTimeoutSignal(5000),
       });
 
       const success = response.ok;
