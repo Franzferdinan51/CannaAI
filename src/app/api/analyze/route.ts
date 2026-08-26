@@ -32,7 +32,24 @@ const isStaticExport = process.env.BUILD_MODE === 'static';
 // Enhanced security configuration
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const MAX_REQUESTS_PER_WINDOW = 20;
+const ANALYSIS_DATABASE_TIMEOUT_MS = 2000;
 const requestTracker = new Map<string, { count: number; resetTime: number }>();
+
+async function withAnalysisDatabaseTimeout<T>(operation: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`Analysis history write timed out after ${ANALYSIS_DATABASE_TIMEOUT_MS}ms`)),
+        ANALYSIS_DATABASE_TIMEOUT_MS,
+      );
+      timer.unref?.();
+    });
+    return await Promise.race([operation, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 // Enhanced validation schema with Zod - more flexible for frontend compatibility
 const AnalysisRequestSchema = z.object({
@@ -850,27 +867,29 @@ export async function POST(request: NextRequest) {
 
     // Persist analysis result for history/plant linkage (best-effort)
     try {
-      await prisma.plantAnalysis.create({
-        data: {
-          plantId: body.plantId,
-          request: {
-            strain,
-            leafSymptoms,
-            phLevel,
-            temperature,
-            humidity,
-            medium,
-            growthStage,
-            pestDiseaseFocus,
-            urgency,
-            additionalNotes,
-            temperatureUnit
-          },
-          result: analysisResult,
-          provider: usedProvider,
-          imageInfo: processedImageInfo
-        }
-      });
+      await withAnalysisDatabaseTimeout(
+        prisma.plantAnalysis.create({
+          data: {
+            plantId: body.plantId,
+            request: {
+              strain,
+              leafSymptoms,
+              phLevel,
+              temperature,
+              humidity,
+              medium,
+              growthStage,
+              pestDiseaseFocus,
+              urgency,
+              additionalNotes,
+              temperatureUnit
+            },
+            result: analysisResult,
+            provider: usedProvider,
+            imageInfo: processedImageInfo
+          }
+        }),
+      );
     } catch (persistError) {
       console.warn('Failed to persist plant analysis record:', persistError);
     }
