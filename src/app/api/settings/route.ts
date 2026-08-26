@@ -387,28 +387,45 @@ async function getProviderModels(provider: string) {
         .replace(/\/v1\/?$/i, '')
         .replace(/\/$/, '');
       const apiKey = settings.lmStudio.apiKey || getLMStudioApiKey();
-      const response = await fetch(`${baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
-        },
-        signal: AbortSignal.timeout(5000)
-      });
+      let data: any = null;
+      for (const endpoint of [`${baseUrl}/v1/models`, `${baseUrl}/api/v1/models`]) {
+        try {
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
+            },
+            signal: AbortSignal.timeout(5000)
+          });
+          if (response.ok) {
+            data = await response.json();
+            break;
+          }
+        } catch {
+          // Try the native catalog after the OpenAI-compatible endpoint.
+        }
+      }
 
-      if (response.ok) {
-        const data = await response.json();
-        const models = data.data || [];
+      if (data) {
+        const models = (Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : [])
+          .filter((model: any) => model?.type !== 'embedding' && (model?.id || model?.key));
 
         // Format models for frontend
-        const formattedModels = models.map((model: any) => ({
-          id: model.id,
-          name: model.id,
-          provider: 'lm-studio',
-          capabilities: determineCapabilities(model.id),
-          contextLength: model.context_length || 4096,
-          size: model.size || 'Unknown'
-        }));
+        const formattedModels = models.map((model: any) => {
+          const id = model.id || model.key;
+          return {
+            id,
+            name: id,
+            provider: 'lm-studio',
+            capabilities: [
+              ...determineCapabilities(id),
+              ...(model.capabilities?.vision === true ? ['vision', 'image-analysis'] : []),
+            ].filter((capability, index, all) => all.indexOf(capability) === index),
+            contextLength: model.context_length || 4096,
+            size: model.size || 'Unknown'
+          };
+        });
 
         return {
           success: true,

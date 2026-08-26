@@ -21,6 +21,10 @@ describe('/api/settings durability', () => {
     mockUpsert.mockResolvedValue({ id: 7 });
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test('loads persisted settings and uses the stored record id for future writes', async () => {
     const response = await GET();
     const body = await response.json();
@@ -79,5 +83,30 @@ describe('/api/settings durability', () => {
 
     expect(response.status).toBe(200);
     expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
+  });
+
+  test('uses native LM Studio capability metadata for vision models', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({ ok: false } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          models: [{ key: 'ornith-1.5-35b-a3b', type: 'llm', capabilities: { vision: true } }],
+        }),
+      } as Response);
+
+    const response = await POST(new Request('http://localhost/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'get_models', provider: 'lm-studio' }),
+      headers: { 'content-type': 'application/json' },
+    }) as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.models[0]).toEqual(expect.objectContaining({
+      id: 'ornith-1.5-35b-a3b',
+      capabilities: expect.arrayContaining(['vision', 'image-analysis']),
+    }));
+    expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:1234/api/v1/models');
   });
 });
