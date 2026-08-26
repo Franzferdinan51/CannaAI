@@ -456,8 +456,25 @@ export async function GET() {
   try {
     console.log('🔍 Detecting AI providers for chat endpoint...');
 
-    // Detect available providers
-    const providerDetection = await detectAvailableProviders();
+    // Keep the status probe responsive and local-first. The chat POST path
+    // already uses this mode; running the full cloud/agent probe here made
+    // the UI report a disconnected provider after its short status timeout.
+    const providerDetection = await withTimeout(
+      detectAvailableProviders({ fastLocal: true }),
+      10000,
+    );
+
+    if (!providerDetection) {
+      return NextResponse.json({
+        success: false,
+        currentProvider: 'fallback',
+        error: 'AI provider status detection timed out',
+        availableProviders: [],
+        unavailableProviders: [],
+        recommendations: ['Confirm LM Studio is running and try again'],
+        timestamp: new Date().toISOString(),
+      }, { status: 503 });
+    }
 
     // Get configuration for each provider
     const lmStudioConfig = getProviderConfig('lmstudio');

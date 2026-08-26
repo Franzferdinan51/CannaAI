@@ -26,7 +26,7 @@ jest.mock('@/lib/logger', () => ({
   })),
 }));
 
-import { POST } from '@/app/api/chat/route';
+import { GET, POST } from '@/app/api/chat/route';
 
 describe('/api/chat vision routing', () => {
   beforeEach(() => {
@@ -46,6 +46,15 @@ describe('/api/chat vision routing', () => {
       provider: 'lmstudio',
       processingTime: 42,
     });
+  });
+
+  test('uses fast local detection for the provider status endpoint', async () => {
+    const result = await GET();
+    const body = await result.json();
+
+    expect(result.status).toBe(200);
+    expect(body.currentProvider).toBe('lmstudio');
+    expect(mockDetectAvailableProviders).toHaveBeenCalledWith({ fastLocal: true });
   });
 
   test('passes the submitted image into the local-first provider chain', async () => {
