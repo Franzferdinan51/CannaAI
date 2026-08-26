@@ -17,7 +17,10 @@ export const revalidate = false;
 const LM_STUDIO_URL = (process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234')
   .replace(/\/v1\/?$/, '')
   .replace(/\/$/, '');
-const LM_STUDIO_TIMEOUT = parseInt(process.env.LM_STUDIO_TIMEOUT || '30000');
+const configuredTimeout = Number.parseInt(process.env.LM_STUDIO_TIMEOUT || '30000', 10);
+const LM_STUDIO_TIMEOUT = Number.isFinite(configuredTimeout) && configuredTimeout > 0
+  ? configuredTimeout
+  : 30000;
 
 function lmStudioHeaders(includeJson = false): Record<string, string> {
   const apiKey = getLMStudioApiKey();
