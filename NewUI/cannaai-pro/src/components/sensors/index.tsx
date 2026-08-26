@@ -54,6 +54,7 @@ const Sensors: React.FC<SensorsProps> = ({
   const [activeView, setActiveView] = useState<'dashboard' | 'config' | 'alerts' | 'analytics' | 'map'>(initialView);
   const [sensors, setSensors] = useState<SensorConfig[]>([]);
   const [rooms, setRooms] = useState<RoomConfig[]>([]);
+  const [dashboardRoom, setDashboardRoom] = useState('all');
   const [selectedSensor, setSelectedSensor] = useState<SensorConfig | null>(null);
   const [isCreatingSensor, setIsCreatingSensor] = useState(false);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
@@ -154,8 +155,8 @@ const Sensors: React.FC<SensorsProps> = ({
   const handleRoomSelect = (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
     if (room) {
-      // You could add room-specific view here
-      console.log('Selected room:', room);
+      setDashboardRoom(room.name);
+      setActiveView('dashboard');
     }
   };
 
@@ -348,6 +349,7 @@ const Sensors: React.FC<SensorsProps> = ({
           <SensorDashboard
             sensors={sensors}
             rooms={rooms}
+            initialRoom={dashboardRoom}
             onRefresh={loadInitialData}
             onSensorSelect={handleSensorSelect}
           />

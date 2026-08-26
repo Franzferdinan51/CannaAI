@@ -51,15 +51,16 @@ interface SensorDashboardProps {
   className?: string;
   sensors?: SensorConfig[];
   rooms?: RoomConfig[];
+  initialRoom?: string;
   onRefresh?: () => void;
   onSensorSelect?: (sensorId: string) => void;
 }
 
-const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [], onRefresh, onSensorSelect }) => {
+const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [], initialRoom = 'all', onRefresh, onSensorSelect }) => {
   const { lastSensorData, isConnected, notifications } = useSocketContext();
 
   // State management
-  const [selectedRoom, setSelectedRoom] = useState<string>('all');
+  const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAlerts, setShowAlerts] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
