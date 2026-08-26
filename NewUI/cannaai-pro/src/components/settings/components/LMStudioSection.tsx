@@ -44,6 +44,7 @@ const LMStudioSection: React.FC = () => {
   const [filterCapability, setFilterCapability] = useState<ModelCapability | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'modified'>('name');
   const [draftUrl, setDraftUrl] = useState('');
+  const [saveWarning, setSaveWarning] = useState('');
 
   useEffect(() => {
     setDraftUrl(settings?.lmStudio?.url || 'http://127.0.0.1:1234');
@@ -65,11 +66,15 @@ const LMStudioSection: React.FC = () => {
   const handleTestConnection = async () => {
     const url = draftUrl.trim();
     if (!url) return;
+    setSaveWarning('');
     // Probe the entered endpoint first. Persisting settings is secondary and
     // must not turn a healthy local LM Studio connection into a false error.
     const connected = await loadLMStudioModels(url);
     if (connected) {
-      await saveLMStudioUrl(url);
+      const saved = await saveLMStudioUrl(url, { suppressError: true });
+      if (!saved) {
+        setSaveWarning('Connected to LM Studio, but CannaAI could not save this URL. Use Save Changes to retry.');
+      }
     }
   };
 
@@ -213,6 +218,9 @@ const LMStudioSection: React.FC = () => {
                 Test Connection
               </button>
             </div>
+            {saveWarning && (
+              <p role="status" className="mt-2 text-sm text-amber-300">{saveWarning}</p>
+            )}
           </div>
 
           {!lmStudioData?.lmStudioRunning && (

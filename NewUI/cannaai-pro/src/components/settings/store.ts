@@ -34,7 +34,7 @@ interface SettingsStore extends SettingsUIState {
 
   // LM Studio actions
   loadLMStudioModels: (url?: string) => Promise<boolean>;
-  saveLMStudioUrl: (url: string) => Promise<void>;
+  saveLMStudioUrl: (url: string, options?: { suppressError?: boolean }) => Promise<boolean>;
 
   // Utility actions
   exportSettings: (format: 'json' | 'csv') => Promise<void>;
@@ -417,9 +417,9 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         },
 
-        saveLMStudioUrl: async (url) => {
+        saveLMStudioUrl: async (url, options) => {
           const { settings } = get();
-          if (!settings) return;
+          if (!settings) return false;
 
           set({ isSaving: true, error: '' });
           try {
@@ -433,11 +433,13 @@ export const useSettingsStore = create<SettingsStore>()(
               isSaving: false,
               success: 'LM Studio URL saved'
             });
+            return true;
           } catch (error) {
             set({
-              error: error instanceof Error ? error.message : 'Failed to save LM Studio URL',
+              error: options?.suppressError ? '' : (error instanceof Error ? error.message : 'Failed to save LM Studio URL'),
               isSaving: false
             });
+            return false;
           }
         },
 
