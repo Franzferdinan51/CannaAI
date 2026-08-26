@@ -20,6 +20,11 @@ export async function PUT(request: Request, { params }: Params) {
   if (typeof updates.type === 'string') data.type = updates.type.trim();
   if (typeof updates.enabled === 'boolean') data.enabled = updates.enabled;
   if (typeof updates.locationId === 'string') data.locationId = updates.locationId.trim() || null;
+  if (typeof updates.roomId === 'string') data.locationId = updates.roomId.trim() || null;
+  if (typeof updates.roomName === 'string' && updates.roomName.trim()) {
+    const room = await prisma.room.findFirst({ where: { name: updates.roomName.trim() } });
+    if (room) data.locationId = room.id;
+  }
   if (updates.calibration && typeof updates.calibration === 'object' && !Array.isArray(updates.calibration)) {
     data.calibration = updates.calibration;
   }

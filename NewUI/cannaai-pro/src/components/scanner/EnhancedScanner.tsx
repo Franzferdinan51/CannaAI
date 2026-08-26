@@ -139,6 +139,12 @@ const EnhancedScanner: React.FC = () => {
 
   const selectedImage = images.find(img => img.id === selectedId);
 
+  const selectImage = (image: PlantImage) => {
+    setSelectedId(image.id);
+    setCurrentImage(image.url === '/placeholder-plant.png' ? '' : image.url);
+    if (image.formData) setFormData(image.formData);
+  };
+
   const downloadReport = () => {
     if (!selectedImage) return;
     const blob = new Blob([JSON.stringify(selectedImage, null, 2)], { type: 'application/json' });
@@ -159,6 +165,7 @@ const EnhancedScanner: React.FC = () => {
   // File upload handler with validation and compression
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
 
     // Validate file
@@ -862,7 +869,15 @@ const EnhancedScanner: React.FC = () => {
               <motion.div
                 key={image.id}
                 whileHover={{ scale: viewMode === 'grid' ? 1.02 : 1.01 }}
-                onClick={() => setSelectedId(image.id)}
+                onClick={() => selectImage(image)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    selectImage(image);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
                 className={`relative ${
                   viewMode === 'grid' ? 'aspect-square' : 'flex items-center gap-4'
                 } rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${

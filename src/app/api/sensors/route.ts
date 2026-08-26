@@ -1,5 +1,33 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+
+type SensorConfigInput = {
+  name?: unknown;
+  type?: unknown;
+  enabled?: unknown;
+  calibration?: unknown;
+  locationId?: unknown;
+  roomId?: unknown;
+  roomName?: unknown;
+};
+
+async function sensorConfigData(body: SensorConfigInput): Promise<Prisma.SensorUncheckedCreateInput> {
+  const roomId = typeof body.locationId === 'string' && body.locationId.trim()
+    ? body.locationId.trim()
+    : typeof body.roomId === 'string' && body.roomId.trim()
+      ? body.roomId.trim()
+      : typeof body.roomName === 'string' && body.roomName.trim()
+        ? (await prisma.room.findFirst({ where: { name: body.roomName.trim() } }))?.id
+        : undefined;
+  return {
+    name: typeof body.name === 'string' ? body.name.trim() : '',
+    type: typeof body.type === 'string' ? body.type.trim() : 'temperature',
+    enabled: body.enabled !== false,
+    ...(body.calibration !== undefined ? { calibration: body.calibration as Prisma.InputJsonValue } : {}),
+    ...(roomId ? { locationId: roomId } : {}),
+  };
+}
 
 // POST endpoint for grow monitoring systems to submit sensor data
 // Used by OpenClaw grow monitoring system
@@ -58,6 +86,12 @@ async function getOrCreateSensor(sensorId: string, roomId?: string) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    if (body?.resource === 'config') {
+      const data = await sensorConfigData(body);
+      if (!data.name) return NextResponse.json({ success: false, error: 'Sensor name is required' }, { status: 400 });
+      const sensor = await prisma.sensor.create({ data });
+      return NextResponse.json({ success: true, data: sensor }, { status: 201 });
+    }
     const {
       temperature,
       humidity,
@@ -158,6 +192,10 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    if (searchParams.get('resource') === 'config') {
+      const sensors = await prisma.sensor.findMany({ include: { room: true }, orderBy: { name: 'asc' } });
+      return NextResponse.json({ success: true, data: sensors });
+    }
     const roomId = searchParams.get('roomId');
     const sensorId = searchParams.get('sensorId') || roomId;
     // Hard cap on limit so a hostile or buggy caller can't request millions

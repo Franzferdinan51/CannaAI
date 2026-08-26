@@ -21,6 +21,34 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
   }
 }
 
+function normalizeProviderName(provider: unknown): 'lmstudio' | 'openrouter' | null {
+  const value = typeof provider === 'string' ? provider.toLowerCase().replace(/[-_]/g, '') : '';
+  return value === 'lmstudio' ? 'lmstudio' : value === 'openrouter' ? 'openrouter' : null;
+}
+
+async function probeRequestedProvider(provider: unknown, providerSettings: any): Promise<boolean> {
+  const normalized = normalizeProviderName(provider);
+  if (!normalized) return false;
+  const config = providerSettings?.[normalized === 'lmstudio' ? 'lmStudio' : 'openRouter'] || {};
+  const configuredUrl = normalized === 'lmstudio'
+    ? config.url || 'http://localhost:1234'
+    : config.baseUrl || 'https://openrouter.ai/api/v1';
+  const baseUrl = String(configuredUrl).replace(/\/$/, '').replace(/\/v1$/, '');
+  const headers: Record<string, string> = {};
+  if (typeof config.apiKey === 'string' && config.apiKey.trim()) {
+    headers.Authorization = `Bearer ${config.apiKey.trim()}`;
+  }
+  try {
+    const response = await fetch(`${baseUrl}/v1/models`, {
+      headers,
+      signal: AbortSignal.timeout(8000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Get contextual prompt based on agentic mode
 function getContextualPrompt(mode: string, context: any, sensorData: any, message: string): string {
   const baseContext = `Current page context: ${context?.title || 'CannaAI Pro'} (${context?.page || 'unknown'})
@@ -86,6 +114,15 @@ export async function POST(request: NextRequest) {
   }
   if (!earlyBody || typeof earlyBody.message !== 'string') {
     return NextResponse.json({ success: false, error: 'message is required' }, { status: 400 });
+  }
+
+  if (earlyBody.testProvider) {
+    const provider = normalizeProviderName(earlyBody.testProvider);
+    const available = await probeRequestedProvider(provider, earlyBody.providerSettings);
+    return NextResponse.json(
+      { success: available, provider: provider || earlyBody.testProvider },
+      { status: available ? 200 : 503 },
+    );
   }
 
   // MiniMax's streaming adapter is text-only. An image-bearing request must

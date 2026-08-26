@@ -91,6 +91,7 @@ export function ChatSettings({
         body: JSON.stringify({
           message: 'Connection test',
           testProvider: provider,
+          providerSettings: settings.providers,
           model: provider === 'lm-studio' ? settings.providers.lmStudio.model : settings.providers.openRouter.model,
           baseUrl: provider === 'lm-studio' ? settings.providers.lmStudio.url : undefined,
         })

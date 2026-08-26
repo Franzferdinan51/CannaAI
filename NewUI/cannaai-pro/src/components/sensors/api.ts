@@ -19,7 +19,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefin
 const API_ENDPOINTS = {
   // Sensor CRUD
   SENSORS: '/api/sensors',
-  SENSOR_CONFIG: '/api/sensors/config',
   SENSOR: (id: string) => `/api/sensors/${id}`,
   SENSOR_DATA: (id: string) => `/api/sensors/${id}/data`,
   SENSOR_ANALYTICS: (id: string) => `/api/sensors/${id}/analytics`,
@@ -73,7 +72,7 @@ function sensorTypeFromId(id: string): SensorConfig['type'] {
 }
 
 function normalizeSensors(payload: any): SensorConfig[] {
-  const values = Array.isArray(payload) ? payload : payload?.readings;
+  const values = Array.isArray(payload) ? payload : payload?.data || payload?.sensors || payload?.readings;
   if (!Array.isArray(values)) return [];
 
   return values.map((reading: any, index: number) => {
@@ -91,7 +90,7 @@ function normalizeSensors(payload: any): SensorConfig[] {
       name: reading.name || String(reading.sensorId || id).replace(/[_-]/g, ' '),
       type: reading.type || type,
       location: reading.location || 'Main Grow Room',
-      roomName: reading.roomName || 'Main Grow Room',
+      roomName: reading.roomName || reading.room?.name || 'Main Grow Room',
       enabled: reading.enabled !== false,
       alerts: Array.isArray(reading.alerts) ? reading.alerts : [],
       dataHistory: Array.isArray(reading.dataHistory) ? reading.dataHistory : [{
@@ -102,6 +101,11 @@ function normalizeSensors(payload: any): SensorConfig[] {
       }],
     } as SensorConfig;
   });
+}
+
+function normalizeSensor(payload: any): SensorConfig {
+  const value = payload?.data && !Array.isArray(payload.data) ? payload.data : payload;
+  return normalizeSensors([value])[0];
 }
 
 function normalizeRooms(payload: any): RoomConfig[] {
@@ -172,21 +176,21 @@ async function apiRequest<T>(
 export const sensorAPI = {
   // Get all sensors
   async getSensors(): Promise<SensorConfig[]> {
-    return normalizeSensors(await apiRequest<any>(API_ENDPOINTS.SENSORS));
+    return normalizeSensors(await apiRequest<any>(`${API_ENDPOINTS.SENSORS}?resource=config`));
   },
 
   // Get sensor by ID
   async getSensor(id: string): Promise<SensorConfig> {
-    return apiRequest<SensorConfig>(API_ENDPOINTS.SENSOR(id));
+    return normalizeSensor(await apiRequest<any>(API_ENDPOINTS.SENSOR(id)));
   },
 
   // Create new sensor
   async createSensor(sensor: Omit<SensorConfig, 'id'>): Promise<SensorConfig> {
-    const response = await apiRequest<{ success: boolean; data: any }>(API_ENDPOINTS.SENSOR_CONFIG, {
+    const response = await apiRequest<{ success: boolean; data: any }>(API_ENDPOINTS.SENSORS, {
       method: 'POST',
-      body: JSON.stringify(sensor),
+      body: JSON.stringify({ ...sensor, resource: 'config' }),
     });
-    return normalizeSensors({ readings: [response.data] })[0];
+    return normalizeSensor(response);
   },
 
   // Update sensor
@@ -195,7 +199,7 @@ export const sensorAPI = {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
-    return normalizeSensors({ readings: [response.data] })[0];
+    return normalizeSensor(response);
   },
 
   // Delete sensor

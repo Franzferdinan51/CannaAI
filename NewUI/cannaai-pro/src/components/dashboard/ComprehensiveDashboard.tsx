@@ -154,7 +154,11 @@ const dashboardItems = [
   { id: 'strains', label: 'Strain Database', icon: Sprout },
 ];
 
-const ComprehensiveDashboard: React.FC = () => {
+interface ComprehensiveDashboardProps {
+  initialDashboard?: 'overview' | 'analysis' | 'environment' | 'strains';
+}
+
+const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initialDashboard = 'overview' }) => {
   const navigate = useNavigate();
   const { lastSensorData, isConnected } = useSocketContext();
 
@@ -175,6 +179,7 @@ const ComprehensiveDashboard: React.FC = () => {
 
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [analysisMetadata, setAnalysisMetadata] = useState<AnalysisMetadata | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [image, setImage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -197,10 +202,14 @@ const ComprehensiveDashboard: React.FC = () => {
   ]);
 
   // UI State
-  const [activeDashboard, setActiveDashboard] = useState('overview');
+  const [activeDashboard, setActiveDashboard] = useState(initialDashboard);
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    setActiveDashboard(initialDashboard);
+  }, [initialDashboard]);
 
   // Update sensor data from Socket.IO context
   useEffect(() => {
@@ -253,6 +262,7 @@ const ComprehensiveDashboard: React.FC = () => {
     setIsLoading(true);
     setAnalysisResult(null);
     setAnalysisMetadata(null);
+    setAnalysisError(null);
 
     try {
       const payload = { ...formData };
@@ -286,10 +296,12 @@ const ComprehensiveDashboard: React.FC = () => {
 
     } catch (error: any) {
       console.error('Analysis error:', error);
+      const message = error instanceof Error ? error.message : 'Unable to analyze the plant.';
+      setAnalysisError(message);
       setNotifications(prev => [{
         id: Date.now(),
         type: 'error',
-        message: `Analysis failed: ${error.message}`,
+        message: `Analysis failed: ${message}`,
         time: 'Just now'
       }, ...prev]);
       setIsLoading(false);
@@ -331,11 +343,11 @@ const ComprehensiveDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-end space-x-3 sm:justify-start">
-          <Button variant="outline" size="sm" onClick={() => navigate('/plants')} aria-label="Start a new grow" className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-700">
+          <Button type="button" variant="outline" size="sm" onClick={() => navigate('/plants')} aria-label="Start a new grow" className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-700">
             <Plus className="w-4 h-4 mr-2" />
             New Grow
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowNotifications(!showNotifications)} aria-label="Show dashboard notifications" className="relative text-gray-400 hover:text-white hover:bg-gray-800">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setShowNotifications(!showNotifications)} aria-label="Show dashboard notifications" aria-expanded={showNotifications} aria-controls="dashboard-notifications" className="relative text-gray-400 hover:text-white hover:bg-gray-800">
             <Bell className="w-5 h-5" />
             {notifications.length > 0 && (
               <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
@@ -345,7 +357,7 @@ const ComprehensiveDashboard: React.FC = () => {
       </div>
 
       {showNotifications && (
-        <div className="absolute right-6 top-16 z-50 w-80 rounded-xl border border-gray-700 bg-[#181b21] p-4 shadow-2xl" role="status" aria-label="Dashboard notifications panel">
+        <div id="dashboard-notifications" className="absolute right-6 top-16 z-50 w-80 rounded-xl border border-gray-700 bg-[#181b21] p-4 shadow-2xl" role="region" aria-label="Dashboard notifications panel">
           <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close dashboard notifications" onClick={() => setShowNotifications(false)} className="text-sm text-gray-400 hover:text-white">Close</button></div>
           {notifications.length === 0 ? <p className="text-sm text-gray-400">No notifications.</p> : <div className="space-y-2">{notifications.map((notification) => <div key={notification.id} className="rounded-lg bg-[#0f1419] p-3 text-sm text-gray-300"><p>{notification.message}</p><p className="mt-1 text-xs text-gray-500">{notification.time}</p></div>)}</div>}
         </div>
@@ -354,10 +366,13 @@ const ComprehensiveDashboard: React.FC = () => {
       {/* Mobile Menu Toggle */}
       <div className="lg:hidden px-4 py-2 border-b border-gray-800">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           className="text-gray-400 hover:text-white"
           onClick={() => setShowMobileMenu(!showMobileMenu)}
+          aria-expanded={showMobileMenu}
+          aria-controls="dashboard-navigation"
         >
           <Menu className="w-5 h-5 mr-2" />
           {showMobileMenu ? 'Hide Menu' : 'Show Menu'}
@@ -366,15 +381,15 @@ const ComprehensiveDashboard: React.FC = () => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className={`${showMobileMenu ? 'block' : 'hidden'} lg:block w-64 border-r border-gray-800 bg-[#181b21] overflow-y-auto`}>
-          <nav className="p-4 space-y-2">
+        <aside id="dashboard-navigation" className={`${showMobileMenu ? 'block' : 'hidden'} lg:block w-64 border-r border-gray-800 bg-[#181b21] overflow-y-auto`}>
+          <nav className="p-4 space-y-2" aria-label="Dashboard sections">
             {dashboardItems.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 aria-current={activeDashboard === item.id ? 'page' : undefined}
                 onClick={() => {
-                  setActiveDashboard(item.id);
+                  setActiveDashboard(item.id as 'overview' | 'analysis' | 'environment' | 'strains');
                   setShowMobileMenu(false);
                 }}
                 className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
@@ -462,6 +477,11 @@ const ComprehensiveDashboard: React.FC = () => {
                         </div>
 
                         {formError && <p role="alert" className="text-sm text-red-300">{formError}</p>}
+                        {analysisError && (
+                          <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                            Analysis failed: {analysisError}. Update the details and try again.
+                          </div>
+                        )}
                         <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white" disabled={isLoading || !formData.strain || formData.strain === 'Select Strain' || (!formData.leafSymptoms.trim() && !image)}>
                           {isLoading ? (
                             <>
@@ -821,6 +841,7 @@ const ComprehensiveDashboard: React.FC = () => {
                       <h3 className="text-xl font-semibold text-white mb-2">No Analysis Available</h3>
                       <p className="text-gray-400 mb-6">Start a new plant analysis from the Overview tab to see detailed results here.</p>
                       <Button
+                        type="button"
                         onClick={() => setActiveDashboard('overview')}
                         className="bg-emerald-600 hover:bg-emerald-500"
                       >
