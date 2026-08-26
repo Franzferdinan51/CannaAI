@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload, Camera, Scan, Brain, AlertTriangle, CheckCircle, XCircle,
@@ -9,6 +10,7 @@ import {
 import { api } from '../../lib/api';
 import { useSettingsStore } from '../settings/store';
 import toast from 'react-hot-toast';
+import plantsAPI from '../plants/api-client';
 
 // Import modular components
 import CameraCapture from './CameraCapture';
@@ -36,6 +38,8 @@ import {
 } from '../../types/scanner';
 
 const EnhancedScanner: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const plantId = searchParams.get('plantId');
   const configuredLMStudioModel = useSettingsStore((state) => state.settings?.lmStudio?.model || '');
   const configuredLMStudioUrl = useSettingsStore((state) => state.settings?.lmStudio?.url || '');
   // State management
@@ -118,6 +122,20 @@ const EnhancedScanner: React.FC = () => {
     urgency: 'medium',
     additionalNotes: ''
   });
+
+  useEffect(() => {
+    if (!plantId) return;
+    let cancelled = false;
+    void plantsAPI.getPlant(plantId).then((plant) => {
+      if (!cancelled && plant.strain?.name) {
+        setFormData((current) => ({ ...current, strain: plant.strain!.name }));
+        toast.success(`Loaded ${plant.name} for analysis`);
+      }
+    }).catch((error) => {
+      if (!cancelled) toast.error(error instanceof Error ? error.message : 'Unable to load the selected plant');
+    });
+    return () => { cancelled = true; };
+  }, [plantId]);
 
   const selectedImage = images.find(img => img.id === selectedId);
 

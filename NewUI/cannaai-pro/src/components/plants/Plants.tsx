@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Plant,
   PlantStrain,
@@ -63,6 +64,7 @@ import {
 } from 'lucide-react';
 
 const Plants: React.FC = () => {
+  const navigate = useNavigate();
   // State management
   const [state, setState] = useState<PlantManagementState>({
     plants: [],
@@ -261,8 +263,7 @@ const Plants: React.FC = () => {
   };
 
   const handleAnalyzePlant = async (plantId: string) => {
-    // This would open the analysis interface
-    setState(prev => ({ ...prev, activeTab: 'analysis' }));
+    navigate(`/scanner?plantId=${encodeURIComponent(plantId)}`);
   };
 
   const exportInventory = () => {
