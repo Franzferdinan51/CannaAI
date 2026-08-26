@@ -52,9 +52,10 @@ interface SensorDashboardProps {
   sensors?: SensorConfig[];
   rooms?: RoomConfig[];
   onRefresh?: () => void;
+  onSensorSelect?: (sensorId: string) => void;
 }
 
-const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [], onRefresh }) => {
+const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [], onRefresh, onSensorSelect }) => {
   const { lastSensorData, isConnected, notifications } = useSocketContext();
 
   // State management
@@ -424,6 +425,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
                 connectionStatus={getConnectionStatusColor(sensor)}
                 batteryStatus={getBatteryStatusColor(sensor.batteryLevel)}
                 hasAlerts={hasActiveAlerts(sensor)}
+                onSensorSelect={onSensorSelect}
               />
             ))}
           </div>
@@ -452,6 +454,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
                     connectionStatus={getConnectionStatusColor(sensor)}
                     batteryStatus={getBatteryStatusColor(sensor.batteryLevel)}
                     hasAlerts={hasActiveAlerts(sensor)}
+                    onSensorSelect={onSensorSelect}
                   />
                 ))}
               </tbody>
@@ -472,6 +475,7 @@ interface SensorCardProps {
   connectionStatus: string;
   batteryStatus: string;
   hasAlerts: boolean;
+  onSensorSelect?: (sensorId: string) => void;
 }
 
 const SensorCard: React.FC<SensorCardProps> = ({
@@ -481,7 +485,8 @@ const SensorCard: React.FC<SensorCardProps> = ({
   color,
   connectionStatus,
   batteryStatus,
-  hasAlerts
+  hasAlerts,
+  onSensorSelect
 }) => {
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
@@ -523,7 +528,15 @@ const SensorCard: React.FC<SensorCardProps> = ({
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-700">
         <span className="text-xs text-gray-500">{sensor.roomName}</span>
-        <Settings className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+        <button
+          type="button"
+          aria-label={`Configure ${sensor.name}`}
+          onClick={() => onSensorSelect?.(sensor.id)}
+          disabled={!onSensorSelect}
+          className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-60"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
@@ -538,6 +551,7 @@ interface SensorTableRowProps {
   connectionStatus: string;
   batteryStatus: string;
   hasAlerts: boolean;
+  onSensorSelect?: (sensorId: string) => void;
 }
 
 const SensorTableRow: React.FC<SensorTableRowProps> = ({
@@ -547,7 +561,8 @@ const SensorTableRow: React.FC<SensorTableRowProps> = ({
   color,
   connectionStatus,
   batteryStatus,
-  hasAlerts
+  hasAlerts,
+  onSensorSelect
 }) => {
   return (
     <tr className="hover:bg-gray-900/50">
@@ -601,8 +616,24 @@ const SensorTableRow: React.FC<SensorTableRowProps> = ({
           {hasAlerts && (
             <AlertTriangle className="w-4 h-4 text-yellow-400" aria-label="Alerts Active" />
           )}
-          <Settings className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-          <Eye className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+          <button
+            type="button"
+            aria-label={`Configure ${sensor.name}`}
+            onClick={() => onSensorSelect?.(sensor.id)}
+            disabled={!onSensorSelect}
+            className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-60"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            aria-label={`View ${sensor.name} details`}
+            onClick={() => onSensorSelect?.(sensor.id)}
+            disabled={!onSensorSelect}
+            className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-60"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
         </div>
       </td>
     </tr>
