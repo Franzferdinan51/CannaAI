@@ -423,9 +423,9 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
     <div className={`flex-1 overflow-y-auto bg-[#0B0D10] ${className}`}>
       {/* Tab Navigation */}
       <div className="bg-[#1A1D23] border-b border-gray-800">
-        <div className="flex items-center p-4">
-          <h1 className="text-2xl font-bold text-white mr-8">Reports & Analytics</h1>
-          <div className="flex gap-2" role="tablist" aria-label="Report views">
+        <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+          <h1 className="mr-0 text-2xl font-bold text-white lg:mr-8">Reports & Analytics</h1>
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Report views">
             {[
               { id: 'reports', label: 'My Reports', icon: FileText },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -454,12 +454,12 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
       </div>
 
       {/* Tab Content */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {activeTab === 'reports' && (
           <div>
             {/* Header */}
             <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
               <FileText className="w-8 h-8 text-emerald-400" />
@@ -469,7 +469,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
               Generate, customize, and manage comprehensive cultivation reports
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={loadReports}
@@ -902,7 +902,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
       {/* Create Report Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 max-w-lg w-full">
+          <div className="w-full max-w-lg rounded-xl border border-gray-800 bg-[#1A1D23] p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">Create New Report</h2>
               <button
@@ -942,7 +942,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Type
@@ -1009,7 +1009,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
       {/* Export Modal */}
       {showExportModal && selectedReport && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 max-w-md w-full">
+          <div className="w-full max-w-md rounded-xl border border-gray-800 bg-[#1A1D23] p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">Export Report</h2>
               <button
@@ -1027,7 +1027,7 @@ export const Reports: React.FC<ReportsProps> = ({ className = '' }) => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Export Format
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {(['pdf', 'csv', 'excel', 'json'] as ExportFormat[]).map((format) => (
                     <button
                       key={format}
