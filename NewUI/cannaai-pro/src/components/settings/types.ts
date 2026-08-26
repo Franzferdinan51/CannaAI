@@ -299,6 +299,7 @@ export interface LMStudioSummary {
 // UI State Types
 export interface SettingsUIState {
   isLoading: boolean;
+  isLoadingLMStudio: boolean;
   isSaving: boolean;
   isTesting: boolean;
   hasChanges: boolean;

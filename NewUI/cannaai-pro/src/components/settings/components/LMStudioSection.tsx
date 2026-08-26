@@ -32,7 +32,7 @@ import { LMStudioModel, ModelCapability } from '../types';
 const LMStudioSection: React.FC = () => {
   const {
     settings,
-    isLoading,
+    isLoadingLMStudio,
     isSaving,
     lmStudioData,
     loadLMStudioModels,
@@ -175,10 +175,10 @@ const LMStudioSection: React.FC = () => {
               type="button"
               aria-label="Refresh LM Studio models"
               onClick={() => void loadLMStudioModels(draftUrl.trim() || undefined)}
-              disabled={isLoading}
+              disabled={isLoadingLMStudio}
               className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
             >
-              {isLoading ? (
+              {isLoadingLMStudio ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <RefreshCw className="w-4 h-4" />
@@ -204,7 +204,7 @@ const LMStudioSection: React.FC = () => {
               <button
                 type="button"
                 onClick={handleTestConnection}
-                disabled={isSaving || isLoading || !draftUrl.trim()}
+                disabled={isSaving || isLoadingLMStudio || !draftUrl.trim()}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-lg transition-colors flex items-center gap-2"
               >
                 {isSaving ? (

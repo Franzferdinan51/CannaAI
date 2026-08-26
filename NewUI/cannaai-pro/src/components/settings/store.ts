@@ -232,6 +232,7 @@ export const useSettingsStore = create<SettingsStore>()(
         availableModels: {} as Record<AIProviderType, AIModel[]>,
         lmStudioData: null,
         isLoading: false,
+        isLoadingLMStudio: false,
         isSaving: false,
         isTesting: false,
         hasChanges: false,
@@ -403,10 +404,10 @@ export const useSettingsStore = create<SettingsStore>()(
 
         // LM Studio actions
         loadLMStudioModels: async (url) => {
-          set({ isLoading: true, error: '' });
+          set({ isLoadingLMStudio: true, error: '' });
           try {
             const response = await settingsAPI.getLMStudioModels(url);
-            set({ lmStudioData: response, isLoading: false });
+            set({ lmStudioData: response, isLoadingLMStudio: false });
             return true;
           } catch (error) {
             set({
@@ -414,7 +415,7 @@ export const useSettingsStore = create<SettingsStore>()(
               // connected after a failed refresh or URL probe.
               lmStudioData: null,
               error: error instanceof Error ? error.message : 'Failed to load LM Studio models',
-              isLoading: false
+              isLoadingLMStudio: false
             });
             return false;
           }
