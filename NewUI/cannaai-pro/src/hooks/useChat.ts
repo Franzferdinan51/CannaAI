@@ -441,40 +441,55 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       }
 
       abortControllerRef.current = new AbortController();
+      // Keep the UI recoverable when a local model is unloaded, crashes, or
+      // never completes. The server has its own provider timeout, but fetch
+      // itself otherwise leaves the composer disabled indefinitely.
+      const requestTimeout = setTimeout(() => {
+        abortControllerRef.current?.abort();
+      }, 180000);
 
-      const response = await fetch(apiUrl('/chat'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...apiAuthHeaders(),
-        },
-        body: JSON.stringify({
-          message: content,
-          image,
-          attachments,
-          context: {
-            page: 'chat',
-            title: conversation.title,
-            data: {
-              sensorData,
-              conversationHistory: messages.slice(-5) // Last 5 messages for context
-            }
+      try {
+        const response = await fetch(apiUrl('/chat'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...apiAuthHeaders(),
           },
-          sensorData,
-          mode: 'chat',
-          // Pass the arbitrary LM Studio model selected in Settings through
-          // to the server instead of silently using only its env default.
-          model: settings.providers.lmStudio.model.trim() || undefined,
-          baseUrl: settings.providers.lmStudio.url.trim() || undefined,
-          primaryProvider: settings.providers.lmStudio.enabled ? 'lmstudio' : undefined
-        }),
-        signal: abortControllerRef.current.signal
-      });
+          body: JSON.stringify({
+            message: content,
+            image,
+            attachments,
+            context: {
+              page: 'chat',
+              title: conversation.title,
+              data: {
+                sensorData,
+                conversationHistory: messages.slice(-5) // Last 5 messages for context
+              }
+            },
+            sensorData,
+            mode: 'chat',
+            // Pass the arbitrary LM Studio model selected in Settings through
+            // to the server instead of silently using only its env default.
+            model: settings.providers.lmStudio.model.trim() || undefined,
+            baseUrl: settings.providers.lmStudio.url.trim() || undefined,
+            primaryProvider: settings.providers.lmStudio.enabled ? 'lmstudio' : undefined
+          }),
+          signal: abortControllerRef.current.signal
+        });
 
-      const data = await response.json();
+        const data = await response.json().catch(() => ({
+          success: false,
+          error: `AI service returned an invalid response (HTTP ${response.status}).`
+        }));
 
-      // Remove typing indicator
-      setMessages(prev => prev.filter(msg => msg.id !== typingId));
+        if (!response.ok && data.success !== true) {
+          data.success = false;
+          data.error = data.error || `AI service request failed (HTTP ${response.status}).`;
+        }
+
+        // Remove typing indicator
+        setMessages(prev => prev.filter(msg => msg.id !== typingId));
 
       if (data.success) {
         // Create AI response message
@@ -562,6 +577,9 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
           tokens: 0,
           success: false
         });
+        }
+      } finally {
+        clearTimeout(requestTimeout);
       }
 
     } catch (error) {
@@ -571,7 +589,9 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       const errorMessage: IChatMessage = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: 'Connection failed. Please check your internet connection and AI provider configuration.',
+        content: error instanceof DOMException && error.name === 'AbortError'
+          ? 'The AI request timed out. Confirm LM Studio is running with the selected model loaded, then try again.'
+          : 'Connection to the AI service failed. Check the provider status in Settings and try again.',
         timestamp: new Date()
       };
 
@@ -580,7 +600,9 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       addNotification({
         type: 'error',
         title: 'Connection Error',
-        message: 'Failed to connect to AI service'
+        message: error instanceof DOMException && error.name === 'AbortError'
+          ? 'The AI request timed out'
+          : 'Failed to connect to AI service'
       });
 
       updateAnalytics('message_sent', {
