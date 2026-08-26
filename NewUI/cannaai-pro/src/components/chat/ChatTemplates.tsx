@@ -314,6 +314,8 @@ export function ChatTemplates({
           </div>
           <div className="flex flex-wrap gap-2">
             <button
+              type="button"
+              aria-label="Show all chat templates"
               onClick={() => setSelectedCategory('all')}
               className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 selectedCategory === 'all'
@@ -328,6 +330,8 @@ export function ChatTemplates({
               return (
                 <button
                   key={category}
+                  type="button"
+                  aria-label={`Filter chat templates by ${category}`}
                   onClick={() => setSelectedCategory(category)}
                   className={`px-3 py-1 rounded-full text-sm transition-colors flex items-center gap-1 ${
                     selectedCategory === category
@@ -381,6 +385,8 @@ export function ChatTemplates({
 
                     <div className="flex items-center gap-1">
                       <button
+                        type="button"
+                        aria-label={`Use template ${template.name}`}
                         onClick={() => handleTemplateExecute(template)}
                         className="p-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20 rounded"
                         title="Use template"
@@ -389,6 +395,8 @@ export function ChatTemplates({
                       </button>
                       {template.variables && template.variables.length > 0 && (
                         <button
+                          type="button"
+                          aria-label={`${expandedTemplates.has(template.id) ? 'Collapse' : 'Expand'} variables for ${template.name}`}
                           onClick={() => toggleTemplateExpansion(template.id)}
                           className="p-1 text-gray-400 hover:text-white hover:bg-gray-600 rounded"
                           title="Template variables"
