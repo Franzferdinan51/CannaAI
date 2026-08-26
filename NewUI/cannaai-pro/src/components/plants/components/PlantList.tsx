@@ -54,18 +54,15 @@ const PlantList: React.FC<PlantListProps> = ({
       {plants.map((plant) => (
         <Card
           key={plant.id}
-          className="bg-[#181b21] border-gray-800 rounded-xl hover:border-emerald-500/50 transition-all duration-200 cursor-pointer"
-          onClick={() => onSelect(plant)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              onSelect(plant);
-            }
-          }}
-          role="button"
-          tabIndex={0}
+          className="relative bg-[#181b21] border-gray-800 rounded-xl hover:border-emerald-500/50 transition-all duration-200 cursor-pointer"
         >
-          <CardContent className="p-6">
+          <button
+            type="button"
+            aria-label={`Open plant ${plant.name}`}
+            onClick={() => onSelect(plant)}
+            className="absolute inset-0 z-0 h-full w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          />
+          <CardContent className="relative z-[1] p-6 pointer-events-none">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-white mb-1">{plant.name}</h3>
@@ -75,7 +72,7 @@ const PlantList: React.FC<PlantListProps> = ({
                   <span className="text-xs text-gray-500">Health: {plant.health.score}%</span>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="pointer-events-auto relative z-10 flex space-x-2">
                 <Button
                   type="button"
                   size="sm"

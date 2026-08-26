@@ -124,21 +124,18 @@ const PlantGrid: React.FC<PlantGridProps> = ({
           transition={{ duration: 0.3, delay: index * 0.05 }}
         >
           <Card
-            className={`group bg-[#181b21] border-gray-800 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all duration-200 cursor-pointer ${
+            className={`group relative bg-[#181b21] border-gray-800 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all duration-200 cursor-pointer ${
               !plant.isActive ? 'opacity-60' : ''
             }`}
-            onClick={() => onSelect(plant)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onSelect(plant);
-              }
-            }}
-            role="button"
-            tabIndex={0}
           >
+            <button
+              type="button"
+              aria-label={`Open plant ${plant.name}`}
+              onClick={() => onSelect(plant)}
+              className="absolute inset-0 z-0 h-full w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            />
             {/* Plant Image */}
-            <div className="relative h-48 bg-gray-900 overflow-hidden">
+            <div className="relative z-[1] h-48 bg-gray-900 overflow-hidden pointer-events-none">
               {plant.images && plant.images.length > 0 ? (
                 <img
                   src={plant.images.find(img => img.isPrimary)?.url || plant.images[0].url}
@@ -166,7 +163,7 @@ const PlantGrid: React.FC<PlantGridProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="absolute bottom-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex space-x-1">
+              <div className="pointer-events-auto absolute bottom-2 right-2 z-10 flex space-x-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 <Button
                   type="button"
                   aria-label={`Analyze ${plant.name}`}
@@ -210,7 +207,7 @@ const PlantGrid: React.FC<PlantGridProps> = ({
             </div>
 
             {/* Plant Info */}
-            <CardContent className="p-4">
+            <CardContent className="relative z-[1] p-4 pointer-events-none">
               <div className="flex items-start justify-between mb-2">
                 <h3 className="text-lg font-semibold text-white group-hover:text-emerald-400 transition-colors">
                   {plant.name}
