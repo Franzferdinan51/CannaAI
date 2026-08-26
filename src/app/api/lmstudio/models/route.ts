@@ -9,6 +9,20 @@ import { normalizeRemoteModels } from '@/lib/lmstudio-models';
 import { prisma } from '@/lib/prisma';
 
 const execAsync = promisify(exec);
+const SETTINGS_LOOKUP_TIMEOUT_MS = 2000;
+
+async function withSettingsLookupTimeout<T>(operation: Promise<T>): Promise<T | undefined> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<undefined>((resolve) => {
+      timer = setTimeout(() => resolve(undefined), SETTINGS_LOOKUP_TIMEOUT_MS);
+      timer.unref?.();
+    });
+    return await Promise.race([operation, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 function normalizeLMStudioBaseUrl(value: string): string {
   return value.replace(/\/v1\/?$/, '').replace(/\/$/, '');
@@ -33,7 +47,9 @@ async function getRemoteLMStudioConfig(urlOverride?: string): Promise<{ baseUrl:
   let storedUrl = '';
   let storedApiKey = '';
   try {
-    const stored = await prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } });
+    const stored = await withSettingsLookupTimeout(
+      prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } }),
+    );
     const storedConfig = stored?.config as { lmStudio?: { url?: unknown; apiKey?: unknown } } | null;
     storedUrl = typeof storedConfig?.lmStudio?.url === 'string' ? storedConfig.lmStudio.url.trim() : '';
     storedApiKey = typeof storedConfig?.lmStudio?.apiKey === 'string' ? storedConfig.lmStudio.apiKey.trim() : '';
