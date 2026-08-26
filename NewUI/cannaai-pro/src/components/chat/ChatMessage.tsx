@@ -643,7 +643,13 @@ export function ChatMessage({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 ${className}`}
-      onClick={() => onSelect?.(message)}
+      onClick={(event) => {
+        // Nested message actions own their click. Do not also select the
+        // message when a user copies, rates, edits, or expands it.
+        const target = event.target as HTMLElement;
+        if (target.closest('button, a, input, textarea, select, [role="button"], [role="menuitem"]')) return;
+        onSelect?.(message);
+      }}
     >
       <div className={`max-w-[85%] ${message.role === 'user' ? 'order-2' : 'order-1'}`}>
         {renderMessageHeader()}
