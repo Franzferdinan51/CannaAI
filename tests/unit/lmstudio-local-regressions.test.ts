@@ -156,7 +156,7 @@ describe('LM Studio local-model regressions', () => {
       } as Response);
 
     const provider = new LMStudioProvider({
-      url: 'http://localhost:1234',
+      url: 'http://localhost:1234/api/v1',
       apiKey: '',
       model: '',
     });

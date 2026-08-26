@@ -34,6 +34,14 @@ function normalizeImageUrl(image?: string): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function normalizeBaseUrl(value: string): string {
+  return value
+    .trim()
+    .replace(/\/(?:api\/)?v1\/?$/i, '')
+    .replace(/\/api\/?$/i, '')
+    .replace(/\/$/, '');
+}
+
 function createTimeoutSignal(timeoutMs: number): AbortSignal {
   const timeout = (AbortSignal as typeof AbortSignal & {
     timeout?: (milliseconds: number) => AbortSignal;
@@ -53,7 +61,7 @@ export class LMStudioProvider extends BaseProvider {
       name: 'lm-studio',
       // CannaAI historically accepted both http://host:1234 and
       // http://host:1234/v1. Provider methods append the endpoint version.
-      baseUrl: rawBaseUrl.replace(/\/v1\/?$/, '').replace(/\/$/, ''),
+      baseUrl: normalizeBaseUrl(rawBaseUrl),
       timeout: 120000,
       maxRetries: 1,
       retryDelay: 1000,
@@ -85,9 +93,7 @@ export class LMStudioProvider extends BaseProvider {
 
     // `...config` above may contain a baseUrl with /v1. Normalize the final
     // value as well so callers can use either historical setting shape.
-    this.config.baseUrl = (this.config.baseUrl || rawBaseUrl)
-      .replace(/\/v1\/?$/, '')
-      .replace(/\/$/, '');
+    this.config.baseUrl = normalizeBaseUrl(this.config.baseUrl || rawBaseUrl);
   }
 
   async isAvailable(): Promise<boolean> {
