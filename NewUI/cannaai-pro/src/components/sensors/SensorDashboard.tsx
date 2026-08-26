@@ -115,14 +115,33 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
     });
   }, [sensorConfigs, searchQuery, selectedRoom]);
 
-  // Get sensor value from last sensor data
-  const getSensorValue = (sensorType: SensorType): number | string => {
-    if (!lastSensorData) return '--';
-
+  // Prefer the reading belonging to this sensor. The socket context also
+  // exposes a room-level snapshot, which is only a fallback for legacy
+  // configurations that have no per-sensor history.
+  const getSensorValue = (sensor: SensorConfig): number | string => {
     const format = (value: unknown, suffix = '') =>
       typeof value === 'number' && Number.isFinite(value) ? `${Math.round(value)}${suffix}` : '--';
     const formatDecimal = (value: unknown) =>
       typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '--';
+
+    const sensorValue = sensor.dataHistory.at(-1)?.value;
+    const hasSensorValue = typeof sensorValue === 'number' && Number.isFinite(sensorValue);
+    const sensorType = sensor.type;
+    if (hasSensorValue) {
+      switch (sensorType) {
+        case 'temperature': return format(sensorValue, '°F');
+        case 'humidity': return format(sensorValue, '%');
+        case 'ph':
+        case 'ec':
+        case 'vpd': return formatDecimal(sensorValue);
+        case 'co2': return format(sensorValue, ' ppm');
+        case 'soil_moisture': return format(sensorValue, '%');
+        case 'light_intensity': return format(sensorValue, ' PPFD');
+        default: return formatDecimal(sensorValue);
+      }
+    }
+
+    if (!lastSensorData) return '--';
 
     switch (sensorType) {
       case 'temperature': return format(lastSensorData.temperature, '°F');
@@ -396,7 +415,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
               <SensorCard
                 key={sensor.id}
                 sensor={sensor}
-                value={getSensorValue(sensor.type)}
+                value={getSensorValue(sensor)}
                 icon={getSensorIcon(sensor.type)}
                 color={getSensorColor(sensor.type)}
                 connectionStatus={getConnectionStatusColor(sensor)}
@@ -424,7 +443,7 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
                   <SensorTableRow
                     key={sensor.id}
                     sensor={sensor}
-                    value={getSensorValue(sensor.type)}
+                    value={getSensorValue(sensor)}
                     icon={getSensorIcon(sensor.type)}
                     color={getSensorColor(sensor.type)}
                     connectionStatus={getConnectionStatusColor(sensor)}

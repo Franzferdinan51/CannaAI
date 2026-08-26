@@ -52,6 +52,12 @@ interface SensorMapProps {
   onSensorMove?: (sensorId: string, x: number, y: number) => void;
 }
 
+const isSensorOnline = (sensor: SensorConfig): boolean => {
+  if (!sensor.enabled) return false;
+  const timestamp = sensor.dataHistory.at(-1)?.timestamp;
+  return Boolean(timestamp && Date.now() - new Date(timestamp).getTime() <= 5 * 60 * 1000);
+};
+
 const SensorMap: React.FC<SensorMapProps> = ({
   className = '',
   rooms = [],
@@ -198,7 +204,7 @@ const SensorMap: React.FC<SensorMapProps> = ({
 
       const isSelected = selectedSensor === sensor.id;
       const isHovered = hoveredSensor === sensor.id;
-      const isOnline = sensor.enabled;
+      const isOnline = isSensorOnline(sensor);
       const hasAlert = (sensor.alerts || []).some(a => a.enabled);
 
       // Sensor circle
@@ -354,8 +360,8 @@ const SensorMap: React.FC<SensorMapProps> = ({
   // Filter sensors
   const filteredSensors = sensors.filter(sensor => {
     // Status filter
-    if (filterStatus === 'online' && !sensor.enabled) return false;
-    if (filterStatus === 'offline' && sensor.enabled) return false;
+    if (filterStatus === 'online' && !isSensorOnline(sensor)) return false;
+    if (filterStatus === 'offline' && isSensorOnline(sensor)) return false;
     if (filterStatus === 'alert' && !(sensor.alerts || []).some(a => a.enabled)) return false;
 
     // Type filter
@@ -547,7 +553,7 @@ const SensorMap: React.FC<SensorMapProps> = ({
                         <p>Type: {sensor.type}</p>
                         <p>Location: {sensor.location}</p>
                         <p>Room: {sensor.roomName}</p>
-                        <p>Status: {sensor.enabled ? 'Online' : 'Offline'}</p>
+                        <p>Status: {isSensorOnline(sensor) ? 'Online' : 'Offline'}</p>
                         {sensor.batteryLevel && (
                           <p>Battery: {sensor.batteryLevel}%</p>
                         )}
