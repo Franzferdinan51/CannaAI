@@ -37,7 +37,6 @@ const LMStudioSection: React.FC = () => {
     lmStudioData,
     loadLMStudioModels,
     saveLMStudioUrl,
-    updateSettings,
   } = useSettingsStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,11 +58,6 @@ const LMStudioSection: React.FC = () => {
 
   const handleUrlChange = (url: string) => {
     setDraftUrl(url);
-    if (settings) {
-      updateSettings({
-        lmStudio: { ...settings.lmStudio, url },
-      });
-    }
   };
 
   const handleTestConnection = async () => {

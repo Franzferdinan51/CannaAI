@@ -410,6 +410,9 @@ export const useSettingsStore = create<SettingsStore>()(
             return true;
           } catch (error) {
             set({
+              // Do not leave a previous successful response marked as
+              // connected after a failed refresh or URL probe.
+              lmStudioData: null,
               error: error instanceof Error ? error.message : 'Failed to load LM Studio models',
               isLoading: false
             });
