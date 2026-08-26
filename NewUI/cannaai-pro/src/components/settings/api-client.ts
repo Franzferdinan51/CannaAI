@@ -12,6 +12,7 @@ import { API_ORIGIN } from '../../lib/api-origin';
 
 // API base URL - adjust as needed for your environment
 const API_BASE_URL = API_ORIGIN;
+const SETTINGS_INIT_TIMEOUT_MS = 15000;
 
 class SettingsAPIClient {
   private api = axios.create({
@@ -62,7 +63,11 @@ class SettingsAPIClient {
    */
   async getSettings(): Promise<Settings> {
     try {
-      const response: AxiosResponse<SettingsAPIResponse> = await this.api.get('/api/settings');
+      const response: AxiosResponse<SettingsAPIResponse> = await this.api.get('/api/settings', {
+        // Initial rendering should fail over to local defaults promptly when
+        // the backend is down; mutation requests retain the client timeout.
+        timeout: SETTINGS_INIT_TIMEOUT_MS,
+      });
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to fetch settings');
