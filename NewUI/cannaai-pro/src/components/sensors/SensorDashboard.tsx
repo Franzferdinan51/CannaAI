@@ -412,6 +412,16 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
             <p className="mt-2 text-sm text-gray-400">
               Connect a sensor agent or create a sensor configuration to view live readings.
             </p>
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-600"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh sensor data
+              </button>
+            )}
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
