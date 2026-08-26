@@ -21,6 +21,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
   const [isLoading, setIsLoading] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     checkCameraDevices();
@@ -70,6 +71,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
         }
       });
 
+      streamRef.current = mediaStream;
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -84,10 +86,12 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
   };
 
   const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+    const activeStream = streamRef.current;
+    if (activeStream) {
+      activeStream.getTracks().forEach(track => track.stop());
     }
+    streamRef.current = null;
+    setStream(null);
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -111,10 +115,13 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onPhotoCapture, onError, 
   };
 
   const switchCamera = () => {
+    if (devices.length < 2) return;
+    const wasActive = isActive;
     stopCamera();
     const currentIndex = devices.findIndex(d => d.deviceId === selectedDeviceId);
     const nextIndex = (currentIndex + 1) % devices.length;
     setSelectedDeviceId(devices[nextIndex].deviceId);
+    if (wasActive) setIsActive(true);
   };
 
   useEffect(() => {
