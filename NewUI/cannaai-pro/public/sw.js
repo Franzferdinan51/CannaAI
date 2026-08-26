@@ -5,8 +5,8 @@
 
 // Bump this whenever the production bundle changes so installed phones do
 // not keep serving a stale route chunk after an app update.
-const CACHE_NAME = 'cannaai-pro-v1.0.3';
-const RUNTIME_CACHE = 'cannaai-runtime-v1.0.3';
+const CACHE_NAME = 'cannaai-pro-v1.0.4';
+const RUNTIME_CACHE = 'cannaai-runtime-v1.0.4';
 
 // Resources to cache on install
 const PRECACHE_RESOURCES = [
@@ -47,6 +47,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET' || !url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Never cache the development Vite app. Cache-first JavaScript makes local
+  // UI fixes appear ineffective until users manually clear site data.
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    event.respondWith(fetch(request));
     return;
   }
 
