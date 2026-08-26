@@ -30,12 +30,22 @@ export function LMStudioTest() {
   const [error, setError] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
 
+  const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 15000) => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
+
   const testModels = async () => {
     try {
-      const response = await fetch('/api/lmstudio/models');
+      const response = await fetchWithTimeout('/api/lmstudio/models', {}, 10000);
       const data = await response.json();
 
-      if (data.status === 'success' && data.models.length > 0) {
+      if (response.ok && data.status === 'success' && data.models.length > 0) {
         console.log('Found models:', data.models);
       } else {
         console.log('No models found or error:', data);
@@ -59,13 +69,13 @@ export function LMStudioTest() {
         modelId: selectedModel || undefined
       };
 
-      const response = await fetch('/api/lmstudio/chat', {
+      const response = await fetchWithTimeout('/api/lmstudio/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload)
-      });
+      }, 120000);
 
       if (!response.ok) {
         const errorData = await response.json();

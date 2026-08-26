@@ -29,16 +29,27 @@ export function LMStudioProvider({ onModelSelect, className }: LMStudioProviderP
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    checkLMStudioStatus();
-    loadModels();
+    void checkLMStudioStatus();
   }, []);
+
+  const fetchWithTimeout = async (input: RequestInfo | URL, timeoutMs = 10000) => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(input, { signal: controller.signal });
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
 
   const checkLMStudioStatus = async () => {
     try {
-      const response = await fetch('/api/lmstudio');
+      setError('');
+      setIsLoading(true);
+      const response = await fetchWithTimeout('/api/lmstudio');
       const data = await response.json();
 
-      setIsHealthy(data.status === 'healthy');
+      setIsHealthy(response.ok && data.status === 'healthy');
 
       if (data.status === 'healthy' && data.models) {
         setModels(data.models.map((model: any) => ({
@@ -51,15 +62,12 @@ export function LMStudioProvider({ onModelSelect, className }: LMStudioProviderP
       }
     } catch (error) {
       setIsHealthy(false);
-      setError('Failed to connect to LM Studio');
+      setError(error instanceof DOMException && error.name === 'AbortError'
+        ? 'LM Studio status request timed out'
+        : 'Failed to connect to LM Studio');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const loadModels = async () => {
-    // This would load additional local models if needed
-    // For now, we rely on the LM Studio API
   };
 
   const formatFileSize = (bytes: number) => {
@@ -131,7 +139,7 @@ export function LMStudioProvider({ onModelSelect, className }: LMStudioProviderP
           <div className="text-center py-4">
             <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-sm text-red-600 mb-2">
-              LM Studio is not running
+              {error || 'LM Studio is not running'}
             </p>
             <p className="text-xs text-gray-500">
               Please start LM Studio to use local models
