@@ -45,6 +45,7 @@ import {
   SensorType
 } from './types';
 import { alertAPI } from './api';
+import { useSettingsStore } from '../settings/store';
 
 interface SensorDashboardProps {
   className?: string;
@@ -63,14 +64,16 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
   const [acknowledgedNotificationIds, setAcknowledgedNotificationIds] = useState<Set<string>>(new Set());
+  const chartRefreshRate = useSettingsStore(state => state.settings?.display.chartRefreshRate ?? 30);
+  const refreshInterval = Math.max(1, Number(chartRefreshRate) || 30) * 1000;
   const sensorConfigs = sensors;
   const roomConfigs = rooms;
 
   useEffect(() => {
     if (!autoRefresh || !onRefresh) return;
-    const interval = window.setInterval(onRefresh, 30000);
+    const interval = window.setInterval(onRefresh, refreshInterval);
     return () => window.clearInterval(interval);
-  }, [autoRefresh, onRefresh]);
+  }, [autoRefresh, onRefresh, refreshInterval]);
 
   const handleAutoRefreshToggle = () => {
     setAutoRefresh((enabled) => {

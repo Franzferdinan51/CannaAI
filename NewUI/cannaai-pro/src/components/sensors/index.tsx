@@ -60,16 +60,28 @@ const Sensors: React.FC<SensorsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const withTimeout = useCallback(<T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => (
+    Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        window.setTimeout(() => reject(new Error('Sensor request timed out')), timeoutMs);
+      }),
+    ])
+  ), []);
+
   const loadInitialData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
       // Load sensors and rooms in parallel
-      const [sensorsData, roomsData] = await Promise.all([
-        sensorAPI.sensors.getSensors().catch(() => []),
-        sensorAPI.rooms.getRooms().catch(() => [])
+      const [sensorsResult, roomsResult] = await Promise.allSettled([
+        withTimeout(sensorAPI.sensors.getSensors(), 8000),
+        withTimeout(sensorAPI.rooms.getRooms(), 8000),
       ]);
+
+      const sensorsData = sensorsResult.status === 'fulfilled' ? sensorsResult.value : [];
+      const roomsData = roomsResult.status === 'fulfilled' ? roomsResult.value : [];
 
       setSensors(sensorsData);
       setRooms(roomsData);
@@ -79,7 +91,7 @@ const Sensors: React.FC<SensorsProps> = ({
       // Health is optional telemetry. Do not block the sensor UI on a slow or
       // unavailable health provider after the primary sensor data is ready.
       const healthData = await Promise.race([
-        sensorAPI.system.getSystemHealth(),
+        withTimeout(sensorAPI.system.getSystemHealth(), 1500),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
       ]).catch((err) => {
         console.warn('Failed to load system health:', err);
@@ -93,7 +105,7 @@ const Sensors: React.FC<SensorsProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [withTimeout]);
 
   // Load initial data
   useEffect(() => {
@@ -406,6 +418,15 @@ const Sensors: React.FC<SensorsProps> = ({
                       key={sensor.id}
                       className="bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-gray-600 cursor-pointer"
                       onClick={() => setSelectedSensor(sensor)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedSensor(sensor);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Configure ${sensor.name}`}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
