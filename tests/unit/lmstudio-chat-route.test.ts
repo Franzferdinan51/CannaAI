@@ -42,6 +42,7 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     }));
     expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
     expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
+    expect(fetchMock.mock.calls[2][1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   test('attaches a supplied image to the latest user message when messages are provided', async () => {

@@ -145,6 +145,9 @@ async function discoverVisionModelIds(baseUrl: string): Promise<{
 export const dynamic = 'auto';
 export const revalidate = false;
 
+const TEXT_INFERENCE_TIMEOUT_MS = 120000;
+const VISION_INFERENCE_TIMEOUT_MS = 600000;
+
 export async function POST(request: NextRequest) {
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -290,6 +293,10 @@ export async function POST(request: NextRequest) {
     const lmStudioResponse = await fetch(`${discovered.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: lmStudioHeaders(true),
+      // Large local vision models can legitimately take several minutes, but
+      // an inference request must still have a hard upper bound so the UI is
+      // never left waiting forever on a stalled LM Studio process.
+      signal: createTimeoutSignal(image ? VISION_INFERENCE_TIMEOUT_MS : TEXT_INFERENCE_TIMEOUT_MS),
       body: JSON.stringify(lmStudioPayload)
     });
 
