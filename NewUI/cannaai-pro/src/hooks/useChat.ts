@@ -900,7 +900,8 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
           testProvider: provider,
           model: provider === 'lmstudio' ? settings.providers.lmStudio.model : settings.providers.openRouter.model,
           baseUrl: provider === 'lmstudio' ? settings.providers.lmStudio.url : undefined,
-        })
+        }),
+        signal: createTimeoutSignal(5000),
       });
 
       return response.ok;
@@ -932,7 +933,10 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Get provider status
   const getProviderStatus = useCallback(async () => {
     try {
-      const response = await fetch(apiUrl('/chat'), { headers: apiAuthHeaders() });
+      const response = await fetch(apiUrl('/chat'), {
+        headers: apiAuthHeaders(),
+        signal: createTimeoutSignal(5000),
+      });
       return await response.json();
     } catch {
       return { success: false, error: 'Connection failed' };
