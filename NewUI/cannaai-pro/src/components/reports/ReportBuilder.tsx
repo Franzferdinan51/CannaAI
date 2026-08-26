@@ -571,7 +571,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {templates.map((template) => (
+              {templates.length > 0 ? templates.map((template) => (
                 <div
                   key={template.id}
                   onClick={() => applyTemplate(template)}
@@ -600,7 +600,15 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
                     </span>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="md:col-span-2 lg:col-span-4 rounded-lg border border-dashed border-gray-700 bg-[#252A33]/60 p-6 text-center">
+                  <FileText className="mx-auto mb-2 h-8 w-8 text-gray-500" />
+                  <p className="font-medium text-gray-200">No report templates are available yet</p>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Build a report from the current steps below. Saved templates will appear here when template storage is enabled.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
