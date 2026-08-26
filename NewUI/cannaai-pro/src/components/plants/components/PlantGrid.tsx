@@ -166,7 +166,7 @@ const PlantGrid: React.FC<PlantGridProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+              <div className="absolute bottom-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex space-x-1">
                 <Button
                   type="button"
                   aria-label={`Analyze ${plant.name}`}

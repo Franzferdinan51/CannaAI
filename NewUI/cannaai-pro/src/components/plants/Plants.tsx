@@ -104,19 +104,32 @@ const Plants: React.FC = () => {
     setState(prev => ({ ...prev, isLoading: true, error: undefined }));
 
     try {
-      const [plantsResponse, strainsResponse, inventoryResponse] = await Promise.all([
+      const [plantsResult, strainsResult, inventoryResult] = await Promise.allSettled([
         plantsAPI.getPlants({ isActive: showArchivedPlants ? undefined : true, includeArchived: showArchivedPlants }),
         plantsAPI.getStrains(),
         plantsAPI.getPlantInventory()
       ]);
 
+      const failures = [
+        plantsResult.status === 'rejected' ? 'plants' : null,
+        strainsResult.status === 'rejected' ? 'strains' : null,
+        inventoryResult.status === 'rejected' ? 'inventory' : null,
+      ].filter((section): section is string => Boolean(section));
+
       setState(prev => ({
         ...prev,
-        plants: plantsResponse.plants,
-        strains: strainsResponse,
-        inventory: inventoryResponse,
-        isLoading: false
+        ...(plantsResult.status === 'fulfilled' ? { plants: plantsResult.value.plants } : {}),
+        ...(strainsResult.status === 'fulfilled' ? { strains: strainsResult.value } : {}),
+        ...(inventoryResult.status === 'fulfilled' ? { inventory: inventoryResult.value } : {}),
+        isLoading: false,
+        error: failures.length > 0
+          ? `Some plant data could not be loaded (${failures.join(', ')}). Try Refresh to retry.`
+          : undefined,
       }));
+
+      if (failures.length > 0) {
+        console.warn('Partial plant data load:', failures);
+      }
     } catch (error) {
       console.error('Failed to load initial data:', error);
       setState(prev => ({
@@ -508,6 +521,9 @@ const Plants: React.FC = () => {
                       <Button
                         variant={state.viewMode === 'grid' ? 'default' : 'outline'}
                         size="sm"
+                        type="button"
+                        aria-label="Grid view"
+                        title="Grid view"
                         onClick={() => setState(prev => ({ ...prev, viewMode: 'grid' }))}
                         className="border-gray-700"
                       >
@@ -516,6 +532,9 @@ const Plants: React.FC = () => {
                       <Button
                         variant={state.viewMode === 'list' ? 'default' : 'outline'}
                         size="sm"
+                        type="button"
+                        aria-label="List view"
+                        title="List view"
                         onClick={() => setState(prev => ({ ...prev, viewMode: 'list' }))}
                         className="border-gray-700"
                       >

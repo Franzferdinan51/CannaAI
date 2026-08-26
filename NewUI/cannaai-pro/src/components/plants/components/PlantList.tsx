@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 // Import icons
-import { Sprout } from 'lucide-react';
+import { Sprout, Trash2 } from 'lucide-react';
 
 interface PlantListProps {
   plants: Plant[];
@@ -56,6 +56,14 @@ const PlantList: React.FC<PlantListProps> = ({
           key={plant.id}
           className="bg-[#181b21] border-gray-800 rounded-xl hover:border-emerald-500/50 transition-all duration-200 cursor-pointer"
           onClick={() => onSelect(plant)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onSelect(plant);
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -69,6 +77,7 @@ const PlantList: React.FC<PlantListProps> = ({
               </div>
               <div className="flex space-x-2">
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
                   onClick={(e) => {
@@ -80,6 +89,7 @@ const PlantList: React.FC<PlantListProps> = ({
                   Analyze
                 </Button>
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
                   onClick={(e) => {
@@ -89,6 +99,20 @@ const PlantList: React.FC<PlantListProps> = ({
                   className="border-gray-700 text-gray-300"
                 >
                   Edit
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  aria-label={`Delete ${plant.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(plant.id);
+                  }}
+                  className="border-red-800 text-red-300 hover:bg-red-950/40"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="sr-only">Delete</span>
                 </Button>
               </div>
             </div>
