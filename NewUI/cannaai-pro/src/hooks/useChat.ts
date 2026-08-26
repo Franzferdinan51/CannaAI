@@ -381,7 +381,11 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Check AI connection
   const checkConnection = useCallback(async () => {
     try {
-      const response = await fetch(apiUrl('/chat'), {
+      const configuredUrl = settings.providers.lmStudio.url.trim();
+      const statusUrl = configuredUrl
+        ? `${apiUrl('/chat')}?baseUrl=${encodeURIComponent(configuredUrl)}`
+        : apiUrl('/chat');
+      const response = await fetch(statusUrl, {
         headers: apiAuthHeaders(),
         signal: createTimeoutSignal(15000),
       });
@@ -398,7 +402,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       setIsConnected(false);
       setCurrentProvider('fallback');
     }
-  }, []);
+  }, [settings.providers.lmStudio.url]);
 
   // Send message to AI
   const sendMessage = useCallback(async (
@@ -936,7 +940,11 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
   // Get provider status
   const getProviderStatus = useCallback(async () => {
     try {
-      const response = await fetch(apiUrl('/chat'), {
+      const configuredUrl = settings.providers.lmStudio.url.trim();
+      const statusUrl = configuredUrl
+        ? `${apiUrl('/chat')}?baseUrl=${encodeURIComponent(configuredUrl)}`
+        : apiUrl('/chat');
+      const response = await fetch(statusUrl, {
         headers: apiAuthHeaders(),
         signal: createTimeoutSignal(15000),
       });
@@ -944,7 +952,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
     } catch {
       return { success: false, error: 'Connection failed' };
     }
-  }, []);
+  }, [settings.providers.lmStudio.url]);
 
   // Add notification
   const addNotification = useCallback((notification: Omit<ChatNotification, 'id' | 'timestamp' | 'read'>) => {

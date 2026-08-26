@@ -440,7 +440,7 @@ async function streamChatResponse(args: {
   });
 }
 
-export async function GET() {
+export async function GET(request?: NextRequest) {
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
   if (isStaticExport) {
@@ -459,8 +459,11 @@ export async function GET() {
     // Keep the status probe responsive and local-first. The chat POST path
     // already uses this mode; running the full cloud/agent probe here made
     // the UI report a disconnected provider after its short status timeout.
+    const statusUrl = request
+      ? new URL(request.url).searchParams.get('baseUrl')?.trim() || undefined
+      : undefined;
     const providerDetection = await withTimeout(
-      detectAvailableProviders({ fastLocal: true }),
+      detectAvailableProviders({ fastLocal: true, lmStudioBaseUrl: statusUrl }),
       10000,
     );
 

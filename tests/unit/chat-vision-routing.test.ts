@@ -54,7 +54,18 @@ describe('/api/chat vision routing', () => {
 
     expect(result.status).toBe(200);
     expect(body.currentProvider).toBe('lmstudio');
-    expect(mockDetectAvailableProviders).toHaveBeenCalledWith({ fastLocal: true });
+    expect(mockDetectAvailableProviders).toHaveBeenCalledWith(expect.objectContaining({ fastLocal: true }));
+  });
+
+  test('passes a configured LM Studio URL through the status probe', async () => {
+    await GET(new Request(
+      'http://localhost/api/chat?baseUrl=http%3A%2F%2F192.168.1.50%3A1234',
+    ) as any);
+
+    expect(mockDetectAvailableProviders).toHaveBeenCalledWith({
+      fastLocal: true,
+      lmStudioBaseUrl: 'http://192.168.1.50:1234',
+    });
   });
 
   test('passes the submitted image into the local-first provider chain', async () => {
