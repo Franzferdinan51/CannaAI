@@ -44,6 +44,7 @@ import {
   NotificationData,
   SensorType
 } from './types';
+import { alertAPI } from './api';
 
 interface SensorDashboardProps {
   className?: string;
@@ -319,6 +320,8 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
 
           {/* Show Alerts Toggle */}
           <button
+            type="button"
+            aria-pressed={showAlerts}
             onClick={() => setShowAlerts(!showAlerts)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg ${showAlerts ? 'bg-emerald-900/30 border border-emerald-700/50' : 'bg-gray-800 border border-gray-700'}`}
           >
@@ -334,14 +337,14 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
         </div>
 
         {/* Alerts Section */}
-        {showAlerts && notifications.length > 0 && (
+        {showAlerts && notifications.filter(n => !n.acknowledged && !acknowledgedNotificationIds.has(n.id)).length > 0 && (
           <div className="mb-6 bg-gray-800 border border-gray-700 rounded-xl p-4">
             <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-400" />
               Active Alerts
             </h3>
             <div className="space-y-2">
-              {notifications.slice(0, 3).map((notification) => (
+              {notifications.filter(n => !n.acknowledged && !acknowledgedNotificationIds.has(n.id)).slice(0, 3).map((notification) => (
                 <div key={notification.id} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border-l-4 border-l-yellow-400">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-4 h-4 text-yellow-400" />
@@ -352,7 +355,25 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">{new Date(notification.timestamp).toLocaleTimeString()}</span>
-                    <button type="button" onClick={() => setAcknowledgedNotificationIds((current) => new Set(current).add(notification.id))} className="text-xs text-emerald-400 hover:text-emerald-300">Acknowledge</button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setAcknowledgedNotificationIds((current) => new Set(current).add(notification.id));
+                        try {
+                          await alertAPI.acknowledgeNotification(notification.id);
+                        } catch (error) {
+                          setAcknowledgedNotificationIds((current) => {
+                            const next = new Set(current);
+                            next.delete(notification.id);
+                            return next;
+                          });
+                          console.error('Failed to acknowledge notification:', error);
+                        }
+                      }}
+                      className="text-xs text-emerald-400 hover:text-emerald-300"
+                    >
+                      Acknowledge
+                    </button>
                   </div>
                 </div>
               ))}
