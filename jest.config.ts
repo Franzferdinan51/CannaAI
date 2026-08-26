@@ -76,7 +76,7 @@ const config: Config = {
       {
         // Keep Jest on the maintained test graph. The broad Next tsconfig
         // causes ts-jest to scan archived legacy UI files before test startup.
-        tsconfig: '<rootDir>/tsconfig.tests-check.json'
+        tsconfig: '<rootDir>/tsconfig.jest-tests.json'
       }
     ]
   },
