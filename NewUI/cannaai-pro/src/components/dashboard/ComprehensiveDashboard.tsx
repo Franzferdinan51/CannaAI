@@ -227,6 +227,7 @@ const ComprehensiveDashboard: React.FC = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (file && (file.type.startsWith('image/'))) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -370,6 +371,8 @@ const ComprehensiveDashboard: React.FC = () => {
             {dashboardItems.map((item) => (
               <button
                 key={item.id}
+                type="button"
+                aria-current={activeDashboard === item.id ? 'page' : undefined}
                 onClick={() => {
                   setActiveDashboard(item.id);
                   setShowMobileMenu(false);
