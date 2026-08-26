@@ -165,6 +165,7 @@ export async function POST(request: NextRequest) {
       providerDetection = await withTimeout(
         detectAvailableProviders({
           lmStudioBaseUrl: typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined,
+          fastLocal: true,
         }),
         25000,
       );

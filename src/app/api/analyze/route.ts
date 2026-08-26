@@ -497,6 +497,7 @@ export async function POST(request: NextRequest) {
     // Enhanced AI provider detection with detailed logging
     const providerDetection = await detectAvailableProviders({
       lmStudioBaseUrl: requestedBaseUrl,
+      fastLocal: true,
     });
     const imageProviderOverride = imageBase64ForAI && process.env.CANNAAI_IMAGE_PROVIDER;
     const detectedPrimary = providerDetection.primary;

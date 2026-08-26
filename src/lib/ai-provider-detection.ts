@@ -154,7 +154,7 @@ function providerRecommendations(provider: string, isAvailable: boolean): string
 }
 
 // Check all available providers.
-export async function detectAvailableProviders(options: { lmStudioBaseUrl?: string } = {}) {
+export async function detectAvailableProviders(options: { lmStudioBaseUrl?: string; fastLocal?: boolean } = {}) {
   const runCheck = async <T>(promise: Promise<T>, ms: number, name: string) => {
     try {
       const result = await withTimeout(promise, ms, name);
@@ -170,6 +170,32 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
       return { r: false as any, isAvailable: false };
     }
   };
+
+  if (options.fastLocal) {
+    const local = await runCheck(
+      checkLMStudio(false, options.lmStudioBaseUrl),
+      3000,
+      'lmstudio',
+    );
+    if (local.isAvailable) {
+      const primary = {
+        provider: 'lmstudio',
+        isAvailable: true,
+        reason: (local.r as any)?.reason || 'LM Studio is running',
+        recommendations: [],
+        data: local.r,
+      };
+      // Local-first callers can begin inference immediately. They do not
+      // need to wait for unrelated agent/cloud health probes; a later retry
+      // still uses the complete fallback detection path if local AI fails.
+      return {
+        primary,
+        fallback: [],
+        all: [primary],
+        recommendations: [],
+      };
+    }
+  }
 
   // Run local / inexpensive probes together. These timeouts are outer safety
   // rails; provider implementations may also abort their own fetch calls.
