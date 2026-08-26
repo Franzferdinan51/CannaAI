@@ -76,8 +76,10 @@ const Sensors: React.FC<SensorsProps> = ({
 
       // Load sensors and rooms in parallel
       const [sensorsResult, roomsResult] = await Promise.allSettled([
-        withTimeout(sensorAPI.sensors.getSensors(), 8000),
-        withTimeout(sensorAPI.rooms.getRooms(), 8000),
+        // Local SQLite may be cold after the first request. Do not turn a
+        // valid but slow local response into a misleading empty dashboard.
+        withTimeout(sensorAPI.sensors.getSensors(), 20000),
+        withTimeout(sensorAPI.rooms.getRooms(), 20000),
       ]);
 
       const sensorsData = sensorsResult.status === 'fulfilled' ? sensorsResult.value : [];
