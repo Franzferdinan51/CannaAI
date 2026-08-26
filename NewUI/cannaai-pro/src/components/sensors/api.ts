@@ -15,6 +15,17 @@ import { API_ORIGIN } from '../../lib/api-origin';
 // API Configuration
 const API_BASE_URL = API_ORIGIN;
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const nativeTimeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof nativeTimeout === 'function') return nativeTimeout(timeoutMs);
+
+  const controller = new AbortController();
+  window.setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+}
+
 const API_ENDPOINTS = {
   // Sensor CRUD
   SENSORS: '/api/sensors',
@@ -151,6 +162,7 @@ async function apiRequest<T>(
         ...options.headers,
       },
       ...options,
+      signal: options.signal || createTimeoutSignal(15000),
     });
 
     if (!response.ok) {
@@ -363,6 +375,7 @@ export const dataAPI = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(exportConfig),
+      signal: createTimeoutSignal(30000),
     });
 
     if (!response.ok) {
