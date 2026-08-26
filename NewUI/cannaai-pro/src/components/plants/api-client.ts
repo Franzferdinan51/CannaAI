@@ -49,6 +49,7 @@ const API_BASE_URL = API_ORIGIN;
 // initializes. Keep the UI from converting that valid response into a network
 // error; the screen still exposes its loading state while the request runs.
 const PLANTS_REQUEST_TIMEOUT_MS = 60000;
+const PLANTS_READ_TIMEOUT_MS = 15000;
 
 class PlantsAPIClient {
   private api = axios.create({
@@ -75,9 +76,11 @@ class PlantsAPIClient {
       // Server responded with error status
       const message = error.response.data?.error || error.response.statusText || 'Server error';
       return new Error(`API Error (${error.response.status}): ${message}`);
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || /timeout/i.test(error.message || '')) {
+      return new Error('Request timed out. Confirm the local service is running and try again.');
     } else if (error.request) {
       // Request was made but no response received
-      return new Error('Network error: Unable to connect to server');
+      return new Error('Network error: Unable to reach the CannaAI server. Confirm it is running and try again.');
     } else {
       // Something else happened
       return new Error(`Request error: ${error.message}`);
@@ -87,7 +90,7 @@ class PlantsAPIClient {
   // Plant Management
   async getPlants(filter?: PlantFilter): Promise<PlantSearchResult> {
     try {
-      const response: AxiosResponse<PlantsResponse> = await this.api.post('/api/plants/search', filter);
+      const response: AxiosResponse<PlantsResponse> = await this.api.post('/api/plants/search', filter, { timeout: PLANTS_READ_TIMEOUT_MS });
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to fetch plants');
@@ -218,7 +221,7 @@ class PlantsAPIClient {
   // Plant Inventory
   async getPlantInventory(): Promise<PlantInventory> {
     try {
-      const response: AxiosResponse<PlantsResponse> = await this.api.get('/api/plants/inventory');
+      const response: AxiosResponse<PlantsResponse> = await this.api.get('/api/plants/inventory', { timeout: PLANTS_READ_TIMEOUT_MS });
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to fetch plant inventory');
@@ -234,7 +237,7 @@ class PlantsAPIClient {
   // Strain Management
   async getStrains(): Promise<PlantStrain[]> {
     try {
-      const response: AxiosResponse<StrainsResponse> = await this.api.get('/api/strains');
+      const response: AxiosResponse<StrainsResponse> = await this.api.get('/api/strains', { timeout: PLANTS_READ_TIMEOUT_MS });
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to fetch strains');
