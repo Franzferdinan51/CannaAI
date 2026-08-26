@@ -293,7 +293,7 @@ class PlantsAPIClient {
 
   async deleteStrain(id: string): Promise<void> {
     try {
-      const response: AxiosResponse<PlantAPIResponse> = await this.api.delete(`/api/strains/${id}`);
+      const response: AxiosResponse<PlantAPIResponse> = await this.api.delete(`/api/strains?id=${encodeURIComponent(id)}`);
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to delete strain');

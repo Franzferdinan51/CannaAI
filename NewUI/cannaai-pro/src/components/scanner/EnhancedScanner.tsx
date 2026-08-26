@@ -512,11 +512,11 @@ const EnhancedScanner: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Temperature (°F)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Temperature (°{formData.temperatureUnit})</label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="75"
+                    placeholder={formData.temperatureUnit === 'F' ? '75' : '24'}
                     value={formData.temperature}
                     onChange={(e) => handleInputChange('temperature', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
