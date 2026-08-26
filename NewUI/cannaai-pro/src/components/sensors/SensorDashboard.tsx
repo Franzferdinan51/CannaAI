@@ -224,15 +224,15 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
   };
 
   return (
-    <div className={`flex-1 overflow-y-auto p-6 bg-gray-900 ${className}`}>
+    <div className={`flex-1 overflow-y-auto p-4 bg-gray-900 sm:p-6 ${className}`}>
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Sensor Monitoring</h1>
             <p className="text-gray-400">Real-time environmental monitoring and control</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isConnected ? 'bg-emerald-900/30 border border-emerald-700/50' : 'bg-red-900/30 border border-red-700/50'}`}>
               {isConnected ? <Wifi className="w-4 h-4 text-emerald-400" /> : <WifiOff className="w-4 h-4 text-red-400" />}
               <span className={`text-sm ${isConnected ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -307,14 +307,14 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
           </select>
 
           {/* Search */}
-          <div className="relative">
+            <div className="relative min-w-0 flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Search sensors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-gray-800 border border-gray-700 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full bg-gray-800 border border-gray-700 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:w-auto"
             />
           </div>
 

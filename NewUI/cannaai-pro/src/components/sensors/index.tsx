@@ -261,8 +261,8 @@ const Sensors: React.FC<SensorsProps> = ({
   return (
     <div className={`flex flex-col h-full bg-gray-900 ${className}`}>
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-gray-800 border-b border-gray-700 px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
               <Activity className="w-8 h-8 text-emerald-400" />
@@ -273,7 +273,7 @@ const Sensors: React.FC<SensorsProps> = ({
             </div>
 
             {/* Quick Stats */}
-            <div className="flex items-center gap-6 ml-8">
+            <div className="flex flex-wrap items-center gap-4 sm:ml-8 sm:gap-6">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-300">{sensorStats.total} sensors</span>
@@ -295,7 +295,7 @@ const Sensors: React.FC<SensorsProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -311,7 +311,7 @@ const Sensors: React.FC<SensorsProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1 mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-1">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -329,7 +329,7 @@ const Sensors: React.FC<SensorsProps> = ({
           ))}
 
           {/* Sensor Type Distribution */}
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="ml-auto flex flex-wrap items-center gap-2">
             {Object.entries(sensorTypeCounts).slice(0, 4).map(([type, count]) => (
               <div key={type} className="flex items-center gap-1 px-2 py-1 bg-gray-700 rounded">
                 {getSensorTypeIcon(type)}
@@ -370,7 +370,7 @@ const Sensors: React.FC<SensorsProps> = ({
         )}
 
         {activeView === 'config' && (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="h-full overflow-y-auto p-4 sm:p-6">
             {selectedSensor ? (
               <SensorConfiguration
                 sensor={selectedSensor}
