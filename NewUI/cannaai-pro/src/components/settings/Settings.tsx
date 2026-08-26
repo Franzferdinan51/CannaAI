@@ -234,14 +234,14 @@ const Settings: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#0B0D10]">
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="mx-auto max-w-7xl p-4 sm:p-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                 <SettingsIcon className="w-6 h-6 text-emerald-400" />
@@ -253,7 +253,7 @@ const Settings: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
               {/* Export Button */}
               <div className="relative group">
                 <button
@@ -347,7 +347,7 @@ const Settings: React.FC = () => {
         {/* Settings Content */}
         <Tabs.Root value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           {/* Tab Navigation */}
-          <Tabs.List className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2 p-1 bg-gray-800/50 rounded-lg">
+          <Tabs.List className="grid grid-cols-2 gap-2 rounded-lg bg-gray-800/50 p-1 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-8">
             {settingsTabs.map((tab) => (
               <Tabs.Trigger
                 key={tab.value}
@@ -421,7 +421,7 @@ const Settings: React.FC = () => {
         <Dialog.Root open={showResetDialog} onOpenChange={setShowResetDialog}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl p-6 z-50">
+            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-800 bg-gray-900 p-6">
               <Dialog.Title className="text-lg font-semibold text-white mb-4">
                 Reset Settings to Defaults?
               </Dialog.Title>
@@ -451,7 +451,7 @@ const Settings: React.FC = () => {
         <Dialog.Root open={showImportDialog} onOpenChange={setShowImportDialog}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl p-6 z-50">
+            <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-800 bg-gray-900 p-6">
               <Dialog.Title className="text-lg font-semibold text-white mb-4">
                 Import Settings
               </Dialog.Title>
