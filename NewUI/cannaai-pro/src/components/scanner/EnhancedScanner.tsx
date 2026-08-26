@@ -14,7 +14,6 @@ import plantsAPI from '../plants/api-client';
 
 // Import modular components
 import CameraCapture from './CameraCapture';
-import EnvironmentalForm from './EnvironmentalForm';
 import AnalysisResults from './AnalysisResults';
 import StrainSelector from './StrainSelector';
 
@@ -33,7 +32,6 @@ import {
   PlantAnalysis,
   AnalysisFormData,
   PlantImage,
-  Strain,
   ScannerStats
 } from '../../types/scanner';
 
@@ -57,13 +55,6 @@ const EnhancedScanner: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
-
-  const strains = [
-    { id: 'blue-dream', name: 'Blue Dream', type: 'Hybrid' },
-    { id: 'granddaddy-purple', name: 'Granddaddy Purple', type: 'Indica' },
-    { id: 'girl-scout-cookies', name: 'Girl Scout Cookies', type: 'Hybrid' },
-    { id: 'sour-diesel', name: 'Sour Diesel', type: 'Sativa Dominant' },
-  ];
 
   const stopCamera = useCallback(() => {
     cameraStreamRef.current?.getTracks().forEach(track => track.stop());
@@ -496,18 +487,10 @@ const EnhancedScanner: React.FC = () => {
               {/* Strain Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Strain</label>
-                <select
-                  value={formData.strain}
-                  onChange={(e) => handleInputChange('strain', e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                >
-                  <option value="">Select Strain</option>
-                  {strains.map(strain => (
-                    <option key={strain.id} value={strain.name}>
-                      {strain.name} ({strain.type})
-                    </option>
-                  ))}
-                </select>
+                <StrainSelector
+                  selectedStrain={formData.strain}
+                  onStrainSelect={(strain) => handleInputChange('strain', strain)}
+                />
               </div>
 
               {/* Symptoms */}
