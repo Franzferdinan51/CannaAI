@@ -796,7 +796,8 @@ const EnhancedScanner: React.FC = () => {
                           type="button"
                           aria-label="Re-analyze selected plant image"
                           onClick={() => handleAnalysis(selectedImage)}
-                          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                          disabled={isAnalyzing}
+                          className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:cursor-wait disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
                         >
                           <RefreshCw className="w-3 h-3" />
                           Re-analyze
