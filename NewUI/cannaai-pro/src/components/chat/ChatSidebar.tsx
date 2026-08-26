@@ -436,22 +436,20 @@ export function ChatSidebar({
                     ? 'bg-emerald-500/20 border border-emerald-500/30'
                     : 'hover:bg-gray-700/50'
                 } ${selectedConversation === conversation.id ? 'ring-2 ring-emerald-500' : ''}`}
-                onClick={() => {
-                  onConversationSelect(conversation.id);
-                  setSelectedConversation(null);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
+                role="group"
+                aria-label={`Conversation ${conversation.title}`}
+              >
+                <button
+                  type="button"
+                  aria-label={`Open conversation ${conversation.title}`}
+                  onClick={() => {
                     onConversationSelect(conversation.id);
                     setSelectedConversation(null);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-              >
+                  }}
+                  className="absolute inset-0 z-0 h-full w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                />
                 {/* Conversation content */}
-                <div className="flex items-start justify-between">
+                <div className="relative z-[1] flex items-start justify-between pointer-events-none">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-medium text-white truncate">
@@ -477,7 +475,7 @@ export function ChatSidebar({
                   </div>
 
                   {/* Action menu */}
-                  <div className="relative">
+                  <div className="relative z-10 pointer-events-auto">
                     <button
                       type="button"
                       aria-label={`Open actions for ${conversation.title}`}
@@ -542,7 +540,7 @@ export function ChatSidebar({
 
                 {/* Tags */}
                 {conversation.tags && conversation.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="relative z-[1] flex flex-wrap gap-1 mt-2 pointer-events-none">
                     {conversation.tags.slice(0, 3).map(tag => (
                       <span
                         key={tag}
