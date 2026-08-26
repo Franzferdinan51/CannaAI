@@ -788,9 +788,9 @@ const EnhancedScanner: React.FC = () => {
 
                       {/* Actions */}
                       <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 sm:flex-row">
-                        <button type="button" onClick={downloadReport} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1">
+                        <button type="button" aria-label="Export selected analysis as JSON" onClick={downloadReport} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1">
                           <FileText className="w-3 h-3" />
-                          Report
+                          Export JSON
                         </button>
                         <button
                           type="button"
