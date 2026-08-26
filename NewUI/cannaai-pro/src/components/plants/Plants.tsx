@@ -321,9 +321,9 @@ const Plants: React.FC = () => {
   return (
     <div className="flex-1 overflow-hidden flex flex-col bg-[#0f1419]">
       {/* Header */}
-      <div className="border-b border-gray-800 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      <div className="border-b border-gray-800 p-4 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="p-2 bg-emerald-500/10 rounded-lg">
               <Sprout className="w-6 h-6 text-emerald-400" />
             </div>
@@ -357,16 +357,16 @@ const Plants: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex">
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         {/* Sidebar */}
-        <div className="w-64 border-r border-gray-800 bg-[#181b21] p-4">
+        <div className="w-full shrink-0 border-b border-gray-800 bg-[#181b21] p-3 lg:w-64 lg:border-b-0 lg:border-r lg:p-4">
           <Tabs
             value={state.activeTab}
             onValueChange={handleTabChange}
             orientation="vertical"
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-1 gap-2 bg-transparent">
+            <TabsList className="grid w-full grid-cols-2 gap-2 bg-transparent sm:grid-cols-4 lg:grid-cols-1">
               <TabsTrigger
                 value="overview"
                 className="justify-start text-gray-400 hover:text-white data-[state=active]:text-emerald-400 data-[state=active]:bg-emerald-500/10"
@@ -420,7 +420,7 @@ const Plants: React.FC = () => {
           </Tabs>
 
           {/* Quick Stats */}
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:mt-6 lg:grid-cols-1 lg:space-y-4">
             <div className="bg-[#0f1419] rounded-lg p-3 border border-gray-800">
               <div className="text-xs text-gray-400 mb-1">Active Plants</div>
               <div className="text-xl font-bold text-white">{state.inventory.activePlants}</div>
@@ -446,9 +446,9 @@ const Plants: React.FC = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-hidden">
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           <ScrollArea className="h-full">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {/* Error/Success Messages */}
               <AnimatePresence>
                 {state.error && (
