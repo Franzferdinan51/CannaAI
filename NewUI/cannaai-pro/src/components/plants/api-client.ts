@@ -45,7 +45,10 @@ const emptyPlantInventory = (): PlantInventory => ({
 // API base URL - adjust as needed for your environment
 const API_BASE_URL = API_ORIGIN;
 
-const PLANTS_REQUEST_TIMEOUT_MS = 10000;
+// A cold local SQLite/agent stack can take tens of seconds while it wakes or
+// initializes. Keep the UI from converting that valid response into a network
+// error; the screen still exposes its loading state while the request runs.
+const PLANTS_REQUEST_TIMEOUT_MS = 60000;
 
 class PlantsAPIClient {
   private api = axios.create({
