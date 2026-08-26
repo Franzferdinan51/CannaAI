@@ -108,7 +108,10 @@ export function ChatSettings({
             ? settings.providers.lmStudio.url
             : settings.providers.openRouter.baseUrl,
         }),
-        signal: createTimeoutSignal(5000),
+        // The backend performs the local model probe before answering. Give
+        // it enough time to inspect a cold LM Studio instance without making
+        // a healthy provider look disconnected.
+        signal: createTimeoutSignal(15000),
       });
 
       const success = response.ok;

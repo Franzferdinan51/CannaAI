@@ -383,7 +383,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
     try {
       const response = await fetch(apiUrl('/chat'), {
         headers: apiAuthHeaders(),
-        signal: createTimeoutSignal(5000),
+        signal: createTimeoutSignal(15000),
       });
       const data = await response.json();
 
@@ -904,7 +904,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
             ? settings.providers.lmStudio.url
             : settings.providers.openRouter.baseUrl,
         }),
-        signal: createTimeoutSignal(5000),
+        signal: createTimeoutSignal(15000),
       });
 
       return response.ok;
@@ -938,7 +938,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
     try {
       const response = await fetch(apiUrl('/chat'), {
         headers: apiAuthHeaders(),
-        signal: createTimeoutSignal(5000),
+        signal: createTimeoutSignal(15000),
       });
       return await response.json();
     } catch {
