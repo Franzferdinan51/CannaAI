@@ -561,10 +561,14 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
 
       } else {
         // Handle error response
+        const providerError = data.error;
+        const userFacingError = typeof providerError === 'string'
+          ? providerError
+          : providerError?.userMessage || providerError?.message || 'Sorry, I encountered an error. Please check your AI provider configuration.';
         const errorMessage: IChatMessage = {
           id: (Date.now() + 2).toString(),
           role: 'assistant',
-          content: data.error?.userMessage || data.error || 'Sorry, I encountered an error. Please check your AI provider configuration.',
+          content: String(userFacingError),
           timestamp: new Date()
         };
 
