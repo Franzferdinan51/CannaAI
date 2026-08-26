@@ -190,6 +190,11 @@ const createDefaultSettings = (): Settings => ({
   },
 });
 
+// A background discovery request may still be waiting on a local service when
+// the user starts a newer manual probe. Only the newest request may update the
+// connection state, so a slow response cannot overwrite the user's result.
+let lmStudioRequestSequence = 0;
+
 // The server intentionally returns only the settings it has stored. Older
 // installs therefore do not contain newer UI sections (or notificationTypes).
 // Normalize at the boundary so every settings panel can safely render and the
@@ -412,12 +417,15 @@ export const useSettingsStore = create<SettingsStore>()(
 
         // LM Studio actions
         loadLMStudioModels: async (url) => {
+          const requestSequence = ++lmStudioRequestSequence;
           set({ isLoadingLMStudio: true, error: '' });
           try {
             const response = await settingsAPI.getLMStudioModels(url);
+            if (requestSequence !== lmStudioRequestSequence) return false;
             set({ lmStudioData: response, isLoadingLMStudio: false });
             return true;
           } catch (error) {
+            if (requestSequence !== lmStudioRequestSequence) return false;
             set({
               // Do not leave a previous successful response marked as
               // connected after a failed refresh or URL probe.

@@ -204,10 +204,12 @@ const LMStudioSection: React.FC = () => {
               <button
                 type="button"
                 onClick={handleTestConnection}
-                disabled={isSaving || isLoadingLMStudio || !draftUrl.trim()}
+                // Manual probes must remain available while the initial
+                // background discovery request is waiting on a local service.
+                disabled={isSaving || !draftUrl.trim()}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-lg transition-colors flex items-center gap-2"
               >
-                {isSaving ? (
+                {isSaving || isLoadingLMStudio ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Save className="w-4 h-4" />
