@@ -16,7 +16,9 @@ const API_BASE_URL = API_ORIGIN;
 class SettingsAPIClient {
   private api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 30000,
+    // Settings initialization may wait on a cold local SQLite/agent stack;
+    // avoid turning a slow but healthy local service into a network error.
+    timeout: 60000,
     headers: {
       'Content-Type': 'application/json',
     },
