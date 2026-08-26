@@ -51,12 +51,13 @@ interface SensorDashboardProps {
   className?: string;
   sensors?: SensorConfig[];
   rooms?: RoomConfig[];
+  error?: string | null;
   initialRoom?: string;
   onRefresh?: () => void;
   onSensorSelect?: (sensorId: string) => void;
 }
 
-const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [], initialRoom = 'all', onRefresh, onSensorSelect }) => {
+const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', sensors = [], rooms = [], error, initialRoom = 'all', onRefresh, onSensorSelect }) => {
   const { lastSensorData, isConnected, notifications } = useSocketContext();
 
   // State management
@@ -409,9 +410,9 @@ const SensorDashboard: React.FC<SensorDashboardProps> = ({ className = '', senso
         {filteredSensors.length === 0 ? (
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center">
             <Activity className="w-10 h-10 mx-auto mb-3 text-gray-500" />
-            <h3 className="text-lg font-medium text-white">No sensor data available</h3>
+            <h3 className="text-lg font-medium text-white">{error ? 'Unable to load sensor data' : 'No sensor data available'}</h3>
             <p className="mt-2 text-sm text-gray-400">
-              Connect a sensor agent or create a sensor configuration to view live readings.
+              {error || 'Connect a sensor agent or create a sensor configuration to view live readings.'}
             </p>
             {onRefresh && (
               <button

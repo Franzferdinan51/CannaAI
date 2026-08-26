@@ -88,6 +88,12 @@ const Sensors: React.FC<SensorsProps> = ({
 
       setSensors(sensorsData);
       setRooms(roomsData);
+      const primaryFailures = [sensorsResult, roomsResult].filter(
+        (result): result is PromiseRejectedResult => result.status === 'rejected'
+      );
+      setError(primaryFailures.length > 0
+        ? 'Sensor data is temporarily unavailable. Check the local backend and try again.'
+        : null);
       // Render the primary sensor workspace immediately; health is advisory.
       setIsLoading(false);
 
@@ -349,6 +355,7 @@ const Sensors: React.FC<SensorsProps> = ({
           <SensorDashboard
             sensors={sensors}
             rooms={rooms}
+            error={error}
             initialRoom={dashboardRoom}
             onRefresh={loadInitialData}
             onSensorSelect={handleSensorSelect}
