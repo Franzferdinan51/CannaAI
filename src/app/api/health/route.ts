@@ -59,7 +59,7 @@ export async function GET() {
   // Non-blocking best-effort provider summary — never let probe failures
   // flip the health endpoint to unhealthy.
   try {
-    const detected = await withHealthTimeout(detectAvailableProviders({ fastLocal: true }), 4000);
+    const detected = await withHealthTimeout(detectAvailableProviders({ fastLocal: true, localOnly: true }), 4000);
     if (detected) {
       const available = (detected.all || []).filter((p: any) => p.isAvailable).map((p: any) => p.provider);
       const unavailable = (detected.all || []).filter((p: any) => !p.isAvailable).map((p: any) => p.provider);

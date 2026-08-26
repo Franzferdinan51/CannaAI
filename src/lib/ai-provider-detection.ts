@@ -154,7 +154,7 @@ function providerRecommendations(provider: string, isAvailable: boolean): string
 }
 
 // Check all available providers.
-export async function detectAvailableProviders(options: { lmStudioBaseUrl?: string; fastLocal?: boolean } = {}) {
+export async function detectAvailableProviders(options: { lmStudioBaseUrl?: string; fastLocal?: boolean; localOnly?: boolean } = {}) {
   const runCheck = async <T>(promise: Promise<T>, ms: number, name: string) => {
     try {
       const result = await withTimeout(promise, ms, name);
@@ -193,6 +193,27 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
         fallback: [],
         all: [primary],
         recommendations: [],
+      };
+    }
+    if (options.localOnly) {
+      const localEntry = {
+        provider: 'lmstudio',
+        isAvailable: false,
+        reason: (local.r as any)?.reason || 'LM Studio is not reachable',
+        recommendations: providerRecommendations('lmstudio', false),
+        data: local.r,
+      };
+      return {
+        primary: {
+          provider: 'fallback',
+          isAvailable: false,
+          reason: 'no local provider available',
+          recommendations: localEntry.recommendations,
+          data: false,
+        },
+        fallback: [],
+        all: [localEntry],
+        recommendations: localEntry.recommendations,
       };
     }
   }

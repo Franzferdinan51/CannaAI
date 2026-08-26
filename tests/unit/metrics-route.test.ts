@@ -30,7 +30,7 @@ describe('/api/metrics', () => {
     expect(firstBody).toContain('cannaai_uptime_seconds');
     expect(firstBody).toContain('cannaai_providers_detected{provider="lmstudio",status="available"} 1');
     expect(firstBody).toContain('cannaai_providers_detected{provider="hermes",status="unavailable"} 0');
-    expect(mockDetect).toHaveBeenCalledWith({ fastLocal: true });
+    expect(mockDetect).toHaveBeenCalledWith({ fastLocal: true, localOnly: true });
 
     mockDetect.mockResolvedValueOnce({ primary: { provider: 'hermes' }, all: [{ provider: 'hermes', isAvailable: true }] });
     const second = await GET();

@@ -26,7 +26,7 @@ async function getProviderSummary(): Promise<ProviderSummary> {
       timer = setTimeout(() => resolve(null), 3000);
       timer.unref?.();
     });
-    const detected = await Promise.race([detectAvailableProviders({ fastLocal: true }), timeout]);
+    const detected = await Promise.race([detectAvailableProviders({ fastLocal: true, localOnly: true }), timeout]);
     if (!detected) return { primary: null, available: [], unavailable: [], count: 0, timedOut: true };
 
     const all = detected.all || [];

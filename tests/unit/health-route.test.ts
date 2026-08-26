@@ -30,7 +30,7 @@ describe('/api/health', () => {
     expect(body.status).toBe('ok');
     expect(body.providers).toEqual({ primary: 'lmstudio', available: ['lmstudio'], unavailable: [], count: 1 });
     expect(body.analyzeCache.entries).toBe(0);
-    expect(mockDetect).toHaveBeenCalledWith({ fastLocal: true });
+    expect(mockDetect).toHaveBeenCalledWith({ fastLocal: true, localOnly: true });
     expect(mockDetect).toHaveBeenCalledTimes(1);
   });
 });
