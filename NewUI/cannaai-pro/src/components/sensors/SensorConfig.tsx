@@ -219,6 +219,7 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={testSensor}
             disabled={testInProgress}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
@@ -227,6 +228,8 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
             Test Sensor
           </button>
           <button
+            type="button"
+            aria-label="Close sensor configuration"
             onClick={onCancel}
             className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg"
           >
@@ -250,6 +253,8 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
               </span>
             </div>
             <button
+              type="button"
+              aria-label="Dismiss sensor test results"
               onClick={() => setTestResults(null)}
               className="text-gray-400 hover:text-white"
             >
@@ -353,6 +358,7 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
               <span className="text-sm text-gray-300">Enable Sensor</span>
             </label>
             <button
+              type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="text-sm text-emerald-400 hover:text-emerald-300"
             >
@@ -430,12 +436,14 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
             </h3>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => setShowAlerts(!showAlerts)}
                 className="text-sm text-emerald-400 hover:text-emerald-300"
               >
                 {showAlerts ? 'Hide' : 'Show'} Alerts
               </button>
               <button
+                type="button"
                 onClick={addAlert}
                 className="flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700"
               >
@@ -475,6 +483,7 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
               Calibration
             </h3>
             <button
+              type="button"
               onClick={() => setShowCalibration(!showCalibration)}
               className="text-sm text-emerald-400 hover:text-emerald-300"
             >
@@ -497,12 +506,14 @@ const SensorConfiguration: React.FC<SensorConfigProps> = ({
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-700">
           <button
+            type="button"
             onClick={onCancel}
             className="px-6 py-2 text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSave}
             className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
           >
@@ -561,6 +572,8 @@ const AlertConfiguration: React.FC<AlertConfigurationProps> = ({
           </span>
         </div>
         <button
+          type="button"
+          aria-label={`Remove alert ${alert.id.slice(-6)}`}
           onClick={onRemove}
           className="text-gray-400 hover:text-red-400"
         >
@@ -742,6 +755,8 @@ const CalibrationConfiguration: React.FC<CalibrationConfigurationProps> = ({
         <div className="flex items-center justify-between mb-3">
           <label className="block text-sm font-medium text-gray-300">Calibration Points</label>
           <button
+            type="button"
+            aria-label="Add calibration point"
             onClick={onAddPoint}
             className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
           >
@@ -776,6 +791,8 @@ const CalibrationConfiguration: React.FC<CalibrationConfigurationProps> = ({
                 </div>
               </div>
               <button
+                type="button"
+                aria-label={`Remove calibration point ${index + 1}`}
                 onClick={() => onRemovePoint(index)}
                 className="text-gray-400 hover:text-red-400"
               >
