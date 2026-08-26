@@ -269,6 +269,8 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
             {(['daily', 'weekly', 'monthly', 'quarterly', 'yearly'] as const).map((periodType) => (
               <button
                 key={periodType}
+                type="button"
+                aria-pressed={selectedPeriod === periodType}
                 onClick={() => setSelectedPeriod(periodType)}
                 className={`px-4 py-2 text-sm font-medium capitalize transition-colors first:rounded-l-lg last:rounded-r-lg ${
                   selectedPeriod === periodType
@@ -286,6 +288,8 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
             {(['overview', 'detailed', 'forecasts', 'kpis'] as const).map((mode) => (
               <button
                 key={mode}
+                type="button"
+                aria-pressed={viewMode === mode}
                 onClick={() => setViewMode(mode)}
                 className={`px-4 py-2 text-sm font-medium capitalize transition-colors first:rounded-l-lg last:rounded-r-lg ${
                   viewMode === mode
@@ -299,6 +303,8 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
           </div>
 
           <button
+            type="button"
+            aria-pressed={showComparison}
             onClick={() => setShowComparison(!showComparison)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               showComparison

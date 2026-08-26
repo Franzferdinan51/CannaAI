@@ -324,6 +324,10 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
             {(['grid', 'list', 'chart'] as const).map((mode) => (
               <button
                 key={mode}
+                type="button"
+                aria-label={`Switch to plant growth ${mode} view`}
+                aria-pressed={viewMode === mode}
+                title={`${mode.charAt(0).toUpperCase()}${mode.slice(1)} view`}
                 onClick={() => setViewMode(mode)}
                 className={`px-3 py-2 text-sm font-medium capitalize transition-colors first:rounded-l-lg last:rounded-r-lg ${
                   viewMode === mode
@@ -339,6 +343,8 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
           </div>
 
           <button
+            type="button"
+            aria-pressed={autoRefresh}
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               autoRefresh
@@ -353,6 +359,8 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
 
         <div className="flex items-center gap-3">
           <button
+            type="button"
+            aria-pressed={showPredictions}
             onClick={() => setShowPredictions(!showPredictions)}
             className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-400 rounded-lg hover:bg-gray-600 hover:text-white transition-colors"
           >
