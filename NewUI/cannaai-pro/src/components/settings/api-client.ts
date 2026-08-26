@@ -236,9 +236,12 @@ class SettingsAPIClient {
    */
   async testAIProvider(providerId: string, modelId: string): Promise<TestConnectionResponse> {
     try {
-      const response: AxiosResponse<TestConnectionResponse> = await this.api.post('/api/ai/providers', {
-        action: 'test',
-        providerId,
+      // `/api/ai/providers` is a read-only registry endpoint. Use the
+      // implemented settings contract for connection tests; keep modelId in
+      // the request for forwards compatibility with provider-specific tests.
+      const response: AxiosResponse<TestConnectionResponse> = await this.api.post('/api/settings', {
+        action: 'test_connection',
+        provider: providerId === 'lmstudio' ? 'lm-studio' : providerId,
         modelId,
       });
 
