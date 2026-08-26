@@ -110,7 +110,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { prompt, image, systemPrompt, temperature, maxTokens, modelId } = body;
+    const { prompt, image, systemPrompt, temperature, maxTokens, modelId, baseUrl } = body;
+    const requestedBaseUrl = typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined;
 
     // Validate required fields
     if (!prompt) {
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
     let lastHealthError = 'connection refused';
     let discovered = false;
 
-    for (const candidate of getLMStudioEndpointCandidates()) {
+    for (const candidate of getLMStudioEndpointCandidates(requestedBaseUrl)) {
       try {
         const healthCheck = await fetch(`${candidate}/v1/models`, {
           method: 'GET',

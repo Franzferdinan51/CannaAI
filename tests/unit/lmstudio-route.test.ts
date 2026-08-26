@@ -68,6 +68,27 @@ describe('/api/lmstudio legacy local endpoint', () => {
     expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
   });
 
+  test('uses an explicitly configured base URL for chat requests', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
+      .mockResolvedValueOnce(response({
+        model: 'ornith-1.5-35b-a3b',
+        choices: [{ message: { content: 'custom endpoint answer' } }],
+      }));
+
+    const result = await POST({
+      json: async () => ({
+        prompt: 'Inspect this plant',
+        modelId: 'ornith-1.5-35b-a3b',
+        baseUrl: 'http://192.168.1.50:1234/v1',
+      }),
+    } as any);
+
+    expect(result.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
+    expect(fetchMock.mock.calls[1][0]).toBe('http://192.168.1.50:1234/v1/chat/completions');
+  });
+
   test('does not send an embedding model to chat completions', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({
