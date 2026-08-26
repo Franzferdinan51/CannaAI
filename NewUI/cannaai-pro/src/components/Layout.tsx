@@ -113,6 +113,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             return (
               <button
                 key={item.path}
+                type="button"
+                aria-current={active ? 'page' : undefined}
                 onClick={() => navigate(item.path)}
                 className={`
                   w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
@@ -195,7 +197,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {mobileNavItems.map(item => {
             const Icon = item.icon;
             const active = isActive(item.path);
-            return <button key={item.path} type="button" aria-label={item.label} onClick={() => navigate(item.path)} className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors ${active ? 'text-emerald-300' : 'text-slate-500'}`}>
+            return <button key={item.path} type="button" aria-label={item.label} aria-current={active ? 'page' : undefined} onClick={() => navigate(item.path)} className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors ${active ? 'text-emerald-300' : 'text-slate-500'}`}>
               <span className={`grid h-8 w-10 place-items-center rounded-xl ${active ? 'bg-emerald-400/12' : ''}`}><Icon className="h-4 w-4" /></span>
               <span className="truncate">{item.label.replace('Plant Analysis', 'Scan').replace('AI Assistant', 'Assistant').replace('MoA Advisors', 'Advisors')}</span>
             </button>;
