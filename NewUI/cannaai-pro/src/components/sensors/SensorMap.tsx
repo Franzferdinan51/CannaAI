@@ -292,6 +292,20 @@ const SensorMap: React.FC<SensorMapProps> = ({
       setSelectedSensor(clickedSensor);
       onSensorSelect?.(clickedSensor);
     } else {
+      // Rooms are drawn as 200x150 tiles in a three-column layout. Handle
+      // room clicks before starting a pan so the map's primary visual targets
+      // are actionable, not just decorative backgrounds.
+      const clickedRoomIndex = rooms.findIndex((_room, index) => {
+        const roomX = (index % 3) * 250;
+        const roomY = Math.floor(index / 3) * 200;
+        return x >= roomX && x <= roomX + 200 && y >= roomY && y <= roomY + 150;
+      });
+      if (clickedRoomIndex >= 0) {
+        const room = rooms[clickedRoomIndex];
+        setSelectedRoom(room.id);
+        onRoomSelect?.(room.id);
+        return;
+      }
       setIsDragging(true);
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
