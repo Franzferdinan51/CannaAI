@@ -60,11 +60,12 @@ class SocketService {
 
     this.socket = io(getSocketBaseUrl(), {
       path: '/api/socketio',
-      // Establish the reliable Engine.IO polling connection first; the local
-      // custom server may reject an immediate websocket upgrade while still
-      // serving Socket.IO correctly over polling.
-      transports: ['polling', 'websocket'],
-      upgrade: true,
+      // The custom local server reliably supports Engine.IO polling, while
+      // websocket upgrades can fail during dev-server reloads and surface as
+      // noisy network errors even though realtime events remain available.
+      // Keep the transport deterministic for local sensor/notification flows.
+      transports: ['polling'],
+      upgrade: false,
       timeout: 20000,
       forceNew: false,
       reconnection: true,
