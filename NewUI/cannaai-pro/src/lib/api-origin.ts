@@ -4,7 +4,10 @@
  * requests to the backend, while the custom server serves its own API routes.
  */
 const configuredOrigin = (() => {
-  const value = import.meta.env.VITE_API_URL?.trim();
+  const value = (
+    import.meta.env.VITE_API_URL?.trim() ||
+    (globalThis as typeof globalThis & { __VITE_API_URL__?: string }).__VITE_API_URL__?.trim()
+  );
   if (!value) return undefined;
   return value.replace(/\/api\/?$/, '').replace(/\/$/, '');
 })();
@@ -12,7 +15,9 @@ const configuredOrigin = (() => {
 export const API_ORIGIN = configuredOrigin || (
   typeof window === 'undefined'
     ? 'http://localhost:3000'
-    : window.location.origin
+    : window.location.port === '5174'
+      ? `${window.location.protocol}//${window.location.hostname}:3000`
+      : window.location.origin
 );
 
 export const apiUrl = (path: string): string => (
