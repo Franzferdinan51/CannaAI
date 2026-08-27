@@ -70,9 +70,7 @@ const config: Config = {
   },
   moduleDirectories: ['node_modules', '<rootDir>'],
   transform: {
-    '^.+\\.(ts|tsx)$': [
-      '<rootDir>/tests/jest-typescript-transformer.cjs'
-    ]
+    '^.+\\.(ts|tsx)$': '<rootDir>/tests/jest-typescript-transformer.cjs'
   },
   transformIgnorePatterns: [
     'node_modules/(?!(sharp|heic-convert|libheif-js)/)'
