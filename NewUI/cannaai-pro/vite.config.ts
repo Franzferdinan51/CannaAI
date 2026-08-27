@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     return {
       server: {
         port: Number(env.CANNAAI_FRONTEND_PORT) || 5174,
-        host: '127.0.0.1',
+        host: env.CANNAAI_FRONTEND_HOST || '127.0.0.1',
         allowedHosts: ['localhost', '127.0.0.1'],
         // Keep browser-relative API calls on the same origin while routing
         // them to the CannaAI backend during local development.
@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
       },
       preview: {
         port: Number(env.CANNAAI_FRONTEND_PORT) || 5174,
-        host: '127.0.0.1',
+        host: env.CANNAAI_FRONTEND_HOST || '127.0.0.1',
         allowedHosts: ['localhost', '127.0.0.1'],
         proxy: {
           '/api': {

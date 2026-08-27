@@ -22,6 +22,8 @@ services:
       - NODE_ENV=development
       - HOST=0.0.0.0
       - PORT=3000
+      - CANNAAI_FRONTEND_HOST=0.0.0.0
+      - CANNAAI_FRONTEND_PORT=5174
     env_file:
       - .env.local
     volumes:
