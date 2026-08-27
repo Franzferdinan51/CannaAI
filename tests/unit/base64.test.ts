@@ -18,6 +18,7 @@ describe('base64.ts', () => {
       const dataUrl = 'data:image/png;base64,ZmFrZQ==';
       expect(normalizeBase64ImageData(dataUrl)).toBe(dataUrl);
       expect(() => normalizeBase64ImageData('https://example.com/photo.jpg')).toThrow(ImageProcessingError);
+      expect(() => normalizeBase64ImageData('invalid-image-data')).toThrow(ImageProcessingError);
     });
 
     test('parses a valid data URL correctly', () => {
