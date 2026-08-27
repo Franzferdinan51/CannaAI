@@ -143,7 +143,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         else:
             self.send_json({'error': 'Not found'}, status=404)
     
-    def lm_chat(self, prompt, image_b64=None, max_tokens=4096, temp=0.3):
+    def lm_chat(self, prompt, image_b64=None, max_tokens=4096, temp=0.3, requested_model=None):
         """Call LM Studio via curl subprocess (NOT urllib - urllib hangs on Termux)"""
         if image_b64:
             image_value = str(image_b64).strip()
@@ -157,7 +157,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         else:
             messages = [{"role": "user", "content": prompt}]
         
-        model = VISION_MODEL if image_b64 else TEXT_MODEL
+        model = str(requested_model or '').strip() or (VISION_MODEL if image_b64 else TEXT_MODEL)
         if not model:
             catalog = self.get_lmstudio_models()
             candidates = catalog.get('data', []) if isinstance(catalog, dict) else []
@@ -178,7 +178,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             elif usable:
                 model = usable[0]
         if not model:
-            return None, "No LM Studio model is configured or available"
+            return None, "No LM Studio model is configured or available", None
 
         payload = {
             "model": model,
@@ -220,18 +220,18 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                 result = json.load(f)
             
             if 'error' in result:
-                return None, result['error']
+                return None, result['error'], model
             
             msg = result['choices'][0]['message']
             text = completion_text(msg)
             if not text:
-                return None, "LM Studio returned an empty response"
-            return text, None
+                return None, "LM Studio returned an empty response", model
+            return text, None, model
             
         except subprocess.TimeoutExpired:
-            return None, "LM Studio timeout"
+            return None, "LM Studio timeout", model
         except Exception as e:
-            return None, str(e)
+            return None, str(e), model
         finally:
             for path in (req_file, resp_file):
                 try:
@@ -336,7 +336,11 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                 prompt += f"\n\nContext: {', '.join(ctx)}"
             
             # Call LM Studio via curl
-            analysis_text, error = self.lm_chat(prompt, image_data)
+            analysis_text, error, model_used = self.lm_chat(
+                prompt,
+                image_data,
+                requested_model=data.get('model') or data.get('visionModel'),
+            )
             
             if error:
                 self.send_json({'error': f'LM Studio error: {error}'}, status=500)
@@ -359,7 +363,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                     'confidence': 0.85,
                     'recommendations': self.extract_recs(analysis_text)
                 },
-                'metadata': {'provider': 'lmstudio', 'model': VISION_MODEL, 'timestamp': datetime.now().isoformat()}
+                'metadata': {'provider': 'lmstudio', 'model': model_used, 'timestamp': datetime.now().isoformat()}
             })
             
         except json.JSONDecodeError:
@@ -384,15 +388,17 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         message = data.get('message', '')
         
         system = "You are an expert cannabis cultivation assistant."
-        response_text, error = self.lm_chat(
+        response_text, error, model_used = self.lm_chat(
             f"{system}\n\nUser: {message}",
-            max_tokens=800, temp=0.7
+            max_tokens=800,
+            temp=0.7,
+            requested_model=data.get('model') or data.get('textModel'),
         )
         
         if error:
             self.send_json({'response': f'Error: {error}'}, status=500)
         else:
-            self.send_json({'response': response_text, 'metadata': {'provider': 'lmstudio', 'model': TEXT_MODEL}})
+            self.send_json({'response': response_text, 'metadata': {'provider': 'lmstudio', 'model': model_used}})
     
     def handle_add_strain(self):
         content_length = int(self.headers.get('Content-Length', 0))
