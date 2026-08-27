@@ -25,6 +25,18 @@ function textFromCompletionMessage(message: any): string {
     : '';
 }
 
+function isNonChatModel(model: any): boolean {
+  const id = String(model?.id || model?.key || '').toLowerCase();
+  return Boolean(
+    model?.type === 'embedding' ||
+    model?.type === 'reranker' ||
+    id.includes('embedding') ||
+    id.includes('reranker') ||
+    id.includes('embed-') ||
+    id.endsWith('-embed'),
+  );
+}
+
 function normalizeBaseUrl(endpoint: string): string {
   const value = endpoint.trim();
   const withProtocol = /^https?:\/\//i.test(value) ? value : `http://${value}`;
@@ -111,7 +123,8 @@ async function getAvailableModel(baseUrl: string): Promise<string | null> {
     if (response.ok) {
       const data = await response.json();
       if (data.data && data.data.length > 0) {
-        return data.data[0].id;
+        const model = data.data.find((entry: any) => !isNonChatModel(entry));
+        return model?.id || model?.key || null;
       }
     }
   } catch (e) {

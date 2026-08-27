@@ -131,4 +131,19 @@ describe('legacy LM Studio vision client', () => {
       headers: expect.objectContaining({ Authorization: 'Bearer local-token' }),
     }));
   });
+
+  test('skips non-chat models during automatic selection', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [
+        { id: 'qwen3-reranker-0.6b', type: 'reranker' },
+        { id: 'ornith-1.5-35b-a3b' },
+      ] }),
+    } as Response);
+
+    await analyzeWithLMStudio('Inspect the plant', [], 'http://localhost:1234');
+
+    const body = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(body.model).toBe('ornith-1.5-35b-a3b');
+  });
 });
