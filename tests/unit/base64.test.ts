@@ -6,10 +6,20 @@
  * multi-megabyte data URIs from camera images.
  */
 
-import { base64ToBuffer, ImageProcessingError } from '@/lib/base64';
+import { base64ToBuffer, ImageProcessingError, normalizeBase64ImageData } from '@/lib/base64';
 
 describe('base64.ts', () => {
   describe('basic parsing', () => {
+    test('normalizes raw camera base64 to a JPEG data URL', () => {
+      expect(normalizeBase64ImageData(' ZmFrZQ== ')).toBe('data:image/jpeg;base64,ZmFrZQ==');
+    });
+
+    test('preserves data URLs and rejects remote URLs', () => {
+      const dataUrl = 'data:image/png;base64,ZmFrZQ==';
+      expect(normalizeBase64ImageData(dataUrl)).toBe(dataUrl);
+      expect(() => normalizeBase64ImageData('https://example.com/photo.jpg')).toThrow(ImageProcessingError);
+    });
+
     test('parses a valid data URL correctly', () => {
       const dataUrl = 'data:image/jpeg;base64,dGVzdCBkYXRh'; // "test data"
       const { buffer, mimeType } = base64ToBuffer(dataUrl);

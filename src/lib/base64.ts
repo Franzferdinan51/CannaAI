@@ -10,6 +10,22 @@ export class ImageProcessingError extends Error {
   }
 }
 
+/** Normalize raw camera base64 and complete data URLs to one strict format. */
+export function normalizeBase64ImageData(value: unknown, defaultMimeType = 'image/jpeg'): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new ImageProcessingError('Image data is required');
+  }
+  const normalized = value.trim();
+  if (/^https?:\/\//i.test(normalized)) {
+    throw new ImageProcessingError('Remote image URLs are not supported by this endpoint');
+  }
+  if (normalized.startsWith('data:')) return normalized;
+
+  const compact = normalized.replace(/\s/g, '');
+  if (!compact) throw new ImageProcessingError('Image data is empty');
+  return `data:${defaultMimeType};base64,${compact}`;
+}
+
 /**
  * Parse base64 data URL to buffer and mime type
  */

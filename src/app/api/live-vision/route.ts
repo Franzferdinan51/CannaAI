@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withSecurity, createAPIResponse, createAPIError } from '@/lib/security';
-import { base64ToBuffer } from '@/lib/base64';
+import { base64ToBuffer, normalizeBase64ImageData } from '@/lib/base64';
 import { processImageForVisionModel } from '@/lib/image-simple';
 import { analyzePlantHealth } from '@/lib/ai';
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       // Validate base64 image data
       let processedImageInfo;
       try {
-        const { buffer } = base64ToBuffer(imageData);
+        const { buffer } = base64ToBuffer(normalizeBase64ImageData(imageData));
 
         // Enhanced processing for live vision - prioritize speed and quality
         processedImageInfo = await processImageForVisionModel(buffer, {

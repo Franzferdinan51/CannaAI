@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withSecurity, createAPIResponse, createAPIError } from '@/lib/security';
-import { base64ToBuffer } from '@/lib/base64';
+import { base64ToBuffer, normalizeBase64ImageData } from '@/lib/base64';
 import { getImageMetadata, processImageForVisionModel } from '@/lib/image-simple';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import crypto from 'crypto';
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       // Process image with trichome-specific optimizations
       let processedImageInfo;
       try {
-        const { buffer } = base64ToBuffer(imageData);
+        const { buffer } = base64ToBuffer(normalizeBase64ImageData(imageData));
 
         // Read metadata through the server-safe image helper. It uses Sharp
         // when available and has a deterministic header fallback otherwise.
