@@ -168,7 +168,8 @@ describe('/api/lmstudio legacy local endpoint', () => {
     expect(result.status).toBe(500);
     await expect(result.json()).resolves.toEqual(expect.objectContaining({
       success: false,
-      error: 'LM Studio returned an empty response',
+      error: 'LM Studio communication failed',
+      message: 'LM Studio returned an empty response',
     }));
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
