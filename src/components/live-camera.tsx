@@ -361,7 +361,7 @@ export default function LiveCamera({
         streamRef.current = null;
       }
     }
-  }, [selectedDevice, resolution, isMobileDevice, isStreaming]);
+  }, [selectedDevice, resolution, isMobileDevice]);
 
   // Stop video stream
   const stopStream = useCallback(() => {
@@ -567,16 +567,19 @@ export default function LiveCamera({
 
   // Start stream when device or resolution changes
   useEffect(() => {
-    if (selectedDevice) {
-      if (isStreaming) {
-        stopStream();
-        setTimeout(() => startStream(), 100);
-      } else {
-        // Start stream for the first time
-        startStream();
-      }
-    }
-  }, [selectedDevice, resolution, startStream, stopStream, isStreaming]);
+    if (!selectedDevice) return undefined;
+
+    // Restart only when the selected device or requested resolution changes.
+    // Including isStreaming here made the stream's own successful start
+    // trigger this effect again, producing camera races and false
+    // NotReadableError failures on mobile and USB devices.
+    stopStream();
+    const restartTimer = window.setTimeout(() => {
+      void startStream();
+    }, 100);
+
+    return () => window.clearTimeout(restartTimer);
+  }, [selectedDevice, resolution, startStream, stopStream]);
 
   // Update resolution based on camera mode
   useEffect(() => {
