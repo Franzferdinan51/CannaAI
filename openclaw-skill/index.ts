@@ -32,7 +32,7 @@ function getCannaAIHeaders(json = false): Record<string, string> {
 
 function toImageDataUrl(image: string): string {
   const value = image.trim();
-  return value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')
+  return value.startsWith('data:')
     ? value
     : `data:image/jpeg;base64,${value}`;
 }
