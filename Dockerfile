@@ -12,6 +12,10 @@ FROM dependencies AS builder
 COPY . .
 RUN npm run db:generate
 RUN npm run build:backend
+# The builder needs devDependencies for Next/TypeScript compilation, but the
+# runtime only needs production packages. Pruning here keeps the pushed image
+# small and avoids shipping test/build tooling in production.
+RUN npm prune --omit=dev
 
 FROM node:22-alpine AS runner
 RUN apk add --no-cache libc6-compat vips dumb-init curl
