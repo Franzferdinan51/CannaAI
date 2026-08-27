@@ -54,6 +54,17 @@ describe('legacy LM Studio vision client', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/chat/completions');
   });
 
+  test('normalizes an endpoint copied from the native /api/v1 route', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '{"summary":"ok"}' } }] }),
+    } as Response);
+
+    await analyzeWithLMStudio('Inspect this plant', [], 'http://localhost:1234/api/v1/', undefined, 'vision-model');
+
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/chat/completions');
+  });
+
   test('uses a bounded model discovery request for a /v1 endpoint', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,

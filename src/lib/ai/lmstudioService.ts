@@ -11,8 +11,14 @@ function normalizeImageUrl(image: unknown): string | undefined {
 }
 
 function normalizeBaseUrl(endpoint: string): string {
-  const withProtocol = endpoint.startsWith('http') ? endpoint : `http://${endpoint}`;
-  return withProtocol.replace(/\/v1\/?$/i, '').replace(/\/$/, '');
+  const value = endpoint.trim();
+  const withProtocol = /^https?:\/\//i.test(value) ? value : `http://${value}`;
+  // Accept the root URL as well as URLs copied from either LM Studio API.
+  // Requests in this legacy adapter append the API path themselves.
+  return withProtocol
+    .replace(/\/(?:api\/)?v1\/?$/i, '')
+    .replace(/\/api\/?$/i, '')
+    .replace(/\/$/, '');
 }
 
 async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number): Promise<Response> {

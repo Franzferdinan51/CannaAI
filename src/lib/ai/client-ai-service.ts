@@ -44,7 +44,10 @@ interface AIResponse {
 }
 
 function getLMStudioEndpointCandidates(configuredUrl: string): string[] {
-  const baseUrl = configuredUrl.replace(/\/$/, '').replace(/\/v1\/?$/, '');
+  const baseUrl = configuredUrl.trim()
+    .replace(/\/(?:api\/)?v1\/?$/i, '')
+    .replace(/\/api\/?$/i, '')
+    .replace(/\/$/, '');
   try {
     const parsed = new URL(baseUrl);
     if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {

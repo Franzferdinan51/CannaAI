@@ -86,7 +86,8 @@ async function scanDirectory(dirPath: string, depth: number = 0): Promise<any> {
 async function checkLMStudioRunning() {
   try {
     const baseUrl = (process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL || 'http://localhost:1234')
-      .replace(/\/v1\/?$/, '')
+      .replace(/\/(?:api\/)?v1\/?$/i, '')
+      .replace(/\/api\/?$/i, '')
       .replace(/\/$/, '');
     const apiKey = getLMStudioApiKey();
     const response = await fetch(`${baseUrl}/v1/models`, {
