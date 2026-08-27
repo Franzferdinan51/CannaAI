@@ -361,10 +361,20 @@ async function resolveModel(type: 'vision' | 'text', explicitModel?: string, con
     }
 
     if (requested && available.length > 0 && visionCatalog.metadataAvailable && visionCatalog.models.length === 0) {
-      throw new Error(
-        `LM Studio model "${requested}" is advertised as text-only and cannot process images.`,
-      );
+      // A model missing from /v1/models may still be a downloaded JIT target.
+      // Only reject an explicit ID when the catalog actually contains that ID
+      // and native metadata says it is not vision-capable.
+      if (available.includes(requested)) {
+        throw new Error(
+          `LM Studio model "${requested}" is advertised as text-only and cannot process images.`,
+        );
+      }
     }
+
+    // Explicit model IDs are authoritative. Forward an unknown ID and let
+    // LM Studio validate or JIT-load it instead of silently choosing another
+    // vision model.
+    if (requested && !available.includes(requested)) return requested;
 
     const visionModels = visionCatalog.models;
     if (visionModels.length > 0) return visionModels[0];

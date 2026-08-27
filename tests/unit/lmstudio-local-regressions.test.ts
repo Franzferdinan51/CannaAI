@@ -5,6 +5,7 @@
  */
 
 import { LMStudioProvider } from '@/lib/ai-providers/lmstudio-provider';
+import { executeWithLMStudio } from '@/lib/ai-provider-lmstudio';
 
 const mockCheckLMStudio = jest.fn();
 const mockExecuteWithLMStudio = jest.fn();
@@ -367,6 +368,33 @@ describe('LM Studio local-model regressions', () => {
 
     const requestBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
     expect(requestBody.model).toBe('custom-jit-model');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  test('legacy LM Studio vision adapter forwards an explicit unknown JIT model', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'another-model', object: 'model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'another-model', capabilities: { vision: false } }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'JIT vision answer.' } }],
+        }),
+      } as Response);
+
+    await expect(executeWithLMStudio(
+      [{ role: 'user', content: 'Describe this image.' }],
+      { model: 'custom-jit-vision-model', image: 'ZmFrZS1pbWFnZQ==' },
+    )).resolves.toBe('JIT vision answer.');
+
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(requestBody.model).toBe('custom-jit-vision-model');
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
