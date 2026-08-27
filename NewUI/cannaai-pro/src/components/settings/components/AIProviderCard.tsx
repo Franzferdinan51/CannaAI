@@ -208,7 +208,7 @@ const AIProviderCard: React.FC = () => {
   };
 
   const handleTestConnection = async (providerId: AIProviderType) => {
-    await testProviderConnection(providerId);
+    await testProviderConnection(providerId, localConfigs[providerId]);
   };
 
   const isOAuthProvider = (providerId: string) => ['openai', 'grok'].includes(providerId);

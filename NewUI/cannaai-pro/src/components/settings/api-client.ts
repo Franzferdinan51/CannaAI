@@ -122,11 +122,12 @@ class SettingsAPIClient {
   /**
    * Test connection to AI provider
    */
-  async testConnection(provider: AIProviderType): Promise<TestConnectionResponse> {
+  async testConnection(provider: AIProviderType, config?: any): Promise<TestConnectionResponse> {
     try {
       const response: AxiosResponse<TestConnectionResponse> = await this.api.post('/api/settings', {
         action: 'test_connection',
         provider,
+        ...(config ? { config } : {}),
       }, { timeout: 15000 });
 
       return response.data;

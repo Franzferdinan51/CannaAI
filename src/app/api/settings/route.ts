@@ -322,7 +322,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const testResult = await testAIConnection(provider);
+        const testResult = await testAIConnection(provider, config);
         return NextResponse.json({
           success: testResult.success,
           message: testResult.message,
@@ -817,7 +817,7 @@ function determineCapabilities(modelId: string): string[] {
   return capabilities;
 }
 
-async function testAIConnection(provider: string) {
+async function testAIConnection(provider: string, configOverride?: Record<string, any>) {
   try {
     if (['grok', 'openclaw', 'hermes'].includes(provider)) {
       const auth = await providerAuthStatus(provider as 'grok' | 'openclaw' | 'hermes');
@@ -833,11 +833,14 @@ async function testAIConnection(provider: string) {
     if (provider === 'lm-studio') {
       // LM Studio may require its local bearer token (newer LM Studio
       // versions do), so use the same authenticated probe as model discovery.
-      const baseUrl = String(settings.lmStudio.url || 'http://localhost:1234')
+      const lmStudioConfig = configOverride && typeof configOverride === 'object'
+        ? { ...settings.lmStudio, ...configOverride }
+        : settings.lmStudio;
+      const baseUrl = String(lmStudioConfig.url || 'http://localhost:1234')
         .replace(/\/(?:api\/)?v1\/?$/i, '')
         .replace(/\/api\/?$/i, '')
         .replace(/\/$/, '');
-      const apiKey = settings.lmStudio.apiKey || getLMStudioApiKey();
+      const apiKey = lmStudioConfig.apiKey || getLMStudioApiKey();
       const response = await fetch(`${baseUrl}/v1/models`, {
         method: 'GET',
         headers: {
