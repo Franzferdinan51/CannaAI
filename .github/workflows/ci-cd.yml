@@ -33,6 +33,8 @@ jobs:
         run: npm run db:generate
       - name: Install static UI dependencies
         run: npm ci --prefix NewUI/cannaai-pro
+      - name: Validate Android and agent integration sources
+        run: python3 -m py_compile android_backend/cannaai_server.py
       - name: Initialize SQLite test database
         run: DATABASE_URL=file:./test.db npm run db:push
       - name: Run lint
