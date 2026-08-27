@@ -58,8 +58,7 @@ interface UnifiedSettingsProps {
 // Tab icons mapping
 const TAB_ICONS = {
   ai: Brain,
-  lmstudio: ServerCog,
-  evolver: Cpu
+  lmstudio: ServerCog
 };
 
 // AI Provider Settings Component
@@ -890,8 +889,7 @@ export function UnifiedSettings({ onNotification, className = '' }: UnifiedSetti
   const [activeTab, setActiveTab] = useState('ai');
   const [settings, setSettings] = useState<Settings>({
     aiProviders: {},
-    lmStudio: {},
-    agentEvolver: { enabled: false }
+    lmStudio: {}
   });
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -975,8 +973,7 @@ export function UnifiedSettings({ onNotification, className = '' }: UnifiedSetti
 
   const tabs = [
     { id: 'ai', label: 'AI Providers', icon: Brain },
-    { id: 'lmstudio', label: 'LM Studio', icon: ServerCog },
-    { id: 'evolver', label: 'AgentEvolver', icon: Cpu }
+    { id: 'lmstudio', label: 'LM Studio', icon: ServerCog }
   ];
 
   return (
@@ -991,7 +988,7 @@ export function UnifiedSettings({ onNotification, className = '' }: UnifiedSetti
             <div>
               <h1 className="text-3xl font-bold text-slate-100">Unified Settings</h1>
               <p className="text-slate-400">
-                Configure AI providers, local LM Studio, and AgentEvolver with comprehensive options.
+                Configure AI providers and local LM Studio with comprehensive options.
               </p>
             </div>
           </div>
@@ -1069,13 +1066,6 @@ export function UnifiedSettings({ onNotification, className = '' }: UnifiedSetti
                 )}
                 {activeTab === 'lmstudio' && (
                   <LMStudioSettings
-                    settings={settings}
-                    onUpdate={updateSettings}
-                    onNotification={(notification) => onNotification?.(notification)}
-                  />
-                )}
-                {activeTab === 'evolver' && (
-                  <AgentEvolverSettings
                     settings={settings}
                     onUpdate={updateSettings}
                     onNotification={(notification) => onNotification?.(notification)}
