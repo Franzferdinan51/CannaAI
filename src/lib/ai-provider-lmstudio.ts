@@ -424,6 +424,7 @@ export async function executeWithLMStudio(
     image?: string;
     temperature?: number;
     useVision?: boolean;
+    returnMetadata?: boolean;
   } = {},
 ) {
   const wantsVision = Boolean(options.image) && options.useVision !== false;
@@ -482,7 +483,10 @@ export async function executeWithLMStudio(
   }
 
   const data = await response.json();
-  return textFromCompletionMessage(data.choices?.[0]?.message);
+  const content = textFromCompletionMessage(data.choices?.[0]?.message);
+  return options.returnMetadata
+    ? { content, result: content, model }
+    : content;
 }
 
 export function getConfiguredModels() {

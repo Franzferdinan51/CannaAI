@@ -381,6 +381,7 @@ export async function executeAIWithFallback(
       fn: () => executeWithLMStudio(messages, {
         ...options,
         useVision: options.requireVision ?? Boolean(options.image),
+        returnMetadata: true,
       }),
     },
     {

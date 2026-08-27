@@ -79,6 +79,27 @@ describe('legacy LM Studio runtime configuration', () => {
     expect(fetchMock.mock.calls[1][0]).toBe('http://192.168.1.50:1234/v1/chat/completions');
   });
 
+  test('can preserve the resolved model for the provider fallback chain', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'auto-selected-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'answer' } }] }),
+      } as Response);
+
+    await expect(executeWithLMStudio(
+      [{ role: 'user', content: 'hello' }],
+      { returnMetadata: true },
+    )).resolves.toEqual(expect.objectContaining({
+      content: 'answer',
+      result: 'answer',
+      model: 'auto-selected-model',
+    }));
+  });
+
   test('does not auto-select a reranker as a chat model', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({
