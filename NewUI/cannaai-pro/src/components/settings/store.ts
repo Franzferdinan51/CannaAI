@@ -30,7 +30,7 @@ interface SettingsStore extends SettingsUIState {
   switchProvider: (provider: AIProviderType) => Promise<void>;
   updateProviderConfig: (provider: AIProviderType, config: any) => Promise<void>;
   testProviderConnection: (provider: AIProviderType, config?: any) => Promise<void>;
-  loadProviderModels: (provider: AIProviderType) => Promise<void>;
+  loadProviderModels: (provider: AIProviderType, config?: any) => Promise<void>;
 
   // LM Studio actions
   loadLMStudioModels: (url?: string) => Promise<boolean>;
@@ -398,10 +398,10 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         },
 
-        loadProviderModels: async (provider) => {
+        loadProviderModels: async (provider, config) => {
           set({ isLoading: true, error: '' });
           try {
-            const response = await settingsAPI.getProviderModels(provider);
+            const response = await settingsAPI.getProviderModels(provider, config);
             const { availableModels } = get();
             set({
               availableModels: { ...availableModels, [provider]: response.models },

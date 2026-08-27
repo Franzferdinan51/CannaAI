@@ -140,11 +140,12 @@ class SettingsAPIClient {
   /**
    * Get available models for a provider
    */
-  async getProviderModels(provider: AIProviderType): Promise<GetModelsResponse> {
+  async getProviderModels(provider: AIProviderType, config?: any): Promise<GetModelsResponse> {
     try {
       const response: AxiosResponse<GetModelsResponse> = await this.api.post('/api/settings', {
         action: 'get_models',
         provider,
+        ...(config ? { config } : {}),
       }, { timeout: 10000 });
 
       return response.data;

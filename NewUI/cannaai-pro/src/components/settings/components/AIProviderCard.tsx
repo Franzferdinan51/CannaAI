@@ -226,7 +226,7 @@ const AIProviderCard: React.FC = () => {
   };
 
   const handleLoadModels = async (providerId: AIProviderType) => {
-    await loadProviderModels(providerId);
+    await loadProviderModels(providerId, localConfigs[providerId]);
   };
 
   const getCapabilityIcon = (capability: ModelCapability) => {

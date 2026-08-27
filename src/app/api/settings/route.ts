@@ -338,7 +338,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const modelsResult = await getProviderModels(provider);
+        const modelsResult = await getProviderModels(provider, config);
         return NextResponse.json({
           success: modelsResult.success,
           models: modelsResult.models,
@@ -363,7 +363,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function getProviderModels(provider: string) {
+async function getProviderModels(provider: string, configOverride?: Record<string, any>) {
   try {
     if (['grok', 'openclaw', 'hermes'].includes(provider)) {
       const auth = await providerAuthStatus(provider as 'grok' | 'openclaw' | 'hermes');
@@ -383,11 +383,14 @@ async function getProviderModels(provider: string) {
     }
     if (provider === 'lm-studio') {
       // Get LM Studio models - doesn't need API key
-      const baseUrl = String(settings.lmStudio.url || 'http://localhost:1234')
+      const lmStudioConfig = configOverride && typeof configOverride === 'object'
+        ? configOverride
+        : settings.lmStudio;
+      const baseUrl = String(lmStudioConfig.url || 'http://localhost:1234')
         .replace(/\/(?:api\/)?v1\/?$/i, '')
         .replace(/\/api\/?$/i, '')
         .replace(/\/$/, '');
-      const apiKey = settings.lmStudio.apiKey || getLMStudioApiKey();
+      const apiKey = lmStudioConfig.apiKey || getLMStudioApiKey();
       let data: any = null;
       for (const endpoint of [`${baseUrl}/v1/models`, `${baseUrl}/api/v1/models`]) {
         try {

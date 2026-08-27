@@ -130,4 +130,28 @@ describe('/api/settings durability', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
     await expect(response.json()).resolves.toEqual(expect.objectContaining({ success: true }));
   });
+
+  test('loads models from the current unsaved LM Studio URL', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ id: 'lan-local-model' }] }),
+    } as Response);
+
+    const response = await POST(new Request('http://localhost/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'get_models',
+        provider: 'lm-studio',
+        config: { url: 'http://192.168.1.50:1234/v1', apiKey: '' },
+      }),
+      headers: { 'content-type': 'application/json' },
+    }) as any);
+
+    expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
+    await expect(response.json()).resolves.toEqual(expect.objectContaining({
+      success: true,
+      models: [expect.objectContaining({ id: 'lan-local-model' })],
+    }));
+  });
 });
