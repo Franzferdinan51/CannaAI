@@ -7,6 +7,7 @@ import {
   getConfiguredModels,
   setModel,
 } from '@/lib/ai-provider-lmstudio';
+import { LMStudioProvider } from '@/lib/ai-providers/lmstudio-provider';
 
 describe('legacy LM Studio runtime configuration', () => {
   beforeEach(() => {
