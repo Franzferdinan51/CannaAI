@@ -17,7 +17,11 @@ export const revalidate = false;
 const LM_STUDIO_URL = (process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234')
   .replace(/\/v1\/?$/, '')
   .replace(/\/$/, '');
-const configuredTimeout = Number.parseInt(process.env.LM_STUDIO_TIMEOUT || '30000', 10);
+// Large local vision models can legitimately need several minutes for one
+// request, especially on CPU/shared-memory systems. The primary LM Studio
+// provider uses the same five-minute default; this legacy-compatible route
+// must not time out healthy phone/vision analyses after 30 seconds.
+const configuredTimeout = Number.parseInt(process.env.LM_STUDIO_TIMEOUT || '300000', 10);
 const LM_STUDIO_TIMEOUT = Number.isFinite(configuredTimeout) && configuredTimeout > 0
   ? configuredTimeout
   : 30000;
@@ -303,6 +307,10 @@ export async function POST(request: NextRequest) {
           platform: 'local'
         }
       };
+
+      if (!response.content.trim()) {
+        throw new Error('LM Studio returned an empty response');
+      }
 
       return NextResponse.json(response);
 

@@ -153,6 +153,26 @@ describe('/api/lmstudio legacy local endpoint', () => {
     ]);
   });
 
+  test('does not report success when LM Studio returns empty content', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(response({ data: [{ id: 'local-model' }] }))
+      .mockResolvedValueOnce(response({
+        model: 'local-model',
+        choices: [{ message: { content: '' } }],
+      }));
+
+    const result = await POST({
+      json: async () => ({ prompt: 'Hello', modelId: 'local-model' }),
+    } as any);
+
+    expect(result.status).toBe(500);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      success: false,
+      error: 'LM Studio returned an empty response',
+    }));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   test('rejects a native text-only model for image analysis', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({ data: [{ id: 'text-only-model' }] }))
