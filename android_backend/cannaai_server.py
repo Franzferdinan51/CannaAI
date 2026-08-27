@@ -31,6 +31,7 @@ LM_STUDIO_URL = normalize_lmstudio_url(
 API_KEY = os.environ.get("LM_STUDIO_API_KEY", "").strip()
 VISION_MODEL = os.environ.get("LM_STUDIO_VISION_MODEL", "").strip()
 TEXT_MODEL = os.environ.get("LM_STUDIO_TEXT_MODEL", "").strip()
+LM_STUDIO_TIMEOUT = max(30, int(os.environ.get("LM_STUDIO_TIMEOUT", "300")))
 PORT = 3000
 HOST = "0.0.0.0"
 
@@ -71,6 +72,26 @@ ANALYSIS_PROMPT = """You are an expert cannabis cultivator analyzing a plant pho
 - Harvest timing if approaching readiness
 
 Be thorough and specific. Format with headers."""
+
+
+def completion_text(message):
+    """Extract usable text from string, structured, and reasoning responses."""
+    if not isinstance(message, dict):
+        return ""
+    content = message.get("content")
+    if isinstance(content, list):
+        parts = [
+            str(part.get("text", ""))
+            for part in content
+            if isinstance(part, dict) and part.get("type") == "text" and part.get("text")
+        ]
+        text = "".join(parts).strip()
+        if text:
+            return text
+    elif isinstance(content, str) and content.strip():
+        return content.strip()
+    reasoning = message.get("reasoning_content")
+    return reasoning.strip() if isinstance(reasoning, str) else ""
 
 
 class CannaAIHandler(SimpleHTTPRequestHandler):
@@ -176,14 +197,21 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             json.dump(payload, f)
         
         try:
-            r = subprocess.run([
-                "curl", "-s", "--max-time", "120",
+            curl_args = [
+                "curl", "-sS", "--max-time", str(LM_STUDIO_TIMEOUT),
                 "-X", "POST",
                 f"{LM_STUDIO_URL}/chat/completions",
                 "-H", "Content-Type: application/json",
-                "-H", f"Authorization: Bearer {API_KEY}",
                 "--data-binary", f"@{req_file}"
-            ], capture_output=True, timeout=130, text=True)
+            ]
+            if API_KEY:
+                curl_args[9:9] = ["-H", f"Authorization: Bearer {API_KEY}"]
+            r = subprocess.run(
+                curl_args,
+                capture_output=True,
+                timeout=LM_STUDIO_TIMEOUT + 10,
+                text=True,
+            )
             
             with open(resp_file, 'w') as f:
                 f.write(r.stdout)
@@ -195,10 +223,9 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                 return None, result['error']
             
             msg = result['choices'][0]['message']
-            # qwen3.6-35b puts reasoning in reasoning_content, response in content
-            text = msg.get('reasoning_content') or msg.get('content') or ''
+            text = completion_text(msg)
             if not text:
-                text = msg.get('content', '')
+                return None, "LM Studio returned an empty response"
             return text, None
             
         except subprocess.TimeoutExpired:
