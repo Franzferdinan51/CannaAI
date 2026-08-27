@@ -571,6 +571,9 @@ export async function POST(request: NextRequest) {
             ...(requestedBaseUrl ? { baseUrl: requestedBaseUrl } : {}),
             temperature: 0.15,
             useVision: !!imageBase64ForAI,
+            // Match the route and browser deadlines for slow local vision
+            // models instead of letting the adapter's shorter default abort.
+            timeout: imageBase64ForAI ? 600000 : 120000,
           }
         );
         aiResult = {
