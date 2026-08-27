@@ -12,13 +12,24 @@ const configuredOrigin = (() => {
   return value.replace(/\/api\/?$/, '').replace(/\/$/, '');
 })();
 
-export const API_ORIGIN = configuredOrigin || (
-  typeof window === 'undefined'
-    ? 'http://localhost:3000'
-    : window.location.port === '5174'
-      ? `${window.location.protocol}//${window.location.hostname}:3000`
-      : window.location.origin
-);
+export function resolveApiOrigin(
+  explicitOrigin?: string,
+  runtimeOrigin?: string,
+  server = typeof window === 'undefined',
+): string {
+  const normalizedExplicit = explicitOrigin?.trim()
+    .replace(/\/api\/?$/, '')
+    .replace(/\/$/, '');
+  if (normalizedExplicit) return normalizedExplicit;
+  if (server) return 'http://localhost:3000';
+
+  // The Vite dev/preview server proxies same-origin `/api` requests to the
+  // backend. Keeping the browser on its current origin avoids CORS failures
+  // and also works when the backend is configured on a non-default port.
+  return runtimeOrigin || window.location.origin;
+}
+
+export const API_ORIGIN = resolveApiOrigin(configuredOrigin);
 
 export const apiUrl = (path: string): string => (
   `${API_ORIGIN}/api${path.startsWith('/') ? path : `/${path}`}`

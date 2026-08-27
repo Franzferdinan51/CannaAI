@@ -3,6 +3,7 @@ import path from 'node:path';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { resolveWebSocketUrl } from '../../NewUI/cannaai-pro/src/lib/websocket-url';
+import { resolveApiOrigin } from '../../NewUI/cannaai-pro/src/lib/api-origin';
 import { SafeMarkdown } from '../../NewUI/cannaai-pro/src/components/chat/markdown';
 import {
   MAX_ATTACHMENT_SIZE,
@@ -11,6 +12,12 @@ import {
 } from '../../NewUI/cannaai-pro/src/components/chat/attachments';
 
 describe('Vite frontend runtime contracts', () => {
+  it('keeps browser API calls same-origin so Vite can proxy them', () => {
+    expect(resolveApiOrigin(undefined, 'http://localhost:5174', false)).toBe('http://localhost:5174');
+    expect(resolveApiOrigin('http://localhost:3000/api', 'http://localhost:5174', false)).toBe('http://localhost:3000');
+    expect(resolveApiOrigin(undefined, undefined, true)).toBe('http://localhost:3000');
+  });
+
   it('resolves relative WebSocket paths against the active page protocol', () => {
     expect(resolveWebSocketUrl('/api/chat/ws', 'https://app.example/chat')).toBe(
       'wss://app.example/api/chat/ws'
