@@ -22,7 +22,7 @@ npm run db:push
 npm run dev
 ```
 
-`npm run setup` installs both the backend and `NewUI/cannaai-pro` dependencies. `prisma db push` creates or updates the local SQLite schema; run it again after schema changes. The backend is served on `http://localhost:3000`. The Vite application is served on `http://localhost:5174` and proxies API requests to the backend. `npm run dev` starts both processes.
+`npm run setup` installs both the backend and `NewUI/cannaai-pro` dependencies. `prisma db push` creates or updates the local SQLite schema; run it again after schema changes. The backend is served on `http://localhost:3000`. The Vite development application is served on `http://localhost:5174` and proxies API requests to the backend; the frontend also resolves that backend origin automatically when running from the standard Vite preview port. Set `VITE_API_URL` when the backend is remote or uses a non-default port. `npm run dev` starts both processes.
 
 After startup, verify the application and provider state:
 
@@ -137,7 +137,7 @@ SOCKET_IO_TOKEN="use-a-long-random-value"
 
 The app uses Socket.IO for live dashboard updates and a WebSocket chat endpoint. Do not expose the development server directly to the public internet.
 
-The agent should submit the photo to the reachable CannaAI backend, not to the Vite development port. Use `/api/analyze` on the backend address and include the image as `image` or `plantImage`. A successful analysis response identifies the selected provider/model and whether vision processing was used.
+The agent should submit the photo to the reachable CannaAI backend, not to the Vite development port. Use `/api/analyze` on the backend address and include the image as `image` or `plantImage`. A successful analysis response identifies the selected provider/model and whether vision processing was used. The Android bridge also accepts `LM_STUDIO_TIMEOUT` (seconds; default 300) for slow local vision models and normalizes structured LM Studio response content.
 
 The assistant camera control uses the browser's real image capture flow (`capture="environment"` on supported phones) and never submits a generated placeholder image. If no provider is connected, chat and vision return an unavailable/error state; CannaAI does not substitute canned cultivation advice.
 
