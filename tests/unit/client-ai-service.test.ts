@@ -58,6 +58,33 @@ describe('ClientAIService', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
   });
 
+  it('forwards an explicit browser model ID even when it is omitted from the catalog', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'catalog-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'custom-jit-model',
+          choices: [{ message: { content: 'custom answer' } }],
+        }),
+      } as Response);
+
+    const service = new ClientAIService({
+      provider: 'lm-studio',
+      lmStudio: { url: 'http://localhost:1234', model: 'custom-jit-model', apiKey: '' },
+    } as any);
+
+    await expect(service.generateResponse('hello')).resolves.toMatchObject({
+      success: true,
+      model: 'custom-jit-model',
+    });
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(requestBody.model).toBe('custom-jit-model');
+  });
+
   it('uses the normalized native URL for the connection check', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true } as Response);
     const service = new ClientAIService({

@@ -285,9 +285,12 @@ export class ClientAIService {
     }
 
     const configuredModel = this.config.lmStudio.model.trim();
-    const selectedModel = configuredModel && advertisedModels.some(model => model.id === configuredModel)
-      ? configuredModel
-      : advertisedModels.find(model => typeof model.id === 'string' && !isNonChatModel(model))?.id;
+    // An explicit model ID is authoritative. LM Studio may JIT-load a
+    // downloaded/custom model that is absent from the compatibility catalog;
+    // let the completion endpoint validate it instead of silently switching
+    // to a different model.
+    const selectedModel = configuredModel ||
+      advertisedModels.find(model => typeof model.id === 'string' && !isNonChatModel(model))?.id;
 
     if (!selectedModel) {
       throw new Error('LM Studio is connected, but no runnable chat model was advertised. Load a model and retry.');
