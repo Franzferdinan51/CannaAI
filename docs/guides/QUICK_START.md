@@ -15,11 +15,11 @@ npm run dev
 ```
 
 This will start:
-- **Frontend (New UI)**: http://localhost:5173
+- **Frontend (New UI)**: http://localhost:5174
 - **Backend (Next.js)**: http://localhost:3000
 
 ### 3. Access Your Application
-Open your browser to **http://localhost:5173** to see the new CannaAI Pro interface.
+Open your browser to **http://localhost:5174** to see the new CannaAI Pro interface.
 
 ## 🔧 Available Commands
 
@@ -34,7 +34,7 @@ Open your browser to **http://localhost:5173** to see the new CannaAI Pro interf
 ### Utilities & Diagnostics
 | Command | Description |
 |---------|-------------|
-| `npm run check:ports` | Check if ports 3000/5173 are available |
+| `npm run check:ports` | Check if ports 3000/5174 are available |
 | `npm run health` | One-time service health check |
 | `npm run health -- --watch` | Continuous health monitoring |
 | `npm run setup` | Install all dependencies (backend + frontend) |
@@ -52,7 +52,7 @@ Open your browser to **http://localhost:5173** to see the new CannaAI Pro interf
 
 ```
 Frontend (Vite/React)  →  Backend (Next.js/Socket.IO)
-Port: 5173              Port: 3000
+Port: 5174              Port: 3000
 ├── UI Components       ├── API Endpoints
 ├── Routing             ├── Real-time WebSocket
 └── Client-side Logic   └── Database Operations
@@ -73,7 +73,7 @@ The frontend communicates with the backend at `http://localhost:3000/api/*`. All
 ## 🛠️ Development Tips
 
 - Both services start simultaneously with `npm run dev`
-- Changes to frontend code (New UI) auto-reload at localhost:5173
+- Changes to frontend code (New UI) auto-reload at localhost:5174
 - Changes to backend code (Next.js) auto-reload at localhost:3000
 - Socket.IO connections work between frontend and backend
 - CORS is configured to allow development on both ports
@@ -82,7 +82,7 @@ The frontend communicates with the backend at `http://localhost:3000/api/*`. All
 
 ### Port Conflicts
 ```bash
-npm run check:ports      # See what's using ports 3000/5173
+npm run check:ports      # See what's using ports 3000/5174
 ```
 
 ### Services Won't Start

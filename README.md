@@ -22,7 +22,7 @@ npm run db:push
 npm run dev
 ```
 
-`npm run setup` installs both the backend and `NewUI/cannaai-pro` dependencies. `prisma db push` creates or updates the local SQLite schema; run it again after schema changes. The backend is served on `http://localhost:3000`. The Vite application is served on `http://localhost:5173` and talks to the backend through the configured API base URL. `npm run dev` starts both processes.
+`npm run setup` installs both the backend and `NewUI/cannaai-pro` dependencies. `prisma db push` creates or updates the local SQLite schema; run it again after schema changes. The backend is served on `http://localhost:3000`. The Vite application is served on `http://localhost:5174` and proxies API requests to the backend. `npm run dev` starts both processes.
 
 After startup, verify the application and provider state:
 

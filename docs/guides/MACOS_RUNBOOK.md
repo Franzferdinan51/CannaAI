@@ -49,7 +49,7 @@ npm run dev
 
 Default ports:
 - Backend / Next.js: `3000`
-- Frontend / Vite: `5173`
+- Frontend / Vite: `5174`
 
 If you want to run each side separately:
 

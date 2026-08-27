@@ -4,7 +4,7 @@ This project uses a hybrid architecture with separate frontend and backend servi
 
 ## Architecture Overview
 
-- **Frontend**: New UI built with Vite + React (Port 5174 in development; 5173 for the root production preview command)
+- **Frontend**: New UI built with Vite + React (Port 5174 by default; configurable with `CANNAAI_FRONTEND_PORT`)
 - **Backend**: Next.js API server with Socket.IO (Port 3000)
 
 ## Development Scripts
@@ -17,7 +17,7 @@ npm run dev:win      # Windows version with proper command syntax
 
 ### Individual Services
 ```bash
-npm run dev:frontend # Start only the Vite frontend (port 5173)
+npm run dev:frontend # Start only the Vite frontend (port 5174)
 npm run dev:backend  # Start only the Next.js backend (port 3000)
 ```
 
@@ -61,7 +61,7 @@ The frontend communicates with the backend through same-origin `/api/*` requests
 
 ## CORS Configuration
 
-The backend is configured to accept connections from the local development ports (3000, 5173, and 5174) during development, including support for:
+The backend accepts the active frontend port `5174` during development (and retains `5173` for backward compatibility), including support for:
 - Local network access (192.168.x.x, 10.x.x.x)
 - Tailscale network (100.x.x.x)
 - Custom hostnames
@@ -109,7 +109,7 @@ CannaAI/
    This will start both services concurrently with live reload.
 
 3. **Access Applications**:
-   - Frontend: http://localhost:5173
+   - Frontend: http://localhost:5174
    - Backend API: http://localhost:3000/api
 
 ## Troubleshooting
