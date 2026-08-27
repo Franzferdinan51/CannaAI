@@ -51,6 +51,13 @@ interface AIConfigManagerProps {
   children: React.ReactNode;
 }
 
+function normalizeLMStudioBaseUrl(value: string): string {
+  return value.trim()
+    .replace(/\/(?:api\/)?v1\/?$/i, '')
+    .replace(/\/api\/?$/i, '')
+    .replace(/\/$/, '');
+}
+
 export default function AIConfigManager({ onConfigChange, children }: AIConfigManagerProps) {
   const [config, setConfig] = useState<AIConfig>(DEFAULT_CONFIG);
   const [isConfiguring, setIsConfiguring] = useState(false);
@@ -100,7 +107,7 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
         }
       } else if (config.provider === 'lm-studio') {
         // Test LM Studio connection
-        const response = await fetch(`${config.lmStudio.url}/v1/models`, {
+        const response = await fetch(`${normalizeLMStudioBaseUrl(config.lmStudio.url)}/v1/models`, {
           method: 'GET',
         });
 

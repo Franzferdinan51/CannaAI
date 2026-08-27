@@ -138,12 +138,18 @@ export class ClientAIService {
       // healthy AI connection or make the Settings UI appear configured.
       if (this.config.provider === 'fallback') return false;
       if (this.config.provider === 'lm-studio') {
-        const response = await fetch(`${this.config.lmStudio.url.replace(/\/$/, '')}/v1/models`, {
-          headers: this.config.lmStudio.apiKey
-            ? { Authorization: `Bearer ${this.config.lmStudio.apiKey}` }
-            : undefined
-        });
-        return response.ok;
+        const headers = this.config.lmStudio.apiKey
+          ? { Authorization: `Bearer ${this.config.lmStudio.apiKey}` }
+          : undefined;
+        for (const candidate of getLMStudioEndpointCandidates(this.config.lmStudio.url)) {
+          try {
+            const response = await fetch(`${candidate}/v1/models`, { headers, signal: createTimeoutSignal(3000) });
+            if (response.ok) return true;
+          } catch {
+            // Try the alternate loopback hostname before reporting failure.
+          }
+        }
+        return false;
       }
       const response = await fetch(`${this.config.openRouter.baseUrl.replace(/\/$/, '')}/models`, {
         headers: this.config.openRouter.apiKey

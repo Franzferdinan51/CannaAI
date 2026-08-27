@@ -57,4 +57,15 @@ describe('ClientAIService', () => {
     await expect(service.testConnection()).resolves.toBe(true);
     expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
   });
+
+  it('uses the normalized native URL for the connection check', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true } as Response);
+    const service = new ClientAIService({
+      provider: 'lm-studio',
+      lmStudio: { url: 'http://localhost:1234/api/v1/', model: '', apiKey: '' },
+    } as any);
+
+    await expect(service.testConnection()).resolves.toBe(true);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
+  });
 });
