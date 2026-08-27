@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { testLMStudioConnection } from '@/lib/ai/lmstudioService';
+import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 
 export const runtime = 'nodejs';
 export const maxDuration = 10;
@@ -26,7 +27,10 @@ export async function POST(req: NextRequest) {
 
     console.log(`[CONNECTION TEST] Testing connection to ${endpoint}...`);
 
-    const result = await testLMStudioConnection(endpoint, typeof apiKey === 'string' ? apiKey : undefined);
+    const result = await testLMStudioConnection(
+      endpoint,
+      typeof apiKey === 'string' && apiKey.trim() ? apiKey : getLMStudioApiKey(),
+    );
 
     if (result.success) {
       console.log(`[CONNECTION TEST] Success! Available models:`, result.models);
