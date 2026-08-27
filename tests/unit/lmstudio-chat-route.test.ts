@@ -175,4 +175,29 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  test('normalizes structured and reasoning-only assistant responses', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'local-model' }]))
+      .mockResolvedValueOnce(response({
+        model: 'local-model',
+        choices: [{ message: {
+          content: [{ type: 'text', text: 'part one' }, { type: 'text', text: ' part two' }],
+        } }],
+      }));
+
+    const structured = await POST(requestWithBody({ prompt: 'hello', model: 'local-model' }) as any);
+    expect(structured.status).toBe(200);
+    await expect(structured.json()).resolves.toEqual(expect.objectContaining({ content: 'part one part two' }));
+
+    fetchMock.mockReset();
+    fetchMock
+      .mockResolvedValueOnce(modelsResponse([{ id: 'local-model' }]))
+      .mockResolvedValueOnce(response({
+        model: 'local-model',
+        choices: [{ message: { content: '', reasoning_content: 'reasoning answer' } }],
+      }));
+    const reasoning = await POST(requestWithBody({ prompt: 'hello', model: 'local-model' }) as any);
+    await expect(reasoning.json()).resolves.toEqual(expect.objectContaining({ content: 'reasoning answer' }));
+  });
 });

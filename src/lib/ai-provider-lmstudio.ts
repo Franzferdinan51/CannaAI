@@ -143,6 +143,22 @@ function looksLikeVisionModel(id: string): boolean {
   );
 }
 
+function textFromCompletionMessage(message: any): string {
+  const content = message?.content;
+  if (Array.isArray(content)) {
+    const text = content
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('')
+      .trim();
+    if (text) return text;
+  }
+  if (typeof content === 'string' && content.trim()) return content.trim();
+  return typeof message?.reasoning_content === 'string'
+    ? message.reasoning_content.trim()
+    : '';
+}
+
 export interface LMStudioProviderResult {
   available: boolean;
   isAvailable: boolean;
@@ -466,8 +482,7 @@ export async function executeWithLMStudio(
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || '';
-  return typeof content === 'string' ? content : String(content || '');
+  return textFromCompletionMessage(data.choices?.[0]?.message);
 }
 
 export function getConfiguredModels() {

@@ -162,6 +162,40 @@ describe('legacy LM Studio runtime configuration', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  test('does not replace an explicit text-only model when another vision model exists', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [
+          { id: 'text-only-model' },
+          { id: 'other-vision-model' },
+        ] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [
+          { key: 'text-only-model', type: 'llm', capabilities: { vision: false } },
+          { key: 'other-vision-model', type: 'llm', capabilities: { vision: true } },
+        ] }),
+      } as Response);
+
+    const provider = new LMStudioProvider({
+      url: 'http://localhost:1234',
+      apiKey: '',
+      model: 'text-only-model',
+    });
+
+    await expect(provider.execute({
+      messages: [{
+        role: 'user',
+        content: 'Inspect this leaf',
+        image: 'data:image/jpeg;base64,abc123',
+      }],
+    })).rejects.toThrow('no vision-capable model');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   test('preserves non-image data URLs such as application/octet-stream captures', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({

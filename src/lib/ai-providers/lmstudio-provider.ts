@@ -34,6 +34,22 @@ function normalizeImageUrl(image?: string): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function textFromCompletionMessage(message: any): string {
+  const content = message?.content;
+  if (Array.isArray(content)) {
+    const text = content
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('')
+      .trim();
+    if (text) return text;
+  }
+  if (typeof content === 'string' && content.trim()) return content.trim();
+  return typeof message?.reasoning_content === 'string'
+    ? message.reasoning_content.trim()
+    : '';
+}
+
 function normalizeBaseUrl(value: string): string {
   return value
     .trim()
@@ -151,10 +167,6 @@ export class LMStudioProvider extends BaseProvider {
 
       // Some reasoning models expose their usable answer through
       // reasoning_content. Preserve compatibility with those local models.
-      if (!data.choices?.[0]?.message?.content && data.choices?.[0]?.message?.reasoning_content) {
-        data.choices[0].message.content = data.choices[0].message.reasoning_content;
-      }
-
       const aiResponse = this.normalizeResponse(data, { latency });
 
       this.updateHealth(true, latency);
@@ -281,6 +293,17 @@ export class LMStudioProvider extends BaseProvider {
         return { id: loadedId, nativeModel: nativePreferred, loaded: true };
       }
 
+      // An explicitly advertised model is authoritative. Never replace a
+      // selected text-only model with a different vision model merely because
+      // another vision model happens to be available.
+      if (
+        requiresVision &&
+        openAIModelIds.includes(preferredModel) &&
+        nativePreferred?.capabilities?.vision === false
+      ) {
+        return undefined;
+      }
+
       // LM Studio can JIT-load a downloaded model that is not present in the
       // compatibility catalog yet. An explicit model ID is authoritative: do
       // not silently replace it with the first discovered model. If native
@@ -371,7 +394,7 @@ export class LMStudioProvider extends BaseProvider {
           index: 0,
           message: {
             role: choice?.message?.role || 'assistant',
-            content: choice?.message?.content || '',
+            content: textFromCompletionMessage(choice?.message),
           },
           finishReason: choice?.finish_reason || 'stop',
         },

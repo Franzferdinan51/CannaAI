@@ -39,6 +39,22 @@ function normalizeImageUrl(image: unknown): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function textFromCompletionMessage(message: any): string {
+  const content = message?.content;
+  if (Array.isArray(content)) {
+    const text = content
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('')
+      .trim();
+    if (text) return text;
+  }
+  if (typeof content === 'string' && content.trim()) return content.trim();
+  return typeof message?.reasoning_content === 'string'
+    ? message.reasoning_content.trim()
+    : '';
+}
+
 async function discoverVisionModelIds(baseUrl = LM_STUDIO_URL): Promise<Set<string> | null> {
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
@@ -276,9 +292,7 @@ export async function POST(request: NextRequest) {
       // Extract and return the response
       const response = {
         success: true,
-        content: result.choices?.[0]?.message?.content
-          || result.choices?.[0]?.message?.reasoning_content
-          || '',
+        content: textFromCompletionMessage(result.choices?.[0]?.message),
         model: result.model || selectedModel,
         usage: result.usage,
         timestamp: new Date().toISOString(),

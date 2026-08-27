@@ -21,6 +21,22 @@ function normalizeImageUrl(image: unknown): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function textFromCompletionMessage(message: any): string {
+  const content = message?.content;
+  if (Array.isArray(content)) {
+    const text = content
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('')
+      .trim();
+    if (text) return text;
+  }
+  if (typeof content === 'string' && content.trim()) return content.trim();
+  return typeof message?.reasoning_content === 'string'
+    ? message.reasoning_content.trim()
+    : '';
+}
+
 function isNonChatModel(entry: any): boolean {
   const id = String(entry?.id || '').toLowerCase();
   return Boolean(
@@ -338,7 +354,7 @@ export async function POST(request: NextRequest) {
     const response = {
       // Reasoning-first local models may put the usable answer in
       // reasoning_content while content is empty.
-      content: message.content || message.reasoning_content || '',
+      content: textFromCompletionMessage(message),
       model: result.model || selectedModel,
       usage: result.usage,
       timestamp: new Date().toISOString(),
