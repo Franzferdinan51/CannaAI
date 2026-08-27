@@ -56,6 +56,28 @@ export function normalizeAgentImage(image: unknown): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function imageFromMessage(message: any): string | undefined {
+  const direct = normalizeAgentImage(message?.image);
+  if (direct) return direct;
+  if (!Array.isArray(message?.content)) return undefined;
+  const imagePart = message.content.find((part: any) => (
+    (part?.type === 'image_url' && typeof part?.image_url?.url === 'string') ||
+    (part?.type === 'image' && typeof part?.image_url === 'string')
+  ));
+  return normalizeAgentImage(imagePart?.image_url?.url || imagePart?.image_url);
+}
+
+function textFromMessageContent(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('\n');
+  }
+  return String(content || '');
+}
+
 /**
  * Connects to the agents through their supported integration surfaces.
  * OpenClaw owns the Gateway WebSocket and exposes ACP over stdio; Hermes owns
@@ -136,7 +158,7 @@ export class AgentCommandProvider extends BaseProvider {
     const startedAt = Date.now();
     try {
       const result = this.provider === 'openclaw'
-        ? (request.messages.some((message) => Boolean(message.image))
+        ? (request.messages.some((message) => Boolean(imageFromMessage(message)))
           ? await this.executeOpenClawAcp(request)
           : await this.executeOpenClawCli(request))
         : await this.executeHermesProxy(request);
@@ -179,9 +201,9 @@ export class AgentCommandProvider extends BaseProvider {
     }
 
     const messages = request.messages.map((message) => {
-      if (!message.image) return { role: message.role, content: message.content };
-      const image = normalizeAgentImage(message.image);
-      return { role: message.role, content: [{ type: 'text', text: message.content }, { type: 'image_url', image_url: { url: image } }] };
+      const image = imageFromMessage(message);
+      if (!image) return { role: message.role, content: message.content };
+      return { role: message.role, content: [{ type: 'text', text: textFromMessageContent(message.content) }, { type: 'image_url', image_url: { url: image } }] };
     });
     const errors: string[] = [];
     for (const provider of this.hermesProxyCandidates()) {
@@ -257,12 +279,12 @@ export class AgentCommandProvider extends BaseProvider {
 
   private async executeHermesApiServer(request: AIRequest): Promise<{ content: string; model?: string; usage?: any }> {
     const messages = request.messages.map((message) => {
-      if (!message.image) return { role: message.role, content: message.content };
-      const image = normalizeAgentImage(message.image);
+      const image = imageFromMessage(message);
+      if (!image) return { role: message.role, content: message.content };
       return {
         role: message.role,
         content: [
-          { type: 'text', text: message.content },
+          { type: 'text', text: textFromMessageContent(message.content) },
           { type: 'image_url', image_url: { url: image, detail: 'high' } },
         ],
       };
@@ -390,10 +412,9 @@ export class AgentCommandProvider extends BaseProvider {
     try {
       const prompt: any[] = [];
       for (const message of request.messages) {
-        prompt.push({ type: 'text', text: `${message.role.toUpperCase()}: ${message.content}` });
-        if (message.image) {
-          const image = normalizeAgentImage(message.image);
-          if (!image) continue;
+        const image = imageFromMessage(message);
+        prompt.push({ type: 'text', text: `${message.role.toUpperCase()}: ${textFromMessageContent(message.content)}` });
+        if (image) {
           if (image.startsWith('http://') || image.startsWith('https://')) {
             prompt.push({ type: 'resource_link', uri: image, name: 'plant-image', mimeType: 'image/*' });
             continue;

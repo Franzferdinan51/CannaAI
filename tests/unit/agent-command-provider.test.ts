@@ -98,7 +98,10 @@ describe('AgentCommandProvider Hermes proxy resilience', () => {
     const provider = new AgentCommandProvider('hermes', { timeout: 1000 });
     expect(await provider.isAvailable()).toBe(true);
     const response = await provider.execute({
-      messages: [{ role: 'user', content: 'What is shown?', image: 'data:image/jpeg;base64,ZmFrZQ==' }],
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: 'What is shown?' },
+        { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,ZmFrZQ==' } },
+      ] }],
       model: 'auto',
     });
 
