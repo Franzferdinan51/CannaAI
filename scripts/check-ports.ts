@@ -30,7 +30,7 @@ const PORTS = {
     service: 'API Server, Socket.IO',
   },
   frontend: {
-    port: 5173,
+    port: 5174,
     name: 'Frontend (Vite Dev Server)',
     service: 'Development UI',
   },
@@ -156,7 +156,7 @@ async function suggestSolution(port: number, portInfo: typeof PORTS.backend | ty
   if (port === 3000) {
     colorLog('white', `      - Backend: Set PORT=3001 npm run dev`);
     colorLog('white', `      - Update frontend API URL to match new backend port`);
-  } else if (port === 5173) {
+  } else if (port === 5174) {
     colorLog('white', `      - Frontend: cd NewUI/cannaai-pro && npm run dev -- --port 5174`);
   }
 

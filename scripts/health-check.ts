@@ -36,9 +36,9 @@ const CONFIG = {
     socketEndpoint: '/api/socketio',
   },
   frontend: {
-    port: 5173,
+    port: 5174,
     name: 'Frontend',
-    baseUrl: 'http://localhost:5173',
+    baseUrl: 'http://localhost:5174',
     endpoints: [
       { path: '/', method: 'GET', timeout: 5000, expectedStatus: 200 },
     ],
