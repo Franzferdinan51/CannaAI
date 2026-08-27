@@ -63,11 +63,6 @@ function getLMStudioEndpointCandidates(configuredUrl: string): string[] {
   return [baseUrl];
 }
 
-function isNonChatModel(model: { id?: string }): boolean {
-  const id = String(model.id || '').toLowerCase();
-  return id.includes('embedding') || id.includes('embed-') || id.endsWith('-embed') || id.includes('reranker');
-}
-
 function createTimeoutSignal(timeoutMs: number): AbortSignal {
   const timeout = (AbortSignal as typeof AbortSignal & {
     timeout?: (milliseconds: number) => AbortSignal;
@@ -249,83 +244,40 @@ export class ClientAIService {
   }
 
   private async callLMStudio(prompt: string, context?: any): Promise<AIResponse> {
-    const headers: HeadersInit = this.config.lmStudio.apiKey
-      ? { Authorization: `Bearer ${this.config.lmStudio.apiKey}` }
-      : {};
-
-    // LM Studio's supported compatibility probe is /v1/models. The /health
-    // endpoint is not available in every LM Studio release and made a healthy
-    // local server look offline in the browser client.
-    let advertisedModels: Array<{ id?: string }> = [];
-    let baseUrl = '';
-    let lastError = 'model discovery failed';
-    for (const candidate of getLMStudioEndpointCandidates(this.config.lmStudio.url)) {
-      try {
-        const modelsResponse = await fetch(`${candidate}/v1/models`, {
-          method: 'GET',
-          signal: createTimeoutSignal(3000),
-          headers,
-        });
-        if (!modelsResponse.ok) {
-          lastError = `LM Studio model discovery failed: ${modelsResponse.status}`;
-          continue;
-        }
-
-        const modelsPayload = await modelsResponse.json();
-        advertisedModels = Array.isArray(modelsPayload?.data) ? modelsPayload.data : [];
-        baseUrl = candidate;
-        break;
-      } catch (error) {
-        lastError = error instanceof Error ? error.message : lastError;
-      }
-    }
-
-    if (!baseUrl) {
-      throw new Error(`Cannot connect to LM Studio: ${lastError}`);
-    }
-
     const configuredModel = this.config.lmStudio.model.trim();
-    // An explicit model ID is authoritative. LM Studio may JIT-load a
-    // downloaded/custom model that is absent from the compatibility catalog;
-    // let the completion endpoint validate it instead of silently switching
-    // to a different model.
-    const selectedModel = configuredModel ||
-      advertisedModels.find(model => typeof model.id === 'string' && !isNonChatModel(model))?.id;
-
-    if (!selectedModel) {
-      throw new Error('LM Studio is connected, but no runnable chat model was advertised. Load a model and retry.');
-    }
-
-    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+    // Keep inference server-side: browser calls to LM Studio are vulnerable to
+    // CORS failures and cannot use the machine's token-file authentication.
+    // The backend performs model discovery and accepts explicit JIT model IDs.
+    const response = await fetch('/api/lmstudio/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...headers,
       },
       body: JSON.stringify({
-        model: selectedModel,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          }
-        ],
-        max_tokens: 1000,
+        prompt,
+        modelId: configuredModel || undefined,
+        baseUrl: this.config.lmStudio.url,
+        apiKey: this.config.lmStudio.apiKey || undefined,
+        maxTokens: 1000,
         temperature: 0.7,
       }),
+      signal: createTimeoutSignal(600000),
     });
 
+    const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(`LM Studio error: ${response.status} ${response.statusText}`);
+      throw new Error(payload.error || `LM Studio error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content || 'No response generated';
+    const aiResponse = typeof payload.content === 'string' ? payload.content.trim() : '';
+    if (!aiResponse) {
+      throw new Error('LM Studio returned an empty response');
+    }
 
     return {
       success: true,
       response: aiResponse,
-      model: data.model || selectedModel,
+      model: payload.model || configuredModel || undefined,
       provider: 'LM Studio',
     };
   }

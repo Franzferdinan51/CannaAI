@@ -5,8 +5,8 @@ import {
 } from '@/lib/ai-provider-lmstudio';
 import { ImageProcessingError, normalizeBase64ImageData } from '@/lib/base64';
 
-function lmStudioHeaders(includeJson = false): Record<string, string> {
-  const apiKey = getLMStudioApiKey();
+function lmStudioHeaders(includeJson = false, apiKeyOverride?: string): Record<string, string> {
+  const apiKey = apiKeyOverride?.trim() || getLMStudioApiKey();
   return {
     ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
     ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
@@ -90,7 +90,14 @@ function createTimeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
-async function discoverLMStudio(configuredBaseUrl?: string): Promise<{
+async function discoverLMStudio(configuredBaseUrl?: string, apiKey?: string): Promise<{
+  baseUrl: string;
+  models: any[];
+} | null> {
+  return discoverLMStudioWithKey(configuredBaseUrl, apiKey);
+}
+
+async function discoverLMStudioWithKey(configuredBaseUrl?: string, apiKey?: string): Promise<{
   baseUrl: string;
   models: any[];
 } | null> {
@@ -98,7 +105,7 @@ async function discoverLMStudio(configuredBaseUrl?: string): Promise<{
     try {
       const healthResponse = await fetch(`${baseUrl}/v1/models`, {
         signal: createTimeoutSignal(3000),
-        headers: lmStudioHeaders(),
+        headers: lmStudioHeaders(false, apiKey),
       });
       if (!healthResponse.ok) continue;
 
@@ -115,14 +122,14 @@ async function discoverLMStudio(configuredBaseUrl?: string): Promise<{
   return null;
 }
 
-async function discoverVisionModelIds(baseUrl: string): Promise<{
+async function discoverVisionModelIds(baseUrl: string, apiKey?: string): Promise<{
   vision: Set<string>;
   known: Set<string>;
 } | null> {
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
       signal: createTimeoutSignal(3000),
-      headers: lmStudioHeaders(),
+      headers: lmStudioHeaders(false, apiKey),
     });
     if (!response.ok) return null;
 
@@ -189,7 +196,8 @@ export async function POST(request: NextRequest) {
       model,
       baseUrl,
       messages: requestedMessages,
-      stream = false
+      stream = false,
+      apiKey
     } = body;
     const requestedBaseUrl = typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined;
 
@@ -201,7 +209,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, provider: body.testProvider }, { status: 400 });
       }
       const providerUrl = body.providerSettings?.lmStudio?.url || requestedBaseUrl;
-      const discoveredForTest = await discoverLMStudio(providerUrl);
+      const providerApiKey = typeof body.providerSettings?.lmStudio?.apiKey === 'string'
+        ? body.providerSettings.lmStudio.apiKey
+        : undefined;
+      const discoveredForTest = await discoverLMStudio(providerUrl, providerApiKey);
       return NextResponse.json({
         success: Boolean(discoveredForTest),
         provider: 'lmstudio',
@@ -216,7 +227,8 @@ export async function POST(request: NextRequest) {
 
     // Check every local loopback candidate. On macOS, localhost may resolve
     // to IPv6 while LM Studio is listening only on IPv4 (or vice versa).
-    const discovered = await discoverLMStudio(requestedBaseUrl);
+    const configuredApiKey = typeof apiKey === 'string' ? apiKey : undefined;
+    const discovered = await discoverLMStudioWithKey(requestedBaseUrl, configuredApiKey);
     if (!discovered) {
       return NextResponse.json(
         {
@@ -254,7 +266,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (image) {
-      const visionCapabilities = await discoverVisionModelIds(discovered.baseUrl);
+      const visionCapabilities = await discoverVisionModelIds(discovered.baseUrl, configuredApiKey);
       if (
         visionCapabilities?.known.has(selectedModel) &&
         !visionCapabilities.vision.has(selectedModel)
@@ -328,7 +340,7 @@ export async function POST(request: NextRequest) {
     // Call LM Studio API
     const lmStudioResponse = await fetch(`${discovered.baseUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: lmStudioHeaders(true),
+      headers: lmStudioHeaders(true, configuredApiKey),
       // Large local vision models can legitimately take several minutes, but
       // an inference request must still have a hard upper bound so the UI is
       // never left waiting forever on a stalled LM Studio process.
