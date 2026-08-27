@@ -11,6 +11,8 @@ export const revalidate = false;
 
 interface TrichomeAnalysisRequest {
   imageData: string; // Base64 image data
+  model?: string;
+  baseUrl?: string;
   deviceInfo: {
     deviceId: string;
     label: string;
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
   return withSecurity(request, async (req, context) => {
     try {
       const body = await request.json();
-      const { imageData, deviceInfo, analysisOptions = {} } = body as TrichomeAnalysisRequest;
+      const { imageData, model, baseUrl, deviceInfo, analysisOptions = {} } = body as TrichomeAnalysisRequest;
 
       if (!imageData) {
         return createAPIError('Image data is required for trichome analysis', 400);
@@ -137,7 +139,7 @@ export async function POST(request: NextRequest) {
         processedImageInfo.buffer,
         processedImageInfo.base64,
         deviceInfo,
-        analysisOptions
+        { ...analysisOptions, model, baseUrl }
       );
 
       const response: TrichomeAnalysis = {
@@ -370,8 +372,11 @@ Analyze the provided microscopic image and return ONLY valid JSON.`;
     // Execute AI analysis
     const aiResult = await executeAIWithFallback(trichomePrompt, imageBase64, {
       primaryProvider: providerDetection.primary.provider as 'lm-studio' | 'openrouter',
-      timeout: 90000,
-      maxRetries: 2
+      model: typeof options.model === 'string' ? options.model.trim() || undefined : undefined,
+      baseUrl: typeof options.baseUrl === 'string' ? options.baseUrl.trim() || undefined : undefined,
+      requireVision: true,
+      timeout: 600000,
+      maxRetries: 2,
     });
 
     let analysisResult = aiResult.result;
