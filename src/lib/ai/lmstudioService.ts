@@ -10,6 +10,21 @@ function normalizeImageUrl(image: unknown): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function textFromCompletionMessage(message: any): string {
+  const content = message?.content;
+  if (Array.isArray(content)) {
+    const text = content
+      .map((part: any) => typeof part === 'string' ? part : part?.text || '')
+      .join('')
+      .trim();
+    if (text) return text;
+  }
+  if (typeof content === 'string' && content.trim()) return content.trim();
+  return typeof message?.reasoning_content === 'string'
+    ? message.reasoning_content.trim()
+    : '';
+}
+
 function normalizeBaseUrl(endpoint: string): string {
   const value = endpoint.trim();
   const withProtocol = /^https?:\/\//i.test(value) ? value : `http://${value}`;
@@ -232,7 +247,10 @@ export async function analyzeWithLMStudio(
     }
 
     const data = await response.json();
-    const responseContent = data.choices?.[0]?.message?.content || "";
+    const responseContent = textFromCompletionMessage(data.choices?.[0]?.message);
+    if (!responseContent) {
+      throw new Error("LM Studio returned an empty analysis response");
+    }
 
     // Clean response
     let cleanedContent = responseContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -364,21 +382,8 @@ QUERY: ${query}`;
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (typeof content === 'string' && content.trim()) {
-      return content.trim();
-    }
-
-    if (Array.isArray(content)) {
-      const text = content
-        .map((part: any) => typeof part === 'string' ? part : part?.text || '')
-        .join('\n')
-        .trim();
-      if (text) {
-        return text;
-      }
-    }
+    const content = textFromCompletionMessage(data.choices?.[0]?.message);
+    if (content) return content;
 
     throw new Error("LM Studio returned an empty chat response");
   } catch (e: any) {

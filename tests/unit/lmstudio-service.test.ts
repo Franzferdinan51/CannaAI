@@ -43,6 +43,44 @@ describe('legacy LM Studio vision client', () => {
     ]));
   });
 
+  test('normalizes structured and reasoning-only LM Studio analysis responses', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: [
+          { type: 'text', text: '{"summary":"' },
+          { type: 'text', text: 'healthy"}' },
+        ] } }] }),
+      } as Response);
+
+    const result = await analyzeWithLMStudio(
+      'Inspect the plant',
+      ['data:image/jpeg;base64,ZmFrZQ=='],
+      'http://localhost:1234',
+      undefined,
+      'vision-model',
+    );
+
+    expect(result?.summary).toBe('healthy');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: '', reasoning_content: '{"summary":"reasoned"}' } }] }),
+      } as Response);
+
+    const reasoningResult = await analyzeWithLMStudio(
+      'Inspect the plant',
+      [],
+      'http://localhost:1234',
+      undefined,
+      'vision-model',
+    );
+
+    expect(reasoningResult?.summary).toBe('reasoned');
+  });
+
   test('normalizes an LM Studio endpoint that already includes /v1', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
