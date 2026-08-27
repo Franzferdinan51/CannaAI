@@ -106,14 +106,26 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
           throw new Error('Failed to fetch models from OpenRouter');
         }
       } else if (config.provider === 'lm-studio') {
-        // Test LM Studio connection
-        const response = await fetch(`${normalizeLMStudioBaseUrl(config.lmStudio.url)}/v1/models`, {
-          method: 'GET',
+        // Probe through the CannaAI backend so browser CORS policy does not
+        // make a healthy local server look offline. The server also resolves
+        // LM Studio's local token file when the UI has no API key field set.
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'test_connection',
+            provider: 'lm-studio',
+            config: {
+              ...config.lmStudio,
+              url: normalizeLMStudioBaseUrl(config.lmStudio.url),
+            },
+          }),
         });
 
         if (response.ok) {
-          const models = await response.json();
-          setTestResults([`✅ Connected to LM Studio - ${models.data?.length || 0} models available`]);
+          const result = await response.json();
+          if (!result.success) throw new Error(result.message || 'Failed to connect to LM Studio');
+          setTestResults([`✅ Connected to LM Studio - ${result.details?.availableModels || 0} models available`]);
           setConnectionStatus('success');
         } else {
           throw new Error('Failed to connect to LM Studio');
@@ -130,7 +142,9 @@ export default function AIConfigManager({ onConfigChange, children }: AIConfigMa
       return config.openRouter.apiKey.trim() !== '';
     }
     if (config.provider === 'lm-studio') {
-      return config.lmStudio.url.trim() !== '' && config.lmStudio.model.trim() !== '';
+      // An empty model means auto-select the first runnable model advertised
+      // by LM Studio; explicit arbitrary model IDs remain supported.
+      return config.lmStudio.url.trim() !== '';
     }
     return true;
   };
