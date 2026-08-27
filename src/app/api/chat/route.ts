@@ -229,6 +229,11 @@ export async function POST(request: NextRequest) {
       const fallbackReason = aiResult.fallbackReason || '';
       console.log(`✅ Chat completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
 
+      const responseText = getChatResponseText(chatResult);
+      if (!responseText.trim()) {
+        throw new Error(`${usedProvider || 'AI provider'} returned an empty response`);
+      }
+
       // A provider test must validate the provider the user selected. A
       // successful fallback response is useful for chat, but would otherwise
       // make a broken OpenRouter/LM Studio connection look healthy.
@@ -249,7 +254,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        response: getChatResponseText(chatResult),
+        response: responseText,
         model: chatMetadata.model || 'unknown',
         provider: usedProvider,
         usage: chatMetadata.usage,
