@@ -61,6 +61,20 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     expect(fetchMock.mock.calls[1][0]).toBe('http://192.168.1.50:1234/v1/chat/completions');
   });
 
+  test('normalizes a native /api/v1 URL when probing a requested provider', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'ornith-1.5-35b-a3b' }]));
+
+    const result = await POST(requestWithBody({
+      message: 'test connection',
+      testProvider: 'lmstudio',
+      providerSettings: { lmStudio: { url: 'http://192.168.1.50:1234/api/v1', apiKey: '' } },
+    }) as any);
+
+    expect(result.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
+  });
+
   test('attaches a supplied image to the latest user message when messages are provided', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))

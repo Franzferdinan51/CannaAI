@@ -26,6 +26,14 @@ function normalizeProviderName(provider: unknown): 'lmstudio' | 'openrouter' | n
   return value === 'lmstudio' ? 'lmstudio' : value === 'openrouter' ? 'openrouter' : null;
 }
 
+function normalizeLMStudioBaseUrl(value: unknown): string {
+  const raw = typeof value === 'string' && value.trim() ? value.trim() : 'http://localhost:1234';
+  return raw
+    .replace(/\/(?:api\/)?v1\/?$/i, '')
+    .replace(/\/api\/?$/i, '')
+    .replace(/\/$/, '');
+}
+
 async function probeRequestedProvider(provider: unknown, providerSettings: any, urlOverride?: unknown): Promise<boolean> {
   const normalized = normalizeProviderName(provider);
   if (!normalized) return false;
@@ -33,7 +41,9 @@ async function probeRequestedProvider(provider: unknown, providerSettings: any, 
   const configuredUrl = normalized === 'lmstudio'
     ? urlOverride || config.url || 'http://localhost:1234'
     : urlOverride || config.baseUrl || 'https://openrouter.ai/api/v1';
-  const baseUrl = String(configuredUrl).replace(/\/$/, '').replace(/\/v1$/, '');
+  const baseUrl = normalized === 'lmstudio'
+    ? normalizeLMStudioBaseUrl(configuredUrl)
+    : String(configuredUrl).replace(/\/$/, '').replace(/\/v1$/, '');
   const headers: Record<string, string> = {};
   if (typeof config.apiKey === 'string' && config.apiKey.trim()) {
     headers.Authorization = `Bearer ${config.apiKey.trim()}`;
