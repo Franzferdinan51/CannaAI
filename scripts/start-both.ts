@@ -30,7 +30,7 @@ const CONFIG = {
     name: 'Backend',
     command: 'npm',
     args: ['run', process.argv.includes('--prod') ? 'start:backend' : 'dev:backend'],
-    healthCheckPath: '/',
+    healthCheckPath: '/api/health',
     startupDelay: 3000, // Time to wait before checking health
     startupTimeout: 30000, // Max time to wait for startup
   },
@@ -84,29 +84,15 @@ function checkPortAvailable(port: number): Promise<boolean> {
   });
 }
 
-function waitForPort(port: number, timeout: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const startTime = performance.now();
-
-    const check = () => {
-      const elapsed = performance.now() - startTime;
-
-      if (elapsed > timeout) {
-        reject(new Error(`Port ${port} did not become available within ${timeout}ms`));
-        return;
-      }
-
-      checkPortAvailable(port).then((available) => {
-        if (!available) {
-          resolve(); // Port is in use (service is running)
-        } else {
-          setTimeout(check, 500); // Check again in 500ms
-        }
-      });
-    };
-
-    check();
-  });
+async function checkServiceHealth(config: typeof CONFIG.backend | typeof CONFIG.frontend): Promise<boolean> {
+  try {
+    const response = await fetch(`http://127.0.0.1:${config.port}${config.healthCheckPath}`, {
+      signal: AbortSignal.timeout(2000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 function spawnProcess(config: typeof CONFIG.backend | typeof CONFIG.frontend): ChildProcess {
@@ -155,15 +141,18 @@ async function waitForService(config: typeof CONFIG.backend | typeof CONFIG.fron
   // Wait initial startup delay
   await new Promise(resolve => setTimeout(resolve, startupDelay));
 
-  colorLog('yellow', `⏳ Waiting for ${name} to be ready on port ${port}...`);
+  colorLog('yellow', `⏳ Waiting for ${name} health endpoint on port ${port}...`);
 
-  try {
-    await waitForPort(port, startupTimeout);
-    colorLog('green', `✅ ${name} is ready on port ${port}`);
-  } catch (error) {
-    colorLog('red', `❌ ${name} failed to start: ${error.message}`);
-    throw error;
+  const deadline = performance.now() + startupTimeout;
+  while (performance.now() <= deadline) {
+    if (await checkServiceHealth(config)) {
+      colorLog('green', `✅ ${name} is healthy on port ${port}`);
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
+
+  throw new Error(`${name} health check failed on port ${port}${config.healthCheckPath}`);
 }
 
 async function showStartupInfo() {
