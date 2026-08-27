@@ -56,7 +56,7 @@ LM_STUDIO_BASE_URL="http://127.0.0.1:1234/v1"
 # LM_STUDIO_TEXT_MODEL="ornith-1.5-35b-a3b"
 ```
 
-`LM_STUDIO_URL` is also accepted for compatibility. If a model name is not configured, CannaAI can discover available models from `/v1/models`; an explicitly configured model must actually be loaded in LM Studio. For vision, the selected model and projector must support image input. CannaAI accepts data URLs and raw base64 image payloads at `/api/analyze`, including photos submitted by a remote agent.
+`LM_STUDIO_URL` is also accepted for compatibility. If a model name is not configured, CannaAI can discover available models from `/v1/models`; an explicitly configured model ID is forwarded to LM Studio even when it is not yet in the compatibility catalog, allowing downloaded models to be JIT-loaded. The Settings UI accepts exact custom model IDs in addition to the discovered list. For vision, the selected model and projector must support image input; when LM Studio reports native vision metadata, CannaAI rejects a known text-only selection instead of silently substituting another model. CannaAI accepts data URLs and raw base64 image payloads at `/api/analyze`, including photos submitted by a remote agent.
 
 When LM Studio authentication is enabled, CannaAI also reads `LM_STUDIO_API_KEY`, `LM_API_TOKEN`, or LM Studio's local token file. Do not paste the token into committed files or shell history. An authenticated catalog check is:
 
