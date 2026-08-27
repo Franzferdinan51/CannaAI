@@ -1,4 +1,6 @@
 import { AgentCommandProvider, normalizeAgentImage } from '@/lib/ai-providers/agent-command-provider';
+import { executeWithHermes } from '@/lib/ai-provider-hermes';
+import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 
 describe('AgentCommandProvider Hermes proxy resilience', () => {
   const originalProvider = process.env.HERMES_PROXY_PROVIDER;
@@ -102,5 +104,27 @@ describe('AgentCommandProvider Hermes proxy resilience', () => {
 
     expect(response.choices[0].message.content).toBe('Native Hermes vision answer');
     expect(response.metadata?.provider).toBe('hermes');
+  });
+
+  test('normalizes text-part arrays returned by Hermes and OpenClaw adapters', async () => {
+    jest.spyOn(AgentCommandProvider.prototype, 'execute').mockResolvedValue({
+      id: 'agent-response',
+      object: 'chat.completion',
+      created: 0,
+      model: 'vision-agent',
+      choices: [{
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: [{ type: 'text', text: 'part one' }, { type: 'text', text: ' part two' }],
+        },
+        finishReason: 'stop',
+      }],
+    } as any);
+
+    await expect(executeWithHermes({ prompt: 'What is shown?' }))
+      .resolves.toEqual(expect.objectContaining({ success: true, result: 'part one part two' }));
+    await expect(executeWithOpenClaw({ prompt: 'What is shown?' }))
+      .resolves.toEqual(expect.objectContaining({ success: true, result: 'part one part two' }));
   });
 });

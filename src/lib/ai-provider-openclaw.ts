@@ -16,6 +16,22 @@ const provider = () => new AgentCommandProvider('openclaw', {
   timeout: Number(process.env.OPENCLAW_TIMEOUT_MS || 120000)
 });
 
+function textFromAgentMessage(message: any): string {
+  const content = message?.content;
+  if (Array.isArray(content)) {
+    const text = content
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('')
+      .trim();
+    if (text) return text;
+  }
+  if (typeof content === 'string' && content.trim()) return content.trim();
+  return typeof message?.reasoning_content === 'string'
+    ? message.reasoning_content.trim()
+    : '';
+}
+
 // OpenClaw's status command can be slow on macOS launchd installations even
 // with --no-probe. Keep a bounded timeout, but do not turn a healthy gateway
 // into a false outage merely because the CLI takes longer than a few seconds.
@@ -81,9 +97,7 @@ export async function executeWithOpenClaw(params: any, options: any = {}): Promi
       maxTokens: request.maxTokens
     });
     const message = response.choices[0]?.message as { content?: string; reasoning_content?: string } | undefined;
-    const content = message?.content
-      || message?.reasoning_content
-      || '';
+    const content = textFromAgentMessage(message);
     if (!content.trim()) {
       return {
         success: false,
