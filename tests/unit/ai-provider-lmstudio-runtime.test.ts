@@ -167,16 +167,16 @@ describe('legacy LM Studio runtime configuration', () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: [
-          { id: 'text-only-model' },
-          { id: 'other-vision-model' },
+        json: async () => ({ models: [
+          { key: 'text-only-model', type: 'llm', capabilities: { vision: false } },
+          { key: 'other-vision-model', type: 'llm', capabilities: { vision: true } },
         ] }),
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ models: [
-          { key: 'text-only-model', type: 'llm', capabilities: { vision: false } },
-          { key: 'other-vision-model', type: 'llm', capabilities: { vision: true } },
+        json: async () => ({ data: [
+          { id: 'text-only-model' },
+          { id: 'other-vision-model' },
         ] }),
       } as Response);
 
