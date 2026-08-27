@@ -32,7 +32,7 @@ function getCannaAIHeaders(json = false): Record<string, string> {
 
 function toImageDataUrl(image: string): string {
   const value = image.trim();
-  return value.startsWith('data:image/')
+  return value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')
     ? value
     : `data:image/jpeg;base64,${value}`;
 }
@@ -104,13 +104,21 @@ export const tools = {
       
       const result = await response.json();
       
+      const analysis = result.analysis || {};
       return {
         success: true,
-        analysis: result.analysis,
-        healthScore: result.analysis?.healthScore,
-        diagnosis: result.analysis?.diagnosis,
-        recommendations: result.analysis?.priorityActions || [],
-        confidence: result.analysis?.confidence
+        analysis,
+        healthScore: analysis.healthScore,
+        diagnosis: analysis.diagnosis,
+        recommendations: Array.isArray(analysis.priorityActions)
+          ? analysis.priorityActions
+          : Array.isArray(analysis.recommendations)
+            ? analysis.recommendations
+            : [],
+        confidence: analysis.confidence,
+        provider: result.metadata?.provider,
+        model: result.metadata?.model,
+        visionUsed: result.metadata?.visionUsed ?? true,
       };
     }
   },
@@ -133,11 +141,15 @@ export const tools = {
       
       const data = await response.json();
       
+      const readings = Array.isArray(data.readings) ? data.readings : [];
+      const latest = readings[readings.length - 1];
+      const environment = latest?.data || data.sensors || latest || null;
       return {
         success: true,
-        environment: data.sensors,
+        environment,
+        readings,
         rooms: data.rooms,
-        status: data.sensors?.temperature && data.sensors?.humidity ? 'ok' : 'unknown'
+        status: environment?.temperature !== undefined && environment?.humidity !== undefined ? 'ok' : 'unknown'
       };
     }
   },

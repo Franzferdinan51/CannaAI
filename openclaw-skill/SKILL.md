@@ -2,7 +2,7 @@
 
 **Purpose:** Plant health analysis, grow monitoring, and cannabis cultivation expertise for OpenClaw agents
 
-**Status:** 🚧 In Development
+**Status:** Active integration skill
 
 ---
 
@@ -135,10 +135,6 @@ Get strain-specific growing info
 openclaw-skill/
 ├── SKILL.md              # Skill documentation
 ├── index.ts              # Main skill entry point
-├── tools/
-│   ├── analyze-plant.ts  # Plant analysis tool
-│   ├── environment.ts    # Environmental monitoring
-│   └── strain-info.ts    # Strain database
 └── package.json
 ```
 
@@ -207,10 +203,9 @@ openclaw agent --message "What's wrong with this plant?" --file sick-plant.jpg
 
 ---
 
-**Status:** Ready for implementation  
-**Priority:** HIGH  
-**Estimated Effort:** 2-3 hours
+The skill is ready to link into an OpenClaw installation. The CannaAI API
+and the OpenClaw agent remain separate processes and credentials.
 
 ---
 
-**Last Updated:** 2026-02-25 21:20 EST
+**Last Updated:** 2026-08-27
