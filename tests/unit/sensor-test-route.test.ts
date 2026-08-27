@@ -1,7 +1,12 @@
 /** @jest-environment node */
 
+const mockFindUnique = jest.fn();
+
+jest.mock('@/lib/prisma', () => ({
+  prisma: { sensor: { findUnique: (...args: unknown[]) => mockFindUnique(...args) } },
+}));
+
 import { POST } from '@/app/api/sensors/[id]/test/route';
-import { prisma } from '@/lib/prisma';
 
 describe('POST /api/sensors/:id/test', () => {
   beforeEach(() => {
@@ -9,7 +14,7 @@ describe('POST /api/sensors/:id/test', () => {
   });
 
   test('reports a sensor with a recent reading as healthy', async () => {
-    (prisma.sensor.findUnique as jest.Mock).mockResolvedValue({
+    mockFindUnique.mockResolvedValue({
       id: 'sensor-1',
       enabled: true,
       readings: [{
@@ -39,7 +44,7 @@ describe('POST /api/sensors/:id/test', () => {
   });
 
   test('does not claim a configured sensor is healthy without readings', async () => {
-    (prisma.sensor.findUnique as jest.Mock).mockResolvedValue({
+    mockFindUnique.mockResolvedValue({
       id: 'sensor-1',
       enabled: true,
       readings: [],
