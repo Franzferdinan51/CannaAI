@@ -19,6 +19,7 @@ import {
   checkOpenRouter
 } from '@/lib/ai-provider-detection';
 import { checkHermes, executeWithHermes } from '@/lib/ai-provider-hermes';
+import * as minimaxProvider from '@/lib/ai-provider-minimax';
 
 describe('AI Provider Detection', () => {
   beforeEach(() => {
@@ -442,6 +443,24 @@ describe('AI Provider Detection', () => {
       });
 
       expect(result.result).toBeDefined();
+    });
+
+    test('preserves the image when falling back to MiniMax', async () => {
+      const executeMiniMax = jest.spyOn(minimaxProvider, 'executeWithMiniMax').mockResolvedValue({
+        content: 'MiniMax vision answer',
+        provider: 'minimax',
+      });
+
+      const image = 'data:image/jpeg;base64,phone-photo';
+      const result = await executeAIWithFallback('Inspect this plant', image, {
+        primaryProvider: 'minimax',
+      });
+
+      expect(result).toEqual(expect.objectContaining({ provider: 'minimax', result: 'MiniMax vision answer' }));
+      expect(executeMiniMax).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({
+        image: image,
+        imageBase64: image,
+      }));
     });
 
     test('should throw AIProviderUnavailableError when no providers configured', async () => {

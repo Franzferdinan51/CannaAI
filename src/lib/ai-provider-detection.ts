@@ -393,7 +393,13 @@ export async function executeAIWithFallback(
     },
     {
       name: 'minimax',
-      fn: () => executeWithMiniMax(messages, options),
+      fn: () => executeWithMiniMax(messages, {
+        ...options,
+        // MiniMax retains the legacy `imageBase64` option name while the
+        // shared provider chain uses `image`. Preserve the image during
+        // fallback instead of silently sending a text-only request.
+        imageBase64: options.image,
+      }),
     },
     {
       name: 'bailian',
