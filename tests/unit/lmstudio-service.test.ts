@@ -116,4 +116,19 @@ describe('legacy LM Studio vision client', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
     expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
   });
+
+  test('sends an optional bearer token and reads native model keys', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [{ key: 'ornith-1.5-35b-a3b' }] }),
+    } as Response);
+
+    await expect(testLMStudioConnection('http://localhost:1234', 'local-token')).resolves.toEqual({
+      success: true,
+      models: ['ornith-1.5-35b-a3b'],
+    });
+    expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer local-token' }),
+    }));
+  });
 });

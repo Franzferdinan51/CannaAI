@@ -49,7 +49,10 @@ async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: num
 /**
  * Test connection to LM Studio
  */
-export async function testLMStudioConnection(endpoint: string): Promise<{ success: boolean; error?: string; models?: string[] }> {
+export async function testLMStudioConnection(
+  endpoint: string,
+  apiKey?: string,
+): Promise<{ success: boolean; error?: string; models?: string[] }> {
   try {
     const baseUrl = normalizeBaseUrl(endpoint);
     const response = await fetchWithTimeout(`${baseUrl}/v1/models`, {
@@ -57,13 +60,18 @@ export async function testLMStudioConnection(endpoint: string): Promise<{ succes
       mode: 'cors',
       credentials: 'omit',
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        ...(apiKey?.trim() ? { Authorization: `Bearer ${apiKey.trim()}` } : {}),
       }
     }, 5000);
 
     if (response.ok) {
       const data = await response.json();
-      const models = data.data?.map((m: any) => m.id) || [];
+      const models = Array.isArray(data.data)
+        ? data.data.map((m: any) => m?.id || m?.key).filter(Boolean)
+        : Array.isArray(data.models)
+          ? data.models.map((m: any) => m?.id || m?.key).filter(Boolean)
+          : [];
       return { success: true, models };
     }
 
@@ -92,7 +100,12 @@ async function getAvailableModel(baseUrl: string): Promise<string | null> {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
-      headers: { 'Accept': 'application/json' }
+      headers: {
+        'Accept': 'application/json',
+        ...(process.env.LM_STUDIO_API_KEY
+          ? { Authorization: `Bearer ${process.env.LM_STUDIO_API_KEY}` }
+          : {}),
+      }
     }, 5000);
 
     if (response.ok) {

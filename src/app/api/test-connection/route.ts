@@ -15,7 +15,7 @@ export const maxDuration = 10;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { endpoint } = body;
+    const { endpoint, apiKey } = body;
 
     if (!endpoint) {
       return NextResponse.json(
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[CONNECTION TEST] Testing connection to ${endpoint}...`);
 
-    const result = await testLMStudioConnection(endpoint);
+    const result = await testLMStudioConnection(endpoint, typeof apiKey === 'string' ? apiKey : undefined);
 
     if (result.success) {
       console.log(`[CONNECTION TEST] Success! Available models:`, result.models);
