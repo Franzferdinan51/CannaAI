@@ -125,10 +125,12 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
     def lm_chat(self, prompt, image_b64=None, max_tokens=4096, temp=0.3):
         """Call LM Studio via curl subprocess (NOT urllib - urllib hangs on Termux)"""
         if image_b64:
+            image_value = str(image_b64).strip()
+            image_url = image_value if re.match(r"^(data:|https?://)", image_value, re.IGNORECASE) else f"data:image/jpeg;base64,{image_value}"
             messages = [
                 {"role": "user", "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}
+                    {"type": "image_url", "image_url": {"url": image_url}}
                 ]}
             ]
         else:
