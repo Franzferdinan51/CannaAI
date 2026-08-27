@@ -493,41 +493,59 @@ export function AIProviderSettings() {
           </div>
 
           {/* Model Selection */}
-          {selectedProvider && availableModels.length > 0 && (
+          {selectedProvider && (availableModels.length > 0 || selectedProvider === 'lm-studio') && (
             <div className="space-y-2">
-              <Label className="text-emerald-300">Select Model</Label>
-              <Select value={selectedModel} onValueChange={handleModelChange}>
-                <SelectTrigger className="bg-emerald-800 border-emerald-700 text-emerald-200">
-                  <SelectValue placeholder="Choose a model..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      <div className="flex flex-col items-start">
-                        <div className="font-medium">{model.name}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          {model.capabilities.slice(0, 2).map((capability) => (
-                            <Badge
-                              key={capability}
-                              variant="secondary"
-                              className={`text-xs ${getCapabilityColor(capability)}`}
-                            >
-                              {getCapabilityIcon(capability)}
-                              {capability.replace('-', ' ')}
-                            </Badge>
-                          ))}
-                          {model.size && (
-                            <Badge variant="outline" className="text-xs">
-                              <HardDrive className="h-3 w-3 mr-1" />
-                              {model.size}
-                            </Badge>
-                          )}
+              <Label className="text-emerald-300">
+                {selectedProvider === 'lm-studio' ? 'Model ID' : 'Select Model'}
+              </Label>
+              {selectedProvider === 'lm-studio' && (
+                <>
+                  <Input
+                    value={selectedModel}
+                    onChange={(event) => handleModelChange(event.target.value)}
+                    placeholder="Any LM Studio model ID (blank = auto-discover)"
+                    aria-label="LM Studio model ID"
+                    className="bg-emerald-800 border-emerald-700 text-emerald-200"
+                  />
+                  <p className="text-xs text-emerald-200/70">
+                    Enter an exact downloaded or JIT-loadable model ID, or choose one from discovery.
+                  </p>
+                </>
+              )}
+              {availableModels.length > 0 && (
+                <Select value={selectedModel} onValueChange={handleModelChange}>
+                  <SelectTrigger className="bg-emerald-800 border-emerald-700 text-emerald-200">
+                    <SelectValue placeholder="Choose a model..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        <div className="flex flex-col items-start">
+                          <div className="font-medium">{model.name}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {model.capabilities.slice(0, 2).map((capability) => (
+                              <Badge
+                                key={capability}
+                                variant="secondary"
+                                className={`text-xs ${getCapabilityColor(capability)}`}
+                              >
+                                {getCapabilityIcon(capability)}
+                                {capability.replace('-', ' ')}
+                              </Badge>
+                            ))}
+                            {model.size && (
+                              <Badge variant="outline" className="text-xs">
+                                <HardDrive className="h-3 w-3 mr-1" />
+                                {model.size}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           )}
 
