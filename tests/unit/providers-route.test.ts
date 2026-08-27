@@ -10,6 +10,9 @@ jest.mock('@/lib/ai-providers/unified-ai', () => ({
 jest.mock('@/lib/ai-provider-detection', () => ({
   checkLMStudio: (...args: unknown[]) => mockCheckLMStudio(...args),
   detectAvailableProviders: (...args: unknown[]) => mockDetectAvailableProviders(...args),
+  getProviderConfig: jest.fn((provider: string) => provider === 'lmstudio'
+    ? { url: 'http://localhost:1234', model: '', apiKey: '', timeout: 120000 }
+    : { baseUrl: 'https://openrouter.ai/api/v1', model: '', apiKey: '', timeout: 30000 }),
 }));
 
 import { GET } from '@/app/api/providers/route';

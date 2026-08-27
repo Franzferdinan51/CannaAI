@@ -174,10 +174,26 @@ export async function POST(request: NextRequest) {
       messages: requestedMessages,
       stream = false
     } = body;
+    const requestedBaseUrl = typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined;
+
+    // The legacy settings panel uses this endpoint for its connection test.
+    // Keep that probe side-effect free and honor the panel's configured URL.
+    if (typeof body.testProvider === 'string' && body.testProvider.trim()) {
+      const provider = body.testProvider.trim().toLowerCase().replace(/[-_]/g, '');
+      if (provider !== 'lmstudio') {
+        return NextResponse.json({ success: false, provider: body.testProvider }, { status: 400 });
+      }
+      const providerUrl = body.providerSettings?.lmStudio?.url || requestedBaseUrl;
+      const discoveredForTest = await discoverLMStudio(providerUrl);
+      return NextResponse.json({
+        success: Boolean(discoveredForTest),
+        provider: 'lmstudio',
+        model: discoveredForTest?.models.find((entry: any) => !isNonChatModel(entry))?.id,
+      }, { status: discoveredForTest ? 200 : 503 });
+    }
 
     // Check every local loopback candidate. On macOS, localhost may resolve
     // to IPv6 while LM Studio is listening only on IPv4 (or vice versa).
-    const requestedBaseUrl = typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined;
     const discovered = await discoverLMStudio(requestedBaseUrl);
     if (!discovered) {
       return NextResponse.json(

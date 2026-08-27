@@ -101,6 +101,7 @@ export interface ChatSettings {
       enabled: boolean;
       apiKey: string;
       model: string;
+      baseUrl?: string;
       timeout: number;
       maxTokens: number;
       temperature: number;

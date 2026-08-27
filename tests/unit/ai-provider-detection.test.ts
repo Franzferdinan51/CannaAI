@@ -2,6 +2,14 @@
  * Unit Tests for AI Provider Detection
  */
 
+// Mock fetch globally
+global.fetch = jest.fn();
+
+jest.mock('@/lib/ai-provider-hermes', () => ({
+  checkHermes: jest.fn(),
+  executeWithHermes: jest.fn(),
+}));
+
 import {
   detectAvailableProviders,
   getProviderConfig,
@@ -11,14 +19,6 @@ import {
   checkOpenRouter
 } from '@/lib/ai-provider-detection';
 import { checkHermes, executeWithHermes } from '@/lib/ai-provider-hermes';
-
-// Mock fetch globally
-global.fetch = jest.fn();
-
-jest.mock('@/lib/ai-provider-hermes', () => ({
-  checkHermes: jest.fn(),
-  executeWithHermes: jest.fn(),
-}));
 
 describe('AI Provider Detection', () => {
   beforeEach(() => {

@@ -68,6 +68,7 @@ const defaultSettings: ChatSettings = {
       enabled: false,
       apiKey: '',
       model: 'meta-llama/llama-3.1-8b-instruct:free',
+      baseUrl: 'https://openrouter.ai/api/v1',
       timeout: 30000,
       maxTokens: 2000,
       temperature: 0.3

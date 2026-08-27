@@ -38,7 +38,7 @@ jobs:
         with:
           name: test-results-unit
           path: |
-            junit.xml
+            coverage/junit.xml
 
   e2e-tests:
     name: E2E Tests

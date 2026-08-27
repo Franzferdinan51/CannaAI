@@ -490,8 +490,12 @@ export async function GET(request?: NextRequest) {
     }
 
     // Get configuration for each provider
-    const lmStudioConfig = getProviderConfig('lmstudio');
-    const openRouterConfig = getProviderConfig('openrouter');
+    const lmStudioConfig = getProviderConfig('lmstudio') || {
+      url: statusUrl || 'http://localhost:1234', model: '', apiKey: '', timeout: 120000,
+    };
+    const openRouterConfig = getProviderConfig('openrouter') || {
+      baseUrl: 'https://openrouter.ai/api/v1', model: '', apiKey: '', timeout: 30000,
+    };
 
     const settings = {
       aiProvider: providerDetection.primary.provider,
