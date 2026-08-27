@@ -413,7 +413,16 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
 
       if (data) {
         const models = (Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : [])
-          .filter((model: any) => model?.type !== 'embedding' && (model?.id || model?.key));
+          .filter((model: any) => {
+            const id = String(model?.id || model?.key || '').trim().toLowerCase();
+            return Boolean(id) &&
+              model?.type !== 'embedding' &&
+              model?.type !== 'reranker' &&
+              !id.includes('embedding') &&
+              !id.includes('reranker') &&
+              !id.includes('embed-') &&
+              !id.endsWith('-embed');
+          });
 
         // Format models for frontend
         const formattedModels = models.map((model: any) => {

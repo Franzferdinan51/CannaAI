@@ -110,6 +110,28 @@ describe('/api/settings durability', () => {
     expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:1234/api/v1/models');
   });
 
+  test('does not expose embedding or reranker models as chat models', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [
+        { id: 'text-embedding-nomic-embed-text-v1.5', type: 'embedding' },
+        { id: 'qwen3-reranker-0.6b', type: 'reranker' },
+        { id: 'ornith-1.5-35b-a3b', type: 'llm' },
+      ] }),
+    } as Response);
+
+    const response = await POST(new Request('http://localhost/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'get_models', provider: 'lm-studio' }),
+      headers: { 'content-type': 'application/json' },
+    }) as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.models.map((model: any) => model.id)).toEqual(['ornith-1.5-35b-a3b']);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   test('tests the current unsaved LM Studio URL from the request config', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
