@@ -33,6 +33,8 @@ export async function GET(_request: Request) {
     });
   }
 
+  const appOrigin = new URL(_request.url).origin;
+
   try {
     console.log('=== Testing LM Studio Models API ===');
 
@@ -81,7 +83,7 @@ export async function GET(_request: Request) {
     console.log('\n2. Testing our local scanner...');
     let localScanner = null;
     try {
-      const response = await fetch('http://localhost:3000/api/lmstudio/models', {
+      const response = await fetch(`${appOrigin}/api/lmstudio/models`, {
         signal: AbortSignal.timeout(10000)
       });
 
@@ -123,7 +125,7 @@ export async function GET(_request: Request) {
     console.log('\n3. Testing AI providers API...');
     let aiProviders = null;
     try {
-      const response = await fetch('http://localhost:3000/api/ai/providers', {
+      const response = await fetch(`${appOrigin}/api/ai/providers`, {
         signal: AbortSignal.timeout(10000)
       });
 
@@ -163,7 +165,7 @@ export async function GET(_request: Request) {
     console.log('\n4. Testing settings API...');
     let settings = null;
     try {
-      const response = await fetch('http://localhost:3000/api/settings', {
+      const response = await fetch(`${appOrigin}/api/settings`, {
         signal: AbortSignal.timeout(5000)
       });
 
