@@ -132,6 +132,26 @@ describe('legacy LM Studio vision client', () => {
     }));
   });
 
+  test('uses the configured LM Studio token for legacy inference', async () => {
+    const previousToken = process.env.LM_STUDIO_API_KEY;
+    process.env.LM_STUDIO_API_KEY = 'inference-token';
+    try {
+      const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: '{"summary":"ok"}' } }] }),
+      } as Response);
+
+      await analyzeWithLMStudio('Inspect the plant', [], 'http://localhost:1234', undefined, 'vision-model');
+
+      expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer inference-token' }),
+      }));
+    } finally {
+      if (previousToken === undefined) delete process.env.LM_STUDIO_API_KEY;
+      else process.env.LM_STUDIO_API_KEY = previousToken;
+    }
+  });
+
   test('skips non-chat models during automatic selection', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({

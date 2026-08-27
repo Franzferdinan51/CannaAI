@@ -1,4 +1,5 @@
 import { PlantHealthAnalysis } from "../../types/plant-analysis";
+import { getLMStudioApiKey } from "../ai-provider-lmstudio";
 
 function normalizeImageUrl(image: unknown): string | undefined {
   if (typeof image !== 'string') return undefined;
@@ -114,8 +115,8 @@ async function getAvailableModel(baseUrl: string): Promise<string | null> {
       credentials: 'omit',
       headers: {
         'Accept': 'application/json',
-        ...(process.env.LM_STUDIO_API_KEY
-          ? { Authorization: `Bearer ${process.env.LM_STUDIO_API_KEY}` }
+        ...(getLMStudioApiKey()
+          ? { Authorization: `Bearer ${getLMStudioApiKey()}` }
           : {}),
       }
     }, 5000);
@@ -247,6 +248,9 @@ export async function analyzeWithLMStudio(
       credentials: 'omit',
       headers: {
         'Content-Type': 'application/json',
+        ...(getLMStudioApiKey()
+          ? { Authorization: `Bearer ${getLMStudioApiKey()}` }
+          : {}),
       },
       signal: controller.signal,
       body: JSON.stringify({
@@ -388,6 +392,9 @@ QUERY: ${query}`;
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        ...(getLMStudioApiKey()
+          ? { Authorization: `Bearer ${getLMStudioApiKey()}` }
+          : {}),
       },
       body: JSON.stringify({
         model: modelId,
