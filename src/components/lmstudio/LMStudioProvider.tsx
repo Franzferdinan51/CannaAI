@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Bot, CheckCircle, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface LMStudioModel {
   id: string;
@@ -96,7 +97,13 @@ export function LMStudioProvider({ onModelSelect, className }: LMStudioProviderP
 
   const handleModelSelect = (modelId: string) => {
     setSelectedModel(modelId);
-    const model = models.find(m => m.id === modelId);
+    const model = models.find(m => m.id === modelId) || {
+      id: modelId,
+      name: modelId,
+      size: 'Unknown',
+      capabilities: ['text-generation'],
+      provider: 'lmstudio-local',
+    };
     if (model && onModelSelect) {
       onModelSelect(model);
     }
@@ -149,8 +156,20 @@ export function LMStudioProvider({ onModelSelect, className }: LMStudioProviderP
           <>
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Select Model
+                Select or enter a model
               </label>
+              <Input
+                value={selectedModel}
+                onChange={(event) => setSelectedModel(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && selectedModel.trim()) {
+                    event.preventDefault();
+                    handleModelSelect(selectedModel.trim());
+                  }
+                }}
+                placeholder="Any LM Studio model ID"
+                className="mb-2"
+              />
               <Select value={selectedModel} onValueChange={handleModelSelect}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a model..." />

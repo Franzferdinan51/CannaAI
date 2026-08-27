@@ -290,6 +290,33 @@ export function LMStudioSettings() {
                 )}
               </Button>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="lmstudio-model-id">Model ID</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="lmstudio-model-id"
+                  value={selectedModel || ''}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  placeholder="Any LM Studio model ID (blank = auto-discover)"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && selectedModel.trim()) {
+                      e.preventDefault();
+                      handleSelectModel(selectedModel.trim());
+                    }
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => handleSelectModel(selectedModel.trim())}
+                  disabled={!selectedModel.trim() || isSaving}
+                >
+                  Use model
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Enter an exact ID for any downloaded or JIT-loadable model. The model list below is optional.
+              </p>
+            </div>
           </div>
 
           {!lmStudioRunning && (
