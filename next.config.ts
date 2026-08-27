@@ -4,9 +4,8 @@ const isStaticExport = process.env.BUILD_MODE === 'static';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // Production builds must fail on type errors. The CI workflow runs the
+  // same build, so a green artifact cannot hide a broken server route.
   // 禁用 Next.js 热重载，由 nodemon 处理重编译
   reactStrictMode: false,
   
