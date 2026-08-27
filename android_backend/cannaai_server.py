@@ -5,20 +5,32 @@ Simple Python server that works with the React frontend
 Provides plant analysis, strains, chat, and sensor APIs
 
 KEY: Uses curl subprocess for LM Studio calls (urllib hangs on Termux).
-     Uses qwen3.5-0.8b for vision (gemma-4-26b-a4b hangs on API calls from Termux).
+     Uses the configured LM Studio model, or discovers a compatible model at runtime.
 """
 
-import os, sys, json, base64, subprocess, re
+import os, sys, json, base64, subprocess, re, tempfile
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse
 from datetime import datetime
 import random
 
-# Configuration
-LM_STUDIO_URL = "http://192.168.1.81:1234/v1"
-API_KEY = "sk-lm-xWvfQHZF:L8P76SQakhEA95U8DDNf"
-VISION_MODEL = "qwen3.6-35b-a3b"   # qwen3.6-35b works via curl subprocess on Termux API calls
-TEXT_MODEL = "qwen3.6-35b-a3b"
+# Configuration. Set these in Termux rather than editing or committing secrets.
+# The URL may be the server root or an OpenAI-compatible /v1(/) URL.
+def normalize_lmstudio_url(value):
+    value = (value or "http://127.0.0.1:1234").strip()
+    if not re.match(r"^https?://", value, re.IGNORECASE):
+        value = "http://" + value
+    value = re.sub(r"/(?:api/)?v1/?$", "", value, flags=re.IGNORECASE)
+    value = re.sub(r"/api/?$", "", value, flags=re.IGNORECASE)
+    return value.rstrip("/")
+
+
+LM_STUDIO_URL = normalize_lmstudio_url(
+    os.environ.get("LM_STUDIO_BASE_URL") or os.environ.get("LM_STUDIO_URL")
+)
+API_KEY = os.environ.get("LM_STUDIO_API_KEY", "").strip()
+VISION_MODEL = os.environ.get("LM_STUDIO_VISION_MODEL", "").strip()
+TEXT_MODEL = os.environ.get("LM_STUDIO_TEXT_MODEL", "").strip()
 PORT = 3000
 HOST = "0.0.0.0"
 
@@ -122,8 +134,31 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         else:
             messages = [{"role": "user", "content": prompt}]
         
+        model = VISION_MODEL if image_b64 else TEXT_MODEL
+        if not model:
+            catalog = self.get_lmstudio_models()
+            candidates = catalog.get('data', []) if isinstance(catalog, dict) else []
+            if not candidates and isinstance(catalog, dict):
+                candidates = catalog.get('models', [])
+            usable = []
+            vision_capable = []
+            for candidate in candidates:
+                candidate_id = candidate.get('id') or candidate.get('key') if isinstance(candidate, dict) else None
+                candidate_type = str(candidate.get('type', '')).lower() if isinstance(candidate, dict) else ''
+                if candidate_id and not any(term in str(candidate_id).lower() for term in ('embed', 'rerank')) and candidate_type not in ('embedding', 'embeddings', 'reranker'):
+                    usable.append(str(candidate_id))
+                    capabilities = candidate.get('capabilities', {}) if isinstance(candidate, dict) else {}
+                    if capabilities.get('vision') is True or candidate.get('vision') is True:
+                        vision_capable.append(str(candidate_id))
+            if image_b64 and vision_capable:
+                model = vision_capable[0]
+            elif usable:
+                model = usable[0]
+        if not model:
+            return None, "No LM Studio model is configured or available"
+
         payload = {
-            "model": VISION_MODEL if image_b64 else TEXT_MODEL,
+            "model": model,
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temp,
@@ -131,8 +166,9 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         }
         
         tmp_dir = os.environ.get('TMPDIR', '/data/data/com.termux/files/usr/tmp')
-        req_file = f"{tmp_dir}/lm_req_{os.getpid()}.json"
-        resp_file = f"{tmp_dir}/lm_resp_{os.getpid()}.json"
+        fd, req_file = tempfile.mkstemp(prefix='cannaai_lm_req_', suffix='.json', dir=tmp_dir)
+        os.close(fd)
+        resp_file = f"{req_file}.response"
         
         with open(req_file, 'w') as f:
             json.dump(payload, f)
@@ -153,9 +189,6 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             with open(resp_file) as f:
                 result = json.load(f)
             
-            os.remove(req_file)
-            os.remove(resp_file)
-            
             if 'error' in result:
                 return None, result['error']
             
@@ -167,24 +200,26 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             return text, None
             
         except subprocess.TimeoutExpired:
-            os.remove(req_file)
-            if os.path.exists(resp_file):
-                os.remove(resp_file)
             return None, "LM Studio timeout"
         except Exception as e:
-            os.remove(req_file)
-            if os.path.exists(resp_file):
-                os.remove(resp_file)
             return None, str(e)
+        finally:
+            for path in (req_file, resp_file):
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
     
     def get_lmstudio_models(self):
         try:
-            r = subprocess.run([
-                "curl", "-s", "--max-time", "10",
-                f"{LM_STUDIO_URL}/models",
-                "-H", f"Authorization: Bearer {API_KEY}"
-            ], capture_output=True, timeout=15, text=True)
-            return json.loads(r.stdout)
+            headers = ["-H", f"Authorization: Bearer {API_KEY}"] if API_KEY else []
+            for endpoint in (f"{LM_STUDIO_URL}/api/v1/models", f"{LM_STUDIO_URL}/v1/models"):
+                r = subprocess.run([
+                    "curl", "-fsS", "--max-time", "10", endpoint, *headers
+                ], capture_output=True, timeout=15, text=True)
+                if r.returncode == 0 and r.stdout.strip():
+                    return json.loads(r.stdout)
+            return {'error': 'Failed to get models'}
         except:
             return {'error': 'Failed to get models'}
     
