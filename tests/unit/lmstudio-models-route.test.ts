@@ -48,4 +48,26 @@ describe('/api/lmstudio/models explicit URL probes', () => {
       capabilities: expect.arrayContaining(['vision', 'image-analysis']),
     }));
   });
+
+  test('uses a fallback timeout signal when AbortSignal.timeout is unavailable', async () => {
+    const originalTimeout = (AbortSignal as typeof AbortSignal & {
+      timeout?: (milliseconds: number) => AbortSignal;
+    }).timeout;
+    Object.defineProperty(AbortSignal, 'timeout', { configurable: true, value: undefined });
+    try {
+      const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        json: async () => ({ models: [{ key: 'local-model', capabilities: { vision: false } }] }),
+      } as Response);
+
+      const result = await GET(new Request(
+        'http://localhost/api/lmstudio/models?url=http%3A%2F%2F127.0.0.1%3A1234',
+      ) as any);
+
+      expect(result.status).toBe(200);
+      expect(fetchMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
+    } finally {
+      Object.defineProperty(AbortSignal, 'timeout', { configurable: true, value: originalTimeout });
+    }
+  });
 });
