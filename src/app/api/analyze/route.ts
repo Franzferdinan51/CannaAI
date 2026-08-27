@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { base64ToBuffer, ImageProcessingError } from '@/lib/base64';
+import { base64ToBuffer, ImageProcessingError, normalizeBase64ImageData } from '@/lib/base64';
 // processImageForVisionModel is loaded dynamically to avoid sharp/heic-convert crashing on android-arm64 server
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithLMStudio } from '@/lib/ai-provider-lmstudio';
@@ -256,17 +256,11 @@ export async function POST(request: NextRequest) {
 
       // Camera agents commonly send raw base64 while the browser sends a data
       // URL. Normalize both forms before validation so vision is not silently
-      // downgraded to text-only analysis.
+      // downgraded to text-only analysis. Preserve valid non-image data URLs
+      // too: Android/agent capture pipelines may use application/octet-stream
+      // while still carrying a decodable image payload.
       if (rawBody.plantImage) {
-        let value = String(rawBody.plantImage);
-        const isDataUrl = value.startsWith('data:image/');
-        const isRawBase64 = /^[A-Za-z0-9+/]+={0,2}$/.test(value);
-        if (!isDataUrl && !isRawBase64) {
-          throw new Error('Invalid image format. Use a data URL or raw base64 image data.');
-        }
-        if (isRawBase64) {
-          rawBody.plantImage = `data:image/jpeg;base64,${value}`;
-        }
+        rawBody.plantImage = normalizeBase64ImageData(rawBody.plantImage);
       }
 
       body = AnalysisRequestSchema.parse(rawBody);

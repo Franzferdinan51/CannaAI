@@ -404,6 +404,26 @@ describe('/api/analyze integration', () => {
     }));
   });
 
+  test('preserves a non-image data URL from an Android capture pipeline', async () => {
+    process.env.CANNAAI_IMAGE_PROVIDER = 'hermes';
+
+    const response = await POST(
+      createAnalyzeRequest(
+        {
+          leafSymptoms: 'Inspect this capture.',
+          growthStage: 'vegetative',
+          image: 'data:application/octet-stream;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        },
+        33
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockExecuteWithHermes).toHaveBeenCalledWith(expect.objectContaining({
+      image: 'processed-image-base64',
+    }));
+  });
+
   test('returns explainability fields for successful analyses', async () => {
     mockExecuteAIWithFallback.mockResolvedValue({
       provider: 'openrouter',
