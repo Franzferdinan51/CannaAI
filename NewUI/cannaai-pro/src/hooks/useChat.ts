@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import { apiUrl } from '../lib/api';
+import { getChatRequestTimeoutMs } from '../lib/chat-request-timeout';
 
 import {
   ChatMessage,
@@ -467,7 +468,10 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       // Keep the UI recoverable when a local model is unloaded, crashes, or
       // never completes. The server has its own provider timeout, but fetch
       // itself otherwise leaves the composer disabled indefinitely.
-      const requestTimeout = setTimeout(() => requestController.abort(), 180000);
+      const requestTimeout = setTimeout(
+        () => requestController.abort(),
+        getChatRequestTimeoutMs(Boolean(image), settings.providers.lmStudio.enabled ? 'lmstudio' : undefined),
+      );
 
       try {
         const response = await fetch(apiUrl('/chat'), {
