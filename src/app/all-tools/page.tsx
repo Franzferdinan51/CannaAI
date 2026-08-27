@@ -214,17 +214,50 @@ const SystemDiagnostics = () => (
 export default function AllToolsPage() {
   const [selectedUSBDevice, setSelectedUSBDevice] = useState<any>(null);
   const [liveAnalysisData, setLiveAnalysisData] = useState<any>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Handle image capture from live camera
   const handleImageCapture = async (imageData: string, deviceInfo: any) => {
     console.log('Image captured for analysis:', deviceInfo);
-    // Handle analysis
+    setAnalysisError(null);
+    try {
+      const response = await fetch('/api/live-vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageData, deviceInfo }),
+        signal: AbortSignal.timeout(660000),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success) {
+        throw new Error(result.error?.message || result.error || `Analysis failed (HTTP ${response.status})`);
+      }
+      setLiveAnalysisData(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Live analysis failed';
+      setAnalysisError(message);
+    }
   };
 
   // Handle trichome analysis
   const handleTrichomeAnalysis = async (imageData: string, deviceInfo: any) => {
     console.log('Trichome analysis requested:', deviceInfo);
-    // Handle trichome analysis
+    setAnalysisError(null);
+    try {
+      const response = await fetch('/api/trichome-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageData, deviceInfo, analysisOptions: { focusArea: 'trichomes' } }),
+        signal: AbortSignal.timeout(660000),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success) {
+        throw new Error(result.error?.message || result.error || `Trichome analysis failed (HTTP ${response.status})`);
+      }
+      setLiveAnalysisData({ ...result, isTrichomeAnalysis: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Trichome analysis failed';
+      setAnalysisError(message);
+    }
   };
 
   return (
@@ -419,25 +452,48 @@ export default function AllToolsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {analysisError && (
+                    <Alert className="mb-4 border-red-600 bg-red-950/50">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{analysisError}</AlertDescription>
+                    </Alert>
+                  )}
                   {liveAnalysisData ? (
                     <div className="space-y-4">
                       <div className="bg-green-900/20 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-green-400 font-medium">Health Score</span>
-                          <span className="text-2xl font-bold text-green-300">92%</span>
+                          <span className="text-2xl font-bold text-green-300">
+                            {typeof liveAnalysisData.analysis?.healthScore === 'number'
+                              ? `${Math.round(Math.max(0, Math.min(1, liveAnalysisData.analysis.healthScore)) * 100)}%`
+                              : 'N/A'}
+                          </span>
                         </div>
                         <div className="w-full bg-green-900 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{ width: '92%' }} />
+                          <div
+                            className="bg-green-500 h-2 rounded-full"
+                            style={{
+                              width: `${typeof liveAnalysisData.analysis?.healthScore === 'number'
+                                ? Math.round(Math.max(0, Math.min(1, liveAnalysisData.analysis.healthScore)) * 100)
+                                : 0}%`,
+                            }}
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-slate-400">Issues Found:</span>
-                          <p className="text-slate-300 font-medium">0 Critical</p>
+                          <p className="text-slate-300 font-medium">
+                            {liveAnalysisData.analysis?.potentialIssues?.length
+                              || liveAnalysisData.analysis?.issues?.length
+                              || 0} detected
+                          </p>
                         </div>
                         <div>
                           <span className="text-slate-400">Last Analysis:</span>
-                          <p className="text-slate-300 font-medium">Just now</p>
+                          <p className="text-slate-300 font-medium">
+                            {liveAnalysisData.timestamp ? new Date(liveAnalysisData.timestamp).toLocaleTimeString() : 'Just now'}
+                          </p>
                         </div>
                       </div>
                     </div>
