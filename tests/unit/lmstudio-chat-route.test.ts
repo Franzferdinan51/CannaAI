@@ -200,4 +200,24 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     const reasoning = await POST(requestWithBody({ prompt: 'hello', model: 'local-model' }) as any);
     await expect(reasoning.json()).resolves.toEqual(expect.objectContaining({ content: 'reasoning answer' }));
   });
+
+  test('preserves LM Studio SSE responses when streaming is requested', async () => {
+    const streamBody = 'data: {"choices":[{"delta":{"content":"hello"}}]}\n\ndata: [DONE]\n\n';
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'local-model' }]))
+      .mockResolvedValueOnce(new Response(streamBody, {
+        headers: { 'content-type': 'text/event-stream' },
+      }));
+
+    const result = await POST(requestWithBody({
+      prompt: 'hello',
+      model: 'local-model',
+      stream: true,
+    }) as any);
+
+    expect(result.status).toBe(200);
+    expect(result.headers.get('content-type')).toContain('text/event-stream');
+    await expect(result.text()).resolves.toBe(streamBody);
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body)).stream).toBe(true);
+  });
 });

@@ -347,6 +347,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Preserve LM Studio's OpenAI-compatible SSE stream for callers that
+    // explicitly request streaming. Parsing the body as JSON here would
+    // consume/fail the event stream and make streamed models unusable.
+    if (stream) {
+      return new Response(lmStudioResponse.body, {
+        status: lmStudioResponse.status,
+        headers: {
+          'Content-Type': lmStudioResponse.headers.get('content-type') || 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
     const result = await lmStudioResponse.json();
 
     // Extract and return the response
