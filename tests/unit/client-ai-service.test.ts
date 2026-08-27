@@ -19,16 +19,10 @@ describe('ClientAIService', () => {
   });
 
   it('fails over loopback and does not select a reranker in the browser adapter', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch')
-      .mockRejectedValueOnce(new Error('connect ECONNREFUSED ::1:1234'))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [{ id: 'qwen3-reranker-0.6b' }, { id: 'browser-chat-model' }] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ model: 'browser-chat-model', choices: [{ message: { content: 'local answer' } }] }),
-      } as Response);
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ content: 'local answer', model: 'browser-chat-model' }),
+    } as Response);
 
     const service = new ClientAIService({
       provider: 'lm-studio',
@@ -39,8 +33,10 @@ describe('ClientAIService', () => {
       success: true,
       model: 'browser-chat-model',
     });
-    expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
-    expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/lmstudio/chat');
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(requestBody.baseUrl).toBe('http://localhost:1234');
+    expect(requestBody.modelId).toBeUndefined();
   });
 
   it('normalizes a native LM Studio /api/v1 URL before discovery', async () => {
@@ -59,18 +55,10 @@ describe('ClientAIService', () => {
   });
 
   it('forwards an explicit browser model ID even when it is omitted from the catalog', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [{ id: 'catalog-model' }] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          model: 'custom-jit-model',
-          choices: [{ message: { content: 'custom answer' } }],
-        }),
-      } as Response);
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ content: 'custom answer', model: 'custom-jit-model' }),
+    } as Response);
 
     const service = new ClientAIService({
       provider: 'lm-studio',
@@ -81,8 +69,9 @@ describe('ClientAIService', () => {
       success: true,
       model: 'custom-jit-model',
     });
-    const requestBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
-    expect(requestBody.model).toBe('custom-jit-model');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/lmstudio/chat');
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(requestBody.modelId).toBe('custom-jit-model');
   });
 
   it('uses the normalized native URL for the connection check', async () => {
