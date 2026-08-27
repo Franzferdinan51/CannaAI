@@ -125,23 +125,30 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             super().do_GET()
     
     def do_POST(self):
-        parsed = urlparse(self.path)
-        if parsed.path == '/api/analyze':
-            self.handle_analyze()
-        elif parsed.path == '/api/chat':
-            self.handle_chat()
-        elif parsed.path == '/api/capture':
-            self.handle_capture()
-        elif parsed.path == '/api/strains':
-            self.handle_add_strain()
-        elif parsed.path == '/api/sensors':
-            self.handle_update_sensors()
-        elif parsed.path == '/api/settings':
-            self.handle_update_settings()
-        elif parsed.path == '/api/automation':
-            self.handle_automation()
-        else:
-            self.send_json({'error': 'Not found'}, status=404)
+        try:
+            parsed = urlparse(self.path)
+            if parsed.path == '/api/analyze':
+                self.handle_analyze()
+            elif parsed.path == '/api/chat':
+                self.handle_chat()
+            elif parsed.path == '/api/capture':
+                self.handle_capture()
+            elif parsed.path == '/api/strains':
+                self.handle_add_strain()
+            elif parsed.path == '/api/sensors':
+                self.handle_update_sensors()
+            elif parsed.path == '/api/settings':
+                self.handle_update_settings()
+            elif parsed.path == '/api/automation':
+                self.handle_automation()
+            else:
+                self.send_json({'error': 'Not found'}, status=404)
+        except json.JSONDecodeError:
+            self.send_json({'error': 'Invalid JSON'}, status=400)
+        except (TypeError, ValueError) as error:
+            self.send_json({'error': str(error) or 'Invalid request'}, status=400)
+        except Exception as error:
+            self.send_json({'error': 'Request failed', 'details': str(error)}, status=500)
     
     def lm_chat(self, prompt, image_b64=None, max_tokens=4096, temp=0.3, requested_model=None):
         """Call LM Studio via curl subprocess (NOT urllib - urllib hangs on Termux)"""
@@ -390,6 +397,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         system = "You are an expert cannabis cultivation assistant."
         response_text, error, model_used = self.lm_chat(
             f"{system}\n\nUser: {message}",
+            image_b64=data.get('image') or data.get('plantImage'),
             max_tokens=800,
             temp=0.7,
             requested_model=data.get('model') or data.get('textModel'),
