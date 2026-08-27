@@ -198,6 +198,41 @@ describe('LM Studio local-model regressions', () => {
     ]);
   });
 
+  test('LM Studio detects image_url content arrays before selecting a model', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [
+          { key: 'text-model', type: 'llm', capabilities: { vision: false } },
+          { key: 'vision-model', type: 'llm', capabilities: { vision: true } },
+        ] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'text-model' }, { id: 'vision-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ model: 'vision-model', choices: [{ message: { content: 'vision answer' } }] }),
+      } as Response);
+
+    const provider = new LMStudioProvider({ url: 'http://localhost:1234' });
+    await provider.execute({
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Inspect this leaf' },
+          { type: 'image_url', image_url: { url: 'data:image/png;base64,abc123' } },
+        ],
+      }] as any,
+    });
+
+    const completion = fetchMock.mock.calls[2];
+    const body = JSON.parse(String((completion[1] as RequestInit).body));
+    expect(body.model).toBe('vision-model');
+    expect(body.messages[0].content[1].image_url.url).toBe('data:image/png;base64,abc123');
+  });
+
   test('LM Studio preserves non-image data URL MIME types', () => {
     const provider = new TestLMStudioProvider({
       url: 'http://localhost:1234',

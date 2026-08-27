@@ -34,6 +34,28 @@ function normalizeImageUrl(image?: string): string | undefined {
   return `data:image/png;base64,${value}`;
 }
 
+function imageFromMessage(message: any): string | undefined {
+  const direct = normalizeImageUrl(message?.image);
+  if (direct) return direct;
+  if (!Array.isArray(message?.content)) return undefined;
+  const imagePart = message.content.find((part: any) => (
+    (part?.type === 'image_url' && typeof part?.image_url?.url === 'string') ||
+    (part?.type === 'image' && typeof part?.image_url === 'string')
+  ));
+  return normalizeImageUrl(imagePart?.image_url?.url || imagePart?.image_url);
+}
+
+function textFromMessageContent(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('\n');
+  }
+  return String(content || '');
+}
+
 function textFromCompletionMessage(message: any): string {
   const content = message?.content;
   if (Array.isArray(content)) {
@@ -130,7 +152,7 @@ export class LMStudioProvider extends BaseProvider {
     // Resolve against both LM Studio's native model catalog and OpenAI model
     // list. The latter is important for JIT mode: a downloaded model can be
     // runnable even when there is no preloaded instance yet.
-    const requiresVision = request.messages.some(message => Boolean(normalizeImageUrl(message.image)));
+    const requiresVision = request.messages.some(message => Boolean(imageFromMessage(message)));
     const resolvedModel = await this.resolveAvailableModel(request.model, requiresVision);
     if (requiresVision && !resolvedModel) {
       throw new Error(
@@ -350,12 +372,12 @@ export class LMStudioProvider extends BaseProvider {
 
   protected normalizeRequest(request: AIRequest): any {
     const messages = request.messages.map(message => {
-      const image = normalizeImageUrl(message.image);
+      const image = imageFromMessage(message);
       if (image) {
         return {
           role: message.role,
           content: [
-            { type: 'text', text: message.content },
+            { type: 'text', text: textFromMessageContent(message.content) },
             { type: 'image_url', image_url: { url: image } },
           ],
         };
