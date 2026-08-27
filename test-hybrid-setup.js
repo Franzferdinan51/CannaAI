@@ -46,8 +46,8 @@ console.log('\n3️⃣ Checking Vite configuration...');
 const fs = require('fs');
 try {
   const viteConfig = fs.readFileSync('./NewUI/cannaai-pro/vite.config.ts', 'utf8');
-  if (viteConfig.includes('port: 5173')) {
-    console.log('   ✅ Vite configured for port 5173');
+  if (viteConfig.includes('5174')) {
+    console.log('   ✅ Vite configured for port 5174');
   } else {
     console.log('   ⚠️  Vite port configuration might need verification');
   }
@@ -59,10 +59,10 @@ try {
 console.log('\n4️⃣ Checking backend CORS configuration...');
 try {
   const serverConfig = fs.readFileSync('./server.ts', 'utf8');
-  if (serverConfig.includes('5173')) {
-    console.log('   ✅ Server CORS configured for port 5173');
+  if (serverConfig.includes('5174')) {
+    console.log('   ✅ Server CORS configured for port 5174');
   } else {
-    console.log('   ❌ Server CORS might not allow port 5173');
+    console.log('   ❌ Server CORS might not allow port 5174');
   }
 } catch (error) {
   console.log('   ❌ Could not read server.ts');
