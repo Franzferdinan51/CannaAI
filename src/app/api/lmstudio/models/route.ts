@@ -124,7 +124,10 @@ async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
     // LM Studio exposes the OpenAI-compatible catalog at /v1/models and its
     // native catalog at /api/v1/models. Support both so version/configuration
     // differences do not surface as a generic browser network error.
-    for (const endpoint of [`${candidate}/v1/models`, `${candidate}/api/v1/models`]) {
+    // Prefer the native catalog because it includes capabilities.vision and
+    // loaded-instance metadata; fall back to the OpenAI-compatible catalog
+    // for older LM Studio versions that do not expose /api/v1/models.
+    for (const endpoint of [`${candidate}/api/v1/models`, `${candidate}/v1/models`]) {
       try {
         const response = await fetch(endpoint, {
           headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},

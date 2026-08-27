@@ -23,4 +23,29 @@ describe('/api/lmstudio/models explicit URL probes', () => {
     }));
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  test('preserves native vision capability metadata for Settings', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        models: [{
+          key: 'ornith-1.5-35b-a3b',
+          type: 'llm',
+          capabilities: { vision: true },
+        }],
+      }),
+    } as Response);
+
+    const result = await GET(new Request(
+      'http://localhost/api/lmstudio/models?url=http%3A%2F%2F127.0.0.1%3A1234',
+    ) as any);
+    const body = await result.json();
+
+    expect(result.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://127.0.0.1:1234/api/v1/models');
+    expect(body.models[0]).toEqual(expect.objectContaining({
+      id: 'ornith-1.5-35b-a3b',
+      capabilities: expect.arrayContaining(['vision', 'image-analysis']),
+    }));
+  });
 });
