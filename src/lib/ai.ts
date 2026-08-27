@@ -78,7 +78,10 @@ export async function analyzePlantHealth(
     baseUrl: context.baseUrl,
     primaryProvider: context.primaryProvider,
     requireVision: true,
-    timeout: 120000,
+    // Phone and microscope captures always use vision. Large local models
+    // may need several minutes for their first image pass; the old two-minute
+    // ceiling caused healthy LM Studio requests to fail before completion.
+    timeout: 600000,
   });
   const report = normalizePlantAnalysisResult(result.result ?? result.content, {
     imageAnalysis: true,

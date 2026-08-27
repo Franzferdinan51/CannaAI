@@ -44,6 +44,7 @@ describe('live vision AI helper', () => {
       expect.objectContaining({
         image: 'data:image/jpeg;base64,abc',
         requireVision: true,
+        timeout: 600000,
       }),
     );
   });
