@@ -124,6 +124,22 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     ]);
   });
 
+  test('rejects malformed raw image data before contacting LM Studio', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch');
+
+    const result = await POST(requestWithBody({
+      prompt: 'Inspect this plant',
+      image: 'not-an-image-payload',
+      model: 'ornith-1.5-35b-a3b',
+    }) as any);
+
+    expect(result.status).toBe(400);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      code: 'INVALID_IMAGE_DATA',
+    }));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   test('rejects an advertised text-only model for image requests', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(modelsResponse([{ id: 'text-only-model' }]))

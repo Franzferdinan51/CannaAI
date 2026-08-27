@@ -3,6 +3,7 @@ import {
   getLMStudioApiKey,
   getLMStudioEndpointCandidates,
 } from '@/lib/ai-provider-lmstudio';
+import { ImageProcessingError, normalizeBase64ImageData } from '@/lib/base64';
 
 function lmStudioHeaders(includeJson = false): Record<string, string> {
   const apiKey = getLMStudioApiKey();
@@ -18,7 +19,7 @@ function normalizeImageUrl(image: unknown): string | undefined {
   if (!value) return undefined;
   if (value.startsWith('data:')) return value;
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
-  return `data:image/png;base64,${value}`;
+  return normalizeBase64ImageData(value, 'image/png');
 }
 
 function textFromCompletionMessage(message: any): string {
@@ -208,6 +209,11 @@ export async function POST(request: NextRequest) {
       }, { status: discoveredForTest ? 200 : 503 });
     }
 
+    // Reject malformed raw image payloads before spending time probing or
+    // waking a local model. This keeps camera-input errors deterministic and
+    // avoids turning a client validation problem into a provider outage.
+    if (image) normalizeImageUrl(image);
+
     // Check every local loopback candidate. On macOS, localhost may resolve
     // to IPv6 while LM Studio is listening only on IPv4 (or vice versa).
     const discovered = await discoverLMStudio(requestedBaseUrl);
@@ -386,6 +392,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('LM Studio chat API error:', error);
+
+    if (error instanceof ImageProcessingError) {
+      return NextResponse.json(
+        { error: error.message, code: 'INVALID_IMAGE_DATA' },
+        { status: 400 },
+      );
+    }
 
     // Handle timeout specifically
     if (error?.name === 'AbortError') {
