@@ -43,26 +43,6 @@ interface AIResponse {
   fallbackUsed?: boolean;
 }
 
-function getLMStudioEndpointCandidates(configuredUrl: string): string[] {
-  const baseUrl = configuredUrl.trim()
-    .replace(/\/(?:api\/)?v1\/?$/i, '')
-    .replace(/\/api\/?$/i, '')
-    .replace(/\/$/, '');
-  try {
-    const parsed = new URL(baseUrl);
-    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
-      return Array.from(new Set([
-        baseUrl,
-        `${parsed.protocol}//127.0.0.1${parsed.port ? `:${parsed.port}` : ''}`,
-        `${parsed.protocol}//localhost${parsed.port ? `:${parsed.port}` : ''}`,
-      ]));
-    }
-  } catch {
-    // Let the fetch below report an invalid configured URL.
-  }
-  return [baseUrl];
-}
-
 function createTimeoutSignal(timeoutMs: number): AbortSignal {
   const timeout = (AbortSignal as typeof AbortSignal & {
     timeout?: (milliseconds: number) => AbortSignal;
@@ -133,18 +113,18 @@ export class ClientAIService {
       // healthy AI connection or make the Settings UI appear configured.
       if (this.config.provider === 'fallback') return false;
       if (this.config.provider === 'lm-studio') {
-        const headers = this.config.lmStudio.apiKey
-          ? { Authorization: `Bearer ${this.config.lmStudio.apiKey}` }
-          : undefined;
-        for (const candidate of getLMStudioEndpointCandidates(this.config.lmStudio.url)) {
-          try {
-            const response = await fetch(`${candidate}/v1/models`, { headers, signal: createTimeoutSignal(3000) });
-            if (response.ok) return true;
-          } catch {
-            // Try the alternate loopback hostname before reporting failure.
-          }
-        }
-        return false;
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'test_connection',
+            provider: 'lm-studio',
+            config: this.config.lmStudio,
+          }),
+          signal: createTimeoutSignal(15000),
+        });
+        const result = await response.json().catch(() => ({}));
+        return response.ok && result.success === true;
       }
       const response = await fetch(`${this.config.openRouter.baseUrl.replace(/\/$/, '')}/models`, {
         headers: this.config.openRouter.apiKey

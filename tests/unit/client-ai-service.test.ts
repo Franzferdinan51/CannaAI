@@ -42,7 +42,7 @@ describe('ClientAIService', () => {
   it('normalizes a native LM Studio /api/v1 URL before discovery', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ data: [{ id: 'browser-chat-model' }] }),
+      json: async () => ({ success: true }),
     } as Response);
 
     const service = new ClientAIService({
@@ -51,7 +51,12 @@ describe('ClientAIService', () => {
     } as any);
 
     await expect(service.testConnection()).resolves.toBe(true);
-    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/settings');
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({
+      action: 'test_connection',
+      provider: 'lm-studio',
+      config: { url: 'http://localhost:1234/api/v1/', model: '', apiKey: '' },
+    });
   });
 
   it('forwards an explicit browser model ID even when it is omitted from the catalog', async () => {
@@ -75,13 +80,16 @@ describe('ClientAIService', () => {
   });
 
   it('uses the normalized native URL for the connection check', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true } as Response);
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    } as Response);
     const service = new ClientAIService({
       provider: 'lm-studio',
       lmStudio: { url: 'http://localhost:1234/api/v1/', model: '', apiKey: '' },
     } as any);
 
     await expect(service.testConnection()).resolves.toBe(true);
-    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/settings');
   });
 });
