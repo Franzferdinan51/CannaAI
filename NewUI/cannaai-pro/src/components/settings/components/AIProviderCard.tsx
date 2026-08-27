@@ -514,6 +514,21 @@ const AIProviderCard: React.FC = () => {
                           Refresh
                         </button>
                       </div>
+                      {provider.id === 'lm-studio' && (
+                        <>
+                          <input
+                            type="text"
+                            value={config.model || ''}
+                            onChange={(e) => handleConfigChange(provider.id, 'model', e.target.value)}
+                            placeholder="Any LM Studio model ID (blank = auto-discover)"
+                            aria-label="LM Studio model ID"
+                            className="w-full px-3 py-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400"
+                          />
+                          <p className="mb-2 text-xs text-gray-400">
+                            Enter the exact model ID from LM Studio, or leave blank to use the first available chat model.
+                          </p>
+                        </>
+                      )}
                       <Select.Root
                         value={config.model || ''}
                         onValueChange={(value) => handleConfigChange(provider.id, 'model', value)}
