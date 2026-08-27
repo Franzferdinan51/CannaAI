@@ -418,7 +418,37 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         self.send_json({'success': True})
     
     def handle_update_settings(self):
-        self.send_json({'success': True})
+        global LM_STUDIO_URL, API_KEY, VISION_MODEL, TEXT_MODEL
+
+        content_length = int(self.headers.get('Content-Length', 0))
+        if content_length <= 0:
+            self.send_json({'success': False, 'error': 'No settings provided'}, status=400)
+            return
+
+        data = json.loads(self.rfile.read(content_length))
+        # Support both the Android-shaped payload and the shared web settings
+        # action payload used by the Vite UI.
+        config = data.get('lmStudio') if isinstance(data.get('lmStudio'), dict) else data.get('config')
+        if not isinstance(config, dict):
+            config = data
+
+        if config.get('url') or config.get('baseUrl'):
+            LM_STUDIO_URL = normalize_lmstudio_url(config.get('url') or config.get('baseUrl'))
+        if isinstance(config.get('apiKey'), str):
+            API_KEY = config['apiKey'].strip()
+        if isinstance(config.get('visionModel'), str):
+            VISION_MODEL = config['visionModel'].strip()
+        if isinstance(config.get('textModel'), str):
+            TEXT_MODEL = config['textModel'].strip()
+        if isinstance(config.get('model'), str):
+            # A single model field is the common UI shape. Apply it to the
+            # relevant path without erasing a separately configured model.
+            selected = config['model'].strip()
+            if selected:
+                VISION_MODEL = selected
+                TEXT_MODEL = selected
+
+        self.send_json({'success': True, 'settings': self.get_settings()})
     
     def handle_automation(self):
         self.send_json({'success': True, 'message': 'Automation command received'})
