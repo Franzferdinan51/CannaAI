@@ -26,7 +26,7 @@ import { performance } from 'perf_hooks';
 // Configuration
 const CONFIG = {
   backend: {
-    port: 3000,
+    port: Number(process.env.CANNAAI_BACKEND_PORT || process.env.PORT) || 3000,
     name: 'Backend',
     command: 'npm',
     args: ['run', process.argv.includes('--prod') ? 'start:backend' : 'dev:backend'],
@@ -35,7 +35,7 @@ const CONFIG = {
     startupTimeout: 30000, // Max time to wait for startup
   },
   frontend: {
-    port: 5173,
+    port: Number(process.env.CANNAAI_FRONTEND_PORT) || 5174,
     name: 'Frontend',
     command: 'npm',
     args: ['run', process.argv.includes('--prod') ? 'start:frontend' : 'dev:frontend'],
@@ -114,19 +114,24 @@ function spawnProcess(config: typeof CONFIG.backend | typeof CONFIG.frontend): C
 
   colorLog('cyan', `🚀 Starting ${name}...`);
 
-  const process = spawn(command, args, {
+  const childProcess = spawn(command, args, {
     stdio: 'inherit',
     shell: true,
+    env: {
+      ...process.env,
+      ...(name === 'Backend' ? { PORT: String(config.port) } : {}),
+      ...(name === 'Frontend' ? { CANNAAI_FRONTEND_PORT: String(config.port) } : {}),
+    },
   });
 
-  process.on('error', (error) => {
+  childProcess.on('error', (error) => {
     colorLog('red', `❌ Failed to start ${name}: ${error.message}`);
     if (!isShuttingDown) {
       process.exit(1);
     }
   });
 
-  process.on('exit', (code, signal) => {
+  childProcess.on('exit', (code, signal) => {
     if (!isShuttingDown) {
       if (signal) {
         colorLog('yellow', `⚠️  ${name} killed with signal: ${signal}`);
@@ -141,7 +146,7 @@ function spawnProcess(config: typeof CONFIG.backend | typeof CONFIG.frontend): C
     }
   });
 
-  return process;
+  return childProcess;
 }
 
 async function waitForService(config: typeof CONFIG.backend | typeof CONFIG.frontend): Promise<void> {

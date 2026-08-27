@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
       .replace(/\/$/, '');
     return {
       server: {
-        port: 5174,
+        port: Number(env.CANNAAI_FRONTEND_PORT) || 5174,
         host: '127.0.0.1',
         allowedHosts: ['localhost', '127.0.0.1'],
         // Keep browser-relative API calls on the same origin while routing
@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       preview: {
+        port: Number(env.CANNAAI_FRONTEND_PORT) || 5174,
         host: '127.0.0.1',
         allowedHosts: ['localhost', '127.0.0.1'],
         proxy: {

@@ -26,7 +26,7 @@
     "build:frontend-only": "cd NewUI/cannaai-pro && npm run build",
     "preview": "cd NewUI/cannaai-pro && npm run preview",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:frontend": "cd NewUI/cannaai-pro && npm run preview -- --port 5173 --host 0.0.0.0",
+    "start:frontend": "cd NewUI/cannaai-pro && npm run preview -- --host 0.0.0.0",
     "start:backend": "NODE_ENV=production tsx server.ts",
     "start:win": "concurrently \"npm run start:backend:win\" \"npm run start:frontend\"",
     "start:backend:win": "set NODE_ENV=production && tsx server.ts",
