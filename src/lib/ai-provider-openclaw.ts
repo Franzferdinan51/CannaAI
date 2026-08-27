@@ -32,6 +32,22 @@ function textFromAgentMessage(message: any): string {
     : '';
 }
 
+function normalizeAgentMessage(message: any, fallbackImage?: string) {
+  const parts = Array.isArray(message?.content) ? message.content : [];
+  const content = parts.length > 0
+    ? parts
+      .filter((part: any) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part: any) => part.text)
+      .join('\n')
+    : typeof message?.content === 'string'
+      ? message.content
+      : String(message?.text || '');
+  const image = message?.image || parts.find((part: any) => (
+    part?.type === 'image_url' && typeof part?.image_url?.url === 'string'
+  ))?.image_url?.url || (message?.role === 'user' ? fallbackImage : undefined);
+  return { role: message?.role || 'user', content, image };
+}
+
 // OpenClaw's status command can be slow on macOS launchd installations even
 // with --no-probe. Keep a bounded timeout, but do not turn a healthy gateway
 // into a false outage merely because the CLI takes longer than a few seconds.
@@ -84,11 +100,8 @@ export async function executeWithOpenClaw(params: any, options: any = {}): Promi
   const request = Array.isArray(params)
     ? { messages: params, model: options.model, temperature: options.temperature, maxTokens: options.maxTokens, image: options.image }
     : params;
-  const messages = (request.messages || [{ role: 'user', content: request.prompt || '', image: request.image }]).map((message: any) => ({
-    role: message.role || 'user',
-    content: typeof message.content === 'string' ? message.content : String(message.text || ''),
-    image: message.image || (message.role === 'user' ? request.image : undefined)
-  }));
+  const messages = (request.messages || [{ role: 'user', content: request.prompt || '', image: request.image }])
+    .map((message: any) => normalizeAgentMessage(message, request.image));
   try {
     const response = await provider().execute({
       messages,

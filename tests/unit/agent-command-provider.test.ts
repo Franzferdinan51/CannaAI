@@ -127,4 +127,34 @@ describe('AgentCommandProvider Hermes proxy resilience', () => {
     await expect(executeWithOpenClaw({ prompt: 'What is shown?' }))
       .resolves.toEqual(expect.objectContaining({ success: true, result: 'part one part two' }));
   });
+
+  test('preserves OpenAI multimodal message parts for Hermes and OpenClaw', async () => {
+    const execute = jest.spyOn(AgentCommandProvider.prototype, 'execute').mockResolvedValue({
+      id: 'agent-response',
+      object: 'chat.completion',
+      created: 0,
+      model: 'vision-agent',
+      choices: [{ index: 0, message: { role: 'assistant', content: 'received image' }, finishReason: 'stop' }],
+    } as any);
+    const messages = [{
+      role: 'user',
+      content: [
+        { type: 'text', text: 'What is shown?' },
+        { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,ZmFrZQ==' } },
+      ],
+    }];
+
+    await expect(executeWithHermes(messages)).resolves.toEqual(expect.objectContaining({ success: true }));
+    expect(execute.mock.calls[0][0].messages[0]).toEqual({
+      role: 'user',
+      content: 'What is shown?',
+      image: 'data:image/jpeg;base64,ZmFrZQ==',
+    });
+    await expect(executeWithOpenClaw(messages)).resolves.toEqual(expect.objectContaining({ success: true }));
+    expect(execute.mock.calls[1][0].messages[0]).toEqual({
+      role: 'user',
+      content: 'What is shown?',
+      image: 'data:image/jpeg;base64,ZmFrZQ==',
+    });
+  });
 });
