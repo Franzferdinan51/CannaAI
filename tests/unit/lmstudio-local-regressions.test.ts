@@ -97,15 +97,17 @@ describe('LM Studio local-model regressions', () => {
   test('fallback accepts a successful plain-string LM Studio completion', async () => {
     mockExecuteWithLMStudio.mockResolvedValue('local model answer');
 
-    const result = await executeAIWithFallback([
-      { role: 'user', content: 'How does this plant look?' },
-    ]);
+    const result = await executeAIWithFallback(
+      [{ role: 'user', content: 'How does this plant look?' }],
+      { model: 'ornith-1.5-35b-a3b' },
+    );
 
     expect(result).toEqual(expect.objectContaining({
       success: true,
       provider: 'lmstudio',
       result: 'local model answer',
       content: 'local model answer',
+      model: 'ornith-1.5-35b-a3b',
     }));
     expect(mockExecuteWithOpenClaw).not.toHaveBeenCalled();
   });

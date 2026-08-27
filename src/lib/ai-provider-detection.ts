@@ -459,6 +459,9 @@ export async function executeAIWithFallback(
           provider: provider.name,
           result: rawResult,
           content: rawResult,
+          ...(provider.name === 'lmstudio' && options.model
+            ? { model: options.model }
+            : {}),
           processingTime: Math.max(1, Date.now() - startedAt),
         };
       }

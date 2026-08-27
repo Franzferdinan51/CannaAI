@@ -267,7 +267,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         response: responseText,
-        model: chatMetadata.model || 'unknown',
+        // Legacy local adapters may return a plain string. Preserve the
+        // request-selected model so diagnostics never report an unknown model
+        // after successful local inference.
+        model: aiResult.model || chatMetadata.model || model || 'unknown',
         provider: usedProvider,
         usage: chatMetadata.usage,
         timestamp: new Date().toISOString(),

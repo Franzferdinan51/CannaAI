@@ -44,6 +44,7 @@ describe('/api/chat vision routing', () => {
       result: 'local vision answer',
       content: 'local vision answer',
       provider: 'lmstudio',
+      model: 'ornith-1.5-35b-a3b',
       processingTime: 42,
     });
   });
@@ -88,6 +89,7 @@ describe('/api/chat vision routing', () => {
       success: true,
       response: 'local vision answer',
       provider: 'lmstudio',
+      model: 'ornith-1.5-35b-a3b',
     }));
     expect(mockExecuteChatWithFallback).toHaveBeenCalledWith(
       expect.any(String),
