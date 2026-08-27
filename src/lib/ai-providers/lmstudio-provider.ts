@@ -280,6 +280,23 @@ export class LMStudioProvider extends BaseProvider {
       if (loadedId && openAIModelIds.includes(loadedId) && isVisionCapable(nativePreferred)) {
         return { id: loadedId, nativeModel: nativePreferred, loaded: true };
       }
+
+      // LM Studio can JIT-load a downloaded model that is not present in the
+      // compatibility catalog yet. An explicit model ID is authoritative: do
+      // not silently replace it with the first discovered model. If native
+      // metadata knows the model is text-only, the vision guard above still
+      // prevents sending an image to it.
+      if (!nativePreferred || isVisionCapable(nativePreferred)) {
+        return {
+          id: preferredModel,
+          nativeModel: nativePreferred,
+          loaded: false,
+        };
+      }
+
+      // An explicitly selected native text-only model must not be replaced
+      // with a different vision model behind the user's back.
+      return undefined;
     }
 
     // Prefer an already-loaded model to avoid unnecessary JIT churn.

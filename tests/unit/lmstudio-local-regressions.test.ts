@@ -332,4 +332,41 @@ describe('LM Studio local-model regressions', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
+
+  test('LM Studio forwards an explicit custom model omitted from both catalogs', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'another-model', type: 'llm' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'another-model', object: 'model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          model: 'custom-jit-model',
+          choices: [{ message: { role: 'assistant', content: 'Custom model answer.' } }],
+        }),
+      } as Response);
+
+    const provider = new LMStudioProvider({
+      url: 'http://localhost:1234',
+      apiKey: '',
+      model: 'custom-jit-model',
+    });
+
+    await expect(provider.execute({
+      messages: [{ role: 'user', content: 'Use the explicitly selected model.' }],
+    })).resolves.toEqual(expect.objectContaining({
+      choices: [expect.objectContaining({
+        message: expect.objectContaining({ content: 'Custom model answer.' }),
+      })],
+    }));
+
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(requestBody.model).toBe('custom-jit-model');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
 });

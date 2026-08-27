@@ -201,13 +201,9 @@ export async function POST(request: NextRequest) {
       ? String(modelId || model).trim()
       : '';
     let selectedModel = requestedModel;
-    if (selectedModel && availableModels.length > 0 && !availableModels.some(entry => entry.id === selectedModel)) {
-      return NextResponse.json({
-        error: `LM Studio model "${selectedModel}" is not currently advertised`,
-        code: 'LM_STUDIO_MODEL_NOT_FOUND',
-        availableModels: availableModels.map(entry => entry.id),
-      }, { status: 503 });
-    }
+    // An explicit model ID is authoritative. LM Studio can JIT-load a
+    // downloaded/custom model that is not currently returned by /v1/models.
+    // The inference endpoint remains responsible for validating the ID.
     if (!selectedModel && availableModels.length > 0) {
       selectedModel = availableModels[0].id;
     }

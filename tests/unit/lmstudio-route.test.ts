@@ -110,20 +110,22 @@ describe('/api/lmstudio legacy local endpoint', () => {
     expect(requestBody.model).toBe('cultivation-chat-model');
   });
 
-  test('does not silently replace an explicitly selected unavailable model', async () => {
+  test('forwards an explicitly selected JIT model even when the catalog omits it', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }));
+      .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
+      .mockResolvedValueOnce(response({
+        model: 'missing-vision-model',
+        choices: [{ message: { content: 'JIT answer' } }],
+      }));
 
     const result = await POST({
       json: async () => ({ prompt: 'Inspect this plant', modelId: 'missing-vision-model' }),
     } as any);
 
-    expect(result.status).toBe(503);
-    await expect(result.json()).resolves.toEqual(expect.objectContaining({
-      code: 'LM_STUDIO_MODEL_NOT_FOUND',
-      availableModels: ['ornith-1.5-35b-a3b'],
-    }));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(requestBody.model).toBe('missing-vision-model');
   });
 
   test('preserves an image for a native vision-capable Ornith model', async () => {

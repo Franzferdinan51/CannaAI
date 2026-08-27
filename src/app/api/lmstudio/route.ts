@@ -216,14 +216,10 @@ export async function POST(request: NextRequest) {
     const chatModels = advertisedModels.filter(model => (
       typeof model.id === 'string' && !model.id.toLowerCase().includes('embedding')
     ));
-    if (requestedModel && chatModels.length > 0 && !chatModels.some(model => model.id === requestedModel)) {
-      return NextResponse.json({
-        success: false,
-        error: `LM Studio model "${requestedModel}" is not currently advertised`,
-        code: 'LM_STUDIO_MODEL_NOT_FOUND',
-        availableModels: chatModels.map(model => model.id),
-      }, { status: 503 });
-    }
+    // An explicit model ID is authoritative. LM Studio may JIT-load a
+    // downloaded model that is not yet present in the compatibility catalog.
+    // Let LM Studio validate the ID instead of silently rejecting or replacing
+    // it with the first discovered model.
     const selectedModel = requestedModel || chatModels[0]?.id;
 
     if (!selectedModel) {
