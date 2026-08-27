@@ -133,13 +133,18 @@ describe('legacy LM Studio vision client', () => {
   });
 
   test('skips non-chat models during automatic selection', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: [
-        { id: 'qwen3-reranker-0.6b', type: 'reranker' },
-        { id: 'ornith-1.5-35b-a3b' },
-      ] }),
-    } as Response);
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [
+          { id: 'qwen3-reranker-0.6b', type: 'reranker' },
+          { id: 'ornith-1.5-35b-a3b' },
+        ] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: '{"summary":"ok"}' } }] }),
+      } as Response);
 
     await analyzeWithLMStudio('Inspect the plant', [], 'http://localhost:1234');
 
