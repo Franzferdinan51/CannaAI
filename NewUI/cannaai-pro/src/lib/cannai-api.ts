@@ -70,6 +70,7 @@ interface StrainsResponse {
 interface ChatMessage {
   message: string;
   context?: any;
+  image?: string;
 }
 
 interface ChatResponse {
@@ -131,6 +132,12 @@ apiClient.interceptors.response.use(
   (error) => {
     console.error('❌ API Response Error:', error);
 
+    // Axios timeout errors do not include a response. Check them before the
+    // generic network branch so a slow local vision request is actionable.
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || /timeout/i.test(error.message || '')) {
+      throw new Error('Request timed out. The local AI model may still be processing; try again if it does not finish.');
+    }
+
     // Handle network errors
     if (!error.response) {
       throw new Error('Network error. Please check your connection and try again.');
@@ -167,7 +174,10 @@ apiClient.interceptors.response.use(
 // Plant Analysis API
 export const analyzePlant = async (data: AnalysisRequest): Promise<AnalysisResponse> => {
   try {
-    const response = await apiClient.post<AnalysisResponse>('/api/analyze', data);
+    const response = await apiClient.post<AnalysisResponse>('/api/analyze', data, {
+      // The server permits ten minutes for cold/large local vision models.
+      timeout: data.plantImage ? 660000 : 30000,
+    });
     return response.data;
   } catch (error) {
     console.error('Plant analysis failed:', error);

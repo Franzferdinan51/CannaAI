@@ -50,6 +50,7 @@ const API_BASE_URL = API_ORIGIN;
 // error; the screen still exposes its loading state while the request runs.
 const PLANTS_REQUEST_TIMEOUT_MS = 60000;
 const PLANTS_READ_TIMEOUT_MS = 15000;
+const PLANT_ANALYSIS_TIMEOUT_MS = 660000;
 
 class PlantsAPIClient {
   private api = axios.create({
@@ -328,6 +329,7 @@ class PlantsAPIClient {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: image ? PLANT_ANALYSIS_TIMEOUT_MS : PLANTS_REQUEST_TIMEOUT_MS,
       });
 
       if (!response.data.success) {
