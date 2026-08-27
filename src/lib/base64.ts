@@ -24,9 +24,10 @@ export function normalizeBase64ImageData(value: unknown, defaultMimeType = 'imag
   const compact = normalized.replace(/\s/g, '');
   if (!compact) throw new ImageProcessingError('Image data is empty');
   // Reject ordinary text before Buffer.from silently discards invalid
-  // characters. Accept standard and URL-safe base64 alphabets, including
-  // optional padding used by camera/agent clients.
-  if (!/^[A-Za-z0-9+/_-]+={0,2}$/.test(compact) || compact.length % 4 === 1) {
+  // characters. Camera clients send standard RFC 4648 base64; accepting
+  // URL-safe punctuation here would allow arbitrary hyphenated text through
+  // as if it were an image.
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(compact) || compact.length % 4 === 1) {
     throw new ImageProcessingError('Invalid base64 image data');
   }
   return `data:${defaultMimeType};base64,${compact}`;
