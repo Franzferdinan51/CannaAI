@@ -99,5 +99,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Avoid exporting the full multi-stage cache to the GitHub Actions
+          # cache service; it can hang after the image itself has built.
+          provenance: false
+          sbom: false
