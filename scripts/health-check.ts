@@ -26,9 +26,9 @@ import { setInterval, clearInterval } from 'timers';
 // Configuration
 const CONFIG = {
   backend: {
-    port: 3000,
+    port: Number(process.env.CANNAAI_BACKEND_PORT || process.env.PORT) || 3000,
     name: 'Backend',
-    baseUrl: 'http://localhost:3000',
+    baseUrl: process.env.CANNAAI_BACKEND_URL || `http://localhost:${Number(process.env.CANNAAI_BACKEND_PORT || process.env.PORT) || 3000}`,
     endpoints: [
       { path: '/', method: 'GET', timeout: 5000, expectedStatus: 200 },
       { path: '/api/health', method: 'GET', timeout: 5000, expectedStatus: [200, 404] }, // 404 if no health endpoint
@@ -36,9 +36,9 @@ const CONFIG = {
     socketEndpoint: '/api/socketio',
   },
   frontend: {
-    port: 5174,
+    port: Number(process.env.CANNAAI_FRONTEND_PORT) || 5174,
     name: 'Frontend',
-    baseUrl: 'http://localhost:5174',
+    baseUrl: process.env.CANNAAI_FRONTEND_URL || `http://localhost:${Number(process.env.CANNAAI_FRONTEND_PORT) || 5174}`,
     endpoints: [
       { path: '/', method: 'GET', timeout: 5000, expectedStatus: 200 },
     ],

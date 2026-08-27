@@ -25,12 +25,12 @@ const execAsync = promisify(exec);
 // Configuration
 const PORTS = {
   backend: {
-    port: 3000,
+    port: Number(process.env.CANNAAI_BACKEND_PORT || process.env.PORT) || 3000,
     name: 'Backend (Next.js API)',
     service: 'API Server, Socket.IO',
   },
   frontend: {
-    port: 5174,
+    port: Number(process.env.CANNAAI_FRONTEND_PORT) || 5174,
     name: 'Frontend (Vite Dev Server)',
     service: 'Development UI',
   },
