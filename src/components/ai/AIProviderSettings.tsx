@@ -106,6 +106,18 @@ export function AIProviderSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [tempSettings, setTempSettings] = useState<Settings | null>(null);
 
+  const getConfiguredModel = (providerId: string, currentSettings: Settings | null): string => {
+    if (!currentSettings) return '';
+    const providerSettings = providerId === 'lm-studio'
+      ? currentSettings.lmStudio
+      : providerId === 'openrouter'
+        ? currentSettings.openRouter
+        : providerId === 'openai-compatible'
+          ? currentSettings.openai
+          : currentSettings[providerId as keyof Settings];
+    return typeof (providerSettings as any)?.model === 'string' ? (providerSettings as any).model : '';
+  };
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -147,7 +159,7 @@ export function AIProviderSettings() {
         setSettings(data.settings);
         setTempSettings(data.settings);
         setSelectedProvider(data.settings.aiProvider);
-        setSelectedModel(data.settings.lmStudio?.model || data.settings.openRouter?.model || data.settings.openai?.model || data.settings.gemini?.model || data.settings.groq?.model || data.settings.anthropic?.model || '');
+        setSelectedModel(getConfiguredModel(data.settings.aiProvider, data.settings));
         await loadProviders(data.settings);
       } else {
         setError(data.error || 'Failed to load settings');
@@ -269,7 +281,7 @@ export function AIProviderSettings() {
 
   const handleProviderChange = async (providerId: string) => {
     setSelectedProvider(providerId);
-    setSelectedModel(''); // Reset model when provider changes
+    setSelectedModel(getConfiguredModel(providerId, tempSettings));
     updateTempSettings({ aiProvider: providerId });
   };
 
@@ -295,8 +307,10 @@ export function AIProviderSettings() {
   };
 
   const handleTestConnection = async () => {
-    if (!selectedProvider || !selectedModel) {
-      setError('Please select both a provider and model to test');
+    if (!selectedProvider || (selectedProvider !== 'lm-studio' && !selectedModel)) {
+      setError(selectedProvider === 'lm-studio'
+        ? 'Please select a provider to test'
+        : 'Please select both a provider and model to test');
       return;
     }
 
@@ -310,7 +324,8 @@ export function AIProviderSettings() {
         body: JSON.stringify({
           action: 'test',
           providerId: selectedProvider,
-          modelId: selectedModel
+          modelId: selectedModel,
+          baseUrl: selectedProvider === 'lm-studio' ? tempSettings?.lmStudio?.url : undefined,
         })
       });
 

@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
-import { detectAvailableProviders } from '@/lib/ai-provider-detection';
+import { checkLMStudio, detectAvailableProviders } from '@/lib/ai-provider-detection';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -208,6 +208,59 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Test one provider from the legacy Settings panel. That panel historically
+ * POSTed to this route, but only GET was implemented, producing a 405/network
+ * error even when LM Studio itself was healthy.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    if (body?.action !== 'test') {
+      return NextResponse.json({ success: false, error: 'Unsupported provider action' }, { status: 400 });
+    }
+
+    const rawProvider = typeof body.providerId === 'string' ? body.providerId.trim().toLowerCase() : '';
+    const providerId = rawProvider.replace(/[-_]/g, '') === 'lmstudio' ? 'lmstudio' : rawProvider;
+    const configuredBaseUrl = typeof body.baseUrl === 'string' && body.baseUrl.trim()
+      ? body.baseUrl.trim()
+      : undefined;
+
+    if (providerId === 'lmstudio') {
+      const result = await withProviderDetectionTimeout(checkLMStudio(true, configuredBaseUrl), 10000);
+      const success = Boolean(result?.isAvailable);
+      return NextResponse.json({
+        success,
+        provider: 'lmstudio',
+        model: typeof body.modelId === 'string' && body.modelId.trim()
+          ? body.modelId.trim()
+          : result?.models?.[0],
+        message: success ? 'LM Studio connection successful' : result?.reason || 'LM Studio is unavailable',
+        details: result,
+      }, { status: success ? 200 : 503 });
+    }
+
+    const detected = await withProviderDetectionTimeout(detectAvailableProviders({ fastLocal: true }), 10000);
+    const provider = detected?.all?.find((entry: any) => {
+      const name = String(entry?.provider || '').toLowerCase().replace(/[-_]/g, '');
+      return name === providerId.replace(/[-_]/g, '');
+    });
+    const success = Boolean(provider?.isAvailable);
+    return NextResponse.json({
+      success,
+      provider: providerId,
+      model: body.modelId,
+      message: success ? `${providerId} connection successful` : provider?.reason || `${providerId} is unavailable`,
+      details: provider,
+    }, { status: success ? 200 : 503 });
+  } catch (error) {
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Provider test failed',
+    }, { status: 500 });
   }
 }
 
