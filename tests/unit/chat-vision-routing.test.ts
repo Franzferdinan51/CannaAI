@@ -95,7 +95,24 @@ describe('/api/chat vision routing', () => {
         primaryProvider: 'lmstudio',
         model: 'ornith-1.5-35b-a3b',
         image: 'data:image/jpeg;base64,abc123',
+        timeout: 600000,
       }),
+    );
+  });
+
+  test('allows longer local text inference for reasoning models', async () => {
+    await POST({
+      url: 'http://localhost/api/chat',
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        message: 'Explain this cultivation reading',
+        primaryProvider: 'lmstudio',
+      }),
+    } as any);
+
+    expect(mockExecuteChatWithFallback).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ timeout: 120000, primaryProvider: 'lmstudio' }),
     );
   });
 

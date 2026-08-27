@@ -212,6 +212,18 @@ export async function POST(request: NextRequest) {
     const contextPrompt = getContextualPrompt(mode, context || {}, sensorData || {}, message);
 
     try {
+      const requestedProvider = normalizeProviderName(primaryProvider);
+      const detectedProvider = normalizeProviderName(providerDetection.primary.provider);
+      // Local vision models—especially large reasoning models—can need several
+      // minutes for their first image pass. The old fixed 45-second ceiling
+      // made a healthy LM Studio instance look broken and triggered fallbacks.
+      // Keep cloud/agent requests bounded while matching the dedicated local
+      // vision endpoint's ten-minute limit.
+      const executionTimeout = image && (requestedProvider === 'lmstudio' || detectedProvider === 'lmstudio')
+        ? 600000
+        : requestedProvider === 'lmstudio' || detectedProvider === 'lmstudio'
+          ? 120000
+          : 45000;
       const aiResult = await executeChatWithFallback(contextPrompt, {
         primaryProvider: typeof testProvider === 'string' && testProvider.trim()
           ? testProvider.trim()
@@ -221,7 +233,7 @@ export async function POST(request: NextRequest) {
         model: typeof model === 'string' && model.trim() ? model.trim() : undefined,
         baseUrl: typeof baseUrl === 'string' && baseUrl.trim() ? baseUrl.trim() : undefined,
         image: typeof image === 'string' ? image : undefined,
-        timeout: 45000,
+        timeout: executionTimeout,
       });
       const chatResult = aiResult.result;
       const usedProvider = aiResult.provider;
