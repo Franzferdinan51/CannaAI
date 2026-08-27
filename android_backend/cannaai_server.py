@@ -290,12 +290,31 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                 'vpd': round(random.uniform(0.8, 1.5), 2), 'co2': round(random.uniform(400, 1200), 0)}
     
     def handle_capture(self):
-        photo_path = "/sdcard/cannaai_capture.jpg"
-        r = subprocess.run(["termux-camera-photo", "-c", "0", photo_path], capture_output=True)
+        # A unique path prevents a failed request from being mistaken for a
+        # previous successful capture, without deleting any existing photos.
+        photo_path = f"/sdcard/cannaai_capture_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.jpg"
+        try:
+            r = subprocess.run(
+                ["termux-camera-photo", "-c", "0", photo_path],
+                capture_output=True,
+                timeout=60,
+                text=True,
+            )
+        except subprocess.TimeoutExpired:
+            self.send_json({'success': False, 'error': 'Photo capture timed out'}, status=504)
+            return
+        except OSError as error:
+            self.send_json({'success': False, 'error': f'Camera command unavailable: {error}'}, status=503)
+            return
         if os.path.exists(photo_path):
             self.send_json({'success': True, 'path': photo_path, 'size': os.path.getsize(photo_path)})
         else:
-            self.send_json({'success': False, 'error': 'Photo capture failed'})
+            detail = r.stderr.strip() if r.stderr else ''
+            self.send_json({
+                'success': False,
+                'error': 'Photo capture failed',
+                'details': detail or f'Camera command exited with status {r.returncode}',
+            }, status=502)
     
     def handle_analyze(self):
         content_length = int(self.headers.get('Content-Length', 0))
