@@ -756,6 +756,40 @@ const EnhancedScanner: React.FC = () => {
                         )}
                       </div>
 
+                      {selectedImage.analysis.observationScope !== 'single-plant' && (
+                        <div className="space-y-3 rounded-lg border border-emerald-900/50 bg-emerald-950/20 p-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-emerald-300">Plant-by-plant findings</h4>
+                            <p className="mt-1 text-xs text-gray-400">Scope: {selectedImage.analysis.observationScope || 'multiple-plants'}</p>
+                          </div>
+                          {selectedImage.analysis.plantAnalyses?.length ? (
+                            <div className="space-y-2">
+                              {selectedImage.analysis.plantAnalyses.map((plant) => (
+                                <div key={plant.plantId} className="rounded-md border border-gray-700 bg-gray-900/60 p-2 text-xs">
+                                  <div className="flex justify-between gap-2 text-gray-200">
+                                    <span className="font-medium">{plant.plantId}</span>
+                                    {plant.location && <span className="text-gray-500">{plant.location}</span>}
+                                  </div>
+                                  <p className="mt-1 text-gray-300">{plant.diagnosis}</p>
+                                  {plant.issues?.length ? <p className="mt-1 text-amber-300">Issues: {plant.issues.join(', ')}</p> : null}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-amber-300">The model could not reliably separate the visible plants. Capture individual frames for plant-specific findings.</p>
+                          )}
+                          {selectedImage.analysis.cropAssessment?.diagnosis && (
+                            <div className="border-t border-emerald-900/50 pt-2 text-xs">
+                              <p className="font-medium text-emerald-300">Shared crop condition</p>
+                              <p className="mt-1 text-gray-300">{selectedImage.analysis.cropAssessment.diagnosis}</p>
+                              {selectedImage.analysis.cropAssessment.sharedEvidence?.length ? (
+                                <p className="mt-1 text-gray-400">Evidence: {selectedImage.analysis.cropAssessment.sharedEvidence.join(', ')}</p>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Urgency */}
                       {selectedImage.analysis.urgency && (
                         <div>

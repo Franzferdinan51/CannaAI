@@ -73,6 +73,24 @@ export interface PlantAnalysis {
   };
   aiResponse?: string;
   provider?: string;
+  observationScope?: 'single-plant' | 'multiple-plants' | 'crop';
+  plantAnalyses?: Array<{
+    plantId: string;
+    location?: string;
+    diagnosis: string;
+    healthScore?: number;
+    confidence?: number;
+    visibleEvidence?: string[];
+    issues?: string[];
+    actions?: string[];
+  }>;
+  cropAssessment?: {
+    diagnosis?: string;
+    healthScore?: number;
+    confidence?: number;
+    sharedEvidence?: string[];
+    actions?: string[];
+  } | null;
 }
 
 export interface AnalysisFormData {
