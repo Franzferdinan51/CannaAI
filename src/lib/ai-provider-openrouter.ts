@@ -275,7 +275,10 @@ export async function executeWithOpenRouter(params: {
       signal: createTimeoutSignal(getOpenRouterTimeoutMs())
     });
 
-    if (!response.ok) {
+    // Native fetch responses always expose `ok`; treating only an explicit
+    // false as failure also keeps lightweight compatible Response shims from
+    // turning a valid fallback response into a false provider failure.
+    if (response.ok === false) {
       const errorText = await response.text();
 
       // Handle specific error cases

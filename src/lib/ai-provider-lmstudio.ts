@@ -138,12 +138,10 @@ function isNonChatModel(model: any): boolean {
   return id ? isEmbeddingModel(id) : false;
 }
 
-function modelIdsFromCatalog(data: any): string[] {
-  const entries = Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data?.models)
-      ? data.models
-      : [];
+function modelIdsFromCatalog(data: any, nativeCatalog: boolean): string[] {
+  const entries = nativeCatalog
+    ? (Array.isArray(data?.models) ? data.models : [])
+    : (Array.isArray(data?.data) ? data.data : []);
   const ids = new Set<string>();
   for (const model of entries) {
     if (isNonChatModel(model)) continue;
@@ -169,7 +167,10 @@ async function fetchModelCatalog(endpoint: string, timeoutMs: number): Promise<{
         headers: getHeaders(),
       }, timeoutMs);
       if (!response.ok) continue;
-      const models = modelIdsFromCatalog(await response.json().catch(() => ({})));
+      const models = modelIdsFromCatalog(
+        await response.json().catch(() => ({})),
+        path === '/api/v1/models',
+      );
       if (models.length > 0) return { models, responseEndpoint: `${endpoint}${path}` };
       successfulEmptyEndpoint ||= `${endpoint}${path}`;
     } catch {
