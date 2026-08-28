@@ -398,7 +398,10 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
         .replace(/\/$/, '');
       const apiKey = lmStudioConfig.apiKey || getLMStudioApiKey();
       let data: any = null;
-      for (const endpoint of [`${baseUrl}/v1/models`, `${baseUrl}/api/v1/models`]) {
+      // Prefer the native catalog because it includes vision capabilities,
+      // loaded-instance state, display names, and context limits. Fall back
+      // to the OpenAI-compatible catalog for older LM Studio releases.
+      for (const endpoint of [`${baseUrl}/api/v1/models`, `${baseUrl}/v1/models`]) {
         try {
           const response = await fetch(endpoint, {
             method: 'GET',
