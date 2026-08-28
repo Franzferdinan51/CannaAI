@@ -124,7 +124,7 @@ export const tools = {
             ? analysis.recommendations
             : [],
         confidence: analysis.confidence,
-        provider: result.metadata?.provider,
+        provider: result.provider?.used || result.metadata?.provider,
         model: result.metadata?.model,
         visionUsed: result.metadata?.visionUsed ?? true,
       };

@@ -39,6 +39,28 @@ describe('OpenClaw CannaAI skill transport', () => {
     expect(JSON.parse(String(request.body)).image).toBe('data:image/png;base64,ZmFrZQ==');
   });
 
+  test('reports the provider and model from the analysis API envelope', async () => {
+    process.env.CANNAAI_API_URL = 'http://127.0.0.1:3000';
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        analysis: { healthScore: 82, diagnosis: 'Healthy' },
+        metadata: { model: 'ornith-1.5-35b-a3b', visionUsed: true },
+        provider: { used: 'lmstudio' },
+      }),
+    } as Response);
+
+    const result = await tools.analyze_plant.execute({ image: 'ZmFrZQ==' });
+
+    expect(result).toEqual(expect.objectContaining({
+      provider: 'lmstudio',
+      model: 'ornith-1.5-35b-a3b',
+      visionUsed: true,
+    }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   test('sends a room filter and auth header for remote environment checks', async () => {
     process.env.CANNAAI_API_URL = 'https://cannaai.example.ts.net';
     process.env.CANNAAI_API_TOKEN = 'skill-test-token';
