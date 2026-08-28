@@ -856,6 +856,8 @@ export async function POST(request: NextRequest) {
         analysisId: crypto.randomUUID(),
         processingTime,
         timestamp: new Date().toISOString(),
+        model: effectiveModel || (analysisResult as any)?.analysisMetadata?.model || null,
+        visionUsed: !!imageBase64ForAI,
         version: '4.0.0-Enhanced-Comprehensive',
         contract: {
           id: 'cannaai.analysis.agent.v1',
