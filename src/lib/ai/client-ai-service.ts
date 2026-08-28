@@ -121,7 +121,10 @@ export class ClientAIService {
             provider: 'lm-studio',
             config: this.config.lmStudio,
           }),
-          signal: createTimeoutSignal(15000),
+          // Local models may be cold or loading through LM Studio JIT;
+          // report a real failure only after the local provider's health
+          // window has elapsed.
+          signal: createTimeoutSignal(60000),
         });
         const result = await response.json().catch(() => ({}));
         return response.ok && result.success === true;
