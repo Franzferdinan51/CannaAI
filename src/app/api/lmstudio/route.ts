@@ -26,6 +26,18 @@ const LM_STUDIO_TIMEOUT = Number.isFinite(configuredTimeout) && configuredTimeou
   ? configuredTimeout
   : 30000;
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const nativeTimeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof nativeTimeout === 'function') return nativeTimeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  return controller.signal;
+}
+
 function lmStudioHeaders(includeJson = false): Record<string, string> {
   const apiKey = getLMStudioApiKey();
   return {
@@ -62,7 +74,7 @@ function textFromCompletionMessage(message: any): string {
 async function discoverVisionModelIds(baseUrl = LM_STUDIO_URL): Promise<Set<string> | null> {
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
-      signal: AbortSignal.timeout(3000),
+      signal: createTimeoutSignal(3000),
       headers: lmStudioHeaders(),
     });
     if (!response.ok) return null;
@@ -157,7 +169,7 @@ export async function POST(request: NextRequest) {
       try {
         const healthCheck = await fetch(`${candidate}/v1/models`, {
           method: 'GET',
-          signal: AbortSignal.timeout(5000),
+          signal: createTimeoutSignal(5000),
           headers: lmStudioHeaders()
         });
         if (!healthCheck.ok) {
@@ -402,7 +414,7 @@ export async function GET() {
       try {
         const candidateResponse = await fetch(`${candidate}/v1/models`, {
           method: 'GET',
-          signal: AbortSignal.timeout(5000),
+          signal: createTimeoutSignal(5000),
           headers: lmStudioHeaders()
         });
         if (candidateResponse.ok) {
