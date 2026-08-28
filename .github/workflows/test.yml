@@ -69,7 +69,10 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Build application
-        run: npm run build
+        # The E2E server is the root Next app; building the separate Vite UI
+        # here duplicates work and can leave the browser job waiting on an
+        # unrelated static build.
+        run: npm run build:backend
 
       - name: Run E2E tests
         run: npx playwright test
@@ -109,7 +112,8 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Build application
-        run: npm run build
+        # Visual tests exercise the root Next app served by test:server.
+        run: npm run build:backend
 
       - name: Run visual tests
         run: npx playwright test --config=playwright.visual.config.ts
