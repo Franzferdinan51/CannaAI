@@ -419,9 +419,22 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             # Extract only values the model actually reported. Never present
             # a fabricated health score or confidence as an observation.
             health = None
-            m = re.search(r'(?:health\s+score|overall\s+health)[^\d]{0,30}(\d+(?:\.\d+)?)\s*(?:/\s*10|out\s+of\s+10)', analysis_text, re.IGNORECASE)
+            # CannaAI's public contract is 0-100, but older phone prompts
+            # asked for a score out of 10. Accept either explicit scale and
+            # normalize the legacy form without inventing a score.
+            m = re.search(
+                r'(?:health\s*score|overall\s*health|"healthScore")'
+                r'[^\d]{0,40}(\d+(?:\.\d+)?)\s*'
+                r'(?:(?:/|out\s+of)\s*(10|100))?',
+                analysis_text,
+                re.IGNORECASE,
+            )
             if m:
-                health = max(1, min(10, float(m.group(1))))
+                raw_health = float(m.group(1))
+                scale = m.group(2)
+                if scale == '10' or (scale is None and raw_health <= 10):
+                    raw_health *= 10
+                health = max(0, min(100, raw_health))
                 health = int(health) if health.is_integer() else health
 
             confidence = None

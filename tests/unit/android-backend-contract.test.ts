@@ -20,6 +20,8 @@ describe('Android LM Studio integration contract', () => {
 
     expect(source).toContain("data.get('plantImage') or data.get('image')");
     expect(source).toContain("health = None");
+    expect(source).toContain("scale == '10'");
+    expect(source).toContain("min(100, raw_health)");
     expect(source).toContain("confidence = None");
     expect(source).toContain("return recs");
     expect(source).toContain("tmp_dir = tempfile.gettempdir()");
