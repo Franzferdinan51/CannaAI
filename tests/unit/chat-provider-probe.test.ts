@@ -1,6 +1,6 @@
 /** @jest-environment node */
 
-import { hasUsableLMStudioChatModel } from '@/app/api/chat/route';
+import { hasUsableLMStudioChatModel } from '@/lib/lmstudio-model-catalog';
 
 describe('LM Studio chat provider probing', () => {
   test('accepts native arbitrary chat models and legacy OpenAI models', () => {

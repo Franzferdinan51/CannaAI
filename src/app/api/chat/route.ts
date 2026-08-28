@@ -3,6 +3,7 @@ import { detectAvailableProviders, getProviderConfig, executeChatWithFallback, A
 import { executeWithMiniMaxStream } from '@/lib/ai-provider-minimax';
 import { getChatResponseText } from '@/lib/chat-routing';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
+import { hasUsableLMStudioChatModel } from '@/lib/lmstudio-model-catalog';
 import { withRequest } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
@@ -45,19 +46,6 @@ function normalizeLMStudioBaseUrl(value: unknown): string {
     .replace(/\/(?:api\/)?v1\/?$/i, '')
     .replace(/\/api\/?$/i, '')
     .replace(/\/$/, '');
-}
-
-export function hasUsableLMStudioChatModel(payload: any): boolean {
-  const models = Array.isArray(payload?.models)
-    ? payload.models
-    : Array.isArray(payload?.data) ? payload.data : [];
-
-  return models.some((model: any) => {
-    const type = typeof model?.type === 'string' ? model.type.toLowerCase() : '';
-    const id = String(model?.id || model?.key || model?.model || '').toLowerCase();
-    if (!id || ['embedding', 'reranker', 'image-embedding'].includes(type)) return false;
-    return !id.includes('embedding') && !id.includes('embed-') && !id.endsWith('-embed') && !id.includes('reranker');
-  });
 }
 
 async function probeRequestedProvider(provider: unknown, providerSettings: any, urlOverride?: unknown): Promise<boolean> {
