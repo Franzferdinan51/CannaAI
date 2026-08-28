@@ -150,6 +150,21 @@ describe('legacy LM Studio vision client', () => {
     }));
   });
 
+  test('does not report an embedding-only catalog as chat-ready', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [
+        { key: 'text-embedding-model', type: 'embedding' },
+        { key: 'qwen3-reranker-0.6b', type: 'llm' },
+      ] }),
+    } as Response);
+
+    await expect(testLMStudioConnection('http://localhost:1234')).resolves.toEqual({
+      success: false,
+      error: 'LM Studio returned no chat-capable models',
+    });
+  });
+
   test('uses the configured LM Studio token for legacy inference', async () => {
     const previousToken = process.env.LM_STUDIO_API_KEY;
     process.env.LM_STUDIO_API_KEY = 'inference-token';

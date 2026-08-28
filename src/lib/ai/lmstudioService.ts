@@ -27,10 +27,12 @@ function textFromCompletionMessage(message: any): string {
 }
 
 function isNonChatModel(model: any): boolean {
+  const type = typeof model?.type === 'string' ? model.type.toLowerCase() : '';
   const id = String(model?.id || model?.key || '').toLowerCase();
   return Boolean(
-    model?.type === 'embedding' ||
-    model?.type === 'reranker' ||
+    type === 'embedding' ||
+    type === 'reranker' ||
+    type === 'image-embedding' ||
     id.includes('embedding') ||
     id.includes('reranker') ||
     id.includes('embed-') ||
@@ -96,7 +98,10 @@ export async function testLMStudioConnection(
   try {
     const baseUrl = normalizeBaseUrl(endpoint);
     const models = await fetchModelCatalog(baseUrl, apiKey);
-    const ids = models.map((model: any) => model?.id || model?.key).filter(Boolean);
+    const ids = models
+      .filter((model: any) => !isNonChatModel(model))
+      .map((model: any) => model?.id || model?.key)
+      .filter(Boolean);
     return ids.length > 0
       ? { success: true, models: ids }
       : { success: false, error: 'LM Studio returned no chat-capable models' };
