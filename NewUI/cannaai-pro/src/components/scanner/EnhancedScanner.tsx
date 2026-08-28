@@ -219,6 +219,13 @@ const EnhancedScanner: React.FC = () => {
       return;
     }
 
+    const rawPlantCount = analysisForm.expectedPlantCount.trim();
+    const parsedPlantCount = rawPlantCount ? Number(rawPlantCount) : undefined;
+    if (parsedPlantCount !== undefined && (!Number.isInteger(parsedPlantCount) || parsedPlantCount < 1 || parsedPlantCount > 100)) {
+      toast.error('Expected plant count must be a whole number from 1 to 100.');
+      return;
+    }
+
     setIsAnalyzing(true);
 
     const targetImage: PlantImage = imageToReanalyze || {
@@ -247,9 +254,7 @@ const EnhancedScanner: React.FC = () => {
         model: configuredLMStudioModel.trim() || undefined,
         baseUrl: configuredLMStudioUrl.trim() || undefined,
         observationScope: analysisForm.observationScope || 'single-plant',
-        expectedPlantCount: analysisForm.expectedPlantCount
-          ? Number(analysisForm.expectedPlantCount)
-          : undefined,
+        expectedPlantCount: parsedPlantCount,
       };
 
       const response = await api.analyze(analysisPayload);
