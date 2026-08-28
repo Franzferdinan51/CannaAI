@@ -165,6 +165,27 @@ describe('legacy LM Studio vision client', () => {
     });
   });
 
+  test('falls back when the native catalog contains only non-chat models', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'text-embedding-model', type: 'embedding' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'legacy-chat-model' }] }),
+      } as Response);
+
+    await expect(testLMStudioConnection('http://localhost:1234')).resolves.toEqual({
+      success: true,
+      models: ['legacy-chat-model'],
+    });
+    expect(fetchMock.mock.calls.map(([input]) => input)).toEqual([
+      'http://localhost:1234/api/v1/models',
+      'http://localhost:1234/v1/models',
+    ]);
+  });
+
   test('uses the configured LM Studio token for legacy inference', async () => {
     const previousToken = process.env.LM_STUDIO_API_KEY;
     process.env.LM_STUDIO_API_KEY = 'inference-token';

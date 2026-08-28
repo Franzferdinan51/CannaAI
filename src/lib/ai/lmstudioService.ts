@@ -70,7 +70,10 @@ async function fetchModelCatalog(baseUrl: string, apiKey?: string): Promise<any[
       if (!response.ok) continue;
       const data = await response.json();
       const models = Array.isArray(data?.models) ? data.models : data?.data;
-      if (Array.isArray(models) && (models.length > 0 || path === '/v1/models')) return models;
+      if (Array.isArray(models)) {
+        const chatModels = models.filter((model: any) => !isNonChatModel(model));
+        if (chatModels.length > 0) return chatModels;
+      }
     } catch {
       // Try the compatibility endpoint before reporting the provider down.
     }
