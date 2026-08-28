@@ -125,21 +125,40 @@ export async function analyzeLiveVision(
     resolution: { width: number; height: number };
   },
   plantContext?: {
+    model?: string;
+    baseUrl?: string;
+    primaryProvider?: string;
     strain?: string;
     growthStage?: string;
+    observationScope?: 'single-plant' | 'multiple-plants' | 'crop';
+    expectedPlantCount?: number;
   }
 ): Promise<LiveVisionAnalysis> {
   const analysis = await analyzePlantHealth(imageData, {
+    model: plantContext?.model,
+    baseUrl: plantContext?.baseUrl,
+    primaryProvider: plantContext?.primaryProvider,
     strain: plantContext?.strain,
     growthStage: plantContext?.growthStage,
+    observationScope: plantContext?.observationScope,
+    expectedPlantCount: plantContext?.expectedPlantCount,
   });
+  const issueNames = (type: string) => analysis.potentialIssues.filter(issue =>
+    issue.toLowerCase().includes(type)
+  );
   return {
     plantHealth: {
       overall: analysis.urgency === 'critical' || analysis.urgency === 'high' ? 'critical' : analysis.confidence < 0.5 ? 'stressed' : 'healthy',
       issues: analysis.potentialIssues,
       recommendations: analysis.recommendations,
     },
-    detectedElements: { pests: [], diseases: [], deficiencies: analysis.potentialIssues },
+    detectedElements: {
+      pests: issueNames('pest'),
+      diseases: issueNames('disease'),
+      deficiencies: analysis.potentialIssues.filter(issue =>
+        !issueNames('pest').includes(issue) && !issueNames('disease').includes(issue)
+      ),
+    },
     imageAnalysis: { clarity: 'acceptable', recommendations: analysis.nextSteps },
   };
 }
