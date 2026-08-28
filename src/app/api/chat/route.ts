@@ -47,6 +47,19 @@ function normalizeLMStudioBaseUrl(value: unknown): string {
     .replace(/\/$/, '');
 }
 
+export function hasUsableLMStudioChatModel(payload: any): boolean {
+  const models = Array.isArray(payload?.models)
+    ? payload.models
+    : Array.isArray(payload?.data) ? payload.data : [];
+
+  return models.some((model: any) => {
+    const type = typeof model?.type === 'string' ? model.type.toLowerCase() : '';
+    const id = String(model?.id || model?.key || model?.model || '').toLowerCase();
+    if (!id || ['embedding', 'reranker', 'image-embedding'].includes(type)) return false;
+    return !id.includes('embedding') && !id.includes('embed-') && !id.endsWith('-embed') && !id.includes('reranker');
+  });
+}
+
 async function probeRequestedProvider(provider: unknown, providerSettings: any, urlOverride?: unknown): Promise<boolean> {
   const normalized = normalizeProviderName(provider);
   if (!normalized) return false;
@@ -73,7 +86,13 @@ async function probeRequestedProvider(provider: unknown, providerSettings: any, 
         headers,
         signal: createTimeoutSignal(8000),
       });
-      if (response.ok) return true;
+      if (response.ok) {
+        try {
+          if (hasUsableLMStudioChatModel(await response.json())) return true;
+        } catch {
+          // A successful but malformed catalog is not proof that chat is usable.
+        }
+      }
     }
     return false;
   } catch {

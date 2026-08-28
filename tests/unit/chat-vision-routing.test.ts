@@ -143,7 +143,10 @@ describe('/api/chat vision routing', () => {
   });
 
   test('uses the requested LM Studio URL when testing a provider', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true } as Response);
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ id: 'local-chat-model' }] }),
+    } as Response);
 
     const result = await POST({
       url: 'http://localhost/api/chat',
