@@ -229,11 +229,16 @@ export async function POST(request: NextRequest) {
         ? body.providerSettings.lmStudio.apiKey
         : undefined;
       const discoveredForTest = await discoverLMStudio(providerUrl, providerApiKey);
+      const chatModel = discoveredForTest?.models.find((entry: any) => !isNonChatModel(entry));
+      const hasChatModel = Boolean(chatModel?.id);
       return NextResponse.json({
-        success: Boolean(discoveredForTest),
+        success: hasChatModel,
         provider: 'lmstudio',
-        model: discoveredForTest?.models.find((entry: any) => !isNonChatModel(entry))?.id,
-      }, { status: discoveredForTest ? 200 : 503 });
+        model: chatModel?.id,
+        code: discoveredForTest
+          ? hasChatModel ? undefined : 'LM_STUDIO_NO_CHAT_MODEL'
+          : 'LM_STUDIO_NOT_RUNNING',
+      }, { status: hasChatModel ? 200 : 503 });
     }
 
     // Reject malformed raw image payloads before spending time probing or

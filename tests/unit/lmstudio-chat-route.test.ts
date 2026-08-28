@@ -76,6 +76,23 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
   });
 
+  test('does not report success when LM Studio is reachable without a chat model', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'text-embedding-model' }]));
+
+    const result = await POST(requestWithBody({
+      testProvider: 'lmstudio',
+      providerSettings: { lmStudio: { url: 'http://127.0.0.1:1234' } },
+    }) as any);
+
+    expect(result.status).toBe(503);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      success: false,
+      code: 'LM_STUDIO_NO_CHAT_MODEL',
+    }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   test('attaches a supplied image to the latest user message when messages are provided', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
