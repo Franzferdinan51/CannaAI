@@ -101,6 +101,11 @@ let settings: any = { ...defaultSettings };
 let settingsLoaded = false;
 let settingsRecordId = 1;
 const SETTINGS_DATABASE_TIMEOUT_MS = 2000;
+// LM Studio may be waking a JIT-loaded model or a local vision server while
+// answering its catalog probe. Keep the request bounded without converting
+// normal local startup latency into a false connection failure.
+const LM_STUDIO_CATALOG_TIMEOUT_MS = 20000;
+const LM_STUDIO_CONNECTION_TIMEOUT_MS = 30000;
 
 async function withSettingsDatabaseTimeout<T>(operation: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -401,7 +406,7 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
               'Content-Type': 'application/json',
               ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
             },
-            signal: createTimeoutSignal(5000)
+            signal: createTimeoutSignal(LM_STUDIO_CATALOG_TIMEOUT_MS)
           });
           if (response.ok) {
             data = await response.json();
@@ -863,7 +868,7 @@ async function testAIConnection(provider: string, configOverride?: Record<string
         // A large local model can take several seconds to answer its catalog
         // probe while it is loading. Keep a bounded timeout, but do not turn
         // normal model-load latency into a false connection failure.
-        signal: createTimeoutSignal(15000)
+        signal: createTimeoutSignal(LM_STUDIO_CONNECTION_TIMEOUT_MS)
       });
 
       if (response.ok) {
