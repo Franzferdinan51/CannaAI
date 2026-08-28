@@ -111,7 +111,9 @@ const EnhancedScanner: React.FC = () => {
     temperatureUnit: 'F',
     pestDiseaseFocus: 'general',
     urgency: 'medium',
-    additionalNotes: ''
+    additionalNotes: '',
+    observationScope: 'single-plant',
+    expectedPlantCount: ''
   });
 
   useEffect(() => {
@@ -195,7 +197,9 @@ const EnhancedScanner: React.FC = () => {
       temperatureUnit: 'F',
       pestDiseaseFocus: 'general',
       urgency: 'medium',
-      additionalNotes: ''
+      additionalNotes: '',
+      observationScope: 'single-plant',
+      expectedPlantCount: ''
     });
     setCurrentImage('');
   };
@@ -242,6 +246,10 @@ const EnhancedScanner: React.FC = () => {
         plantImage: imageData || undefined,
         model: configuredLMStudioModel.trim() || undefined,
         baseUrl: configuredLMStudioUrl.trim() || undefined,
+        observationScope: analysisForm.observationScope || 'single-plant',
+        expectedPlantCount: analysisForm.expectedPlantCount
+          ? Number(analysisForm.expectedPlantCount)
+          : undefined,
       };
 
       const response = await api.analyze(analysisPayload);
@@ -604,6 +612,35 @@ const EnhancedScanner: React.FC = () => {
                         <option value="critical">Critical</option>
                       </select>
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Observation Scope</label>
+                      <select
+                        value={formData.observationScope || 'single-plant'}
+                        onChange={(e) => handleInputChange('observationScope', e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      >
+                        <option value="single-plant">Single plant</option>
+                        <option value="multiple-plants">Multiple plants</option>
+                        <option value="crop">Whole crop / growing area</option>
+                      </select>
+                    </div>
+
+                    {(formData.observationScope || 'single-plant') !== 'single-plant' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Expected Plant Count (optional)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          step="1"
+                          value={formData.expectedPlantCount}
+                          onChange={(e) => handleInputChange('expectedPlantCount', e.target.value)}
+                          placeholder="e.g., 4"
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div>

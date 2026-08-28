@@ -87,6 +87,8 @@ export interface AnalysisFormData {
   pestDiseaseFocus: string;
   urgency: 'low' | 'medium' | 'high' | 'critical';
   additionalNotes: string;
+  observationScope: 'single-plant' | 'multiple-plants' | 'crop';
+  expectedPlantCount: string;
 }
 
 export interface PlantImage {
@@ -338,7 +340,9 @@ export function isValidAnalysisFormData(obj: any): obj is AnalysisFormData {
     ['C', 'F'].includes(obj.temperatureUnit) &&
     typeof obj.pestDiseaseFocus === 'string' &&
     ['low', 'medium', 'high', 'critical'].includes(obj.urgency) &&
-    typeof obj.additionalNotes === 'string';
+    typeof obj.additionalNotes === 'string' &&
+    (obj.observationScope === undefined || ['single-plant', 'multiple-plants', 'crop'].includes(obj.observationScope)) &&
+    (obj.expectedPlantCount === undefined || typeof obj.expectedPlantCount === 'string');
 }
 
 export function createDefaultFormData(): AnalysisFormData {
@@ -353,7 +357,9 @@ export function createDefaultFormData(): AnalysisFormData {
     temperatureUnit: 'F',
     pestDiseaseFocus: 'general',
     urgency: 'medium',
-    additionalNotes: ''
+    additionalNotes: '',
+    observationScope: 'single-plant',
+    expectedPlantCount: ''
   };
 }
 
