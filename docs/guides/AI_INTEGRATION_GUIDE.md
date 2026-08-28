@@ -51,14 +51,16 @@ The CannaAI Pro system now features a comprehensive, enterprise-grade AI integra
   export OPENROUTER_MODEL="meta-llama/llama-3.1-8b-instruct:free"
   ```
 
-### 2. **LM Studio** 💰 Free for Local Development
-- **Capabilities**: Text, Streaming (no vision)
+### 2. **LM Studio** 💰 Free Local-First Provider
+- **Capabilities**: Text and vision through the OpenAI-compatible API; model-dependent native capabilities
 - **Pricing**: FREE (local inference)
-- **Best For**: Development, testing, zero-cost inference
+- **Best For**: Private local inference, development, testing, and zero-cost vision analysis
 - **Setup**:
   ```bash
   export LM_STUDIO_URL="http://localhost:1234"
-  export LM_STUDIO_MODEL="granite-4.0-micro"
+  export LM_STUDIO_MODEL="ornith-1.5-35b-a3b"
+  # Optional: use the same or another loaded vision-capable model for photos
+  export LM_STUDIO_VISION_MODEL="ornith-1.5-35b-a3b"
   ```
 
 ### 3. **Google Gemini** 🚀 Fast Vision Tasks

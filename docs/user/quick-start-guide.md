@@ -28,7 +28,7 @@ You need to configure an AI provider before analyzing plants. Choose one:
    - Paste your API key
    - Click **Save & Test**
 
-### Option B: LM Studio - For Local Development
+### Option B: LM Studio - Recommended Local-First Setup
 
 1. **Download & Install**
    - Go to https://lmstudio.ai/
@@ -46,6 +46,10 @@ You need to configure an AI provider before analyzing plants. Choose one:
    - Select **LM Studio** tab
    - Leave default URL (http://localhost:1234)
    - Click **Save & Test**
+
+   Load a chat model for text or a vision-capable model for plant photos. The
+   Settings page discovers available LM Studio models and accepts an exact
+   model ID when the model is JIT-loaded or not yet shown in the catalog.
 
 ---
 

@@ -212,7 +212,7 @@ You must configure an AI provider before using photo analysis.
 
 **Cost**: ~$0.10-0.50 per analysis (varies by model)
 
-#### Option B: LM Studio (Recommended for Privacy/Development)
+#### Option B: LM Studio (Recommended for Privacy and Local Vision)
 
 **Pros:**
 - ✅ Completely free to use
@@ -220,6 +220,7 @@ You must configure an AI provider before using photo analysis.
 - ✅ Works offline
 - ✅ No ongoing costs
 - ✅ Full control
+- ✅ Supports plant-photo analysis when a vision-capable model is loaded
 
 **Cons:**
 - ❌ Requires local setup
