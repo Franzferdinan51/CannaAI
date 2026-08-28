@@ -165,6 +165,27 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             messages = [{"role": "user", "content": prompt}]
         
         model = str(requested_model or '').strip() or (VISION_MODEL if image_b64 else TEXT_MODEL)
+        if image_b64 and model:
+            # When LM Studio exposes its native catalog, reject an explicitly
+            # selected text-only model with a useful error instead of sending
+            # an image that the model cannot process. Older servers may omit
+            # capability metadata, so only enforce this when it is explicit.
+            catalog = self.get_lmstudio_models()
+            candidates = catalog.get('data', []) if isinstance(catalog, dict) else []
+            if not candidates and isinstance(catalog, dict):
+                candidates = catalog.get('models', [])
+            selected = next((candidate for candidate in candidates
+                             if isinstance(candidate, dict) and
+                             (candidate.get('id') or candidate.get('key')) == model), None)
+            if isinstance(selected, dict):
+                capabilities = selected.get('capabilities')
+                is_vision = selected.get('vision') is True or (
+                    isinstance(capabilities, dict) and capabilities.get('vision') is True
+                )
+                if isinstance(capabilities, dict) and capabilities.get('vision') is False:
+                    return None, f"Selected LM Studio model '{model}' is text-only; choose a vision-capable model", model
+                if selected.get('vision') is False or (isinstance(capabilities, dict) and not is_vision and 'vision' in capabilities):
+                    return None, f"Selected LM Studio model '{model}' is text-only; choose a vision-capable model", model
         if not model:
             catalog = self.get_lmstudio_models()
             candidates = catalog.get('data', []) if isinstance(catalog, dict) else []
@@ -360,6 +381,19 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             prompt = ANALYSIS_PROMPT
             if ctx:
                 prompt += f"\n\nContext: {', '.join(ctx)}"
+            observation_scope = data.get('observationScope')
+            if observation_scope not in ('single-plant', 'multiple-plants', 'crop'):
+                observation_scope = (data.get('analysisOptions') or {}).get('observationScope', 'single-plant')
+            expected_count = data.get('expectedPlantCount')
+            if observation_scope == 'single-plant':
+                prompt += "\n\nObservation scope: single plant. Analyze only the subject plant and do not invent or blend additional plants."
+            else:
+                count_hint = f" Expected visible plant count: {expected_count}." if expected_count else ''
+                prompt += (
+                    f"\n\nObservation scope: {observation_scope}.{count_hint} "
+                    "Identify each distinct plant as Plant 1, Plant 2, etc. Report plant-specific symptoms and actions separately, "
+                    "then distinguish shared crop or growing-area conditions. Do not average symptoms across plants."
+                )
             
             # Call LM Studio via curl
             analysis_text, error, model_used = self.lm_chat(
@@ -387,9 +421,17 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                     'healthScore': health,
                     'urgency': 'medium',
                     'confidence': 0.85,
-                    'recommendations': self.extract_recs(analysis_text)
+                    'recommendations': self.extract_recs(analysis_text),
+                    'observationScope': observation_scope,
+                    'expectedPlantCount': expected_count
                 },
-                'metadata': {'provider': 'lmstudio', 'model': model_used, 'timestamp': datetime.now().isoformat()}
+                'metadata': {
+                    'provider': 'lmstudio',
+                    'model': model_used,
+                    'observationScope': observation_scope,
+                    'expectedPlantCount': expected_count,
+                    'timestamp': datetime.now().isoformat()
+                }
             })
             
         except json.JSONDecodeError:
