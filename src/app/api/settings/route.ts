@@ -435,14 +435,14 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
           const id = model.id || model.key;
           return {
             id,
-            name: id,
+            name: model.display_name || model.name || id,
             provider: 'lm-studio',
             capabilities: [
               ...determineCapabilities(id),
               ...(model.capabilities?.vision === true ? ['vision', 'image-analysis'] : []),
             ].filter((capability, index, all) => all.indexOf(capability) === index),
-            contextLength: model.context_length || 4096,
-            size: model.size || 'Unknown'
+            contextLength: model.context_length || model.max_context_length || 4096,
+            size: model.size || model.size_bytes || 'Unknown'
           };
         });
 
