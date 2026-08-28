@@ -2,6 +2,11 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import type { AnalysisResponse, Strain } from '../types/scanner';
 import { API_ORIGIN, apiUrl } from './api-origin';
 
+// Local vision models can spend several minutes loading a JIT model and
+// generating a structured report. Keep the shared client from turning that
+// expected latency into a generic browser network error.
+const LOCAL_ANALYSIS_TIMEOUT_MS = 660000;
+
 export { API_ORIGIN, apiUrl } from './api-origin';
 
 export interface ChatApiResponse {
@@ -92,7 +97,7 @@ class ApiClient {
   }
 
   // File upload method
-  async upload<T>(url: string, file: File, additionalData?: Record<string, any>): Promise<T> {
+  async upload<T>(url: string, file: File, additionalData?: Record<string, any>, config?: any): Promise<T> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -106,6 +111,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      ...config,
     });
     return response.data;
   }
@@ -117,10 +123,10 @@ export const apiClient = new ApiClient();
 // Export individual API methods for specific endpoints
 export const api = {
   // Plant Analysis - Enhanced
-  analyze: (data: any) => apiClient.post<AnalysisResponse>('/analyze', data),
-  analyzeSimple: (data: any) => apiClient.post('/analyze-simple', data),
-  autoAnalyze: (file: File) => apiClient.upload('/auto-analyze', file),
-  trichomeAnalysis: (file: File) => apiClient.upload('/trichome-analysis', file),
+  analyze: (data: any) => apiClient.post<AnalysisResponse>('/analyze', data, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
+  analyzeSimple: (data: any) => apiClient.post('/analyze-simple', data, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
+  autoAnalyze: (file: File) => apiClient.upload('/auto-analyze', file, undefined, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
+  trichomeAnalysis: (file: File) => apiClient.upload('/trichome-analysis', file, undefined, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
 
   // Scanner-specific endpoints
   scanner: {
@@ -154,7 +160,8 @@ export const api = {
         formDataObj.append(key, value as string);
       });
       return apiClient.post('/scanner/batch-analyze', formDataObj, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: LOCAL_ANALYSIS_TIMEOUT_MS,
       });
     },
 
