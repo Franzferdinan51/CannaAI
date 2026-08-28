@@ -102,21 +102,32 @@ async function discoverLMStudioWithKey(configuredBaseUrl?: string, apiKey?: stri
   models: any[];
 } | null> {
   for (const baseUrl of getLMStudioEndpointCandidates(configuredBaseUrl)) {
-    try {
-      const healthResponse = await fetch(`${baseUrl}/v1/models`, {
-        signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
-        headers: lmStudioHeaders(false, apiKey),
-      });
-      if (!healthResponse.ok) continue;
+    for (const endpoint of [`${baseUrl}/v1/models`, `${baseUrl}/api/v1/models`]) {
+      try {
+        const healthResponse = await fetch(endpoint, {
+          signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
+          headers: lmStudioHeaders(false, apiKey),
+        });
+        if (!healthResponse.ok) continue;
 
-      const modelsData = await healthResponse.json().catch(() => ({}));
-      return {
-        baseUrl,
-        models: Array.isArray(modelsData?.data) ? modelsData.data : [],
-      };
-    } catch {
-      // localhost and 127.0.0.1 can resolve to different stacks on macOS;
-      // continue through every local candidate before declaring LM Studio down.
+        const modelsData = await healthResponse.json().catch(() => ({}));
+        const catalog = Array.isArray(modelsData?.data)
+          ? modelsData.data
+          : Array.isArray(modelsData?.models) ? modelsData.models : [];
+        return {
+          baseUrl,
+          models: catalog.map((entry: any) => ({
+            ...entry,
+            id: typeof entry?.id === 'string' && entry.id.trim()
+              ? entry.id
+              : typeof entry?.key === 'string' ? entry.key : undefined,
+          })),
+        };
+      } catch {
+        // localhost and 127.0.0.1 can resolve to different stacks on macOS;
+        // continue through every endpoint and candidate before declaring
+        // LM Studio down.
+      }
     }
   }
   return null;
