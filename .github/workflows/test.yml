@@ -62,9 +62,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install static UI dependencies
-        run: npm ci --prefix NewUI/cannaai-pro
-
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
@@ -105,9 +102,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install static UI dependencies
-        run: npm ci --prefix NewUI/cannaai-pro
-
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
@@ -142,9 +136,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Install static UI dependencies
-        run: npm ci --prefix NewUI/cannaai-pro
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
