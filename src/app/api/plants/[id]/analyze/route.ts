@@ -63,7 +63,10 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     const analysis = await analyzePlantHealth(imageData, {
       model: typeof input.model === 'string' ? input.model : undefined,
+      baseUrl: typeof input.baseUrl === 'string' ? input.baseUrl : undefined,
       primaryProvider: typeof input.primaryProvider === 'string' ? input.primaryProvider : undefined,
+      observationScope: input.observationScope === 'multiple-plants' || input.observationScope === 'crop' ? input.observationScope : 'single-plant',
+      expectedPlantCount: typeof input.expectedPlantCount === 'number' ? input.expectedPlantCount : undefined,
       strain: typeof input.strain === 'string' ? input.strain : plant.strain?.name,
       growthStage: typeof input.growthStage === 'string' ? input.growthStage : plant.stage || undefined,
       medium: typeof input.medium === 'string' ? input.medium : undefined,

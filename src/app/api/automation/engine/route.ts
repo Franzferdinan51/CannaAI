@@ -558,7 +558,10 @@ async function triggerPhotoAnalysis(plantId: string | null, config?: any) {
 
   const analysis = await analyzePlantHealth(imageData, {
     model: typeof config?.model === 'string' ? config.model : undefined,
+    baseUrl: typeof config?.baseUrl === 'string' ? config.baseUrl : undefined,
     primaryProvider: typeof config?.primaryProvider === 'string' ? config.primaryProvider : undefined,
+    observationScope: config?.observationScope === 'multiple-plants' || config?.observationScope === 'crop' ? config.observationScope : 'single-plant',
+    expectedPlantCount: typeof config?.expectedPlantCount === 'number' ? config.expectedPlantCount : undefined,
     strain: config?.strain,
     growthStage: config?.growthStage,
     medium: config?.medium,
