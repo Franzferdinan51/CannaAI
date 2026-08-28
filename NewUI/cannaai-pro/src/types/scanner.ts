@@ -89,7 +89,9 @@ export interface PlantAnalysis {
     healthScore?: number;
     confidence?: number;
     sharedEvidence?: string[];
+    sharedConditions?: string[];
     actions?: string[];
+    cropWideActions?: string[];
   } | null;
 }
 

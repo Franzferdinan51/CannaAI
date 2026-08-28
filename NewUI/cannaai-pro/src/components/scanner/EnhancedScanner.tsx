@@ -783,12 +783,12 @@ const EnhancedScanner: React.FC = () => {
                           ) : (
                             <p className="text-xs text-amber-300">The model could not reliably separate the visible plants. Capture individual frames for plant-specific findings.</p>
                           )}
-                          {selectedImage.analysis.cropAssessment?.diagnosis && (
+                          {selectedImage.analysis.cropAssessment && (
                             <div className="border-t border-emerald-900/50 pt-2 text-xs">
                               <p className="font-medium text-emerald-300">Shared crop condition</p>
-                              <p className="mt-1 text-gray-300">{selectedImage.analysis.cropAssessment.diagnosis}</p>
-                              {selectedImage.analysis.cropAssessment.sharedEvidence?.length ? (
-                                <p className="mt-1 text-gray-400">Evidence: {selectedImage.analysis.cropAssessment.sharedEvidence.join(', ')}</p>
+                              <p className="mt-1 text-gray-300">{selectedImage.analysis.cropAssessment.diagnosis || 'Shared conditions identified in the growing area.'}</p>
+                              {(selectedImage.analysis.cropAssessment.sharedEvidence || selectedImage.analysis.cropAssessment.sharedConditions)?.length ? (
+                                <p className="mt-1 text-gray-400">Evidence: {(selectedImage.analysis.cropAssessment.sharedEvidence || selectedImage.analysis.cropAssessment.sharedConditions || []).join(', ')}</p>
                               ) : null}
                             </div>
                           )}
