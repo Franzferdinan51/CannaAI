@@ -295,6 +295,18 @@ describe('/api/analyze integration', () => {
     );
   });
 
+  test('accepts string plant counts from phone and agent JSON clients', async () => {
+    const response = await POST(createAnalyzeRequest({
+      strain: 'Blue Dream',
+      leafSymptoms: 'Compare the plants in this crop view.',
+      observationScope: 'multiple-plants',
+      expectedPlantCount: '3',
+    }, 91));
+
+    expect(response.status).toBe(200);
+    expect(mockExecuteAIWithFallback.mock.calls[0][0]).toContain('expected plants visible: 3');
+  });
+
   test('supports combined image and text analysis requests', async () => {
     mockDetectAvailableProviders.mockResolvedValue(createProviderDetection('openclaw'));
     mockExecuteWithOpenClaw.mockResolvedValue({

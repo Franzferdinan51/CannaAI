@@ -84,7 +84,15 @@ const AnalysisRequestSchema = z.object({
   urgency: z.enum(['low', 'medium', 'high', 'critical']).optional().default('medium'),
   additionalNotes: z.string().max(2000).optional().transform(val => val?.trim()),
   observationScope: z.enum(['single-plant', 'multiple-plants', 'crop']).optional().default('single-plant'),
-  expectedPlantCount: z.number().int().min(1).max(100).optional()
+  // JSON callers from phone/agent bridges sometimes serialize form values as
+  // strings. Accept numeric strings while still rejecting blanks, fractions,
+  // and counts outside the supported range.
+  expectedPlantCount: z.preprocess(
+    (value) => value === '' || value === null || value === undefined
+      ? undefined
+      : typeof value === 'string' ? Number(value) : value,
+    z.number().int().min(1).max(100).optional()
+  )
 });
 
 // Enhanced security headers
