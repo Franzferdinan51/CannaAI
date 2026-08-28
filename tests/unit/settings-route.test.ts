@@ -169,7 +169,7 @@ describe('/api/settings durability', () => {
     }) as any);
 
     expect(response.status).toBe(200);
-    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
+    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/api/v1/models');
     await expect(response.json()).resolves.toEqual(expect.objectContaining({
       success: true,
       models: [expect.objectContaining({ id: 'lan-local-model' })],
