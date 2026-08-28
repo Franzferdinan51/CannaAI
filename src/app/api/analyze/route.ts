@@ -34,6 +34,33 @@ const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const MAX_REQUESTS_PER_WINDOW = 20;
 const ANALYSIS_DATABASE_TIMEOUT_MS = 2000;
 const requestTracker = new Map<string, { count: number; resetTime: number }>();
+let lmStudioSettingsCache: { model?: string; baseUrl?: string; expiresAt: number } = { expiresAt: 0 };
+
+async function getPersistedLMStudioSettings(): Promise<{ model?: string; baseUrl?: string }> {
+  if (lmStudioSettingsCache.expiresAt > Date.now()) return lmStudioSettingsCache;
+  try {
+    const lookup = prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } });
+    const timeout = new Promise<null>(resolve => {
+      const timer = setTimeout(() => resolve(null), 750);
+      timer.unref?.();
+    });
+    const stored = await Promise.race([lookup, timeout]);
+    const config = stored && typeof stored.config === 'object' && !Array.isArray(stored.config)
+      ? (stored.config as { lmStudio?: { model?: unknown; url?: unknown; baseUrl?: unknown } }).lmStudio
+      : undefined;
+    const value = {
+      model: typeof config?.model === 'string' && config.model.trim() ? config.model.trim() : undefined,
+      baseUrl: typeof (config?.url || config?.baseUrl) === 'string' && String(config.url || config.baseUrl).trim()
+        ? String(config.url || config.baseUrl).trim()
+        : undefined,
+      expiresAt: Date.now() + 30000,
+    };
+    lmStudioSettingsCache = value;
+    return value;
+  } catch {
+    return {};
+  }
+}
 
 async function withAnalysisDatabaseTimeout<T>(operation: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -332,6 +359,16 @@ export async function POST(request: NextRequest) {
       expectedPlantCount
     } = body;
 
+    // Photo/phone callers historically omitted the Settings selection. Use
+    // the persisted LM Studio choice when no per-request override was sent,
+    // while keeping the database lookup bounded and non-blocking for local
+    // installs whose SQLite store is unavailable.
+    const storedLMStudio = !requestedModel || !requestedBaseUrl
+      ? await getPersistedLMStudioSettings()
+      : {};
+    const effectiveModel = requestedModel || storedLMStudio.model;
+    const effectiveBaseUrl = requestedBaseUrl || storedLMStudio.baseUrl;
+
     // Temperature conversion logic
     let temperatureCelsius: number | undefined;
     if (temperature !== undefined) {
@@ -483,8 +520,8 @@ export async function POST(request: NextRequest) {
       imageBase64: imageBase64ForAI,
       strain, growthStage, medium, leafSymptoms,
       phLevel, temperature, humidity,
-      model: requestedModel,
-      baseUrl: requestedBaseUrl,
+      model: effectiveModel,
+      baseUrl: effectiveBaseUrl,
       observationScope,
       expectedPlantCount,
     });
@@ -498,7 +535,7 @@ export async function POST(request: NextRequest) {
 
     // Enhanced AI provider detection with detailed logging
     const providerDetection = await detectAvailableProviders({
-      lmStudioBaseUrl: requestedBaseUrl,
+      lmStudioBaseUrl: effectiveBaseUrl,
       fastLocal: true,
     });
     const imageProviderOverride = imageBase64ForAI && process.env.CANNAAI_IMAGE_PROVIDER;
@@ -568,7 +605,7 @@ export async function POST(request: NextRequest) {
         // Let the LM Studio adapter resolve the configured or currently
         // advertised model. Hard-coding a Qwen id here made healthy local
         // installs using Ornith (or any other model) fail before inference.
-        const lmStudioModel = requestedModel || (imageBase64ForAI
+        const lmStudioModel = effectiveModel || (imageBase64ForAI
           ? process.env.LM_STUDIO_VISION_MODEL || process.env.LM_STUDIO_MODEL
           : process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL);
         const lmStudioRaw = await executeWithLMStudio(
@@ -576,7 +613,7 @@ export async function POST(request: NextRequest) {
           {
             image: imageBase64ForAI,
             ...(lmStudioModel ? { model: lmStudioModel } : {}),
-            ...(requestedBaseUrl ? { baseUrl: requestedBaseUrl } : {}),
+            ...(effectiveBaseUrl ? { baseUrl: effectiveBaseUrl } : {}),
             temperature: 0.15,
             useVision: !!imageBase64ForAI,
             // Match the route and browser deadlines for slow local vision
