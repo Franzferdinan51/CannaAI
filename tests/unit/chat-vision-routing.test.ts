@@ -102,6 +102,27 @@ describe('/api/chat vision routing', () => {
     );
   });
 
+  test('accepts the plantImage alias for local vision chat', async () => {
+    const result = await POST({
+      url: 'http://localhost/api/chat',
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        message: 'Inspect this plant photo',
+        plantImage: 'data:image/png;base64,abc123',
+        primaryProvider: 'lmstudio',
+      }),
+    } as any);
+
+    expect(result.status).toBe(200);
+    expect(mockExecuteChatWithFallback).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        image: 'data:image/png;base64,abc123',
+        timeout: 600000,
+      }),
+    );
+  });
+
   test('allows longer local text inference for reasoning models', async () => {
     await POST({
       url: 'http://localhost/api/chat',

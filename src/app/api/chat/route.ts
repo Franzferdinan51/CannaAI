@@ -155,6 +155,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'message is required' }, { status: 400 });
   }
 
+  // Analysis and agent clients historically used both names. Normalize at
+  // the boundary so a phone/Hermes chat request cannot silently lose its
+  // attached image when routed through the shared chat endpoint.
+  if (!earlyBody.image && typeof earlyBody.plantImage === 'string') {
+    earlyBody.image = earlyBody.plantImage;
+  }
+
   if (earlyBody.testProvider) {
     const provider = normalizeProviderName(earlyBody.testProvider);
     const available = await probeRequestedProvider(provider, earlyBody.providerSettings, earlyBody.baseUrl);
