@@ -54,6 +54,15 @@ function createTimeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
+const LOCAL_PROVIDER_CONNECTION_TIMEOUT_MS = 60000;
+const REMOTE_PROVIDER_CONNECTION_TIMEOUT_MS = 15000;
+
+function getProviderConnectionTimeoutMs(provider?: string): number {
+  return provider === 'lmstudio' || provider === 'lm-studio'
+    ? LOCAL_PROVIDER_CONNECTION_TIMEOUT_MS
+    : REMOTE_PROVIDER_CONNECTION_TIMEOUT_MS;
+}
+
 // Default settings
 const defaultSettings: ChatSettings = {
   providers: {
@@ -389,7 +398,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         : apiUrl('/chat');
       const response = await fetch(statusUrl, {
         headers: apiAuthHeaders(),
-        signal: createTimeoutSignal(15000),
+        signal: createTimeoutSignal(getProviderConnectionTimeoutMs('lmstudio')),
       });
       const data = await response.json();
 
@@ -913,7 +922,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
             ? settings.providers.lmStudio.url
             : settings.providers.openRouter.baseUrl,
         }),
-        signal: createTimeoutSignal(15000),
+        signal: createTimeoutSignal(getProviderConnectionTimeoutMs(provider)),
       });
 
       return response.ok;
@@ -951,7 +960,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
         : apiUrl('/chat');
       const response = await fetch(statusUrl, {
         headers: apiAuthHeaders(),
-        signal: createTimeoutSignal(15000),
+        signal: createTimeoutSignal(getProviderConnectionTimeoutMs('lmstudio')),
       });
       return await response.json();
     } catch {
