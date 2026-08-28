@@ -25,6 +25,7 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
   test('tries the alternate loopback endpoint when localhost is unavailable', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockRejectedValueOnce(new Error('connect ECONNREFUSED ::1:1234'))
+      .mockRejectedValueOnce(new Error('connect ECONNREFUSED ::1:1234'))
       .mockResolvedValueOnce(response({ data: [{ id: 'ornith-1.5-35b-a3b' }] }))
       .mockResolvedValueOnce(response({
         model: 'ornith-1.5-35b-a3b',
@@ -40,9 +41,9 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
       content: 'healthy local answer',
       provider: 'lmstudio-local',
     }));
-    expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
-    expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
-    expect(fetchMock.mock.calls[2][1]?.signal).toBeInstanceOf(AbortSignal);
+    expect(fetchMock.mock.calls[2][0]).toBe('http://127.0.0.1:1234/v1/models');
+    expect(fetchMock.mock.calls[3][0]).toBe('http://127.0.0.1:1234/v1/chat/completions');
+    expect(fetchMock.mock.calls[3][1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   test('uses an explicitly configured LM Studio base URL for inference', async () => {
