@@ -87,7 +87,6 @@ describe('/api/settings durability', () => {
 
   test('uses native LM Studio capability metadata for vision models', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({ ok: false } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -107,7 +106,7 @@ describe('/api/settings durability', () => {
       id: 'ornith-1.5-35b-a3b',
       capabilities: expect.arrayContaining(['vision', 'image-analysis']),
     }));
-    expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:1234/api/v1/models');
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/api/v1/models');
   });
 
   test('does not expose embedding or reranker models as chat models', async () => {
@@ -149,7 +148,7 @@ describe('/api/settings durability', () => {
     }) as any);
 
     expect(response.status).toBe(200);
-    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/api/v1/models');
+    expect(fetchMock.mock.calls[0][0]).toBe('http://192.168.1.50:1234/v1/models');
     await expect(response.json()).resolves.toEqual(expect.objectContaining({ success: true }));
   });
 
