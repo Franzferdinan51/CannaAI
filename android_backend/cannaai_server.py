@@ -486,6 +486,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                 if len(line) > 10:
                     recs.append(line)
             return recs
+        return recs
     
     def handle_chat(self):
         content_length = int(self.headers.get('Content-Length', 0))
