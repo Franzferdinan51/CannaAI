@@ -22,5 +22,6 @@ describe('Android LM Studio integration contract', () => {
     expect(source).toContain("health = None");
     expect(source).toContain("confidence = None");
     expect(source).toContain("return recs");
+    expect(source).toContain("tmp_dir = tempfile.gettempdir()");
   });
 });

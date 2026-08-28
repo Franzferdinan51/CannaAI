@@ -217,6 +217,11 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
         }
         
         tmp_dir = os.environ.get('TMPDIR', '/data/data/com.termux/files/usr/tmp')
+        if not os.path.isdir(tmp_dir):
+            # The Termux path is correct on Android, but the same backend is
+            # also used for desktop/Linux agent testing where that directory
+            # does not exist.
+            tmp_dir = tempfile.gettempdir()
         fd, req_file = tempfile.mkstemp(prefix='cannaai_lm_req_', suffix='.json', dir=tmp_dir)
         os.close(fd)
         resp_file = f"{req_file}.response"
