@@ -21,6 +21,8 @@ interface AnalysisRequest {
   pestDiseaseFocus?: string;
   urgency?: string;
   additionalNotes?: string;
+  observationScope?: 'single-plant' | 'multiple-plants' | 'crop';
+  expectedPlantCount?: number;
 }
 
 interface AnalysisResponse {
