@@ -309,7 +309,10 @@ export function getProviderConfig(provider: string) {
   switch (normalizeProviderName(provider)) {
     case 'lmstudio': {
       const rawUrl = process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL || 'http://localhost:1234';
-      const url = rawUrl.replace(/\/v1\/?$/, '').replace(/\/$/, '');
+      const url = rawUrl
+        .replace(/\/(?:api\/)?v1\/?$/i, '')
+        .replace(/\/api\/?$/i, '')
+        .replace(/\/$/, '');
       return {
         // Keep both names because older API routes consume `url`, while the
         // newer provider manager consumes `baseUrl`.

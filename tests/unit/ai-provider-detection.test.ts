@@ -315,6 +315,15 @@ describe('AI Provider Detection', () => {
       expect(config.timeout).toBe(60000);
     });
 
+    test('normalizes a native LM Studio API URL from environment', async () => {
+      process.env.LM_STUDIO_URL = 'http://localhost:1234/api/v1/';
+
+      const config = await getProviderConfig('lm-studio');
+
+      expect(config.url).toBe('http://localhost:1234');
+      expect(config.baseUrl).toBe('http://localhost:1234');
+    });
+
     test('should get OpenRouter config from environment', async () => {
       process.env.OPENROUTER_API_KEY = 'test-key';
       process.env.OPENROUTER_MODEL = 'test-model';
