@@ -272,7 +272,10 @@ export async function POST(request: NextRequest) {
 
     const requestedModel = typeof modelId === 'string' ? modelId.trim() : '';
     const chatModels = advertisedModels.filter(model => (
-      typeof model.id === 'string' && !model.id.toLowerCase().includes('embedding')
+      typeof model.id === 'string' &&
+      !model.id.toLowerCase().includes('embedding') &&
+      !model.id.toLowerCase().includes('reranker') &&
+      !model.id.toLowerCase().includes('rerank')
     ));
     // An explicit model ID is authoritative. LM Studio may JIT-load a
     // downloaded model that is not yet present in the compatibility catalog.

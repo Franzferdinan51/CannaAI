@@ -116,6 +116,7 @@ describe('/api/lmstudio legacy local endpoint', () => {
       .mockResolvedValueOnce(response({
         data: [
           { id: 'text-embedding-model' },
+          { id: 'qwen3-reranker-0.6b' },
           { id: 'cultivation-chat-model' },
         ],
       }))
