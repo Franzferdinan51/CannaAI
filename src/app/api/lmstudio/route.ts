@@ -14,6 +14,10 @@ export const dynamic = 'auto';
 export const revalidate = false;
 const LM_STUDIO_PROBE_TIMEOUT_MS = 20000;
 
+function lmStudioModelEndpoints(baseUrl: string): string[] {
+  return [`${baseUrl}/v1/models`, `${baseUrl}/api/v1/models`];
+}
+
 // LM Studio configuration
 const LM_STUDIO_URL = (process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234')
   .replace(/\/v1\/?$/, '')
@@ -167,26 +171,31 @@ export async function POST(request: NextRequest) {
     let discovered = false;
 
     for (const candidate of getLMStudioEndpointCandidates(requestedBaseUrl)) {
-      try {
-        const healthCheck = await fetch(`${candidate}/v1/models`, {
-          method: 'GET',
-          signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
-          headers: lmStudioHeaders()
-        });
-        if (!healthCheck.ok) {
-          lastHealthError = `LM Studio health check failed: ${healthCheck.status} ${healthCheck.statusText}`;
-          continue;
-        }
+      for (const endpoint of lmStudioModelEndpoints(candidate)) {
+        try {
+          const healthCheck = await fetch(endpoint, {
+            method: 'GET',
+            signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
+            headers: lmStudioHeaders()
+          });
+          if (!healthCheck.ok) {
+            lastHealthError = `LM Studio health check failed: ${healthCheck.status} ${healthCheck.statusText}`;
+            continue;
+          }
 
-        const modelsData = await healthCheck.json();
-        advertisedModels = Array.isArray(modelsData?.data) ? modelsData.data : [];
-        activeLMStudioUrl = candidate;
-        discovered = true;
-        console.log(`✅ LM Studio is running with ${advertisedModels.length} models available at ${candidate}`);
-        break;
-      } catch (healthError) {
-        lastHealthError = healthError instanceof Error ? healthError.message : lastHealthError;
+          const modelsData = await healthCheck.json();
+          advertisedModels = Array.isArray(modelsData?.data)
+            ? modelsData.data
+            : Array.isArray(modelsData?.models) ? modelsData.models : [];
+          activeLMStudioUrl = candidate;
+          discovered = true;
+          console.log(`✅ LM Studio is running with ${advertisedModels.length} models available at ${candidate}`);
+          break;
+        } catch (healthError) {
+          lastHealthError = healthError instanceof Error ? healthError.message : lastHealthError;
+        }
       }
+      if (discovered) break;
     }
 
     if (!discovered) {
@@ -412,21 +421,24 @@ export async function GET() {
     let activeLMStudioUrl = LM_STUDIO_URL;
     let lastHealthError = 'LM Studio is not responding';
     for (const candidate of getLMStudioEndpointCandidates()) {
-      try {
-        const candidateResponse = await fetch(`${candidate}/v1/models`, {
-          method: 'GET',
-          signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
-          headers: lmStudioHeaders()
-        });
-        if (candidateResponse.ok) {
-          response = candidateResponse;
-          activeLMStudioUrl = candidate;
-          break;
+      for (const endpoint of lmStudioModelEndpoints(candidate)) {
+        try {
+          const candidateResponse = await fetch(endpoint, {
+            method: 'GET',
+            signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
+            headers: lmStudioHeaders()
+          });
+          if (candidateResponse.ok) {
+            response = candidateResponse;
+            activeLMStudioUrl = candidate;
+            break;
+          }
+          lastHealthError = `HTTP ${candidateResponse.status}: ${candidateResponse.statusText}`;
+        } catch (healthError) {
+          lastHealthError = healthError instanceof Error ? healthError.message : lastHealthError;
         }
-        lastHealthError = `HTTP ${candidateResponse.status}: ${candidateResponse.statusText}`;
-      } catch (healthError) {
-        lastHealthError = healthError instanceof Error ? healthError.message : lastHealthError;
       }
+      if (response) break;
     }
 
     if (!response) {
@@ -451,7 +463,9 @@ export async function GET() {
     }
 
     const models = await response.json();
-    const modelList = Array.isArray(models?.data) ? models.data : [];
+    const modelList = Array.isArray(models?.data)
+      ? models.data
+      : Array.isArray(models?.models) ? models.models : [];
     const chatModels = modelList.filter((model: any) => {
       const id = String(model?.id || '').toLowerCase();
       return id && !id.includes('embedding') && !id.includes('embed-') && !id.endsWith('-embed');
