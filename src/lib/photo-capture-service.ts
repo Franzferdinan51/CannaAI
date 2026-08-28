@@ -74,7 +74,10 @@ async function executeAnalysisAction(plantId: string, imageData: string, capture
   const analysisContext = { ...captureConfig, ...asJsonRecord(captureData) };
   const analysis = await analyzePlantHealth(imageData, {
     model: typeof analysisContext.model === 'string' ? analysisContext.model : undefined,
+    baseUrl: typeof analysisContext.baseUrl === 'string' ? analysisContext.baseUrl : undefined,
     primaryProvider: typeof analysisContext.primaryProvider === 'string' ? analysisContext.primaryProvider : undefined,
+    observationScope: analysisContext.observationScope === 'multiple-plants' || analysisContext.observationScope === 'crop' ? analysisContext.observationScope : 'single-plant',
+    expectedPlantCount: typeof analysisContext.expectedPlantCount === 'number' ? analysisContext.expectedPlantCount : undefined,
     strain: typeof analysisContext.strain === 'string' ? analysisContext.strain : undefined,
     growthStage: typeof analysisContext.growthStage === 'string' ? analysisContext.growthStage : undefined,
     medium: typeof analysisContext.medium === 'string' ? analysisContext.medium : undefined,

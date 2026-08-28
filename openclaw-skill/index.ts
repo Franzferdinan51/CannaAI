@@ -51,7 +51,11 @@ const AnalyzePlantSchema = z.object({
   image: z.string().describe('Base64 encoded plant photo'),
   strain: z.string().optional().describe('Cannabis strain name'),
   stage: z.enum(['seedling', 'vegetative', 'flowering', 'harvest']).optional(),
-  symptoms: z.array(z.string()).optional().describe('Observable symptoms')
+  symptoms: z.array(z.string()).optional().describe('Observable symptoms'),
+  model: z.string().optional().describe('LM Studio model ID override'),
+  baseUrl: z.string().url().optional().describe('LM Studio base URL override'),
+  observationScope: z.enum(['single-plant', 'multiple-plants', 'crop']).optional(),
+  expectedPlantCount: z.number().int().min(1).max(100).optional()
 });
 
 const GetEnvironmentSchema = z.object({
@@ -84,7 +88,7 @@ export const tools = {
     description: 'Analyze cannabis plant health from photo. Returns diagnosis, health score, and recommendations.',
     schema: AnalyzePlantSchema,
     execute: async (params: z.infer<typeof AnalyzePlantSchema>) => {
-      const { image, strain, stage, symptoms } = params;
+      const { image, strain, stage, symptoms, model, baseUrl, observationScope, expectedPlantCount } = params;
       
       // Call CannaAI analysis API
       const response = await fetch(`${getCannaAIBaseUrl()}/api/analyze`, {
@@ -94,7 +98,11 @@ export const tools = {
           image: toImageDataUrl(image),
           strain: strain || 'Cannabis',
           leafSymptoms: symptoms?.join(', ') || 'general_health_check',
-          growthStage: stage || 'vegetative'
+          growthStage: stage || 'vegetative',
+          ...(model ? { model } : {}),
+          ...(baseUrl ? { baseUrl } : {}),
+          observationScope: observationScope || 'single-plant',
+          expectedPlantCount
         })
       });
       
