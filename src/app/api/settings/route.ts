@@ -882,10 +882,15 @@ async function testAIConnection(provider: string, configOverride?: Record<string
 
       if (response?.ok) {
         const models = await response.json();
+        const modelList = Array.isArray(models.data)
+          ? models.data
+          : Array.isArray(models.models)
+            ? models.models
+            : [];
         return {
           success: true,
           message: 'LM Studio connection successful',
-          details: { availableModels: models.data?.length || 0 }
+          details: { availableModels: modelList.length }
         };
       } else {
         return {
