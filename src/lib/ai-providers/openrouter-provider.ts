@@ -4,6 +4,7 @@
  */
 
 import { BaseProvider, AIRequest, AIResponse } from './base-provider';
+import { createTimeoutSignal } from '../abort-signal';
 
 export class OpenRouterProvider extends BaseProvider {
   constructor(config: any) {
@@ -45,7 +46,7 @@ export class OpenRouterProvider extends BaseProvider {
           'HTTP-Referer': this.config.referer || 'http://localhost:3000',
           'X-Title': this.config.title || 'CannaAI Pro'
         },
-        signal: AbortSignal.timeout(5000)
+        signal: createTimeoutSignal(5000)
       });
 
       return response.ok;
@@ -68,7 +69,7 @@ export class OpenRouterProvider extends BaseProvider {
           'X-Title': this.config.title || 'CannaAI Pro'
         },
         body: JSON.stringify(normalizedRequest),
-        signal: AbortSignal.timeout(this.config.timeout)
+          signal: createTimeoutSignal(this.config.timeout)
       });
 
       const latency = Date.now() - startTime;

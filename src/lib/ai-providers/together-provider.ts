@@ -4,6 +4,7 @@
  */
 
 import { BaseProvider, AIRequest, AIResponse } from './base-provider';
+import { createTimeoutSignal } from '../abort-signal';
 
 export class TogetherProvider extends BaseProvider {
   constructor(config: any) {
@@ -47,7 +48,7 @@ export class TogetherProvider extends BaseProvider {
         headers: {
           'Authorization': `Bearer ${this.config.apiKey}`
         },
-        signal: AbortSignal.timeout(5000)
+        signal: createTimeoutSignal(5000)
       });
 
       return response.ok;
@@ -68,7 +69,7 @@ export class TogetherProvider extends BaseProvider {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(normalizedRequest),
-        signal: AbortSignal.timeout(this.config.timeout)
+          signal: createTimeoutSignal(this.config.timeout)
       });
 
       const latency = Date.now() - startTime;

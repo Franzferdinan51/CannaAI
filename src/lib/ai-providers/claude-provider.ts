@@ -4,6 +4,7 @@
  */
 
 import { BaseProvider, AIRequest, AIResponse } from './base-provider';
+import { createTimeoutSignal } from '../abort-signal';
 
 export class ClaudeProvider extends BaseProvider {
   constructor(config: any) {
@@ -55,7 +56,7 @@ export class ClaudeProvider extends BaseProvider {
           max_tokens: 1,
           messages: [{ role: 'user', content: 'test' }]
         }),
-        signal: AbortSignal.timeout(5000)
+        signal: createTimeoutSignal(5000)
       });
 
       return response.status !== 401;
@@ -78,7 +79,7 @@ export class ClaudeProvider extends BaseProvider {
           ...(normalizedRequest.system && { 'anthropic-system-hint': normalizedRequest.system })
         },
         body: JSON.stringify(normalizedRequest),
-        signal: AbortSignal.timeout(this.config.timeout)
+          signal: createTimeoutSignal(this.config.timeout)
       });
 
       const latency = Date.now() - startTime;

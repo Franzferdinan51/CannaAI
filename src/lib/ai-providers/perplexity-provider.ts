@@ -4,6 +4,7 @@
  */
 
 import { BaseProvider, AIRequest, AIResponse } from './base-provider';
+import { createTimeoutSignal } from '../abort-signal';
 
 export class PerplexityProvider extends BaseProvider {
   constructor(config: any) {
@@ -53,7 +54,7 @@ export class PerplexityProvider extends BaseProvider {
           max_tokens: 1,
           messages: [{ role: 'user', content: 'test' }]
         }),
-        signal: AbortSignal.timeout(5000)
+        signal: createTimeoutSignal(5000)
       });
 
       return response.ok; // Only 200-299 means available
@@ -74,7 +75,7 @@ export class PerplexityProvider extends BaseProvider {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(normalizedRequest),
-        signal: AbortSignal.timeout(this.config.timeout)
+          signal: createTimeoutSignal(this.config.timeout)
       });
 
       const latency = Date.now() - startTime;
