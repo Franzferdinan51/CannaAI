@@ -109,6 +109,7 @@ describe('AgentCommandProvider Hermes proxy resilience', () => {
     expect(response.metadata?.provider).toBe('hermes');
     expect(fetchMock.mock.calls.map(([input]) => String(input))).toEqual([
       'http://127.0.0.1:8642/health',
+      'http://127.0.0.1:8642/health',
       'http://127.0.0.1:8642/v1/models',
       'http://127.0.0.1:8642/v1/chat/completions',
     ]);
