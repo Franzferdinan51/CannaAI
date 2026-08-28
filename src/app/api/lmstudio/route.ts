@@ -184,9 +184,18 @@ export async function POST(request: NextRequest) {
           }
 
           const modelsData = await healthCheck.json();
-          advertisedModels = Array.isArray(modelsData?.data)
+          const catalogModels = Array.isArray(modelsData?.data)
             ? modelsData.data
             : Array.isArray(modelsData?.models) ? modelsData.models : [];
+          // Native LM Studio catalogs commonly use `key`, while the
+          // OpenAI-compatible catalog uses `id`. Normalize both shapes so
+          // model selection never drops a valid native-only model.
+          advertisedModels = catalogModels.map((entry: any) => ({
+            ...entry,
+            id: typeof entry?.id === 'string' && entry.id.trim()
+              ? entry.id
+              : typeof entry?.key === 'string' ? entry.key : undefined,
+          }));
           activeLMStudioUrl = candidate;
           discovered = true;
           console.log(`✅ LM Studio is running with ${advertisedModels.length} models available at ${candidate}`);
