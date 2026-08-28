@@ -92,14 +92,18 @@ async function checkLMStudioRunning() {
       .replace(/\/$/, '');
     const apiKey = getLMStudioApiKey();
     for (const apiPath of ['/api/v1/models', '/v1/models']) {
-      const response = await fetch(`${baseUrl}${apiPath}`, {
-        signal: createTimeoutSignal(3000),
-        headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
-      });
-      if (!response.ok) continue;
-      const data = await response.json();
-      const models = Array.isArray(data.models) ? data.models : data.data || [];
-      return { running: true, models, count: models.length };
+      try {
+        const response = await fetch(`${baseUrl}${apiPath}`, {
+          signal: createTimeoutSignal(3000),
+          headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
+        });
+        if (!response.ok) continue;
+        const data = await response.json();
+        const models = Array.isArray(data.models) ? data.models : data.data || [];
+        return { running: true, models, count: models.length };
+      } catch {
+        // A failed native probe should not prevent the legacy endpoint probe.
+      }
     }
     return { running: false, error: 'LM Studio model endpoints returned no successful response' };
   } catch (error) {
