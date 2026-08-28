@@ -350,7 +350,10 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             data = json.loads(body)
             
             # Get image (base64 or file path)
-            image_data = data.get('plantImage')
+            # Accept both names used by the web client and phone/agent
+            # integrations. Keeping the original data URL intact is handled
+            # by lm_chat; raw base64 is wrapped there when needed.
+            image_data = data.get('plantImage') or data.get('image')
             image_format = 'jpeg'
             
             if not image_data:
@@ -408,11 +411,26 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                 self.send_json({'error': f'LM Studio error: {error}'}, status=500)
                 return
             
-            # Extract health score
-            health = 7
-            m = re.search(r'(\d+)\s*/\s*10', analysis_text)
+            # Extract only values the model actually reported. Never present
+            # a fabricated health score or confidence as an observation.
+            health = None
+            m = re.search(r'(?:health\s+score|overall\s+health)[^\d]{0,30}(\d+(?:\.\d+)?)\s*(?:/\s*10|out\s+of\s+10)', analysis_text, re.IGNORECASE)
             if m:
-                health = int(m.group(1))
+                health = max(1, min(10, float(m.group(1))))
+                health = int(health) if health.is_integer() else health
+
+            confidence = None
+            confidence_match = re.search(r'confidence[^\d]{0,20}(\d+(?:\.\d+)?)\s*%?', analysis_text, re.IGNORECASE)
+            if confidence_match:
+                confidence = float(confidence_match.group(1))
+                if confidence > 1:
+                    confidence /= 100
+                confidence = max(0, min(1, confidence))
+
+            urgency = 'unknown'
+            urgency_match = re.search(r'urgency[^a-z]*(low|medium|high|critical)', analysis_text, re.IGNORECASE)
+            if urgency_match:
+                urgency = urgency_match.group(1).lower()
             
             # Save report
             self.save_report(analysis_text, data)
@@ -421,8 +439,8 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                 'analysis': {
                     'diagnosis': analysis_text,
                     'healthScore': health,
-                    'urgency': 'medium',
-                    'confidence': 0.85,
+                    'urgency': urgency,
+                    'confidence': confidence,
                     'recommendations': self.extract_recs(analysis_text),
                     'observationScope': observation_scope,
                     'expectedPlantCount': expected_count
@@ -449,7 +467,7 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
                 line = line.strip()
                 if len(line) > 10:
                     recs.append(line)
-        return recs if recs else ['Monitor health', 'Check pH', 'Ensure proper lighting']
+            return recs
     
     def handle_chat(self):
         content_length = int(self.headers.get('Content-Length', 0))
