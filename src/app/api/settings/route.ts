@@ -101,6 +101,16 @@ let settingsLoaded = false;
 let settingsRecordId = 1;
 const SETTINGS_DATABASE_TIMEOUT_MS = 2000;
 
+// AbortSignal.timeout is unavailable in older Node runtimes used by some
+// local installs. Keep the settings probes portable without changing their
+// timeout behavior.
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  return controller.signal;
+}
+
 async function withSettingsDatabaseTimeout<T>(operation: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
