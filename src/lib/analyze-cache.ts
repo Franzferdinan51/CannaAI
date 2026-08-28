@@ -24,6 +24,8 @@ export interface AnalyzeCacheKey {
   humidity?: string | number;
   model?: string;
   baseUrl?: string;
+  observationScope?: string;
+  expectedPlantCount?: number;
 }
 
 export interface CacheEntry<T = unknown> {
@@ -93,6 +95,8 @@ class AnalyzeCache {
       norm(input.humidity),
       norm(input.model),
       norm(input.baseUrl),
+      norm(input.observationScope),
+      norm(input.expectedPlantCount),
     ].join('|');
   }
 
