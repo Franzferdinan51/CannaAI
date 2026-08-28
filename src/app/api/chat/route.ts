@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { detectAvailableProviders, getProviderConfig, executeChatWithFallback, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import { executeWithMiniMaxStream } from '@/lib/ai-provider-minimax';
 import { getChatResponseText } from '@/lib/chat-routing';
+import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { withRequest } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
@@ -57,15 +58,24 @@ async function probeRequestedProvider(provider: unknown, providerSettings: any, 
     ? normalizeLMStudioBaseUrl(configuredUrl)
     : String(configuredUrl).replace(/\/$/, '').replace(/\/v1$/, '');
   const headers: Record<string, string> = {};
-  if (typeof config.apiKey === 'string' && config.apiKey.trim()) {
-    headers.Authorization = `Bearer ${config.apiKey.trim()}`;
+  const apiKey = typeof config.apiKey === 'string' && config.apiKey.trim()
+    ? config.apiKey.trim()
+    : normalized === 'lmstudio' ? getLMStudioApiKey() : '';
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
   }
   try {
-    const response = await fetch(`${baseUrl}/v1/models`, {
-      headers,
-      signal: createTimeoutSignal(8000),
-    });
-    return response.ok;
+    const endpoints = normalized === 'lmstudio'
+      ? [`${baseUrl}/v1/models`, `${baseUrl}/api/v1/models`]
+      : [`${baseUrl}/v1/models`];
+    for (const endpoint of endpoints) {
+      const response = await fetch(endpoint, {
+        headers,
+        signal: createTimeoutSignal(8000),
+      });
+      if (response.ok) return true;
+    }
+    return false;
   } catch {
     return false;
   }
