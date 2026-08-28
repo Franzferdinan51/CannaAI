@@ -41,8 +41,11 @@ function normalizeAgentMessage(message: any, fallbackImage?: string) {
       ? message.content
       : String(message?.text || '');
   const image = message?.image || parts.find((part: any) => (
-    part?.type === 'image_url' && typeof part?.image_url?.url === 'string'
-  ))?.image_url?.url || (message?.role === 'user' ? fallbackImage : undefined);
+    (part?.type === 'image_url' && typeof part?.image_url?.url === 'string') ||
+    (part?.type === 'image' && typeof part?.image_url === 'string')
+  ))?.image_url?.url || parts.find((part: any) => (
+    part?.type === 'image' && typeof part?.image_url === 'string'
+  ))?.image_url || (message?.role === 'user' ? fallbackImage : undefined);
   return { role: message?.role || 'user', content, image };
 }
 
