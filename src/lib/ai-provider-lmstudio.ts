@@ -131,6 +131,54 @@ function isEmbeddingModel(id: string): boolean {
   return value.includes('embedding') || value.includes('embed-') || value.endsWith('-embed') || value.includes('reranker');
 }
 
+function isNonChatModel(model: any): boolean {
+  const type = typeof model?.type === 'string' ? model.type.toLowerCase() : '';
+  if (type === 'embedding' || type === 'reranker' || type === 'image-embedding') return true;
+  const id = String(model?.id || model?.key || '').trim();
+  return id ? isEmbeddingModel(id) : false;
+}
+
+function modelIdsFromCatalog(data: any): string[] {
+  const entries = Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data?.models)
+      ? data.models
+      : [];
+  const ids = new Set<string>();
+  for (const model of entries) {
+    if (isNonChatModel(model)) continue;
+    const id = typeof model === 'string' ? model : model?.id || model?.key;
+    if (typeof id === 'string' && id.trim()) ids.add(id.trim());
+    for (const instance of Array.isArray(model?.loaded_instances) ? model.loaded_instances : []) {
+      const instanceId = instance?.id;
+      if (typeof instanceId === 'string' && instanceId.trim()) ids.add(instanceId.trim());
+    }
+  }
+  return Array.from(ids);
+}
+
+async function fetchModelCatalog(endpoint: string, timeoutMs: number): Promise<{ models: string[]; responseEndpoint: string } | null> {
+  let successfulEmptyEndpoint: string | undefined;
+  // Keep the OpenAI-compatible route first for older LM Studio versions and
+  // existing deployments; fall back to the native catalog when that route is
+  // unavailable or returns no usable models.
+  for (const path of ['/v1/models', '/api/v1/models']) {
+    try {
+      const response = await fetchWithTimeout(`${endpoint}${path}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      }, timeoutMs);
+      if (!response.ok) continue;
+      const models = modelIdsFromCatalog(await response.json().catch(() => ({})));
+      if (models.length > 0) return { models, responseEndpoint: `${endpoint}${path}` };
+      successfulEmptyEndpoint ||= `${endpoint}${path}`;
+    } catch {
+      // Try the compatibility endpoint before reporting that LM Studio is unavailable.
+    }
+  }
+  return successfulEmptyEndpoint ? { models: [], responseEndpoint: successfulEmptyEndpoint } : null;
+}
+
 function looksLikeVisionModel(id: string): boolean {
   const value = id.toLowerCase();
   return (
@@ -190,24 +238,12 @@ export async function checkLMStudio(includeModels = false, configuredBaseUrl?: s
   let lastError = 'connection refused';
   for (const url of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     try {
-      const response = await fetchWithTimeout(`${url}/v1/models`, {
-        method: 'GET',
-        headers: getHeaders(),
-        signal: createTimeoutSignal(3000),
-      }, 3000);
-
-      if (!response.ok) {
-        lastError = `HTTP ${response.status}`;
+      const catalog = await fetchModelCatalog(url, 3000);
+      if (!catalog) {
+        lastError = 'LM Studio model catalog request failed';
         continue;
       }
-
-      const data = await response.json().catch(() => ({} as any));
-      const models = Array.isArray(data?.data)
-        ? data.data
-          .map((model: any) => model?.id)
-          .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
-          .filter(id => !isEmbeddingModel(id))
-        : [];
+      const models = catalog.models;
 
       if (models.length === 0) {
         return buildResult({
@@ -255,20 +291,9 @@ export async function getAvailableModels(forceRefresh = false, configuredBaseUrl
 
   for (const endpoint of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     try {
-      const response = await fetch(`${endpoint}/v1/models`, {
-        method: 'GET',
-        headers: getHeaders(),
-        signal: createTimeoutSignal(5000),
-      });
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      const models = Array.isArray(data?.data)
-        ? data.data
-          .map((model: any) => model?.id)
-          .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
-          .filter(id => !isEmbeddingModel(id))
-        : [];
+      const catalog = await fetchModelCatalog(endpoint, 5000);
+      if (!catalog) continue;
+      const models = catalog.models;
 
       // Do not cache an empty transient response. A model may be loading or
       // LM Studio may be switching JIT state, and an empty minute-long cache
