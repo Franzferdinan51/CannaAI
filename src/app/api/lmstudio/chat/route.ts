@@ -59,19 +59,16 @@ function attachImageToLatestUserMessage(messages: any[], image: unknown): any[] 
     if (attached || message?.role !== 'user') return message;
     attached = true;
 
-    const text = typeof message.content === 'string'
-      ? message.content
+    const existingContent = typeof message.content === 'string'
+      ? [{ type: 'text', text: message.content }]
       : Array.isArray(message.content)
         ? message.content
-          .filter((part: any) => part?.type === 'text')
-          .map((part: any) => part?.text || '')
-          .join('\n')
-        : String(message.content || '');
+        : [{ type: 'text', text: String(message.content || '') }];
 
     return {
       ...message,
       content: [
-        { type: 'text', text },
+        ...existingContent,
         { type: 'image_url', image_url: { url: normalizedImage } },
       ],
     };
@@ -101,6 +98,7 @@ async function discoverLMStudioWithKey(configuredBaseUrl?: string, apiKey?: stri
   baseUrl: string;
   models: any[];
 } | null> {
+  let reachableBaseUrl: string | undefined;
   for (const baseUrl of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     for (const endpoint of [`${baseUrl}/v1/models`, `${baseUrl}/api/v1/models`]) {
       try {
@@ -109,11 +107,17 @@ async function discoverLMStudioWithKey(configuredBaseUrl?: string, apiKey?: stri
           headers: lmStudioHeaders(false, apiKey),
         });
         if (!healthResponse.ok) continue;
+        reachableBaseUrl ||= baseUrl;
 
         const modelsData = await healthResponse.json().catch(() => ({}));
         const catalog = Array.isArray(modelsData?.data)
           ? modelsData.data
           : Array.isArray(modelsData?.models) ? modelsData.models : [];
+        // Some LM Studio versions answer the compatibility endpoint with an
+        // empty catalog while the native endpoint still has model metadata.
+        // Keep probing instead of treating that transient/partial response
+        // as the complete source of truth.
+        if (catalog.length === 0) continue;
         return {
           baseUrl,
           models: catalog.map((entry: any) => ({
@@ -130,7 +134,7 @@ async function discoverLMStudioWithKey(configuredBaseUrl?: string, apiKey?: stri
       }
     }
   }
-  return null;
+  return reachableBaseUrl ? { baseUrl: reachableBaseUrl, models: [] } : null;
 }
 
 async function discoverVisionModelIds(baseUrl: string, apiKey?: string): Promise<{

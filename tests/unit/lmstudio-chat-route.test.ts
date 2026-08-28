@@ -105,6 +105,45 @@ describe('/api/lmstudio/chat local endpoint failover', () => {
     }]);
   });
 
+  test('preserves existing multimodal parts when attaching a supplied image', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([{ id: 'ornith-1.5-35b-a3b' }]))
+      .mockResolvedValueOnce(response({ models: [{ key: 'ornith-1.5-35b-a3b', capabilities: { vision: true } }] }))
+      .mockResolvedValueOnce(completionResponse('vision answer'));
+    const existingImage = { type: 'image_url', image_url: { url: 'data:image/png;base64,existing' } };
+
+    const result = await POST(requestWithBody({
+      messages: [{
+        role: 'user',
+        content: [{ type: 'text', text: 'Compare these leaves' }, existingImage],
+      }],
+      image: 'data:image/jpeg;base64,additional',
+      model: 'ornith-1.5-35b-a3b',
+    }) as any);
+
+    expect(result.status).toBe(200);
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(requestBody.messages[0].content).toEqual([
+      { type: 'text', text: 'Compare these leaves' },
+      existingImage,
+      { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,additional' } },
+    ]);
+  });
+
+  test('continues to the native catalog when the compatibility catalog is empty', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(modelsResponse([]))
+      .mockResolvedValueOnce(response({ models: [{ key: 'native-local-model' }] }))
+      .mockResolvedValueOnce(completionResponse('native answer'));
+
+    const result = await POST(requestWithBody({ prompt: 'hello' }) as any);
+
+    expect(result.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
+    expect(fetchMock.mock.calls[1][0]).toBe('http://localhost:1234/api/v1/models');
+    expect(JSON.parse(String(fetchMock.mock.calls[2][1]?.body)).model).toBe('native-local-model');
+  });
+
   test('normalizes raw base64 images when the route creates the user message', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce(modelsResponse([{ id: 'ornith-1.5-35b-a3b' }]))
