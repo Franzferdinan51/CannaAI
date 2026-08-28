@@ -37,7 +37,14 @@ describe('plant analysis routes', () => {
 
     const form = new FormData();
     form.append('image', new Blob(['fake-image'], { type: 'image/jpeg' }), 'plant.jpg');
-    form.append('data', JSON.stringify({ model: 'ornith-1.5-35b-a3b', symptoms: ['curling leaves'] }));
+    form.append('data', JSON.stringify({
+      model: 'ornith-1.5-35b-a3b',
+      symptoms: ['curling leaves'],
+      temperature: '24.5',
+      humidity: '55',
+      phLevel: '6.2',
+      expectedPlantCount: '1',
+    }));
 
     const response = await analyzePlant(
       new Request('http://localhost/api/plants/plant-1/analyze', { method: 'POST', body: form }) as any,
@@ -52,6 +59,10 @@ describe('plant analysis routes', () => {
         growthStage: 'flower',
         model: 'ornith-1.5-35b-a3b',
         symptoms: ['curling leaves'],
+        temperature: 24.5,
+        humidity: 55,
+        phLevel: 6.2,
+        expectedPlantCount: 1,
       }),
     );
     expect(mockPrisma.plantAnalysis.create).toHaveBeenCalledWith(expect.objectContaining({

@@ -16,6 +16,22 @@ function normalizeImage(value: string, mimeType = 'image/jpeg'): string {
   return `data:${mimeType};base64,${trimmed}`;
 }
 
+function optionalNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+}
+
+function plantCount(value: unknown): number | undefined {
+  const parsed = optionalNumber(value);
+  return parsed !== undefined && Number.isInteger(parsed) && parsed >= 1 && parsed <= 100
+    ? parsed
+    : undefined;
+}
+
 export async function POST(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const plant = await prisma.plant.findUnique({ where: { id }, include: { strain: true } });
@@ -66,13 +82,13 @@ export async function POST(request: NextRequest, { params }: Params) {
       baseUrl: typeof input.baseUrl === 'string' ? input.baseUrl : undefined,
       primaryProvider: typeof input.primaryProvider === 'string' ? input.primaryProvider : undefined,
       observationScope: input.observationScope === 'multiple-plants' || input.observationScope === 'crop' ? input.observationScope : 'single-plant',
-      expectedPlantCount: typeof input.expectedPlantCount === 'number' ? input.expectedPlantCount : undefined,
+      expectedPlantCount: plantCount(input.expectedPlantCount),
       strain: typeof input.strain === 'string' ? input.strain : plant.strain?.name,
       growthStage: typeof input.growthStage === 'string' ? input.growthStage : plant.stage || undefined,
       medium: typeof input.medium === 'string' ? input.medium : undefined,
-      temperature: typeof input.temperature === 'number' ? input.temperature : undefined,
-      humidity: typeof input.humidity === 'number' ? input.humidity : undefined,
-      phLevel: typeof input.phLevel === 'number' ? input.phLevel : undefined,
+      temperature: optionalNumber(input.temperature),
+      humidity: optionalNumber(input.humidity),
+      phLevel: optionalNumber(input.phLevel),
       symptoms: Array.isArray(input.symptoms) ? input.symptoms.filter((item: unknown): item is string => typeof item === 'string') : undefined,
     });
 
