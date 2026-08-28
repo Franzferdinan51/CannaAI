@@ -228,7 +228,9 @@ class CannaAIHandler(SimpleHTTPRequestHandler):
             curl_args = [
                 "curl", "-sS", "--max-time", str(LM_STUDIO_TIMEOUT),
                 "-X", "POST",
-                f"{LM_STUDIO_URL}/chat/completions",
+                # LM_STUDIO_URL is normalized to the server root above;
+                # inference remains on LM Studio's OpenAI-compatible /v1 API.
+                f"{LM_STUDIO_URL}/v1/chat/completions",
                 "-H", "Content-Type: application/json",
                 "--data-binary", f"@{req_file}"
             ]
