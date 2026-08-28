@@ -82,8 +82,8 @@ tested with `hermes auth status <provider>`:
 ```bash
 hermes portal login
 hermes auth list
-hermes auth status openai-codex
-hermes auth status xai-oauth
+hermes auth status openai
+hermes auth status xai
 ```
 
 The Settings page reports the live Hermes API/legacy proxy status, so it
