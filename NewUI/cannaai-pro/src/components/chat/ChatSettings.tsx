@@ -111,7 +111,7 @@ export function ChatSettings({
         // The backend performs the local model probe before answering. Give
         // it enough time to inspect a cold LM Studio instance without making
         // a healthy provider look disconnected.
-        signal: createTimeoutSignal(15000),
+        signal: createTimeoutSignal(provider === 'lm-studio' ? 60000 : 15000),
       });
 
       const success = response.ok;
