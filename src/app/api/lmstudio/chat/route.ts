@@ -104,7 +104,7 @@ async function discoverLMStudioWithKey(configuredBaseUrl?: string, apiKey?: stri
   for (const baseUrl of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     try {
       const healthResponse = await fetch(`${baseUrl}/v1/models`, {
-        signal: createTimeoutSignal(3000),
+        signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
         headers: lmStudioHeaders(false, apiKey),
       });
       if (!healthResponse.ok) continue;
@@ -128,7 +128,7 @@ async function discoverVisionModelIds(baseUrl: string, apiKey?: string): Promise
 } | null> {
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
-      signal: createTimeoutSignal(3000),
+      signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
       headers: lmStudioHeaders(false, apiKey),
     });
     if (!response.ok) return null;
@@ -171,6 +171,7 @@ export const revalidate = false;
 
 const TEXT_INFERENCE_TIMEOUT_MS = 120000;
 const VISION_INFERENCE_TIMEOUT_MS = 600000;
+const LM_STUDIO_PROBE_TIMEOUT_MS = 20000;
 
 export async function POST(request: NextRequest) {
   // For static export, provide client-side compatibility response
