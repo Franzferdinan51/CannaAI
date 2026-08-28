@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
+import { createTimeoutSignal } from '@/lib/abort-signal';
 
 // Export configuration for dual-mode compatibility
 // This endpoint inspects the host filesystem and a live LM Studio service.
@@ -91,7 +92,7 @@ async function checkLMStudioRunning() {
       .replace(/\/$/, '');
     const apiKey = getLMStudioApiKey();
     const response = await fetch(`${baseUrl}/v1/models`, {
-      signal: AbortSignal.timeout(3000),
+      signal: createTimeoutSignal(3000),
       headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
     });
 

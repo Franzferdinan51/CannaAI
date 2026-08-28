@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
+import { createTimeoutSignal } from '@/lib/abort-signal';
 
 const lmStudioHeaders = () => {
   const apiKey = getLMStudioApiKey();
@@ -43,7 +44,7 @@ export async function GET(_request: Request) {
     let lmStudioDirect = null;
     try {
       const response = await fetch('http://localhost:1234/v1/models', {
-        signal: AbortSignal.timeout(5000),
+        signal: createTimeoutSignal(5000),
         headers: lmStudioHeaders()
       });
 
@@ -84,7 +85,7 @@ export async function GET(_request: Request) {
     let localScanner = null;
     try {
       const response = await fetch(`${appOrigin}/api/lmstudio/models`, {
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -126,7 +127,7 @@ export async function GET(_request: Request) {
     let aiProviders = null;
     try {
       const response = await fetch(`${appOrigin}/api/ai/providers`, {
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -166,7 +167,7 @@ export async function GET(_request: Request) {
     let settings = null;
     try {
       const response = await fetch(`${appOrigin}/api/settings`, {
-        signal: AbortSignal.timeout(5000)
+        signal: createTimeoutSignal(5000)
       });
 
       if (response.ok) {

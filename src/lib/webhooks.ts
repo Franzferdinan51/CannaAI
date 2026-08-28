@@ -1,5 +1,6 @@
 import { prisma } from './prisma';
 import crypto from 'crypto';
+import { createTimeoutSignal } from './abort-signal';
 
 // Webhook event types
 export type WebhookEventType =
@@ -339,7 +340,7 @@ async function deliverWebhook(
       method: 'POST',
       headers,
       body: payload,
-      signal: AbortSignal.timeout(webhook.timeout)
+      signal: createTimeoutSignal(webhook.timeout)
     });
 
     const responseTime = Date.now() - startTime;
