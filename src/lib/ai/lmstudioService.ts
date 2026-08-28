@@ -49,6 +49,33 @@ function normalizeBaseUrl(endpoint: string): string {
     .replace(/\/$/, '');
 }
 
+async function fetchModelCatalog(baseUrl: string, apiKey?: string): Promise<any[]> {
+  const headers = {
+    'Accept': 'application/json',
+    ...(apiKey?.trim() ? { Authorization: `Bearer ${apiKey.trim()}` } : {}),
+  };
+
+  // Newer LM Studio exposes capability and loaded-instance metadata here.
+  // Keep the OpenAI-compatible endpoint as a fallback for older releases.
+  for (const path of ['/api/v1/models', '/v1/models']) {
+    try {
+      const response = await fetchWithTimeout(`${baseUrl}${path}`, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+        headers,
+      }, 5000);
+      if (!response.ok) continue;
+      const data = await response.json();
+      const models = Array.isArray(data?.models) ? data.models : data?.data;
+      if (Array.isArray(models)) return models;
+    } catch {
+      // Try the compatibility endpoint before reporting the provider down.
+    }
+  }
+  return [];
+}
+
 async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -68,27 +95,11 @@ export async function testLMStudioConnection(
 ): Promise<{ success: boolean; error?: string; models?: string[] }> {
   try {
     const baseUrl = normalizeBaseUrl(endpoint);
-    const response = await fetchWithTimeout(`${baseUrl}/v1/models`, {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-      headers: {
-        'Accept': 'application/json',
-        ...(apiKey?.trim() ? { Authorization: `Bearer ${apiKey.trim()}` } : {}),
-      }
-    }, 5000);
-
-    if (response.ok) {
-      const data = await response.json();
-      const models = Array.isArray(data.data)
-        ? data.data.map((m: any) => m?.id || m?.key).filter(Boolean)
-        : Array.isArray(data.models)
-          ? data.models.map((m: any) => m?.id || m?.key).filter(Boolean)
-          : [];
-      return { success: true, models };
-    }
-
-    return { success: false, error: `Server returned ${response.status}` };
+    const models = await fetchModelCatalog(baseUrl, apiKey);
+    const ids = models.map((model: any) => model?.id || model?.key).filter(Boolean);
+    return ids.length > 0
+      ? { success: true, models: ids }
+      : { success: false, error: 'LM Studio returned no chat-capable models' };
   } catch (e: any) {
     let errorMsg = e.message || "Unknown error";
     if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
@@ -109,25 +120,9 @@ export async function testLMStudioConnection(
  */
 async function getAvailableModel(baseUrl: string): Promise<string | null> {
   try {
-    const response = await fetchWithTimeout(`${baseUrl}/v1/models`, {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-      headers: {
-        'Accept': 'application/json',
-        ...(getLMStudioApiKey()
-          ? { Authorization: `Bearer ${getLMStudioApiKey()}` }
-          : {}),
-      }
-    }, 5000);
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.data && data.data.length > 0) {
-        const model = data.data.find((entry: any) => !isNonChatModel(entry));
-        return model?.id || model?.key || null;
-      }
-    }
+    const models = await fetchModelCatalog(baseUrl, getLMStudioApiKey());
+    const model = models.find((entry: any) => !isNonChatModel(entry));
+    if (model) return model.id || model.key || null;
   } catch (e) {
     console.error("Failed to get models:", e);
   }

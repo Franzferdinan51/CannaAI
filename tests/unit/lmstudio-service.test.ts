@@ -103,7 +103,7 @@ describe('legacy LM Studio vision client', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/chat/completions');
   });
 
-  test('uses a bounded model discovery request for a /v1 endpoint', async () => {
+  test('uses the native model catalog for a /v1 endpoint', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({ data: [{ id: 'ornith-1.5-35b-a3b' }] }),
@@ -113,8 +113,26 @@ describe('legacy LM Studio vision client', () => {
       success: true,
       models: ['ornith-1.5-35b-a3b'],
     });
-    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/v1/models');
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:1234/api/v1/models');
     expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
+  });
+
+  test('falls back to the OpenAI-compatible catalog on older LM Studio releases', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({ ok: false, status: 404 } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'legacy-vision-model' }] }),
+      } as Response);
+
+    await expect(testLMStudioConnection('http://localhost:1234')).resolves.toEqual({
+      success: true,
+      models: ['legacy-vision-model'],
+    });
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      'http://localhost:1234/api/v1/models',
+      'http://localhost:1234/v1/models',
+    ]);
   });
 
   test('sends an optional bearer token and reads native model keys', async () => {

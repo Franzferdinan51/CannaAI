@@ -91,24 +91,17 @@ async function checkLMStudioRunning() {
       .replace(/\/api\/?$/i, '')
       .replace(/\/$/, '');
     const apiKey = getLMStudioApiKey();
-    const response = await fetch(`${baseUrl}/v1/models`, {
-      signal: createTimeoutSignal(3000),
-      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
-    });
-
-    if (response.ok) {
+    for (const apiPath of ['/api/v1/models', '/v1/models']) {
+      const response = await fetch(`${baseUrl}${apiPath}`, {
+        signal: createTimeoutSignal(3000),
+        headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
+      });
+      if (!response.ok) continue;
       const data = await response.json();
-      return {
-        running: true,
-        models: data.data || [],
-        count: (data.data || []).length
-      };
-    } else {
-      return {
-        running: false,
-        error: `${response.status} ${response.statusText}`
-      };
+      const models = Array.isArray(data.models) ? data.models : data.data || [];
+      return { running: true, models, count: models.length };
     }
+    return { running: false, error: 'LM Studio model endpoints returned no successful response' };
   } catch (error) {
     return {
       running: false,
