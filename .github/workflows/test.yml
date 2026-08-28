@@ -150,7 +150,9 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Build application
-        run: npm run build
+        # Performance browser tests exercise the root Next app, not the
+        # separate Vite UI. Avoid rebuilding unrelated frontend artifacts.
+        run: npm run build:backend
 
       - name: Run performance tests
         run: npm run test:performance
