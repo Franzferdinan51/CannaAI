@@ -174,7 +174,9 @@ async function fetchModelCatalog(endpoint: string, timeoutMs: number): Promise<{
       if (models.length > 0) return { models, responseEndpoint: `${endpoint}${path}` };
       successfulEmptyEndpoint ||= `${endpoint}${path}`;
     } catch {
-      // Try the compatibility endpoint before reporting that LM Studio is unavailable.
+      if (path === '/v1/models') return null;
+      // A network failure means this loopback candidate is unavailable; move
+      // on so localhost and 127.0.0.1 can be tried independently.
     }
   }
   return successfulEmptyEndpoint ? { models: [], responseEndpoint: successfulEmptyEndpoint } : null;
