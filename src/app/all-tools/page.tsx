@@ -34,6 +34,9 @@ import {
   RefreshCw,
   CheckCircle
 } from 'lucide-react';
+import { createTimeoutSignal } from '@/lib/abort-signal';
+
+const LOCAL_ANALYSIS_TIMEOUT_MS = 660000;
 
 // Tool components imports
 const PestDiseaseIdentifier = () => (
@@ -225,7 +228,7 @@ export default function AllToolsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageData, deviceInfo }),
-        signal: AbortSignal.timeout(660000),
+        signal: createTimeoutSignal(LOCAL_ANALYSIS_TIMEOUT_MS),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.success) {
@@ -247,7 +250,7 @@ export default function AllToolsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageData, deviceInfo, analysisOptions: { focusArea: 'trichomes' } }),
-        signal: AbortSignal.timeout(660000),
+        signal: createTimeoutSignal(LOCAL_ANALYSIS_TIMEOUT_MS),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.success) {
