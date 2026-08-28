@@ -18,10 +18,10 @@
 
 import express from 'express';
 import cors from 'cors';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const app = express();
 const PORT = process.env.PORT || 18790;
@@ -107,9 +107,13 @@ app.post('/v1/chat/completions', async (req, res) => {
       for (const item of lastMessage.content) {
         if (item.type === 'text') {
           promptText += item.text + ' ';
-        } else if (item.type === 'image_url' && item.image_url?.url) {
+        } else if (
+          (item.type === 'image_url' && item.image_url?.url) ||
+          (item.type === 'image' && typeof item.image_url === 'string')
+        ) {
           // Extract base64 from data URL
-          const match = item.image_url.url.match(/^data:image\/\w+;base64,(.+)$/);
+          const imageUrl = item.type === 'image_url' ? item.image_url.url : item.image_url;
+          const match = imageUrl.match(/^data:image\/[^;,]+;base64,([\s\S]+)$/i);
           if (match) {
             imageBase64 = match[1];
           }
@@ -130,16 +134,17 @@ app.post('/v1/chat/completions', async (req, res) => {
     
     // Build openclaw agent command
     // Use default agent (discord) with model override
-    let cmd = `openclaw agent --json --agent discord --message ${JSON.stringify(promptText)}`;
-    
     // Add thinking level based on complexity
     const thinkingLevel = promptText.length > 500 ? 'high' : 'medium';
-    cmd += ` --thinking ${thinkingLevel}`;
-    
-    console.log(`🔧 Executing: ${cmd}`);
+    const args = [
+      'agent', '--json', '--agent', 'discord', '--message', promptText,
+      '--thinking', thinkingLevel,
+    ];
+
+    console.log(`🔧 Executing OpenClaw agent (thinking=${thinkingLevel})`);
     
     // Execute OpenClaw agent
-    const { stdout, stderr } = await execAsync(cmd, {
+    const { stdout, stderr } = await execFileAsync('openclaw', args, {
       timeout: 120000, // 2 minute timeout
       maxBuffer: 10 * 1024 * 1024 // 10MB buffer
     });
