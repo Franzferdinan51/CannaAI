@@ -63,7 +63,7 @@ describe('AgentCommandProvider Hermes proxy resilience', () => {
   });
 
   test('uses the full Hermes API server for native vision and model discovery', async () => {
-    process.env.HERMES_API_URL = 'http://127.0.0.1:8642/v1';
+    process.env.HERMES_API_URL = 'http://127.0.0.1:8642/api/v1/';
     process.env.HERMES_API_KEY = 'hermes-test-key';
     const fetchMock = jest.spyOn(global, 'fetch');
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -107,6 +107,11 @@ describe('AgentCommandProvider Hermes proxy resilience', () => {
 
     expect(response.choices[0].message.content).toBe('Native Hermes vision answer');
     expect(response.metadata?.provider).toBe('hermes');
+    expect(fetchMock.mock.calls.map(([input]) => String(input))).toEqual([
+      'http://127.0.0.1:8642/health',
+      'http://127.0.0.1:8642/v1/models',
+      'http://127.0.0.1:8642/v1/chat/completions',
+    ]);
   });
 
   test('normalizes text-part arrays returned by Hermes and OpenClaw adapters', async () => {

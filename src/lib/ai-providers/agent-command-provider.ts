@@ -235,7 +235,10 @@ export class AgentCommandProvider extends BaseProvider {
 
   private hermesApiBaseUrl(): string {
     const configured = process.env.HERMES_API_URL || 'http://127.0.0.1:8642/v1';
-    return configured.replace(/\/+$/, '').replace(/\/v1$/i, '');
+    return configured
+      .replace(/\/(?:api\/)?v1\/?$/i, '')
+      .replace(/\/api\/?$/i, '')
+      .replace(/\/+$/, '');
   }
 
   private hermesApiHeaders(): Record<string, string> {
