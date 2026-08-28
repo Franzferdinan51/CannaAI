@@ -77,6 +77,14 @@ function textFromCompletionMessage(message: any): string {
     : '';
 }
 
+function isNonChatModel(model: any): boolean {
+  const id = String(model?.id || model?.key || '').toLowerCase();
+  const type = String(model?.type || '').toLowerCase();
+  return type === 'embedding' || type === 'embeddings' || type === 'reranker' ||
+    id.includes('embedding') || id.includes('embed-') || id.endsWith('-embed') ||
+    id.includes('reranker') || id.includes('rerank');
+}
+
 async function discoverVisionModelIds(baseUrl = LM_STUDIO_URL): Promise<Set<string> | null> {
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
@@ -271,12 +279,7 @@ export async function POST(request: NextRequest) {
     messages.push(userMessage);
 
     const requestedModel = typeof modelId === 'string' ? modelId.trim() : '';
-    const chatModels = advertisedModels.filter(model => (
-      typeof model.id === 'string' &&
-      !model.id.toLowerCase().includes('embedding') &&
-      !model.id.toLowerCase().includes('reranker') &&
-      !model.id.toLowerCase().includes('rerank')
-    ));
+    const chatModels = advertisedModels.filter(model => !isNonChatModel(model));
     // An explicit model ID is authoritative. LM Studio may JIT-load a
     // downloaded model that is not yet present in the compatibility catalog.
     // Let LM Studio validate the ID instead of silently rejecting or replacing
@@ -487,12 +490,7 @@ export async function GET() {
       : Array.isArray(models?.models) ? models.models : [];
     const chatModels = modelList.filter((model: any) => {
       const id = String(model?.id || '').toLowerCase();
-      return id &&
-        !id.includes('embedding') &&
-        !id.includes('embed-') &&
-        !id.endsWith('-embed') &&
-        !id.includes('reranker') &&
-        !id.includes('rerank');
+      return id && !isNonChatModel(model);
     });
     console.log(`✅ LM Studio reachable with ${modelList.length} models (${chatModels.length} chat models)`);
 

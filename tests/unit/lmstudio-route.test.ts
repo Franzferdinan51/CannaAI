@@ -218,6 +218,7 @@ describe('/api/lmstudio legacy local endpoint', () => {
       .mockResolvedValueOnce(response({ data: [
         { id: 'text-embedding-model' },
         { id: 'qwen3-reranker-0.6b' },
+        { id: 'auxiliary-model', type: 'reranker' },
       ] }));
 
     const result = await GET();
@@ -226,7 +227,7 @@ describe('/api/lmstudio legacy local endpoint', () => {
     await expect(result.json()).resolves.toEqual(expect.objectContaining({
       success: false,
       status: 'degraded',
-      modelCount: 1,
+      modelCount: 3,
     }));
   });
 
