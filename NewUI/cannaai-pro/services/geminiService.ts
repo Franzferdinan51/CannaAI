@@ -1,12 +1,11 @@
 import { AnalysisResult } from "../types";
-
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+import { apiUrl } from "../src/lib/api-origin";
 
 export const analyzePlantImage = async (base64Data: string): Promise<AnalysisResult> => {
   const image = base64Data.startsWith('data:')
     ? base64Data
     : `data:image/jpeg;base64,${base64Data}`;
-  const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+  const response = await fetch(apiUrl('/analyze'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

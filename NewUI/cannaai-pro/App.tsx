@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, Sprout, Thermometer, Scan, FileText, Settings, Upload, Leaf } from './components/Icons';
 import { PlantImage, AnalysisResult } from './types';
 import { analyzePlantImage } from './services/geminiService';
+import { apiUrl } from './src/lib/api-origin';
 
 // --- MOCK DATA INITIALIZATION ---
 // Removed hardcoded Unsplash images - now fetching real plant data from API
@@ -17,8 +18,7 @@ export default function App() {
   useEffect(() => {
     const fetchPlants = async () => {
       try {
-        const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
-        const response = await fetch(`${apiBaseUrl}/api/plants`);
+        const response = await fetch(apiUrl('/plants'));
         const data = await response.json();
         
         if (data.success && data.data.plants.length > 0) {
