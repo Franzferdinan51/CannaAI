@@ -37,6 +37,8 @@ interface LiveVisionRequest {
     enableChangeDetection?: boolean;
     enableHealthScore?: boolean;
     enableRecommendations?: boolean;
+    observationScope?: 'single-plant' | 'multiple-plants' | 'crop';
+    expectedPlantCount?: number;
   };
 }
 
@@ -89,6 +91,8 @@ export async function POST(request: NextRequest) {
         ...plantContext,
         ...(model ? { model } : {}),
         ...(baseUrl ? { baseUrl } : {}),
+        observationScope: analysisOptions.observationScope || 'single-plant',
+        expectedPlantCount: analysisOptions.expectedPlantCount,
         liveVision: {
           deviceId: deviceInfo.deviceId,
           deviceMode: deviceInfo.mode,

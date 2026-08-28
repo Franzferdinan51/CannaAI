@@ -36,6 +36,20 @@ interface AnalysisResult {
     confidence: number;
   }>;
   recommendations: string[];
+  plantAnalyses?: Array<{
+    plantId: string;
+    location: string;
+    diagnosis: string;
+    healthScore?: number;
+    confidence?: number;
+    issues?: string[];
+  }>;
+  cropAssessment?: {
+    diagnosis?: string;
+    healthScore?: number;
+    sharedEvidence?: string[];
+    actions?: string[];
+  } | null;
   captureInfo: {
     device: {
       id: string;
@@ -63,6 +77,8 @@ export default function LiveVisionDashboard() {
   });
   const [trichomeAnalysis, setTrichomeAnalysis] = useState<any>(null);
   const [enableTrichomeMode, setEnableTrichomeMode] = useState(true);
+  const [observationScope, setObservationScope] = useState<'single-plant' | 'multiple-plants' | 'crop'>('single-plant');
+  const [expectedPlantCount, setExpectedPlantCount] = useState('');
 
   // Handle image capture and analysis
   const handleImageCapture = useCallback(async (imageData: string, deviceInfo: any) => {
@@ -88,7 +104,9 @@ export default function LiveVisionDashboard() {
             urgencyLevel: 'medium',
             enableChangeDetection: true,
             enableHealthScore: true,
-            enableRecommendations: true
+            enableRecommendations: true,
+            observationScope,
+            expectedPlantCount: expectedPlantCount ? Number(expectedPlantCount) : undefined
           }
         }),
       });
@@ -101,9 +119,16 @@ export default function LiveVisionDashboard() {
           healthScore: typeof result.analysis.healthScore === 'number'
             ? result.analysis.healthScore
             : 0,
-          issues: result.analysis.issues || [],
+          issues: result.analysis.issues || (result.analysis.detectedIssues || []).map((issue: any) => ({
+            severity: issue.severity || 'medium',
+            category: issue.type || 'plant health',
+            description: issue.name || issue.description || 'Detected issue',
+            confidence: typeof issue.confidence === 'number' ? issue.confidence / 100 : 0
+          })),
           recommendations: result.analysis.recommendations || [],
-          captureInfo: result.analysis.captureInfo
+          captureInfo: result.analysis.captureInfo,
+          plantAnalyses: result.analysis.plantAnalyses,
+          cropAssessment: result.analysis.cropAssessment
         };
 
         setCurrentAnalysis(analysis);
@@ -117,7 +142,7 @@ export default function LiveVisionDashboard() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [selectedPlant]);
+  }, [selectedPlant, observationScope, expectedPlantCount]);
 
   // Handle trichome analysis
   const handleTrichomeAnalysis = useCallback(async (imageData: string, deviceInfo: any) => {
@@ -146,7 +171,9 @@ export default function LiveVisionDashboard() {
             strainType: 'hybrid', // Default, can be made configurable
             enableCounting: true,
             enableMaturityAssessment: true,
-            enableHarvestReadiness: true
+            enableHarvestReadiness: true,
+            observationScope,
+            expectedPlantCount: expectedPlantCount ? Number(expectedPlantCount) : undefined
           }
         }),
       });
@@ -165,7 +192,7 @@ export default function LiveVisionDashboard() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [selectedPlant]);
+  }, [selectedPlant, observationScope, expectedPlantCount]);
 
   // Get health score color
   const getHealthScoreColor = (score: number) => {
@@ -326,6 +353,39 @@ export default function LiveVisionDashboard() {
                     <option value="aeroponic">Aeroponic</option>
                     <option value="coco">Coco Coir</option>
                   </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Image scope
+                    </label>
+                    <select
+                      value={observationScope}
+                      onChange={(e) => setObservationScope(e.target.value as typeof observationScope)}
+                      className="w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-slate-200"
+                    >
+                      <option value="single-plant">Single plant</option>
+                      <option value="multiple-plants">Multiple plants</option>
+                      <option value="crop">Whole crop / grow area</option>
+                    </select>
+                  </div>
+                  {observationScope !== 'single-plant' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Expected plants (optional)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={expectedPlantCount}
+                        onChange={(e) => setExpectedPlantCount(e.target.value)}
+                        placeholder="e.g., 4"
+                        className="w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-slate-200"
+                      />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

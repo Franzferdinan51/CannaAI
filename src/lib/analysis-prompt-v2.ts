@@ -21,6 +21,8 @@ export interface AnalysisPromptParams {
   urgency?: string;
   additionalNotes?: string;
   hasImage: boolean;
+  observationScope?: 'single-plant' | 'multiple-plants' | 'crop';
+  expectedPlantCount?: number;
 }
 
 /**
@@ -39,7 +41,9 @@ export function generateAnalysisPromptV2(params: AnalysisPromptParams): string {
     pestDiseaseFocus,
     urgency,
     additionalNotes,
-    hasImage
+    hasImage,
+    observationScope = 'single-plant',
+    expectedPlantCount
   } = params;
 
   return `🌿 **EXPERT CANNABIS/HEMP DIAGNOSTIC SYSTEM v5.0 - EXPLAINABLE AI ANALYSIS** 🌿
@@ -56,6 +60,15 @@ export function generateAnalysisPromptV2(params: AnalysisPromptParams): string {
 ⚡ Urgency Level: ${urgency || 'standard'}
 📝 Additional Notes: ${additionalNotes || 'None'}
 ${hasImage ? '📸 IMAGE ANALYSIS: High-resolution visual examination of plant provided' : '📸 TEXT-BASED ANALYSIS ONLY - No image provided'}
+🔎 OBSERVATION SCOPE: ${observationScope}${expectedPlantCount ? ` (expected plants visible: ${expectedPlantCount})` : ''}
+
+## INDIVIDUAL VS CROP DIAGNOSIS
+${observationScope === 'single-plant'
+    ? '- Treat the subject as one plant. Do not invent additional plants or combine unrelated observations.'
+    : '- Inspect the image for distinct plants before diagnosing. Report each visible plant separately using stable labels such as Plant 1, Plant 2, and Plant 3. Never average symptoms across plants.'}
+- For every identified plant, record its location in the frame (for example: left, center, right, front row, back row), visible symptoms, severity, confidence, and plant-specific actions.
+- Separate shared conditions affecting the whole crop or growing area (lighting, humidity, temperature, irrigation, pests appearing across plants) from issues isolated to one plant.
+- If plants cannot be reliably separated, say so in uncertainties and explain what framing or individual photos are needed. Do not present a blended crop diagnosis as an individual diagnosis.
 
 ---
 
@@ -140,6 +153,28 @@ Every response MUST include these TOP-LEVEL KEYS (all required, never omit):
 {
   "diagnosis": "Primary diagnosis with scientific name if applicable (e.g., 'Magnesium Deficiency', 'Powdery Mildew (Podosphaera macularis)')",
   "summary": "Brief 2-3 sentence overview of the plant's condition and main concern",
+
+  "observationScope": "single-plant|multiple-plants|crop",
+  "plantAnalyses": [
+    {
+      "plantId": "Plant 1",
+      "location": "left side of frame",
+      "diagnosis": "specific diagnosis or no visible issue",
+      "healthScore": 0,
+      "confidence": 0,
+      "visibleEvidence": ["specific visible cue"],
+      "issues": ["plant-specific issue"],
+      "actions": ["plant-specific action"]
+    }
+  ],
+  "cropAssessment": {
+    "diagnosis": "shared crop-level condition or none identified",
+    "healthScore": 0,
+    "confidence": 0,
+    "sharedEvidence": ["evidence affecting multiple plants or the environment"],
+    "actions": ["crop-wide action"]
+  },
+  **NOTE:** For single-plant scope, plantAnalyses MUST contain exactly one entry. For multiple-plants or crop scope, include one entry for every reliably visible plant and keep cropAssessment separate. Use an empty cropAssessment only when no shared condition can be assessed.
 
   "urgency": "low|medium|high|critical",
   "urgencyReasons": [

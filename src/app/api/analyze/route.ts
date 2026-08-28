@@ -82,7 +82,9 @@ const AnalysisRequestSchema = z.object({
   baseUrl: z.string().url().max(500).transform(val => val.replace(/\/+$/, '')).optional(),
   pestDiseaseFocus: z.string().max(500).optional().transform(val => val?.trim()),
   urgency: z.enum(['low', 'medium', 'high', 'critical']).optional().default('medium'),
-  additionalNotes: z.string().max(2000).optional().transform(val => val?.trim())
+  additionalNotes: z.string().max(2000).optional().transform(val => val?.trim()),
+  observationScope: z.enum(['single-plant', 'multiple-plants', 'crop']).optional().default('single-plant'),
+  expectedPlantCount: z.number().int().min(1).max(100).optional()
 });
 
 // Enhanced security headers
@@ -462,6 +464,8 @@ export async function POST(request: NextRequest) {
       pestDiseaseFocus,
       urgency,
       additionalNotes,
+      observationScope,
+      expectedPlantCount,
       hasImage: !!imageBase64ForAI
     });
 
@@ -479,6 +483,8 @@ export async function POST(request: NextRequest) {
       phLevel, temperature, humidity,
       model: requestedModel,
       baseUrl: requestedBaseUrl,
+      observationScope,
+      expectedPlantCount,
     });
     const cached = analyzeCache.get<any>(cacheKey);
     if (cached) {
@@ -716,7 +722,7 @@ export async function POST(request: NextRequest) {
 
       console.log('🔍 Normalizing provider response into explainable report-v2 contract...');
       analysisResult = normalizePlantAnalysisResult(analysisResult, {
-        inputParameters: { strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage },
+        inputParameters: { strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage, observationScope, expectedPlantCount },
         imageAnalysis: !!imageBase64ForAI,
         processingTime,
         provider: usedProvider
@@ -733,7 +739,7 @@ export async function POST(request: NextRequest) {
       console.log('🔬 Running report enrichment pass for detailed explanations...');
       const enrichmentContext = {
         analysis: analysisResult,
-        inputParameters: { strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage },
+        inputParameters: { strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage, observationScope, expectedPlantCount },
         imageAnalysis: !!imageBase64ForAI,
         processingTime,
         provider: usedProvider

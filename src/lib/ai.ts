@@ -57,6 +57,8 @@ export async function analyzePlantHealth(
     humidity?: number;
     phLevel?: number;
     symptoms?: string[];
+    observationScope?: 'single-plant' | 'multiple-plants' | 'crop';
+    expectedPlantCount?: number;
   }
 ): Promise<PlantHealthAnalysis> {
   if (!imageData?.trim()) throw new Error('Image data is required for plant health analysis.');
@@ -71,6 +73,8 @@ export async function analyzePlantHealth(
     growthStage: context.growthStage,
     urgency: 'medium',
     hasImage: true,
+    observationScope: context.observationScope,
+    expectedPlantCount: context.expectedPlantCount,
   });
   const result = await executeAIWithFallback([{ role: 'user', content: prompt }], {
     image: imageData,

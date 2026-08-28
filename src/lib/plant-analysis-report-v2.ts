@@ -139,6 +139,37 @@ export function normalizePlantAnalysisResult(
   enhanced.healthScore = clampScore(enhanced.healthScore, enhanced.confidence);
   enhanced.urgency = normalizeUrgency(enhanced.urgency, 'medium');
 
+  // Keep subject-level findings separate from the overall report. Vision
+  // models often return only the legacy single-subject keys, so expose a
+  // predictable empty list for multi-plant requests rather than pretending a
+  // blended diagnosis belongs to every plant.
+  const requestedScope = metadata.inputParameters?.observationScope;
+  const observationScope = requestedScope === 'multiple-plants' || requestedScope === 'crop'
+    ? requestedScope
+    : 'single-plant';
+  enhanced.observationScope = observationScope;
+  if (!Array.isArray(enhanced.plantAnalyses)) {
+    enhanced.plantAnalyses = observationScope === 'single-plant'
+      ? [{
+          plantId: 'Plant 1',
+          location: 'full frame',
+          diagnosis: enhanced.diagnosis || 'See overall diagnosis',
+          healthScore: enhanced.healthScore,
+          confidence: enhanced.confidence,
+          visibleEvidence: [],
+          issues: [],
+          actions: []
+        }]
+      : [];
+  }
+  if (!('cropAssessment' in enhanced)) enhanced.cropAssessment = null;
+  if (observationScope !== 'single-plant' && enhanced.plantAnalyses.length === 0) {
+    enhanced.uncertainties = [
+      ...(Array.isArray(enhanced.uncertainties) ? enhanced.uncertainties : []),
+      'The model did not return reliable plant-by-plant findings; capture one plant per frame or use a wider, well-separated crop image.'
+    ];
+  }
+
   enhanced.symptomsMatched = normalizeMeaningfulStringArray(
     enhanced.symptomsMatched,
     deriveReportedSymptoms(metadata.inputParameters)
@@ -154,6 +185,11 @@ export function normalizePlantAnalysisResult(
     enhanced.likelyCauses.map(item => item.cause)
   );
   enhanced.diagnosis = deriveMeaningfulDiagnosis(enhanced, metadata.inputParameters, rawNarrative);
+  if (observationScope === 'single-plant' && Array.isArray(enhanced.plantAnalyses) && enhanced.plantAnalyses[0]) {
+    enhanced.plantAnalyses[0].diagnosis = enhanced.plantAnalyses[0].diagnosis === 'See overall diagnosis'
+      ? enhanced.diagnosis
+      : enhanced.plantAnalyses[0].diagnosis;
+  }
   enhanced.treatment = normalizeMeaningfulStringArray(enhanced.treatment, []);
   enhanced.preventativeMeasures = normalizeMeaningfulStringArray(
     enhanced.preventativeMeasures,
