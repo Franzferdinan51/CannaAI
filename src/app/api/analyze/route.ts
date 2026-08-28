@@ -925,7 +925,11 @@ export async function POST(request: NextRequest) {
               pestDiseaseFocus,
               urgency,
               additionalNotes,
-              temperatureUnit
+              temperatureUnit,
+              model: effectiveModel,
+              baseUrl: effectiveBaseUrl,
+              observationScope,
+              expectedPlantCount
             },
             result: analysisResult,
             provider: usedProvider,
