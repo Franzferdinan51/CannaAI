@@ -400,7 +400,7 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
               'Content-Type': 'application/json',
               ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
             },
-            signal: AbortSignal.timeout(5000)
+            signal: createTimeoutSignal(5000)
           });
           if (response.ok) {
             data = await response.json();
@@ -470,7 +470,7 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
           'HTTP-Referer': 'http://localhost:3000',
           'X-Title': 'CannaAI Pro'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -524,7 +524,7 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
           'Authorization': `Bearer ${settings.openai.apiKey}`,
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -577,7 +577,7 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
           'Authorization': `Bearer ${settings.gemini.apiKey}`,
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -678,7 +678,7 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
           'Authorization': `Bearer ${settings.groq.apiKey}`,
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -862,7 +862,7 @@ async function testAIConnection(provider: string, configOverride?: Record<string
         // A large local model can take several seconds to answer its catalog
         // probe while it is loading. Keep a bounded timeout, but do not turn
         // normal model-load latency into a false connection failure.
-        signal: AbortSignal.timeout(15000)
+        signal: createTimeoutSignal(15000)
       });
 
       if (response.ok) {
@@ -897,7 +897,7 @@ async function testAIConnection(provider: string, configOverride?: Record<string
           'HTTP-Referer': 'http://localhost:3000',
           'X-Title': 'CannaAI Pro'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -930,7 +930,7 @@ async function testAIConnection(provider: string, configOverride?: Record<string
           'Authorization': `Bearer ${settings.openai.apiKey}`,
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -963,7 +963,7 @@ async function testAIConnection(provider: string, configOverride?: Record<string
           'Authorization': `Bearer ${settings.gemini.apiKey}`,
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -999,7 +999,7 @@ async function testAIConnection(provider: string, configOverride?: Record<string
           'Authorization': `Bearer ${settings.groq.apiKey}`,
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
@@ -1044,7 +1044,7 @@ async function testAIConnection(provider: string, configOverride?: Record<string
             { role: 'user', content: 'Hello' }
           ]
         }),
-        signal: AbortSignal.timeout(10000)
+        signal: createTimeoutSignal(10000)
       });
 
       if (response.ok) {
