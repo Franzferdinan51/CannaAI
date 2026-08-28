@@ -79,6 +79,30 @@ describe('legacy LM Studio runtime configuration', () => {
     expect(fetchMock.mock.calls[1][0]).toBe('http://192.168.1.50:1234/v1/chat/completions');
   });
 
+  test('uses a per-request API key for discovery and completion', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'authenticated-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'authenticated answer' } }] }),
+      } as Response);
+
+    await expect(executeWithLMStudio(
+      [{ role: 'user', content: 'hello' }],
+      { apiKey: 'settings-token' },
+    )).resolves.toBe('authenticated answer');
+
+    expect((fetchMock.mock.calls[0][1] as RequestInit).headers).toEqual(
+      expect.objectContaining({ Authorization: 'Bearer settings-token' }),
+    );
+    expect((fetchMock.mock.calls[1][1] as RequestInit).headers).toEqual(
+      expect.objectContaining({ Authorization: 'Bearer settings-token' }),
+    );
+  });
+
   test('can preserve the resolved model for the provider fallback chain', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({

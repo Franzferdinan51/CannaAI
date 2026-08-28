@@ -154,7 +154,7 @@ function providerRecommendations(provider: string, isAvailable: boolean): string
 }
 
 // Check all available providers.
-export async function detectAvailableProviders(options: { lmStudioBaseUrl?: string; fastLocal?: boolean; localOnly?: boolean } = {}) {
+export async function detectAvailableProviders(options: { lmStudioBaseUrl?: string; lmStudioApiKey?: string; fastLocal?: boolean; localOnly?: boolean } = {}) {
   const runCheck = async <T>(promise: Promise<T>, ms: number, name: string) => {
     try {
       const result = await withTimeout(promise, ms, name);
@@ -173,7 +173,7 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
 
   if (options.fastLocal) {
     const local = await runCheck(
-      checkLMStudio(false, options.lmStudioBaseUrl),
+      checkLMStudio(false, options.lmStudioBaseUrl, options.lmStudioApiKey),
       3000,
       'lmstudio',
     );
@@ -221,7 +221,7 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
   // Run local / inexpensive probes together. These timeouts are outer safety
   // rails; provider implementations may also abort their own fetch calls.
   const [lmstudio, openclaw, hermes, bailian, openrouter, minimax] = await Promise.all([
-    runCheck(checkLMStudio(false, options.lmStudioBaseUrl), 3000, 'lmstudio'),
+    runCheck(checkLMStudio(false, options.lmStudioBaseUrl, options.lmStudioApiKey), 3000, 'lmstudio'),
     // OpenClaw's ACP/gateway status check includes a local RPC handshake and
     // can legitimately take longer than an HTTP health probe.
     runCheck(checkOpenClaw(), 20000, 'openclaw'),

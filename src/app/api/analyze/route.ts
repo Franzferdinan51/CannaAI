@@ -349,6 +349,7 @@ export async function POST(request: NextRequest) {
       : {};
     const effectiveModel = requestedModel || storedLMStudio.model;
     const effectiveBaseUrl = requestedBaseUrl || storedLMStudio.baseUrl;
+    const effectiveApiKey = storedLMStudio.apiKey;
 
     // Temperature conversion logic
     let temperatureCelsius: number | undefined;
@@ -517,6 +518,7 @@ export async function POST(request: NextRequest) {
     // Enhanced AI provider detection with detailed logging
     const providerDetection = await detectAvailableProviders({
       lmStudioBaseUrl: effectiveBaseUrl,
+      lmStudioApiKey: effectiveApiKey,
       fastLocal: true,
     });
     const imageProviderOverride = imageBase64ForAI && process.env.CANNAAI_IMAGE_PROVIDER;
@@ -595,6 +597,7 @@ export async function POST(request: NextRequest) {
             image: imageBase64ForAI,
             ...(lmStudioModel ? { model: lmStudioModel } : {}),
             ...(effectiveBaseUrl ? { baseUrl: effectiveBaseUrl } : {}),
+            ...(effectiveApiKey ? { apiKey: effectiveApiKey } : {}),
             temperature: 0.15,
             useVision: !!imageBase64ForAI,
             // Match the route and browser deadlines for slow local vision

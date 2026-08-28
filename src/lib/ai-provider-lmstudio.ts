@@ -109,8 +109,8 @@ let cacheTime = 0;
 let cacheBaseUrl = '';
 const CACHE_TTL = 60000;
 
-function getHeaders(includeJson = false): Record<string, string> {
-  const apiKey = getLMStudioApiKey();
+function getHeaders(includeJson = false, apiKeyOverride?: string): Record<string, string> {
+  const apiKey = apiKeyOverride?.trim() || getLMStudioApiKey();
   return {
     ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
     ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
@@ -155,7 +155,7 @@ function modelIdsFromCatalog(data: any, nativeCatalog: boolean): string[] {
   return Array.from(ids);
 }
 
-async function fetchModelCatalog(endpoint: string, timeoutMs: number): Promise<{ models: string[]; responseEndpoint: string } | null> {
+async function fetchModelCatalog(endpoint: string, timeoutMs: number, apiKeyOverride?: string): Promise<{ models: string[]; responseEndpoint: string } | null> {
   let successfulEmptyEndpoint: string | undefined;
   // Keep the OpenAI-compatible route first for older LM Studio versions and
   // existing deployments; fall back to the native catalog when that route is
@@ -164,7 +164,7 @@ async function fetchModelCatalog(endpoint: string, timeoutMs: number): Promise<{
     try {
       const response = await fetchWithTimeout(`${endpoint}${path}`, {
         method: 'GET',
-        headers: getHeaders(),
+        headers: getHeaders(false, apiKeyOverride),
       }, timeoutMs);
       if (!response.ok) continue;
       const models = modelIdsFromCatalog(
@@ -220,7 +220,7 @@ export interface LMStudioProviderResult {
   error?: string;
 }
 
-export async function checkLMStudio(includeModels = false, configuredBaseUrl?: string): Promise<LMStudioProviderResult> {
+export async function checkLMStudio(includeModels = false, configuredBaseUrl?: string, apiKeyOverride?: string): Promise<LMStudioProviderResult> {
   const buildResult = (result: Omit<LMStudioProviderResult, 'isAvailable'>): LMStudioProviderResult => ({
     ...result,
     isAvailable: result.available,
@@ -241,7 +241,7 @@ export async function checkLMStudio(includeModels = false, configuredBaseUrl?: s
   let lastError = 'connection refused';
   for (const url of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     try {
-      const catalog = await fetchModelCatalog(url, 3000);
+      const catalog = await fetchModelCatalog(url, 3000, apiKeyOverride);
       if (!catalog) {
         lastError = 'LM Studio model catalog request failed';
         continue;
@@ -253,7 +253,7 @@ export async function checkLMStudio(includeModels = false, configuredBaseUrl?: s
           available: false,
           reason: 'LM Studio is running but no chat model is available',
           provider: 'lm-studio',
-          config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
+          config: { url, hasApiKey: Boolean(apiKeyOverride || getLMStudioApiKey()) },
           error: 'No chat-capable models were returned by LM Studio',
         });
       }
@@ -262,7 +262,7 @@ export async function checkLMStudio(includeModels = false, configuredBaseUrl?: s
         available: true,
         reason: `LM Studio is running with ${models.length} model(s)`,
         provider: 'lm-studio',
-        config: { url, hasApiKey: Boolean(getLMStudioApiKey()) },
+        config: { url, hasApiKey: Boolean(apiKeyOverride || getLMStudioApiKey()) },
         models: includeModels ? models : undefined,
       });
     } catch (error: any) {
@@ -279,7 +279,7 @@ export async function checkLMStudio(includeModels = false, configuredBaseUrl?: s
   });
 }
 
-export async function getAvailableModels(forceRefresh = false, configuredBaseUrl?: string): Promise<string[]> {
+export async function getAvailableModels(forceRefresh = false, configuredBaseUrl?: string, apiKeyOverride?: string): Promise<string[]> {
   const now = Date.now();
   const baseUrl = getLMStudioBaseUrl(configuredBaseUrl);
 
@@ -294,7 +294,7 @@ export async function getAvailableModels(forceRefresh = false, configuredBaseUrl
 
   for (const endpoint of getLMStudioEndpointCandidates(configuredBaseUrl)) {
     try {
-      const catalog = await fetchModelCatalog(endpoint, 5000);
+      const catalog = await fetchModelCatalog(endpoint, 5000, apiKeyOverride);
       if (!catalog) continue;
       const models = catalog.models;
 
@@ -320,12 +320,12 @@ export async function getAvailableModels(forceRefresh = false, configuredBaseUrl
   return [];
 }
 
-async function getNativeVisionModelIds(configuredBaseUrl?: string): Promise<string[] | null> {
+async function getNativeVisionModelIds(configuredBaseUrl?: string, apiKeyOverride?: string): Promise<string[] | null> {
   const baseUrl = configuredBaseUrl ? getLMStudioBaseUrl(configuredBaseUrl) : cacheBaseUrl || getLMStudioBaseUrl();
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
       method: 'GET',
-      headers: getHeaders(),
+      headers: getHeaders(false, apiKeyOverride),
       signal: createTimeoutSignal(5000),
     });
     if (!response.ok) return null;
@@ -350,14 +350,14 @@ async function getNativeVisionModelIds(configuredBaseUrl?: string): Promise<stri
   }
 }
 
-async function getVisionModelCatalog(configuredBaseUrl?: string): Promise<{
+async function getVisionModelCatalog(configuredBaseUrl?: string, apiKeyOverride?: string): Promise<{
   models: string[];
   metadataAvailable: boolean;
 }> {
-  const models = await getAvailableModels(false, configuredBaseUrl);
+  const models = await getAvailableModels(false, configuredBaseUrl, apiKeyOverride);
   if (models.length === 0) return { models: [], metadataAvailable: false };
 
-  const nativeVision = await getNativeVisionModelIds(configuredBaseUrl);
+  const nativeVision = await getNativeVisionModelIds(configuredBaseUrl, apiKeyOverride);
   if (nativeVision !== null) {
     return {
       models: models.filter(id => nativeVision.includes(id)),
@@ -372,12 +372,12 @@ async function getVisionModelCatalog(configuredBaseUrl?: string): Promise<{
   };
 }
 
-export async function getVisionModels(configuredBaseUrl?: string): Promise<string[]> {
-  return (await getVisionModelCatalog(configuredBaseUrl)).models;
+export async function getVisionModels(configuredBaseUrl?: string, apiKeyOverride?: string): Promise<string[]> {
+  return (await getVisionModelCatalog(configuredBaseUrl, apiKeyOverride)).models;
 }
 
-export async function getTextModels(configuredBaseUrl?: string): Promise<string[]> {
-  return getAvailableModels(false, configuredBaseUrl);
+export async function getTextModels(configuredBaseUrl?: string, apiKeyOverride?: string): Promise<string[]> {
+  return getAvailableModels(false, configuredBaseUrl, apiKeyOverride);
 }
 
 function getConfiguredModel(type: 'vision' | 'text'): string {
@@ -387,15 +387,15 @@ function getConfiguredModel(type: 'vision' | 'text'): string {
   return process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL || LM_STUDIO_TEXT_MODEL || '';
 }
 
-async function resolveModel(type: 'vision' | 'text', explicitModel?: string, configuredBaseUrl?: string): Promise<string> {
+async function resolveModel(type: 'vision' | 'text', explicitModel?: string, configuredBaseUrl?: string, apiKeyOverride?: string): Promise<string> {
   const requested = explicitModel?.trim();
   if (requested && type === 'text') return requested;
 
   const configured = getConfiguredModel(type).trim();
-  const available = await getAvailableModels(false, configuredBaseUrl);
+  const available = await getAvailableModels(false, configuredBaseUrl, apiKeyOverride);
 
   if (type === 'vision') {
-    const visionCatalog = await getVisionModelCatalog(configuredBaseUrl);
+    const visionCatalog = await getVisionModelCatalog(configuredBaseUrl, apiKeyOverride);
     const candidate = requested || configured;
 
     if (candidate && (available.length === 0 || available.includes(candidate))) {
@@ -454,10 +454,11 @@ export async function executeWithLMStudio(
     useVision?: boolean;
     timeout?: number;
     returnMetadata?: boolean;
+    apiKey?: string;
   } = {},
 ) {
   const wantsVision = Boolean(options.image) && options.useVision !== false;
-  const model = await resolveModel(wantsVision ? 'vision' : 'text', options.model, options.baseUrl);
+  const model = await resolveModel(wantsVision ? 'vision' : 'text', options.model, options.baseUrl, options.apiKey);
 
   let formattedMessages = messages;
   const normalizedImage = normalizeImageUrl(options.image);
@@ -493,7 +494,7 @@ export async function executeWithLMStudio(
   const endpoint = options.baseUrl ? getLMStudioBaseUrl(options.baseUrl) : cacheBaseUrl || getLMStudioBaseUrl();
   const response = await fetch(`${endpoint}/v1/chat/completions`, {
     method: 'POST',
-    headers: getHeaders(true),
+    headers: getHeaders(true, options.apiKey),
     body: JSON.stringify({
       model,
       messages: formattedMessages,
