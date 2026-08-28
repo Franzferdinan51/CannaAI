@@ -3,6 +3,8 @@ import { API_ORIGIN } from './api-origin';
 
 // API base URL - adjust this to match your backend
 const API_BASE_URL = API_ORIGIN;
+const LOCAL_CHAT_TIMEOUT_MS = 180000;
+const LOCAL_VISION_TIMEOUT_MS = 660000;
 
 // Types for API responses
 interface AnalysisRequest {
@@ -176,7 +178,7 @@ export const analyzePlant = async (data: AnalysisRequest): Promise<AnalysisRespo
   try {
     const response = await apiClient.post<AnalysisResponse>('/api/analyze', data, {
       // The server permits ten minutes for cold/large local vision models.
-      timeout: data.plantImage ? 660000 : 30000,
+      timeout: data.plantImage ? LOCAL_VISION_TIMEOUT_MS : LOCAL_CHAT_TIMEOUT_MS,
     });
     return response.data;
   } catch (error) {
@@ -228,7 +230,9 @@ export const deleteStrain = async (id: string): Promise<void> => {
 // AI Chat API
 export const sendChatMessage = async (data: ChatMessage): Promise<ChatResponse> => {
   try {
-    const response = await apiClient.post<ChatResponse>('/api/chat', data);
+    const response = await apiClient.post<ChatResponse>('/api/chat', data, {
+      timeout: data.image ? LOCAL_VISION_TIMEOUT_MS : LOCAL_CHAT_TIMEOUT_MS,
+    });
     return response.data;
   } catch (error) {
     console.error('Chat message failed:', error);

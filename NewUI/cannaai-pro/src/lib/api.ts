@@ -6,6 +6,7 @@ import { API_ORIGIN, apiUrl } from './api-origin';
 // generating a structured report. Keep the shared client from turning that
 // expected latency into a generic browser network error.
 const LOCAL_ANALYSIS_TIMEOUT_MS = 660000;
+const LOCAL_CHAT_TIMEOUT_MS = 180000;
 
 export { API_ORIGIN, apiUrl } from './api-origin';
 
@@ -191,7 +192,7 @@ export const api = {
   },
 
   // Chat & AI
-  chat: (message: string) => apiClient.post<ChatApiResponse>('/chat', { message }),
+  chat: (message: string) => apiClient.post<ChatApiResponse>('/chat', { message }, { timeout: LOCAL_CHAT_TIMEOUT_MS }),
   advisors: {
     status: () => apiClient.get('/advisors'),
     run: (data: { task: string; context?: string; provider?: string }) => apiClient.post('/advisors', data),
