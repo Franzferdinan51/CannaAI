@@ -327,7 +327,9 @@ export async function POST(request: NextRequest) {
       baseUrl: requestedBaseUrl,
       pestDiseaseFocus,
       urgency,
-      additionalNotes
+      additionalNotes,
+      observationScope,
+      expectedPlantCount
     } = body;
 
     // Temperature conversion logic
