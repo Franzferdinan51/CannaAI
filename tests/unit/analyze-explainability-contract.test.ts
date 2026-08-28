@@ -135,4 +135,76 @@ describe('analysis explainability contract', () => {
     expect(normalized.prognosis.fullRecoveryExpected).toBeNull();
     expect(normalized.followUpSchedule.checkAfterDays).toBeNull();
   });
+
+  test('keeps multi-plant findings separate and does not invent a blended plant result', () => {
+    const normalized = normalizePlantAnalysisResult(
+      {
+        diagnosis: 'Mixed canopy health',
+        confidence: 82,
+        healthScore: 70,
+        urgency: 'medium',
+        plantAnalyses: [
+          {
+            plantId: 'Plant 1',
+            location: 'left',
+            diagnosis: 'Magnesium deficiency',
+            healthScore: 62,
+            confidence: 88,
+            visibleEvidence: ['Interveinal chlorosis on lower leaves'],
+            issues: ['Magnesium deficiency'],
+            actions: ['Check root-zone pH']
+          },
+          {
+            plantId: 'Plant 2',
+            location: 'right',
+            diagnosis: 'Healthy',
+            healthScore: 91,
+            confidence: 86,
+            visibleEvidence: ['Uniform green foliage'],
+            issues: [],
+            actions: ['Continue current care']
+          }
+        ],
+        cropAssessment: {
+          sharedConditions: ['Humidity is elevated across the room'],
+          cropWideActions: ['Improve air circulation']
+        }
+      },
+      {
+        provider: 'lm-studio',
+        imageAnalysis: true,
+        processingTime: 4200,
+        inputParameters: {
+          strain: 'Blue Dream',
+          leafSymptoms: 'Mixed symptoms across two plants',
+          observationScope: 'multiple-plants',
+          expectedPlantCount: 2
+        }
+      }
+    );
+
+    expect(normalized.observationScope).toBe('multiple-plants');
+    expect(normalized.plantAnalyses).toHaveLength(2);
+    expect(normalized.plantAnalyses.map((plant) => plant.plantId)).toEqual(['Plant 1', 'Plant 2']);
+    expect(normalized.plantAnalyses[0].diagnosis).not.toBe(normalized.plantAnalyses[1].diagnosis);
+    expect(normalized.cropAssessment?.sharedConditions).toContain('Humidity is elevated across the room');
+  });
+
+  test('creates exactly one subject fallback for a single-plant response', () => {
+    const normalized = normalizePlantAnalysisResult(
+      { diagnosis: 'Leaf stress', confidence: 64, healthScore: 58 },
+      {
+        provider: 'lm-studio',
+        imageAnalysis: true,
+        processingTime: 1200,
+        inputParameters: {
+          observationScope: 'single-plant'
+        }
+      }
+    );
+
+    expect(normalized.observationScope).toBe('single-plant');
+    expect(normalized.plantAnalyses).toHaveLength(1);
+    expect(normalized.plantAnalyses[0].plantId).toBe('Plant 1');
+  });
 });
