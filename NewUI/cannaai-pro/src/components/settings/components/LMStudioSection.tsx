@@ -43,18 +43,20 @@ const LMStudioSection: React.FC = () => {
   const [filterCapability, setFilterCapability] = useState<ModelCapability | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'modified'>('name');
   const [draftUrl, setDraftUrl] = useState('');
+  const [draftApiKey, setDraftApiKey] = useState('');
   const [saveWarning, setSaveWarning] = useState('');
 
   useEffect(() => {
     setDraftUrl(settings?.lmStudio?.url || 'http://127.0.0.1:1234');
+    setDraftApiKey(settings?.lmStudio?.apiKey || '');
   }, [settings?.lmStudio?.url]);
 
   useEffect(() => {
     const configuredUrl = settings?.lmStudio?.url?.trim();
     if (configuredUrl) {
-      void loadLMStudioModels(configuredUrl);
+      void loadLMStudioModels(configuredUrl, settings?.lmStudio?.apiKey);
     }
-  }, [loadLMStudioModels, settings?.lmStudio?.url]);
+  }, [loadLMStudioModels, settings?.lmStudio?.url, settings?.lmStudio?.apiKey]);
 
   const handleUrlChange = (url: string) => {
     setDraftUrl(url);
@@ -66,9 +68,9 @@ const LMStudioSection: React.FC = () => {
     setSaveWarning('');
     // Probe the entered endpoint first. Persisting settings is secondary and
     // must not turn a healthy local LM Studio connection into a false error.
-    const connected = await loadLMStudioModels(url);
+    const connected = await loadLMStudioModels(url, draftApiKey);
     if (connected) {
-      const saved = await saveLMStudioUrl(url, { suppressError: true });
+      const saved = await saveLMStudioUrl(url, { suppressError: true, apiKey: draftApiKey });
       if (!saved) {
         setSaveWarning('Connected to LM Studio, but CannaAI could not save this URL. Use Save Changes to retry.');
       }
@@ -174,7 +176,7 @@ const LMStudioSection: React.FC = () => {
             <button
               type="button"
               aria-label="Refresh LM Studio models"
-              onClick={() => void loadLMStudioModels(draftUrl.trim() || undefined)}
+              onClick={() => void loadLMStudioModels(draftUrl.trim() || undefined, draftApiKey)}
               disabled={isLoadingLMStudio}
               className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
             >
@@ -220,6 +222,17 @@ const LMStudioSection: React.FC = () => {
             {saveWarning && (
               <p role="status" className="mt-2 text-sm text-amber-300">{saveWarning}</p>
             )}
+            <label className="block text-sm font-medium text-gray-300 mb-2 mt-4">
+              LM Studio API key <span className="font-normal text-gray-500">(only required when authentication is enabled)</span>
+            </label>
+            <input
+              type="password"
+              value={draftApiKey}
+              onChange={(e) => setDraftApiKey(e.target.value)}
+              placeholder="Optional LM Studio API key"
+              aria-label="LM Studio API key"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+            />
           </div>
 
           {!lmStudioData?.lmStudioRunning && (

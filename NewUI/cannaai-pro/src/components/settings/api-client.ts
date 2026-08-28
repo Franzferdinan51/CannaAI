@@ -200,13 +200,16 @@ class SettingsAPIClient {
   /**
    * Get LM Studio models
    */
-  async getLMStudioModels(url?: string): Promise<LMStudioResponse> {
+  async getLMStudioModels(url?: string, apiKey?: string): Promise<LMStudioResponse> {
     try {
       const searchUrl = url ? `?url=${encodeURIComponent(url)}` : '';
       // Model discovery can wake a JIT-loaded local model. Match the server
       // probe budget so a healthy LM Studio instance is not reported as a
       // browser network error at exactly 20 seconds.
-      const response: AxiosResponse<LMStudioResponse> = await this.api.get(`/api/lmstudio/models${searchUrl}`, { timeout: LOCAL_PROVIDER_TIMEOUT_MS });
+      const response: AxiosResponse<LMStudioResponse> = await this.api.get(`/api/lmstudio/models${searchUrl}`, {
+        timeout: LOCAL_PROVIDER_TIMEOUT_MS,
+        ...(apiKey?.trim() ? { headers: { 'X-LM-Studio-API-Key': apiKey.trim() } } : {}),
+      });
 
       return response.data;
     } catch (error) {

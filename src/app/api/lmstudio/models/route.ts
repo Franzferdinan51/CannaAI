@@ -44,14 +44,14 @@ function normalizeLMStudioBaseUrl(value: string): string {
     .replace(/\/$/, '');
 }
 
-async function getRemoteLMStudioConfig(urlOverride?: string): Promise<{ baseUrl: string; apiKey?: string; candidates: string[] }> {
+async function getRemoteLMStudioConfig(urlOverride?: string, apiKeyOverride?: string): Promise<{ baseUrl: string; apiKey?: string; candidates: string[] }> {
   // A URL supplied by the Settings screen is authoritative. Do not wait on
   // the optional Prisma-backed settings record before probing it; a locked or
   // slow local database must not turn a direct LM Studio test into a timeout.
   if (urlOverride?.trim()) {
     return buildLMStudioConfig({
       urlOverride,
-      apiKey: process.env.LM_STUDIO_API_KEY || getLMStudioApiKey(),
+      apiKey: apiKeyOverride?.trim() || process.env.LM_STUDIO_API_KEY || getLMStudioApiKey(),
     });
   }
 
@@ -74,7 +74,7 @@ async function getRemoteLMStudioConfig(urlOverride?: string): Promise<{ baseUrl:
   }
 
   const configuredUrl = process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || storedUrl || fileUrl;
-  const configuredKey = storedApiKey || process.env.LM_STUDIO_API_KEY || getLMStudioApiKey();
+  const configuredKey = apiKeyOverride?.trim() || storedApiKey || process.env.LM_STUDIO_API_KEY || getLMStudioApiKey();
   const configPath = process.env.OPENCLAW_CONFIG_PATH ||
     (process.env.HOME ? path.join(process.env.HOME, '.openclaw', 'openclaw.json') : '');
 
@@ -130,8 +130,8 @@ function buildLMStudioConfig(options: {
   };
 }
 
-async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
-  const { apiKey, candidates } = await getRemoteLMStudioConfig(urlOverride);
+async function getRemoteModels(urlOverride?: string, apiKeyOverride?: string): Promise<any[] | null> {
+  const { apiKey, candidates } = await getRemoteLMStudioConfig(urlOverride, apiKeyOverride);
 
   for (const candidate of candidates) {
     // LM Studio exposes the OpenAI-compatible catalog at /v1/models and its
@@ -540,7 +540,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const urlOverride = searchParams.get('url') || undefined;
-    const remoteModels = await getRemoteModels(urlOverride);
+    const apiKeyOverride = request.headers.get('x-lm-studio-api-key') || undefined;
+    const remoteModels = await getRemoteModels(urlOverride, apiKeyOverride);
     if (remoteModels) {
       return NextResponse.json({
         status: 'success',

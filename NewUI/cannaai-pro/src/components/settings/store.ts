@@ -33,8 +33,8 @@ interface SettingsStore extends SettingsUIState {
   loadProviderModels: (provider: AIProviderType, config?: any) => Promise<void>;
 
   // LM Studio actions
-  loadLMStudioModels: (url?: string) => Promise<boolean>;
-  saveLMStudioUrl: (url: string, options?: { suppressError?: boolean }) => Promise<boolean>;
+  loadLMStudioModels: (url?: string, apiKey?: string) => Promise<boolean>;
+  saveLMStudioUrl: (url: string, options?: { suppressError?: boolean; apiKey?: string }) => Promise<boolean>;
 
   // Utility actions
   exportSettings: (format: 'json' | 'csv') => Promise<void>;
@@ -416,11 +416,11 @@ export const useSettingsStore = create<SettingsStore>()(
         },
 
         // LM Studio actions
-        loadLMStudioModels: async (url) => {
+        loadLMStudioModels: async (url, apiKey) => {
           const requestSequence = ++lmStudioRequestSequence;
           set({ isLoadingLMStudio: true, error: '' });
           try {
-            const response = await settingsAPI.getLMStudioModels(url);
+            const response = await settingsAPI.getLMStudioModels(url, apiKey);
             if (requestSequence !== lmStudioRequestSequence) return false;
             set({ lmStudioData: response, isLoadingLMStudio: false });
             return true;
@@ -443,10 +443,11 @@ export const useSettingsStore = create<SettingsStore>()(
 
           set({ isSaving: true, error: '' });
           try {
-            await settingsAPI.saveLMStudioUrl({ ...settings.lmStudio, url });
+            const apiKey = options?.apiKey ?? settings.lmStudio.apiKey;
+            await settingsAPI.saveLMStudioUrl({ ...settings.lmStudio, url, apiKey });
             const nextSettings = {
               ...settings,
-              lmStudio: { ...settings.lmStudio, url }
+              lmStudio: { ...settings.lmStudio, url, apiKey }
             };
             const { defaultSettings } = get();
             const nextDefaults = defaultSettings

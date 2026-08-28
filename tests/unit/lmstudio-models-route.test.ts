@@ -49,6 +49,23 @@ describe('/api/lmstudio/models explicit URL probes', () => {
     }));
   });
 
+  test('uses an API key supplied by the Settings probe without putting it in the URL', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ id: 'authenticated-model' }] }),
+    } as Response);
+
+    const result = await GET(new Request(
+      'http://localhost/api/lmstudio/models?url=http%3A%2F%2F127.0.0.1%3A1234',
+      { headers: { 'X-LM-Studio-API-Key': 'settings-token' } },
+    ) as any);
+
+    expect(result.status).toBe(200);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://127.0.0.1:1234/api/v1/models');
+    expect(fetchMock.mock.calls[0][1]?.headers).toEqual({ Authorization: 'Bearer settings-token' });
+    expect(fetchMock.mock.calls[0][0]).not.toContain('settings-token');
+  });
+
   test('falls back when the native catalog has no chat-capable models', async () => {
     const nativeResponse = new Response(JSON.stringify({ models: [
       { key: 'text-embedding-model', type: 'embedding' },

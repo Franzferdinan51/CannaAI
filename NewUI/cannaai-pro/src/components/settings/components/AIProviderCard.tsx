@@ -70,7 +70,9 @@ const AIProviderCard: React.FC = () => {
       icon: <Monitor className="w-5 h-5" />,
       color: 'blue',
       configPath: 'lmStudio',
-      needsApiKey: false,
+      // Newer LM Studio servers can require Bearer authentication while
+      // older local servers remain unauthenticated.
+      needsApiKey: true,
       baseUrl: 'http://localhost:1234',
     },
     {
