@@ -859,19 +859,28 @@ async function testAIConnection(provider: string, configOverride?: Record<string
         .replace(/\/api\/?$/i, '')
         .replace(/\/$/, '');
       const apiKey = lmStudioConfig.apiKey || getLMStudioApiKey();
-      const response = await fetch(`${baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
-        },
-        // A large local model can take several seconds to answer its catalog
-        // probe while it is loading. Keep a bounded timeout, but do not turn
-        // normal model-load latency into a false connection failure.
-        signal: createTimeoutSignal(LM_STUDIO_CONNECTION_TIMEOUT_MS)
-      });
+      let response: Response | null = null;
+      for (const endpoint of [`${baseUrl}/v1/models`, `${baseUrl}/api/v1/models`]) {
+        try {
+          const candidate = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
+            },
+            // A large local model can take several seconds to answer its
+            // catalog probe while it is loading. Keep each attempt bounded,
+            // then try the alternate LM Studio endpoint layout.
+            signal: createTimeoutSignal(LM_STUDIO_CONNECTION_TIMEOUT_MS)
+          });
+          response = candidate;
+          if (candidate.ok) break;
+        } catch {
+          // Try the alternate endpoint before reporting the provider offline.
+        }
+      }
 
-      if (response.ok) {
+      if (response?.ok) {
         const models = await response.json();
         return {
           success: true,
@@ -882,7 +891,11 @@ async function testAIConnection(provider: string, configOverride?: Record<string
         return {
           success: false,
           message: 'LM Studio connection failed',
-          details: { status: response.status, statusText: response.statusText }
+          details: {
+            status: response?.status,
+            statusText: response?.statusText,
+            error: response ? undefined : 'LM Studio did not respond on either supported models endpoint'
+          }
         };
       }
     } else if (provider === 'openrouter') {
