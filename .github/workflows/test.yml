@@ -63,7 +63,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium firefox
 
       - name: Build application
         # The E2E server is the root Next app; building the separate Vite UI
@@ -103,7 +103,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
 
       - name: Build application
         # Visual tests exercise the root Next app served by test:server.
@@ -138,7 +138,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
 
       - name: Build application
         # Performance browser tests exercise the root Next app, not the
