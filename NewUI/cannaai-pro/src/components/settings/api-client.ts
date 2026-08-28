@@ -13,6 +13,10 @@ import { API_ORIGIN } from '../../lib/api-origin';
 // API base URL - adjust as needed for your environment
 const API_BASE_URL = API_ORIGIN;
 const SETTINGS_INIT_TIMEOUT_MS = 15000;
+// Local providers may need to wake a JIT model or initialize a large vision
+// model before replying. A short browser timeout incorrectly reports that
+// healthy provider as a network failure.
+const LOCAL_PROVIDER_TIMEOUT_MS = 60000;
 
 class SettingsAPIClient {
   private api = axios.create({
@@ -128,7 +132,7 @@ class SettingsAPIClient {
         action: 'test_connection',
         provider,
         ...(config ? { config } : {}),
-      }, { timeout: 15000 });
+      }, { timeout: provider === 'lm-studio' ? LOCAL_PROVIDER_TIMEOUT_MS : 15000 });
 
       return response.data;
     } catch (error) {
@@ -146,7 +150,7 @@ class SettingsAPIClient {
         action: 'get_models',
         provider,
         ...(config ? { config } : {}),
-      }, { timeout: 10000 });
+      }, { timeout: provider === 'lm-studio' ? LOCAL_PROVIDER_TIMEOUT_MS : 10000 });
 
       return response.data;
     } catch (error) {
