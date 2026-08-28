@@ -309,11 +309,11 @@ const ERROR_CODES = {
   TOOL_EXECUTION_ERROR: -32002,
 } as const;
 
-async function callUpstream(endpoint: string, options: RequestInit = {}): Promise<any> {
+async function callUpstream(endpoint: string, options: RequestInit = {}, authHeaders: Record<string, string> = {}): Promise<any> {
   const url = `${CANNAAI_URL}${endpoint}`;
   const response = await fetch(url, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...authHeaders, ...(options.headers || {}) },
   });
   if (!response.ok) {
     // Surface the upstream status + body so the agent gets useful feedback.
@@ -351,7 +351,7 @@ function buildRequestBody(tool: ToolDef, args: Record<string, any>): any {
   return body;
 }
 
-async function callTool(name: string, args: Record<string, any>): Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }> {
+async function callTool(name: string, args: Record<string, any>, authHeaders: Record<string, string> = {}): Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }> {
   const tool = TOOLS.find((t) => t.name === name);
   if (!tool) {
     return {
@@ -406,7 +406,7 @@ async function callTool(name: string, args: Record<string, any>): Promise<{ cont
       if (tool.method && tool.method !== 'GET' && tool.bodyFromArgs) {
         fetchOptions.body = JSON.stringify(buildRequestBody(tool, args));
       }
-      result = await callUpstream(path, fetchOptions);
+      result = await callUpstream(path, fetchOptions, authHeaders);
     }
 
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
@@ -472,7 +472,12 @@ export async function POST(request: NextRequest) {
         message: 'tools/call requires params.name',
       }), { status: 400 });
     }
-    const result = await callTool(toolName, toolArgs);
+    const authHeaders: Record<string, string> = {};
+    const authorization = request.headers.get('authorization');
+    const apiToken = request.headers.get('x-cannaai-api-token');
+    if (authorization) authHeaders.Authorization = authorization;
+    if (apiToken) authHeaders['X-CannaAI-API-Token'] = apiToken;
+    const result = await callTool(toolName, toolArgs, authHeaders);
     return jsonResponse(makeResponse(id, result));
   }
 
