@@ -55,4 +55,23 @@ describe('OpenClaw CannaAI skill transport', () => {
       { headers: { Authorization: 'Bearer skill-test-token' } },
     );
   });
+
+  test('does not claim growth was logged when the API rejects the write', async () => {
+    process.env.CANNAAI_API_URL = 'https://cannaai.example.ts.net';
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ error: 'database unavailable' }),
+    } as Response);
+
+    await expect(tools.track_growth.execute({
+      stage: 'vegetative',
+      day: 14,
+    })).resolves.toEqual({
+      success: false,
+      logged: false,
+      day: 14,
+      stage: 'vegetative',
+    });
+  });
 });

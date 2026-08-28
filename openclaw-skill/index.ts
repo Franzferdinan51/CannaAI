@@ -237,7 +237,7 @@ export const tools = {
       
       return {
         success: response.ok,
-        logged: true,
+        logged: response.ok,
         day: params.day,
         stage: params.stage
       };
