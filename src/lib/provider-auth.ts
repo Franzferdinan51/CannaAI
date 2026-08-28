@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { createTimeoutSignal } from './abort-signal';
 
 const execFileAsync = promisify(execFile);
 const stateDir = path.join(os.tmpdir(), 'cannaai-provider-auth');
@@ -104,7 +105,7 @@ export async function providerAuthStatus(provider: AuthProvider) {
     try {
       const response = await fetch(`${apiUrl}/health`, {
         headers: { authorization: `Bearer ${apiKey}` },
-        signal: AbortSignal.timeout(2000),
+        signal: createTimeoutSignal(2000),
       });
       if (response.ok) {
         return {

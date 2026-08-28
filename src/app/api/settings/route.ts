@@ -4,6 +4,7 @@ import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
 import { providerAuthStatus } from '@/lib/provider-auth';
 import { prisma } from '@/lib/prisma';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
+import { createTimeoutSignal } from '@/lib/abort-signal';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -100,16 +101,6 @@ let settings: any = { ...defaultSettings };
 let settingsLoaded = false;
 let settingsRecordId = 1;
 const SETTINGS_DATABASE_TIMEOUT_MS = 2000;
-
-// AbortSignal.timeout is unavailable in older Node runtimes used by some
-// local installs. Keep the settings probes portable without changing their
-// timeout behavior.
-function createTimeoutSignal(timeoutMs: number): AbortSignal {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  timer.unref?.();
-  return controller.signal;
-}
 
 async function withSettingsDatabaseTimeout<T>(operation: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
