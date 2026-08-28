@@ -215,7 +215,10 @@ describe('/api/lmstudio legacy local endpoint', () => {
 
   test('reports degraded when LM Studio has no runnable chat model', async () => {
     jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce(response({ data: [{ id: 'text-embedding-model' }] }));
+      .mockResolvedValueOnce(response({ data: [
+        { id: 'text-embedding-model' },
+        { id: 'qwen3-reranker-0.6b' },
+      ] }));
 
     const result = await GET();
 

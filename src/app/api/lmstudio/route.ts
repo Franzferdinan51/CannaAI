@@ -487,7 +487,12 @@ export async function GET() {
       : Array.isArray(models?.models) ? models.models : [];
     const chatModels = modelList.filter((model: any) => {
       const id = String(model?.id || '').toLowerCase();
-      return id && !id.includes('embedding') && !id.includes('embed-') && !id.endsWith('-embed');
+      return id &&
+        !id.includes('embedding') &&
+        !id.includes('embed-') &&
+        !id.endsWith('-embed') &&
+        !id.includes('reranker') &&
+        !id.includes('rerank');
     });
     console.log(`✅ LM Studio reachable with ${modelList.length} models (${chatModels.length} chat models)`);
 
