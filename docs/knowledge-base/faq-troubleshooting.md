@@ -196,19 +196,19 @@ See [Trichome Analysis](../user/user-manual.md#trichome-analysis) for details.
 
 ### Q18: Can I use LM Studio in production?
 **A:**
-- **Not recommended**: LM Studio designed for development
-- **Serverless incompatible**: Won't work on Vercel, Netlify
-- **Production needs**: Use OpenRouter for production
-- **Hybrid approach**: Dev with LM Studio, Prod with OpenRouter
+- **Yes, for self-hosted deployments**: LM Studio can power local text and vision inference when the CannaAI backend runs on the same machine or network.
+- **Serverless limitation**: A serverless deployment cannot reach a user's localhost LM Studio instance; use a reachable self-hosted endpoint or a cloud provider there.
+- **Capacity planning**: Size the host for the selected model and expect slower responses for large vision models.
+- **Hybrid option**: OpenRouter or another cloud provider can remain a fallback when the local service is unavailable.
 
 ---
 
 ### Q19: What models work best for plant analysis?
 **A:**
-- **OpenRouter**: meta-llama/llama-3.1-8b-instruct:free (default)
-- **Other options**: Various Llama, Mixtral models
-- **Auto-selection**: System chooses best available model
-- **Manual override**: Can select specific model in Settings
+- **LM Studio vision models**: Use any loaded model that advertises image/vision capability; `ornith-1.5-35b-a3b` is a supported example.
+- **Text-only models**: Use them for cultivation chat, not image analysis.
+- **Auto-selection**: CannaAI discovers available models and uses the configured provider/model policy.
+- **Manual override**: Select any exact model ID in Settings, including a JIT-loaded LM Studio model.
 
 ---
 
