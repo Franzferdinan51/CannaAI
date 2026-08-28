@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -40,6 +40,7 @@ jobs:
         if: always()
         with:
           name: test-results-unit
+          if-no-files-found: ignore
           path: |
             coverage/junit.xml
 
@@ -51,10 +52,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -79,6 +80,7 @@ jobs:
         if: always()
         with:
           name: test-results-e2e
+          if-no-files-found: ignore
           path: |
             test-results/
             playwright-report/
@@ -91,10 +93,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -117,6 +119,7 @@ jobs:
         if: always()
         with:
           name: test-results-visual
+          if-no-files-found: ignore
           path: test-results/visual/
 
   performance-tests:
@@ -126,10 +129,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -153,6 +156,7 @@ jobs:
         if: always()
         with:
           name: test-results-performance
+          if-no-files-found: ignore
           path: test-results/performance/
 
   security-tests:
@@ -162,10 +166,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -186,10 +190,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -210,6 +214,7 @@ jobs:
         if: always()
         with:
           name: test-results-integration
+          if-no-files-found: ignore
           path: |
             junit.xml
 
