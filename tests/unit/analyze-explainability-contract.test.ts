@@ -207,4 +207,24 @@ describe('analysis explainability contract', () => {
     expect(normalized.plantAnalyses).toHaveLength(1);
     expect(normalized.plantAnalyses[0].plantId).toBe('Plant 1');
   });
+
+  test('repairs empty and over-specified single-plant subject lists', () => {
+    const normalized = normalizePlantAnalysisResult(
+      {
+        diagnosis: 'Leaf stress',
+        plantAnalyses: [
+          { plantId: 'Plant 1', diagnosis: 'Leaf stress' },
+          { plantId: 'Plant 2', diagnosis: 'Unexpected second subject' },
+        ],
+      },
+      { provider: 'lm-studio', inputParameters: { observationScope: 'single-plant' } },
+    );
+    expect(normalized.plantAnalyses).toHaveLength(1);
+
+    const empty = normalizePlantAnalysisResult(
+      { diagnosis: 'Leaf stress', plantAnalyses: [] },
+      { provider: 'lm-studio', inputParameters: { observationScope: 'single-plant' } },
+    );
+    expect(empty.plantAnalyses).toHaveLength(1);
+  });
 });

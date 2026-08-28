@@ -148,7 +148,9 @@ export function normalizePlantAnalysisResult(
     ? requestedScope
     : 'single-plant';
   enhanced.observationScope = observationScope;
-  if (!Array.isArray(enhanced.plantAnalyses)) {
+  if (!Array.isArray(enhanced.plantAnalyses) || (
+    observationScope === 'single-plant' && enhanced.plantAnalyses.length === 0
+  )) {
     enhanced.plantAnalyses = observationScope === 'single-plant'
       ? [{
           plantId: 'Plant 1',
@@ -161,6 +163,12 @@ export function normalizePlantAnalysisResult(
           actions: []
         }]
       : [];
+  }
+  // A single-subject request must never expose model-invented extra plants to
+  // callers. Preserve the first subject-level finding and keep the overall
+  // report as the source of truth for the selected plant.
+  if (observationScope === 'single-plant' && enhanced.plantAnalyses.length > 1) {
+    enhanced.plantAnalyses = enhanced.plantAnalyses.slice(0, 1);
   }
   if (!('cropAssessment' in enhanced)) enhanced.cropAssessment = null;
   if (observationScope !== 'single-plant' && enhanced.plantAnalyses.length === 0) {
