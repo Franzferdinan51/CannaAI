@@ -233,6 +233,34 @@ describe('LM Studio local-model regressions', () => {
     expect(body.messages[0].content[1].image_url.url).toBe('data:image/png;base64,abc123');
   });
 
+  test('LM Studio does not select a reranker when a chat model is available', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [
+          { key: 'qwen3-reranker-0.6b', type: 'llm' },
+          { key: 'chat-model', type: 'llm' },
+        ] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [
+          { id: 'qwen3-reranker-0.6b' },
+          { id: 'chat-model' },
+        ] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'chat answer' } }] }),
+      } as Response);
+
+    const provider = new LMStudioProvider({ url: 'http://localhost:1234' });
+    await provider.execute({ messages: [{ role: 'user', content: 'hello' }] });
+
+    const body = JSON.parse(String((fetchMock.mock.calls[2][1] as RequestInit).body));
+    expect(body.model).toBe('chat-model');
+  });
+
   test('LM Studio preserves non-image data URL MIME types', () => {
     const provider = new TestLMStudioProvider({
       url: 'http://localhost:1234',

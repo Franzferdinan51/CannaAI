@@ -22,6 +22,13 @@ interface ResolvedLMStudioModel {
   loaded: boolean;
 }
 
+function isNonChatModel(model: any): boolean {
+  const type = typeof model?.type === 'string' ? model.type.toLowerCase() : '';
+  if (type === 'embedding' || type === 'reranker' || type === 'image-embedding') return true;
+  const id = String(model?.id || model?.key || '').trim().toLowerCase();
+  return id.includes('embedding') || id.includes('embed-') || id.endsWith('-embed') || id.includes('reranker');
+}
+
 function normalizeImageUrl(image?: string): string | undefined {
   if (!image) return undefined;
   const value = String(image).trim();
@@ -227,7 +234,7 @@ export class LMStudioProvider extends BaseProvider {
 
       const payload = await response.json();
       if (!Array.isArray(payload?.models)) return [];
-      return payload.models.filter((model: LMStudioNativeModel) => model?.type !== 'embedding');
+      return payload.models.filter((model: LMStudioNativeModel) => !isNonChatModel(model));
     } catch {
       // Older LM Studio releases may not expose the native v1 endpoint. The
       // OpenAI-compatible /v1/models endpoint below is sufficient as fallback.
@@ -252,7 +259,7 @@ export class LMStudioProvider extends BaseProvider {
         .filter((id: unknown): id is string => (
           typeof id === 'string' &&
           id.trim().length > 0 &&
-          !id.toLowerCase().includes('embedding')
+          !isNonChatModel({ id })
         ));
     } catch {
       return [];
