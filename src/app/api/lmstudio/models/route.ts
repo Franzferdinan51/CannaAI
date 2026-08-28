@@ -154,6 +154,7 @@ async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
           : Array.isArray(payload.data)
             ? payload.data
             : [];
+        if (models.length === 0 && endpoint.endsWith('/api/v1/models')) continue;
         return normalizeRemoteModels(models);
       } catch {
         // Try the next API shape/configured endpoint before falling back to

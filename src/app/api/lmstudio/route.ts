@@ -188,6 +188,12 @@ export async function POST(request: NextRequest) {
           const catalogModels = Array.isArray(modelsData?.data)
             ? modelsData.data
             : Array.isArray(modelsData?.models) ? modelsData.models : [];
+          // An empty native catalog can occur while LM Studio is refreshing
+          // its model list. Give the compatibility catalog a chance before
+          // declaring that there are no runnable models.
+          if (catalogModels.length === 0 && endpoint.endsWith('/api/v1/models')) {
+            continue;
+          }
           // Native LM Studio catalogs commonly use `key`, while the
           // OpenAI-compatible catalog uses `id`. Normalize both shapes so
           // model selection never drops a valid native-only model.
