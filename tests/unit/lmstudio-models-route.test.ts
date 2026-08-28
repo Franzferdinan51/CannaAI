@@ -71,6 +71,24 @@ describe('/api/lmstudio/models explicit URL probes', () => {
     expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
   });
 
+  test('does not treat an empty compatibility catalog as a connected provider', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ models: [] }), { status: 404 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }));
+
+    const result = await GET(new Request(
+      'http://localhost/api/lmstudio/models?url=http%3A%2F%2F127.0.0.1%3A1234',
+    ) as any);
+
+    expect(result.status).toBe(200);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      status: 'unavailable',
+      lmStudioRunning: false,
+      models: [],
+    }));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   test('uses a fallback timeout signal when AbortSignal.timeout is unavailable', async () => {
     const originalTimeout = (AbortSignal as typeof AbortSignal & {
       timeout?: (milliseconds: number) => AbortSignal;

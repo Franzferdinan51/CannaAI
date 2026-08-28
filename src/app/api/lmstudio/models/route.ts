@@ -154,11 +154,11 @@ async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
           : Array.isArray(payload.data)
             ? payload.data
             : [];
-        if (models.length === 0 && endpoint.endsWith('/api/v1/models')) continue;
         const normalizedModels = normalizeRemoteModels(models);
-        // A native catalog can contain only embeddings or rerankers. That is
-        // not a usable Settings catalog, so continue to the compatible API.
-        if (normalizedModels.length === 0 && endpoint.endsWith('/api/v1/models')) continue;
+        // An empty catalog (or one containing only embeddings/rerankers) is
+        // not proof that LM Studio is ready for chat. Continue through the
+        // alternate API shape and report unavailable if neither has a model.
+        if (normalizedModels.length === 0) continue;
         return normalizedModels;
       } catch {
         // Try the next API shape/configured endpoint before falling back to
