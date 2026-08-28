@@ -24,6 +24,9 @@ interface LiveVisionRequest {
     strain?: string;
     growthStage?: string;
     medium?: string;
+    temperature?: number;
+    humidity?: number;
+    phLevel?: number;
     environment?: {
       temperature?: number;
       humidity?: number;
@@ -87,8 +90,12 @@ export async function POST(request: NextRequest) {
       }
 
       // Prepare analysis context with live vision specifics
+      const environment = plantContext.environment || {};
       const analysisContext = {
         ...plantContext,
+        temperature: plantContext.temperature ?? environment.temperature,
+        humidity: plantContext.humidity ?? environment.humidity,
+        phLevel: plantContext.phLevel ?? environment.phLevel,
         ...(model ? { model } : {}),
         ...(baseUrl ? { baseUrl } : {}),
         observationScope: analysisOptions.observationScope || 'single-plant',
