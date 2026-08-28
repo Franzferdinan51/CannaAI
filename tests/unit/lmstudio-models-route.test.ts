@@ -49,6 +49,28 @@ describe('/api/lmstudio/models explicit URL probes', () => {
     }));
   });
 
+  test('falls back when the native catalog has no chat-capable models', async () => {
+    const nativeResponse = new Response(JSON.stringify({ models: [
+      { key: 'text-embedding-model', type: 'embedding' },
+      { key: 'qwen3-reranker-0.6b', type: 'llm' },
+    ] }), { status: 200 });
+    const openAIResponse = new Response(JSON.stringify({ data: [{ id: 'chat-model' }] }), { status: 200 });
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(nativeResponse)
+      .mockResolvedValueOnce(openAIResponse);
+
+    const result = await GET(new Request(
+      'http://localhost/api/lmstudio/models?url=http%3A%2F%2F127.0.0.1%3A1234',
+    ) as any);
+
+    expect(result.status).toBe(200);
+    await expect(result.json()).resolves.toEqual(expect.objectContaining({
+      source: 'remote-api',
+      models: [expect.objectContaining({ id: 'chat-model' })],
+    }));
+    expect(fetchMock.mock.calls[1][0]).toBe('http://127.0.0.1:1234/v1/models');
+  });
+
   test('uses a fallback timeout signal when AbortSignal.timeout is unavailable', async () => {
     const originalTimeout = (AbortSignal as typeof AbortSignal & {
       timeout?: (milliseconds: number) => AbortSignal;

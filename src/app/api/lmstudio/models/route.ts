@@ -155,7 +155,11 @@ async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
             ? payload.data
             : [];
         if (models.length === 0 && endpoint.endsWith('/api/v1/models')) continue;
-        return normalizeRemoteModels(models);
+        const normalizedModels = normalizeRemoteModels(models);
+        // A native catalog can contain only embeddings or rerankers. That is
+        // not a usable Settings catalog, so continue to the compatible API.
+        if (normalizedModels.length === 0 && endpoint.endsWith('/api/v1/models')) continue;
+        return normalizedModels;
       } catch {
         // Try the next API shape/configured endpoint before falling back to
         // the local disk catalog.
