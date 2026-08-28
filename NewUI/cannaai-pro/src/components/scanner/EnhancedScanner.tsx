@@ -219,7 +219,7 @@ const EnhancedScanner: React.FC = () => {
       return;
     }
 
-    const rawPlantCount = analysisForm.expectedPlantCount.trim();
+    const rawPlantCount = String(analysisForm.expectedPlantCount || '').trim();
     const parsedPlantCount = rawPlantCount ? Number(rawPlantCount) : undefined;
     if (parsedPlantCount !== undefined && (!Number.isInteger(parsedPlantCount) || parsedPlantCount < 1 || parsedPlantCount > 100)) {
       toast.error('Expected plant count must be a whole number from 1 to 100.');
@@ -639,7 +639,7 @@ const EnhancedScanner: React.FC = () => {
                           min="1"
                           max="100"
                           step="1"
-                          value={formData.expectedPlantCount}
+                          value={formData.expectedPlantCount || ''}
                           onChange={(e) => handleInputChange('expectedPlantCount', e.target.value)}
                           placeholder="e.g., 4"
                           className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
