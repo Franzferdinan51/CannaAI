@@ -1,5 +1,6 @@
 import { PlantHealthAnalysis } from "../../types/plant-analysis";
 import { getLMStudioApiKey } from "../ai-provider-lmstudio";
+import { extractJSONFromResponse } from "../analysis-json";
 
 function normalizeImageUrl(image: unknown): string | undefined {
   if (typeof image !== 'string') return undefined;
@@ -285,17 +286,16 @@ export async function analyzeWithLMStudio(
       throw new Error("LM Studio returned an empty analysis response");
     }
 
-    // Clean response
-    let cleanedContent = responseContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    // Try to parse JSON
-    let parsed: any;
-    try {
-      parsed = JSON.parse(cleanedContent);
-    } catch (e) {
-      console.error("Failed to parse LM Studio response:", cleanedContent);
+    // Local reasoning models commonly put a short explanation before or after
+    // the JSON report, or wrap it in markdown. Use the shared tolerant parser
+    // so this compatibility adapter behaves like the primary analysis route.
+    const extracted = extractJSONFromResponse(responseContent);
+    if (!extracted.success || !extracted.data || Array.isArray(extracted.data)) {
+      console.error("Failed to parse LM Studio response:", responseContent);
       return null;
     }
+    const parsed: any = extracted.data;
+    const cleanedContent = JSON.stringify(parsed);
 
     // Map response to PlantHealthAnalysis
     const analysis: PlantHealthAnalysis = {

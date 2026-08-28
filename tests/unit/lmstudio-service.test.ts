@@ -81,6 +81,27 @@ describe('legacy LM Studio vision client', () => {
     expect(reasoningResult?.summary).toBe('reasoned');
   });
 
+  test('extracts JSON when a local reasoning model surrounds it with prose', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: {
+          content: 'I inspected the image. Here is the report:\n```json\n{"summary":"healthy plant"}\n```\nNo urgent issues found.'
+        } }],
+      }),
+    } as Response);
+
+    const result = await analyzeWithLMStudio(
+      'Inspect the plant',
+      ['data:image/jpeg;base64,ZmFrZQ=='],
+      'http://localhost:1234',
+      undefined,
+      'vision-model',
+    );
+
+    expect(result?.summary).toBe('healthy plant');
+  });
+
   test('normalizes an LM Studio endpoint that already includes /v1', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
