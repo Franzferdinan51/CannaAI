@@ -12,6 +12,7 @@ import { isServerless, isDevelopment } from '@/lib/ai-provider-detection';
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
 export const revalidate = false;
+const LM_STUDIO_PROBE_TIMEOUT_MS = 20000;
 
 // LM Studio configuration
 const LM_STUDIO_URL = (process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234')
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest) {
       try {
         const healthCheck = await fetch(`${candidate}/v1/models`, {
           method: 'GET',
-          signal: createTimeoutSignal(5000),
+          signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
           headers: lmStudioHeaders()
         });
         if (!healthCheck.ok) {
@@ -414,7 +415,7 @@ export async function GET() {
       try {
         const candidateResponse = await fetch(`${candidate}/v1/models`, {
           method: 'GET',
-          signal: createTimeoutSignal(5000),
+          signal: createTimeoutSignal(LM_STUDIO_PROBE_TIMEOUT_MS),
           headers: lmStudioHeaders()
         });
         if (candidateResponse.ok) {

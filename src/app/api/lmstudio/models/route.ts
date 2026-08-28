@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma';
 
 const execAsync = promisify(exec);
 const SETTINGS_LOOKUP_TIMEOUT_MS = 2000;
+const LM_STUDIO_CATALOG_TIMEOUT_MS = 20000;
 
 function createTimeoutSignal(timeoutMs: number): AbortSignal {
   const nativeTimeout = (AbortSignal as typeof AbortSignal & {
@@ -143,7 +144,7 @@ async function getRemoteModels(urlOverride?: string): Promise<any[] | null> {
       try {
         const response = await fetch(endpoint, {
           headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
-          signal: createTimeoutSignal(2500)
+          signal: createTimeoutSignal(LM_STUDIO_CATALOG_TIMEOUT_MS)
         });
         if (!response.ok) continue;
 
