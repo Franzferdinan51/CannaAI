@@ -57,7 +57,7 @@
     "test:explainability": "node --import tsx scripts/run-explainability-lane.ts",
     "test:coverage": "cross-env TS_NODE_TRANSPILE_ONLY=1 TS_NODE_PROJECT=tsconfig.jest-config.json jest --coverage",
     "test:watch": "cross-env TS_NODE_TRANSPILE_ONLY=1 TS_NODE_PROJECT=tsconfig.jest-config.json jest --watch",
-    "test:server": "NODE_ENV=test next dev --webpack -p 3000",
+    "test:server": "NODE_ENV=production next start -p 3000",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:visual && npm run test:performance && npm run test:security",
     "setup": "npm install && cd NewUI/cannaai-pro && npm install",
     "setup:backend": "npm install && npm run db:generate",
