@@ -20,7 +20,8 @@ function lmStudioModelEndpoints(baseUrl: string): string[] {
 
 // LM Studio configuration
 const LM_STUDIO_URL = (process.env.LM_STUDIO_URL || process.env.LM_STUDIO_BASE_URL || 'http://localhost:1234')
-  .replace(/\/v1\/?$/, '')
+  .replace(/\/(?:api\/)?v1\/?$/i, '')
+  .replace(/\/api\/?$/i, '')
   .replace(/\/$/, '');
 // Large local vision models can legitimately need several minutes for one
 // request, especially on CPU/shared-memory systems. The primary LM Studio
