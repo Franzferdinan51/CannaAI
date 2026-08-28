@@ -21,6 +21,18 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
   }
 }
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const nativeTimeout = (AbortSignal as typeof AbortSignal & {
+    timeout?: (milliseconds: number) => AbortSignal;
+  }).timeout;
+  if (typeof nativeTimeout === 'function') return nativeTimeout(timeoutMs);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  return controller.signal;
+}
+
 function normalizeProviderName(provider: unknown): 'lmstudio' | 'openrouter' | null {
   const value = typeof provider === 'string' ? provider.toLowerCase().replace(/[-_]/g, '') : '';
   return value === 'lmstudio' ? 'lmstudio' : value === 'openrouter' ? 'openrouter' : null;
@@ -51,7 +63,7 @@ async function probeRequestedProvider(provider: unknown, providerSettings: any, 
   try {
     const response = await fetch(`${baseUrl}/v1/models`, {
       headers,
-      signal: AbortSignal.timeout(8000),
+      signal: createTimeoutSignal(8000),
     });
     return response.ok;
   } catch {
