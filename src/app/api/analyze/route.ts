@@ -25,6 +25,7 @@ import { withRequest } from '@/lib/logger';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { getPersistedLMStudioSettings } from '@/lib/lmstudio-settings';
 
 // Environment detection
 const isStaticExport = process.env.BUILD_MODE === 'static';
@@ -34,34 +35,6 @@ const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const MAX_REQUESTS_PER_WINDOW = 20;
 const ANALYSIS_DATABASE_TIMEOUT_MS = 2000;
 const requestTracker = new Map<string, { count: number; resetTime: number }>();
-let lmStudioSettingsCache: { model?: string; baseUrl?: string; expiresAt: number } = { expiresAt: 0 };
-
-async function getPersistedLMStudioSettings(): Promise<{ model?: string; baseUrl?: string }> {
-  if (lmStudioSettingsCache.expiresAt > Date.now()) return lmStudioSettingsCache;
-  try {
-    const lookup = prisma.automationSetting.findFirst({ orderBy: { updatedAt: 'desc' } });
-    const timeout = new Promise<null>(resolve => {
-      const timer = setTimeout(() => resolve(null), 750);
-      timer.unref?.();
-    });
-    const stored = await Promise.race([lookup, timeout]);
-    const config = stored && typeof stored.config === 'object' && !Array.isArray(stored.config)
-      ? (stored.config as { lmStudio?: { model?: unknown; url?: unknown; baseUrl?: unknown } }).lmStudio
-      : undefined;
-    const value = {
-      model: typeof config?.model === 'string' && config.model.trim() ? config.model.trim() : undefined,
-      baseUrl: typeof (config?.url || config?.baseUrl) === 'string' && String(config.url || config.baseUrl).trim()
-        ? String(config.url || config.baseUrl).trim()
-        : undefined,
-      expiresAt: Date.now() + 30000,
-    };
-    lmStudioSettingsCache = value;
-    return value;
-  } catch {
-    return {};
-  }
-}
-
 async function withAnalysisDatabaseTimeout<T>(operation: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {

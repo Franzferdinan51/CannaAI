@@ -4,6 +4,7 @@ import { base64ToBuffer, normalizeBase64ImageData } from '@/lib/base64';
 import { getImageMetadata, processImageForVisionModel } from '@/lib/image-simple';
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import crypto from 'crypto';
+import { getPersistedLMStudioSettings } from '@/lib/lmstudio-settings';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -134,12 +135,18 @@ export async function POST(request: NextRequest) {
         return createAPIError(`Image processing failed: ${imageError.message}`, 400);
       }
 
+      const storedLMStudio = !model || !baseUrl ? await getPersistedLMStudioSettings() : {};
+
       // Perform AI trichome analysis
       const trichomeResult = await analyzeTrichomes(
         processedImageInfo.buffer,
         processedImageInfo.base64,
         deviceInfo,
-        { ...analysisOptions, model, baseUrl }
+        {
+          ...analysisOptions,
+          model: model || storedLMStudio.model,
+          baseUrl: baseUrl || storedLMStudio.baseUrl,
+        }
       );
 
       const response: TrichomeAnalysis = {

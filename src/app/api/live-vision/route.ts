@@ -3,6 +3,7 @@ import { withSecurity, createAPIResponse, createAPIError } from '@/lib/security'
 import { base64ToBuffer, normalizeBase64ImageData } from '@/lib/base64';
 import { processImageForVisionModel } from '@/lib/image-simple';
 import { analyzePlantHealth } from '@/lib/ai';
+import { getPersistedLMStudioSettings } from '@/lib/lmstudio-settings';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -91,13 +92,16 @@ export async function POST(request: NextRequest) {
 
       // Prepare analysis context with live vision specifics
       const environment = plantContext.environment || {};
+      const storedLMStudio = !model || !baseUrl ? await getPersistedLMStudioSettings() : {};
+      const effectiveModel = model || storedLMStudio.model;
+      const effectiveBaseUrl = baseUrl || storedLMStudio.baseUrl;
       const analysisContext = {
         ...plantContext,
         temperature: plantContext.temperature ?? environment.temperature,
         humidity: plantContext.humidity ?? environment.humidity,
         phLevel: plantContext.phLevel ?? environment.phLevel,
-        ...(model ? { model } : {}),
-        ...(baseUrl ? { baseUrl } : {}),
+        ...(effectiveModel ? { model: effectiveModel } : {}),
+        ...(effectiveBaseUrl ? { baseUrl: effectiveBaseUrl } : {}),
         observationScope: analysisOptions.observationScope || 'single-plant',
         expectedPlantCount: analysisOptions.expectedPlantCount,
         liveVision: {

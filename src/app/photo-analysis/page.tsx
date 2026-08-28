@@ -53,6 +53,8 @@ export default function PhotoAnalysisPage() {
   const [plants, setPlants] = useState<PlantOption[]>([]);
   const [selectedPlant, setSelectedPlant] = useState<string | undefined>(undefined);
   const [imageData, setImageData] = useState<string | undefined>(undefined);
+  const [observationScope, setObservationScope] = useState<'single-plant' | 'multiple-plants' | 'crop'>('single-plant');
+  const [expectedPlantCount, setExpectedPlantCount] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [form, setForm] = useState({
     strain: '',
@@ -142,6 +144,8 @@ export default function PhotoAnalysisPage() {
         growthStage: 'unspecified',
         medium: 'unspecified',
         plantImage: imageData,
+        observationScope,
+        expectedPlantCount: expectedPlantCount ? Number(expectedPlantCount) : undefined,
         additionalNotes: form.notes || ''
       };
       const res = await fetch('/api/analyze', {
@@ -380,6 +384,36 @@ export default function PhotoAnalysisPage() {
                       onChange={(e) => setForm({ ...form, strain: e.target.value })}
                     />
                   </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Image scope</Label>
+                    <Select value={observationScope} onValueChange={(value) => setObservationScope(value as typeof observationScope)}>
+                      <SelectTrigger className="bg-slate-950 border-slate-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-800">
+                        <SelectItem value="single-plant">Single plant</SelectItem>
+                        <SelectItem value="multiple-plants">Multiple plants</SelectItem>
+                        <SelectItem value="crop">Crop / room overview</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {observationScope !== 'single-plant' && (
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Expected plants (optional)</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        className="bg-slate-950 border-slate-700"
+                        placeholder="e.g., 4"
+                        value={expectedPlantCount}
+                        onChange={(e) => setExpectedPlantCount(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
