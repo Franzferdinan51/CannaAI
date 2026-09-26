@@ -39,7 +39,7 @@ export interface TriageResult {
 }
 
 const TRIAGE_PROMPT = `You are a cannabis plant health triage classifier. Look at the photo and respond with ONLY a JSON object, no markdown, no commentary:
-{"healthStatus": "healthy" | "stressed" | "critical", "confidence": 0.0-1.0, "suspectedIssues": ["short label", ...], "urgency": "low" | "medium" | "high" | "critical", "focusAreas": ["leaves" | "stems" | "buds" | "roots" | "overall"], "summary": "one sentence"}
+{"healthStatus": "healthy" | "stressed" | "critical" | "unknown", "confidence": 0.0-1.0, "suspectedIssues": ["short label", ...], "urgency": "low" | "medium" | "high" | "critical", "focusAreas": ["leaves" | "stems" | "buds" | "roots" | "overall"], "summary": "one sentence"}
 Rules:
 - healthy: vigorous plant, no visible deficiency, pest, or environmental stress signs.
 - stressed: visible deficiency/pest/environmental symptoms, but the plant is viable and recoverable.

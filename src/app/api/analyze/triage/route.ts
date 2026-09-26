@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
     try {
       const normalized = normalizeBase64ImageData(plantImage);
       const { processImageForVisionModel } = await import('@/lib/image-simple');
-      const processed = await processImageForVisionModel(base64ToBuffer(normalized));
+      const { buffer } = base64ToBuffer(normalized);
+      const processed = await processImageForVisionModel(buffer);
       imageBase64 = processed.base64;
     } catch (imageError) {
       return addSecurityHeaders(NextResponse.json(
