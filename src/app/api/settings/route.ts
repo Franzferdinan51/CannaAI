@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { maskSettings, safeMergeSettings } from '@/lib/settings-security';
-import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
+import { refreshProviderHealth } from '@/lib/ai-provider-detection';
 import { providerAuthStatus } from '@/lib/provider-auth';
 import { prisma } from '@/lib/prisma';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
@@ -373,7 +373,7 @@ async function getProviderModels(provider: string, configOverride?: Record<strin
   try {
     if (['grok', 'openclaw', 'hermes'].includes(provider)) {
       const auth = await providerAuthStatus(provider as 'grok' | 'openclaw' | 'hermes');
-      const statuses = await getUnifiedAI().refreshProviderHealth();
+      const statuses = await refreshProviderHealth();
       const target = provider === 'grok' ? statuses.find((item) => item.name === 'openclaw') : statuses.find((item) => item.name === provider);
       const authenticated = provider === 'openclaw' ? true : auth.authenticated;
       return {
@@ -842,7 +842,7 @@ async function testAIConnection(provider: string, configOverride?: Record<string
   try {
     if (['grok', 'openclaw', 'hermes'].includes(provider)) {
       const auth = await providerAuthStatus(provider as 'grok' | 'openclaw' | 'hermes');
-      const statuses = await getUnifiedAI().refreshProviderHealth();
+      const statuses = await refreshProviderHealth();
       const target = provider === 'grok' ? statuses.find((item) => item.name === 'openclaw') : statuses.find((item) => item.name === provider);
       const healthy = target?.health.status === 'healthy' && (provider === 'openclaw' || auth.authenticated);
       return {

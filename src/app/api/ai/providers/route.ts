@@ -4,8 +4,44 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
 import { checkLMStudio, detectAvailableProviders } from '@/lib/ai-provider-detection';
+
+/**
+ * Static capability metadata per provider. Detection reports availability;
+ * capabilities don't change at runtime, so they live here instead of a
+ * second registry that can drift out of sync.
+ */
+function providerEntryFromDetection(p: { provider: string; isAvailable: boolean; reason: string }) {
+  const name = p.provider;
+  const isLocal = name === 'lmstudio' || name === 'openclaw' || name === 'hermes';
+  const isVision = name === 'lmstudio' || name === 'openclaw' || name === 'hermes' || name === 'minimax' || name === 'bailian' || name === 'openrouter';
+  // Agent runtimes are tool-aware; plain model APIs are not.
+  const functionCalling = name === 'openclaw' || name === 'hermes';
+  return {
+    name,
+    model: name === 'minimax' ? (process.env.MINIMAX_MODEL || 'MiniMax-M3') : '',
+    capabilities: {
+      text: true,
+      vision: isVision,
+      streaming: false,
+      functionCalling,
+      jsonMode: true,
+      maxTokens: name === 'minimax' ? 1024 : 4096,
+      contextWindow: 8192,
+      supportsBatching: false,
+      realtime: false,
+    },
+    health: {
+      status: p.isAvailable ? 'healthy' : 'unhealthy',
+      latency: 0,
+      successRate: 0,
+      lastError: p.isAvailable ? null : p.reason,
+    },
+    cost: { input: 0, output: 0, currency: 'USD' },
+    metrics: { totalRequests: 0, successfulRequests: 0, failedRequests: 0, averageLatency: 0 },
+    _local: isLocal,
+  };
+}
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -25,12 +61,8 @@ async function withProviderDetectionTimeout<T>(operation: Promise<T>, timeoutMs:
 
 export async function GET(request: NextRequest) {
   try {
-    const unifiedAI = getUnifiedAI();
-    const providerStatus = unifiedAI.getProviderStatus();
-
-    // Also probe the live-detection chain so vision-capable providers we add
-    // outside the unified registry (e.g. MiniMax) surface in the Settings UI.
-    // This is non-fatal: if detection throws we still return the registry view.
+    // Single provider system: everything comes from live detection now.
+    // (The old unified-ai registry was removed; see git history.)
     let liveProviders: Array<{ provider: string; isAvailable: boolean; reason: string }> = [];
     try {
       const configuredBaseUrl = request.nextUrl.searchParams.get('baseUrl')?.trim() || undefined;
@@ -38,21 +70,21 @@ export async function GET(request: NextRequest) {
         detectAvailableProviders({ fastLocal: true, lmStudioBaseUrl: configuredBaseUrl }),
         10000,
       );
-      liveProviders = (detected?.all || []).map((r: any) => ({
-        provider: r.provider,
-        isAvailable: !!r.isAvailable,
-        reason: r.reason || (r.isAvailable ? 'connected' : 'unavailable'),
-      }));
+      liveProviders = (detected?.all || [])
+        .filter((r: any) => r.provider && r.provider !== 'fallback')
+        .map((r: any) => ({
+          provider: r.provider,
+          isAvailable: !!r.isAvailable,
+          reason: r.reason || (r.isAvailable ? 'connected' : 'unavailable'),
+        }));
     } catch (detectionError) {
       console.warn('[providers] live detection failed:', detectionError);
     }
     const liveByName = new Map(liveProviders.map((p) => [p.provider, p]));
 
-    // Normalize registry names vs. live-detector names so the same provider
-    // doesn't appear twice (the registry uses "lm-studio", the live detector
-    // uses "lmstudio").
-    const alias = (n: string) => (n === 'lm-studio' ? 'lmstudio' : n);
-    const registryNamesAliased = new Set(providerStatus.map((p) => alias(p.name)));
+    // Build the provider list from detection results with static capability
+    // metadata per provider (detection reports availability, not capabilities).
+    const providerStatus = liveProviders.map((p) => providerEntryFromDetection(p));
 
     // Group by capabilities
     const capabilities = {
@@ -82,24 +114,24 @@ export async function GET(request: NextRequest) {
           .map(p => p.name),
         primary: capabilities.streaming
           .filter(p => p.health.status === 'healthy')
-          .sort((a, b) => a.health.latency - b.health.latency)[0]?.name || 'groq'
+          .sort((a, b) => a.health.latency - b.health.latency)[0]?.name || 'lmstudio'
       },
       'cost-effective': {
         description: 'Low-cost or free inference for budget-conscious users',
-        recommended: ['lm-studio', 'groq', 'gemini'],
-        primary: 'lm-studio'
+        recommended: ['lmstudio', 'openclaw', 'hermes'],
+        primary: 'lmstudio'
       },
       'high-quality': {
         description: 'Premium quality responses with advanced reasoning',
         recommended: providerStatus
-          .filter(p => p.name === 'claude' || p.name === 'gemini')
+          .filter(p => p.name === 'openclaw' || p.name === 'hermes')
           .map(p => p.name),
-        primary: 'claude'
+        primary: 'openclaw'
       },
       'research': {
         description: 'Research-focused with web browsing and citations',
-        recommended: ['perplexity', 'claude'],
-        primary: 'perplexity'
+        recommended: ['openclaw', 'hermes'],
+        primary: 'openclaw'
       }
     };
 
@@ -112,40 +144,11 @@ export async function GET(request: NextRequest) {
 
     const environmentRecommendations = generateEnvironmentRecommendations(environment);
 
-    // Build the merged provider list: registry entries first, then any
-    // live-detected providers not already in the registry (so vision-capable
-    // additions like MiniMax show up in Settings even if they bypass the
-    // unified-ai pool).
-    const liveOnlyProviders = liveProviders
-      .filter((p) => !registryNamesAliased.has(alias(p.provider)))
-      .map((p) => ({
-        name: p.provider,
-        model: p.provider === 'minimax' ? (process.env.MINIMAX_MODEL || 'MiniMax-M3') : '',
-        capabilities: {
-          text: true,
-          vision: p.provider === 'minimax' || p.provider === 'lmstudio' || p.provider === 'openclaw' || p.provider === 'hermes',
-          streaming: false,
-          functionCalling: false,
-          jsonMode: true,
-          maxTokens: p.provider === 'minimax' ? 1024 : 4096,
-          contextWindow: p.provider === 'minimax' ? 8192 : 8192,
-          supportsBatching: false,
-          realtime: false,
-        },
-        health: {
-          status: p.isAvailable ? 'healthy' : 'unhealthy',
-          latency: 0,
-          successRate: 0,
-          lastError: p.isAvailable ? null : p.reason,
-        },
-        cost: { input: 0, output: 0, currency: 'USD' },
-        metrics: { totalRequests: 0, successfulRequests: 0, failedRequests: 0, averageLatency: 0 },
-      }));
-    const mergedProviders = [...providerStatus, ...liveOnlyProviders];
+    // The provider list IS the detection result now (single system).
+    const mergedProviders = providerStatus;
 
     const mergedProviderView = (p: any) => {
-      const aliasedName = alias(p.name);
-      const live = liveByName.get(p.name) || liveByName.get(aliasedName);
+      const live = liveByName.get(p.name);
       const isHealthy = (live?.isAvailable ?? p.health?.status === 'healthy');
       const liveReason = live?.reason;
       return {
@@ -267,16 +270,11 @@ export async function POST(request: NextRequest) {
 function getApiKeyStatus(provider: string): boolean {
   const keys: Record<string, string> = {
     openrouter: process.env.OPENROUTER_API_KEY || '',
-    'lm-studio': process.env.LM_STUDIO_URL || '',
-    gemini: process.env.GEMINI_API_KEY || '',
-    grok: process.env.XAI_API_KEY || '',
+    lmstudio: process.env.LM_STUDIO_BASE_URL || process.env.LM_STUDIO_URL || '',
     openclaw: process.env.OPENCLAW_AGENT_COMMAND || '',
     hermes: process.env.HERMES_API_KEY || process.env.HERMES_API_SERVER_KEY || process.env.HERMES_AGENT_COMMAND || '',
-    together: process.env.TOGETHER_API_KEY || '',
-    claude: process.env.ANTHROPIC_API_KEY || '',
-    perplexity: process.env.PERPLEXITY_API_KEY || '',
-    lmstudio: process.env.LM_STUDIO_URL || '',
     minimax: process.env.MINIMAX_API_KEY || '',
+    bailian: process.env.BAILIAN_API_KEY || '',
   };
 
   return !!keys[provider];
@@ -285,16 +283,11 @@ function getApiKeyStatus(provider: string): boolean {
 function getEnvironmentVars(provider: string): string[] {
   const vars: Record<string, string[]> = {
     openrouter: ['OPENROUTER_API_KEY', 'OPENROUTER_MODEL'],
-    'lm-studio': ['LM_STUDIO_URL', 'LM_STUDIO_MODEL'],
     lmstudio: ['LM_STUDIO_BASE_URL', 'LM_STUDIO_API_KEY', 'LM_STUDIO_MODEL'],
-    gemini: ['GEMINI_API_KEY', 'GEMINI_MODEL'],
-    grok: ['XAI_API_KEY', 'XAI_MODEL'],
     openclaw: ['OPENCLAW_AGENT_COMMAND', 'OPENCLAW_MODEL'],
     hermes: ['HERMES_API_URL', 'HERMES_API_KEY', 'HERMES_MODEL', 'HERMES_AGENT_COMMAND'],
-    together: ['TOGETHER_API_KEY', 'TOGETHER_MODEL'],
-    claude: ['ANTHROPIC_API_KEY', 'CLAUDE_MODEL'],
-    perplexity: ['PERPLEXITY_API_KEY', 'PERPLEXITY_MODEL'],
     minimax: ['MINIMAX_API_KEY', 'MINIMAX_BASE_URL', 'MINIMAX_MODEL'],
+    bailian: ['BAILIAN_API_KEY', 'BAILIAN_MODEL'],
   };
 
   return vars[provider] || [];
@@ -305,7 +298,7 @@ function generateEnvironmentRecommendations(environment: any): string[] {
 
   if (environment.isServerless) {
     recommendations.push(
-      'Serverless environment detected. LM Studio will not work here. Use cloud providers like OpenRouter, Gemini, or Groq.'
+      'Serverless environment detected. LM Studio will not work here. Use cloud providers like OpenRouter or MiniMax.'
     );
     recommendations.push(
       'For production serverless deployments, OpenRouter is recommended for reliability.'
@@ -342,7 +335,7 @@ function getSetupGuide(): Array<{
         'Get your free API key',
         'Set OPENROUTER_API_KEY environment variable',
         'Optionally set OPENROUTER_MODEL (defaults to free model)',
-        'Test connection at /api/ai/health'
+        'Test connection at /api/health-check'
       ]
     },
     {
@@ -353,16 +346,16 @@ function getSetupGuide(): Array<{
         'Download a compatible model (e.g., Llama 3.1 8B)',
         'Enable API server in LM Studio settings',
         'Set LM_STUDIO_URL (defaults to http://localhost:1234)',
-        'Test connection at /api/ai/health'
+        'Test connection at /api/health-check'
       ]
     },
     {
-      title: 'Google Gemini',
+      title: 'Agent Providers - OpenClaw & Hermes',
       steps: [
-        'Get API key from Google AI Studio',
-        'Set GEMINI_API_KEY environment variable',
-        'Optionally set GEMINI_MODEL',
-        'Test connection at /api/ai/health'
+        'Install OpenClaw or run the Hermes agent API server',
+        'Set OPENCLAW_AGENT_COMMAND or HERMES_API_URL + HERMES_API_KEY',
+        'Agent providers give tool-aware chat and image analysis',
+        'Test connection at /api/health-check'
       ]
     },
     {
@@ -370,8 +363,7 @@ function getSetupGuide(): Array<{
       steps: [
         'Configure multiple providers for load balancing',
         'System will automatically select best provider',
-        'Monitor usage at /api/ai/cost',
-        'View provider health at /api/ai/health'
+        'View provider health at /api/health-check'
       ]
     }
   ];
@@ -389,55 +381,40 @@ function getAllEnvironmentVars(): Record<string, { description: string; required
       required: false,
       example: 'meta-llama/llama-3.1-8b-instruct:free'
     },
-    LM_STUDIO_URL: {
-      description: 'LM Studio API endpoint',
+    LM_STUDIO_BASE_URL: {
+      description: 'LM Studio OpenAI-compatible API endpoint',
       required: false,
-      example: 'http://localhost:1234'
+      example: 'http://127.0.0.1:1234/v1'
     },
     LM_STUDIO_MODEL: {
       description: 'Default LM Studio model',
       required: false,
       example: 'granite-4.0-micro'
     },
-    GEMINI_API_KEY: {
-      description: 'Google Gemini API key',
+    OPENCLAW_AGENT_COMMAND: {
+      description: 'OpenClaw agent command for tool-aware chat',
       required: false,
-      example: 'AIza...'
+      example: 'openclaw'
     },
-    GEMINI_MODEL: {
-      description: 'Default Gemini model',
+    HERMES_API_URL: {
+      description: 'Hermes agent API server endpoint',
       required: false,
-      example: 'gemini-1.5-pro'
+      example: 'http://127.0.0.1:8642/v1'
     },
-    GROQ_API_KEY: {
-      description: 'Groq API key for ultra-fast inference',
-      required: false,
-      example: 'gsk_...'
-    },
-    GROQ_MODEL: {
-      description: 'Default Groq model',
-      required: false,
-      example: 'llama-3.1-70b-versatile'
-    },
-    TOGETHER_API_KEY: {
-      description: 'Together AI API key',
+    HERMES_API_KEY: {
+      description: 'Hermes agent API key',
       required: false,
       example: '...'
     },
-    ANTHROPIC_API_KEY: {
-      description: 'Anthropic Claude API key',
+    MINIMAX_API_KEY: {
+      description: 'MiniMax API key',
       required: false,
-      example: 'sk-ant-...'
+      example: '...'
     },
-    CLAUDE_MODEL: {
-      description: 'Default Claude model',
+    BAILIAN_API_KEY: {
+      description: 'Alibaba Bailian API key',
       required: false,
-      example: 'claude-3-5-sonnet-20241022'
-    },
-    PERPLEXITY_API_KEY: {
-      description: 'Perplexity AI API key',
-      required: false,
-      example: 'pplx-...'
+      example: '...'
     }
   };
 }

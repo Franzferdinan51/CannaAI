@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLocalMoaAdvisors } from '@/lib/ai/localMoaAdvisors';
-import { getUnifiedAI } from '@/lib/ai-providers/unified-ai';
+import { refreshProviderHealth } from '@/lib/ai-provider-detection';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const providers = (await getUnifiedAI().refreshProviderHealth()).map((provider) => ({
+  const providers = (await refreshProviderHealth()).map((provider) => ({
     id: provider.name,
     status: provider.health.status,
     healthy: provider.health.status !== 'unhealthy',

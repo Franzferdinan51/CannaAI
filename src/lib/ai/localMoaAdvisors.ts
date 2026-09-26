@@ -1,4 +1,4 @@
-import { getUnifiedAI, UnifiedAI } from '@/lib/ai-providers/unified-ai';
+import { executeAIWithFallback, refreshProviderHealth } from '@/lib/ai-provider-detection';
 
 export type MoaProvider = string | undefined;
 
@@ -38,8 +38,49 @@ const skepticInstruction = [
   'Do not claim to have used tools or observed anything outside the supplied context.'
 ].join(' ');
 
+/**
+ * Detection-backed adapter replacing the old unified-ai executor.
+ * Routes through the single provider chain (LM Studio -> OpenClaw ->
+ * Hermes -> MiniMax -> Bailian -> OpenRouter).
+ */
+const defaultMoaAI = {
+  refreshProviderHealth,
+  async execute(request: {
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+    provider?: string;
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+  }) {
+    const startedAt = Date.now();
+    const result: any = await executeAIWithFallback(request.messages, {
+      primaryProvider: request.provider,
+      model: request.model,
+      temperature: request.temperature,
+      maxTokens: request.maxTokens,
+    } as any);
+    if (!result?.success) throw new Error(result?.error || 'AI execution failed');
+    const content = typeof result.content === 'string' ? result.content : String(result.content ?? '');
+    return {
+      content,
+      provider: result.provider || request.provider || 'unknown',
+      model: result.model || request.model,
+      metadata: { latency: result.processingTime ?? (Date.now() - startedAt) },
+    };
+  },
+};
+
 export class LocalMoaAdvisors {
-  constructor(private readonly ai: Pick<UnifiedAI, 'execute'> & Partial<Pick<UnifiedAI, 'refreshProviderHealth'>> = getUnifiedAI()) {}
+  constructor(private readonly ai: {
+    execute: (request: {
+      messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+      provider?: string;
+      model?: string;
+      temperature?: number;
+      maxTokens?: number;
+    }) => Promise<{ content: string; provider: string; model?: string; metadata: { latency: number } }>;
+    refreshProviderHealth?: typeof refreshProviderHealth;
+  } = defaultMoaAI) {}
 
   async run(request: LocalMoaRequest): Promise<LocalMoaResult> {
     const task = request.task.trim();
@@ -53,11 +94,10 @@ export class LocalMoaAdvisors {
       : [];
     const requestedProvider = request.provider === 'grok' ? 'openclaw' : request.provider;
     const selectedProvider = requestedProvider || [
-      'lm-studio',
+      'lmstudio',
       'openclaw',
       'hermes',
-      'openrouter',
-      'gemini'
+      'openrouter'
     ].find((name) => statuses.some((status) => status.name === name && status.health.status === 'healthy'));
     const selectedModel = request.model || (request.provider === 'grok' ? 'grok-4.20-0309-reasoning' : undefined);
     if (!selectedProvider) {

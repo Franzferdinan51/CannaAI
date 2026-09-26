@@ -304,6 +304,36 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
   };
 }
 
+/**
+ * Drop-in replacement for the old unified-ai `refreshProviderHealth()`.
+ * Returns one entry per detected provider in the legacy shape
+ * `{ name, health: { status }, capabilities }` so migrated routes keep working
+ * without the old provider registry.
+ */
+export async function refreshProviderHealth(): Promise<Array<{
+  name: string;
+  health: { status: 'healthy' | 'unhealthy'; lastError: string | null };
+  capabilities: { text: boolean; vision: boolean; functionCalling: boolean };
+  reason: string;
+}>> {
+  const detected = await detectAvailableProviders();
+  return (detected?.all || [])
+    .filter((r: any) => r.provider && r.provider !== 'fallback')
+    .map((r: any) => ({
+      name: r.provider,
+      health: {
+        status: (r.isAvailable ? 'healthy' : 'unhealthy') as 'healthy' | 'unhealthy',
+        lastError: r.isAvailable ? null : (r.reason || 'unavailable'),
+      },
+      capabilities: {
+        text: true,
+        vision: ['lmstudio', 'openclaw', 'hermes', 'minimax', 'bailian', 'openrouter'].includes(r.provider),
+        functionCalling: r.provider === 'openclaw' || r.provider === 'hermes',
+      },
+      reason: r.reason || (r.isAvailable ? 'connected' : 'unavailable'),
+    }));
+}
+
 // Get provider config.
 export function getProviderConfig(provider: string) {
   switch (normalizeProviderName(provider)) {
