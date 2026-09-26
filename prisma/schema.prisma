@@ -233,6 +233,41 @@ model Strain {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   plants             Plant[]
+  motherOf           BreedingCross[] @relation("CrossMother")
+  fatherOf           BreedingCross[] @relation("CrossFather")
+  resultOf           BreedingCross[] @relation("CrossResult")
+}
+
+/// A recorded pollination / breeding event. The backbone of the breeding
+/// tracker: who was crossed with whom, when, and what came out of it.
+model BreedingCross {
+  id                String    @id @default(cuid())
+  /// Name of the resulting line, e.g. "Purple Sunshine Auto F2".
+  name              String
+  /// Generation label: F1, F2, S1, BX1, etc.
+  generation        String?
+  motherStrainId    String?
+  motherStrain      Strain?   @relation("CrossMother", fields: [motherStrainId], references: [id])
+  motherPlantId     String?
+  motherPlant       Plant?    @relation("CrossMotherPlant", fields: [motherPlantId], references: [id])
+  fatherStrainId    String?
+  fatherStrain      Strain?   @relation("CrossFather", fields: [fatherStrainId], references: [id])
+  fatherPlantId     String?
+  fatherPlant       Plant?    @relation("CrossFatherPlant", fields: [fatherPlantId], references: [id])
+  /// Free text for pollen from outside the database, e.g. "Blackstrap Auto F2 pollen (Greedy, Strainly)".
+  fatherDescription String?
+  resultingStrainId String?
+  resultingStrain   Strain?   @relation("CrossResult", fields: [resultingStrainId], references: [id])
+  crossDate         DateTime?
+  seedsHarvested    Int?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([motherStrainId])
+  @@index([fatherStrainId])
+  @@index([resultingStrainId])
+  @@index([crossDate])
 }
 
 model Plant {
@@ -262,6 +297,8 @@ model Plant {
   analyses           PlantAnalysis[]
   healthAnalytics    PlantHealthAnalytics[]
   tasks              Task[]
+  motherOfCrosses    BreedingCross[] @relation("CrossMotherPlant")
+  fatherOfCrosses    BreedingCross[] @relation("CrossFatherPlant")
 
   @@index([locationId])
   @@index([strainId])
