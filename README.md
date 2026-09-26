@@ -157,16 +157,18 @@ The agent-facing analysis response is documented in [`docs/developer/api/agent-a
 ## Project layout
 
 ```text
-src/                     Next.js API routes, providers, UI, and domain logic
-server.ts                Custom Node server and Socket.IO setup
-NewUI/cannaai-pro/       Active Vite/React dashboard
+src/                     Next.js app: API routes, AI providers, domain logic, and pages
+server.ts                Custom Node server (Next.js + Socket.IO + WebSocket)
+NewUI/cannaai-pro/       Vite/React dashboard — the active UI; proxies API calls to the backend
 prisma/                  SQLite schema, migrations, and generated client config
 openclaw-skill/          OpenClaw skill definition and scripts
 openclaw-bridge/         Legacy reference, not required at runtime
-docs/                    Current guides and API documentation
-tests/                   Unit, integration, browser, security, and performance tests
+integrations/            Python bridges (grow-monitor, OpenClaw)
+docker/                  Docker deployment assets
 scripts/                 Health, build, deployment, and quality checks
-legacy/ and docs/archive Historical material; not imported by the active app
+tests/                   Unit, integration, browser, security, and performance tests
+docs/                    Current guides and API documentation
+docs/archive/            Historical material; not imported by the active app
 ```
 
 ## Verification commands
@@ -197,7 +199,7 @@ Additional suites are available through `npm run test:integration`, `npm run tes
 
 ## License
 
-No license file is currently tracked in this repository. Add the project’s intended license before distributing builds outside the project.
+MIT — see [LICENSE](LICENSE).
 
 ## Links
 

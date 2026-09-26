@@ -106,6 +106,5 @@ npm run setup            # Install all dependencies
 ## 📚 Documentation
 
 - `HYBRID_ARCHITECTURE.md` - Detailed architecture documentation
-- `test-hybrid-setup.js` - Automated setup verification script
 
 **Happy coding! 🎉**

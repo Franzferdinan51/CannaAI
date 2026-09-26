@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, Sprout, Thermometer, Scan, FileText, Settings, Upload, Leaf } from './components/Icons';
 import { PlantImage, AnalysisResult } from './types';
-import { analyzePlantImage } from './services/geminiService';
+import { analyzePlantImage } from './services/analyzeService';
 import { apiUrl } from './src/lib/api-origin';
 
 // --- MOCK DATA INITIALIZATION ---
