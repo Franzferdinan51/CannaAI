@@ -116,3 +116,13 @@ remain compatible.
 - **Phase 1 (current):** expose schema + metadata contract tags (additive).
 - **Phase 2:** populate `agentSignals` directly in API responses.
 - **Phase 3:** make agent consumers require contract-aware validation for write/actuate paths.
+
+## 8) Diagnosis modes (2026-09-26)
+
+`POST /api/analyze` accepts a `mode` field:
+
+- `full` (default) — the existing deep analysis; behavior unchanged.
+- `triage` — fast health classification only. Returns `status` (`healthy` / `stressed` / `critical` / `unknown`), confidence, suspected issues, urgency, focus areas for a follow-up deep pass, and a one-line summary.
+- `auto` — runs triage first, then a guided deep analysis. The deep prompt receives the triage result and is instructed to verify or refute it, not blindly trust it.
+
+A standalone `POST /api/analyze/triage` endpoint exposes the triage pass directly — intended for phone/PWA quick-checks where a full analysis is too slow or expensive.

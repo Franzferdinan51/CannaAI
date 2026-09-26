@@ -145,8 +145,14 @@ The assistant camera control uses the browser's real image capture flow (`captur
 
 - `GET /api/health-check` — database and provider health, with honest unavailable states
 - `GET /api/ai/providers` — provider availability, models, and configuration status
-- `POST /api/analyze` — plant-photo analysis and the agent analysis contract
+- `POST /api/analyze` — plant-photo analysis and the agent analysis contract (`mode: full | triage | auto`; `auto` runs a fast triage pass that guides the deep analysis)
+- `POST /api/analyze/triage` — fast health classification only (healthy / stressed / critical / unknown) for phone quick-checks
 - `POST /api/chat` — cultivation chat with provider fallback
+- `POST /api/sensors/ac-infinity` — ingest AC Infinity controller readings (temp/RH/VPD from the grow app); computes VPD from temp+RH when the sender omits it, raises temp/VPD alerts
+- `GET /api/sensors/ac-infinity` — latest reading per controller
+- `POST /api/breeding/crosses` — record a pollination/breeding event (parents, generation, seeds, notes)
+- `GET /api/breeding/crosses` — list recorded crosses
+- `GET /api/breeding/lineage?strainId=` — family tree for a strain plus a readable pedigree string
 - `GET /api/openclaw/status` — current OpenClaw-backed cultivation data/status
 - `GET /api/lmstudio/models` — discovered LM Studio models
 
