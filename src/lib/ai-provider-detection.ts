@@ -317,21 +317,30 @@ export async function refreshProviderHealth(): Promise<Array<{
   reason: string;
 }>> {
   const detected = await detectAvailableProviders();
+  const { looksLikeVisionModel } = await import('./ai-provider-lmstudio');
   return (detected?.all || [])
     .filter((r: any) => r.provider && r.provider !== 'fallback')
-    .map((r: any) => ({
-      name: r.provider,
-      health: {
-        status: (r.isAvailable ? 'healthy' : 'unhealthy') as 'healthy' | 'unhealthy',
-        lastError: r.isAvailable ? null : (r.reason || 'unavailable'),
-      },
-      capabilities: {
-        text: true,
-        vision: ['lmstudio', 'openclaw', 'hermes', 'minimax', 'bailian', 'openrouter'].includes(r.provider),
-        functionCalling: r.provider === 'openclaw' || r.provider === 'hermes',
-      },
-      reason: r.reason || (r.isAvailable ? 'connected' : 'unavailable'),
-    }));
+    .map((r: any) => {
+      // Vision is reported honestly: LM Studio depends on the loaded model.
+      const models: string[] = Array.isArray(r.models) ? r.models : [];
+      const vision =
+        r.provider === 'lmstudio'
+          ? models.some(looksLikeVisionModel)
+          : r.provider === 'openclaw' || r.provider === 'hermes';
+      return {
+        name: r.provider,
+        health: {
+          status: (r.isAvailable ? 'healthy' : 'unhealthy') as 'healthy' | 'unhealthy',
+          lastError: r.isAvailable ? null : (r.reason || 'unavailable'),
+        },
+        capabilities: {
+          text: true,
+          vision,
+          functionCalling: r.provider === 'openclaw' || r.provider === 'hermes',
+        },
+        reason: r.reason || (r.isAvailable ? 'connected' : 'unavailable'),
+      };
+    });
 }
 
 // Get provider config.

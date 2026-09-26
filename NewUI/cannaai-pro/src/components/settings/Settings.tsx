@@ -71,6 +71,7 @@ import { useSettingsStore } from './store';
 import { SettingsTab, AIProviderType, ModelCapability } from './types';
 import AIProviderCard from './components/AIProviderCard';
 import LMStudioSection from './components/LMStudioSection';
+import ProviderStatusPanel from './components/ProviderStatusPanel';
 import NotificationSettings from './components/NotificationSettings';
 import UnitSettings from './components/UnitSettings';
 import SystemSettings from './components/SystemSettings';
@@ -374,6 +375,7 @@ const Settings: React.FC = () => {
             >
               {/* AI Providers Tab */}
               <Tabs.Content value="ai-providers" className="space-y-6">
+                <ProviderStatusPanel />
                 <AIProviderCard />
               </Tabs.Content>
 

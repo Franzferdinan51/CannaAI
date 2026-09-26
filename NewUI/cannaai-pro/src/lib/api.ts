@@ -129,67 +129,8 @@ export const api = {
   autoAnalyze: (file: File) => apiClient.upload('/auto-analyze', file, undefined, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
   trichomeAnalysis: (file: File) => apiClient.upload('/trichome-analysis', file, undefined, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
 
-  // Scanner-specific endpoints
-  scanner: {
-    // Image processing
-    uploadImage: (file: File, metadata?: any) => {
-      const formData = new FormData();
-      formData.append('image', file);
-      if (metadata) {
-        Object.entries(metadata).forEach(([key, value]) => {
-          formData.append(key, value as string);
-        });
-      }
-      return apiClient.post('/scanner/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-    },
-
-    // Analysis history
-    getHistory: (params?: { limit?: number; offset?: number; strain?: string }) =>
-      apiClient.get('/scanner/history', params),
-
-    deleteAnalysis: (id: string) => apiClient.delete(`/scanner/history/${id}`),
-
-    // Batch operations
-    batchAnalyze: (files: File[], formData: any) => {
-      const formDataObj = new FormData();
-      files.forEach((file, index) => {
-        formDataObj.append(`images[${index}]`, file);
-      });
-      Object.entries(formData).forEach(([key, value]) => {
-        formDataObj.append(key, value as string);
-      });
-      return apiClient.post('/scanner/batch-analyze', formDataObj, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: LOCAL_ANALYSIS_TIMEOUT_MS,
-      });
-    },
-
-    // Export and reports
-    exportAnalysis: (id: string, format: 'pdf' | 'json' | 'csv' = 'pdf') =>
-      apiClient.get(`/scanner/export/${id}`, { format }),
-
-    generateReport: (id: string) => apiClient.post(`/scanner/report/${id}`),
-
-    // Scanner settings
-    getSettings: () => apiClient.get('/scanner/settings'),
-    updateSettings: (settings: any) => apiClient.put('/scanner/settings', settings),
-
-    // Statistics and analytics
-    getStats: (timeRange?: 'week' | 'month' | 'year') =>
-      apiClient.get('/scanner/stats', { timeRange }),
-
-    getCommonIssues: () => apiClient.get('/scanner/common-issues'),
-
-    // Camera and capture
-    getCameraDevices: () => apiClient.get('/scanner/camera/devices'),
-
-    // Strain management
-    addCustomStrain: (strain: Partial<Strain>) => apiClient.post<CustomStrainApiResponse>('/scanner/strains', strain),
-    updateCustomStrain: (id: string, strain: any) => apiClient.put(`/scanner/strains/${id}`, strain),
-    deleteCustomStrain: (id: string) => apiClient.delete(`/scanner/strains/${id}`),
-  },
+  // Scanner uploads/history are handled via /analyze and /strains endpoints
+  // (the legacy /scanner/* backend routes were never implemented).
 
   // Chat & AI
   chat: (message: string) => apiClient.post<ChatApiResponse>('/chat', { message }, { timeout: LOCAL_CHAT_TIMEOUT_MS }),

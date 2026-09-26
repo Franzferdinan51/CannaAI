@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Sprout, Plus, Info } from 'lucide-react';
-import { api } from '../../lib/api';
+import { api, CustomStrainApiResponse } from '../../lib/api';
 import { Strain } from '../../types/scanner';
 
 interface StrainSelectorProps {
@@ -156,7 +156,7 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
         }
       };
 
-      const response = await api.scanner.addCustomStrain(newStrain);
+      const response = await api.strains.create(newStrain) as CustomStrainApiResponse;
       if (response) {
         const addedStrain: Strain = response.strain || {
           ...newStrain,

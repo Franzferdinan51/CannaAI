@@ -5,28 +5,49 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { checkLMStudio, detectAvailableProviders } from '@/lib/ai-provider-detection';
+import { looksLikeVisionModel } from '@/lib/ai-provider-lmstudio';
 
 /**
  * Static capability metadata per provider. Detection reports availability;
  * capabilities don't change at runtime, so they live here instead of a
  * second registry that can drift out of sync.
+ *
+ * Vision is reported honestly: for LM Studio it depends on the loaded model,
+ * so we check the detected model catalog. Never hard-code model IDs here —
+ * model choice flows from env config, the registry, or explicit user config.
  */
-function providerEntryFromDetection(p: { provider: string; isAvailable: boolean; reason: string }) {
+function providerEntryFromDetection(
+  p: { provider: string; isAvailable: boolean; reason: string; models?: string[] },
+) {
   const name = p.provider;
   const isLocal = name === 'lmstudio' || name === 'openclaw' || name === 'hermes';
-  const isVision = name === 'lmstudio' || name === 'openclaw' || name === 'hermes' || name === 'minimax' || name === 'bailian' || name === 'openrouter';
+  // LM Studio vision depends on the loaded model — check the catalog.
+  const lmStudioVision = name === 'lmstudio'
+    ? (p.models || []).some(looksLikeVisionModel)
+    : false;
+  const isVision = lmStudioVision || name === 'openclaw' || name === 'hermes';
   // Agent runtimes are tool-aware; plain model APIs are not.
   const functionCalling = name === 'openclaw' || name === 'hermes';
+  // Model comes from env config only — no hard-coded fallbacks.
+  const configuredModel =
+    name === 'minimax' ? process.env.MINIMAX_MODEL || '' :
+    name === 'lmstudio' ? process.env.LM_STUDIO_MODEL || process.env.LM_STUDIO_VISION_MODEL || '' :
+    name === 'openclaw' ? process.env.OPENCLAW_MODEL || '' :
+    name === 'hermes' ? process.env.HERMES_MODEL || '' :
+    name === 'bailian' ? process.env.BAILIAN_MODEL || '' :
+    name === 'openrouter' ? process.env.OPENROUTER_MODEL || '' : '';
   return {
     name,
-    model: name === 'minimax' ? (process.env.MINIMAX_MODEL || 'MiniMax-M3') : '',
+    model: configuredModel,
+    // Detected model catalog (LM Studio: what's actually loaded/available).
+    detectedModels: p.models || [],
     capabilities: {
       text: true,
       vision: isVision,
       streaming: false,
       functionCalling,
       jsonMode: true,
-      maxTokens: name === 'minimax' ? 1024 : 4096,
+      maxTokens: 4096,
       contextWindow: 8192,
       supportsBatching: false,
       realtime: false,
@@ -63,7 +84,7 @@ export async function GET(request: NextRequest) {
   try {
     // Single provider system: everything comes from live detection now.
     // (The old unified-ai registry was removed; see git history.)
-    let liveProviders: Array<{ provider: string; isAvailable: boolean; reason: string }> = [];
+    let liveProviders: Array<{ provider: string; isAvailable: boolean; reason: string; models?: string[] }> = [];
     try {
       const configuredBaseUrl = request.nextUrl.searchParams.get('baseUrl')?.trim() || undefined;
       const detected = await withProviderDetectionTimeout(
@@ -76,6 +97,8 @@ export async function GET(request: NextRequest) {
           provider: r.provider,
           isAvailable: !!r.isAvailable,
           reason: r.reason || (r.isAvailable ? 'connected' : 'unavailable'),
+          // Model catalog for honest capability reporting (e.g. LM Studio vision).
+          models: Array.isArray(r.models) ? r.models : Array.isArray(r?.data?.models) ? r.data.models : [],
         }));
     } catch (detectionError) {
       console.warn('[providers] live detection failed:', detectionError);
@@ -164,6 +187,8 @@ export async function GET(request: NextRequest) {
           ? { available: live.isAvailable, reason: liveReason }
           : null,
         capabilities: p.capabilities,
+        // Detected model catalog passthrough (LM Studio loaded models).
+        detectedModels: (p as any).detectedModels || [],
         performance: {
           latency: p.health?.latency ?? 0,
           successRate: p.health?.successRate ?? 0,

@@ -182,7 +182,7 @@ async function fetchModelCatalog(endpoint: string, timeoutMs: number, apiKeyOver
   return successfulEmptyEndpoint ? { models: [], responseEndpoint: successfulEmptyEndpoint } : null;
 }
 
-function looksLikeVisionModel(id: string): boolean {
+export function looksLikeVisionModel(id: string): boolean {
   const value = id.toLowerCase();
   return (
     value.includes('vision') ||
