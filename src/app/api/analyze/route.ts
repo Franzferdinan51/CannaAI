@@ -13,6 +13,11 @@ import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
 import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
 import { getAnalyzeCache } from '@/lib/analyze-cache';
 import { withRequest } from '@/lib/logger';
+import {
+  runTriageStage,
+  formatTriageForPrompt,
+  type TriageResult,
+} from '@/lib/diagnosis-pipeline';
 
 /**
  * Provider Priority Chain:
@@ -92,7 +97,12 @@ const AnalysisRequestSchema = z.object({
       ? undefined
       : typeof value === 'string' ? Number(value) : value,
     z.number().int().min(1).max(100).optional()
-  )
+  ),
+  // Diagnosis pipeline mode:
+  // - full: the classic single-pass V2 analysis (default; unchanged behavior)
+  // - triage: fast classification only (healthy/stressed/critical)
+  // - auto: triage first, then the full analysis guided by triage findings
+  mode: z.enum(['full', 'triage', 'auto']).optional().default('full'),
 });
 
 // Enhanced security headers
@@ -337,7 +347,8 @@ export async function POST(request: NextRequest) {
       urgency,
       additionalNotes,
       observationScope,
-      expectedPlantCount
+      expectedPlantCount,
+      mode
     } = body;
 
     // Photo/phone callers historically omitted the Settings selection. Use
@@ -472,6 +483,44 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Two-stage diagnosis: run the fast triage classifier first when the
+    // caller asked for it. Triage never replaces the deep analysis in `auto`
+    // mode — its findings focus the V2 prompt instead.
+    let triage: TriageResult | undefined;
+    let triageFindings: string | undefined;
+    if ((mode === 'triage' || mode === 'auto') && imageBase64ForAI) {
+      triage = await runTriageStage(
+        imageBase64ForAI,
+        { strain, growthStage, leafSymptoms },
+        async (triagePrompt, image, options) => {
+          const res: any = await executeAIWithFallback(triagePrompt, image ?? '', {
+            temperature: options.temperature ?? 0.2,
+            timeout: options.timeout ?? 45000,
+            maxRetries: 1,
+          });
+          if (!res?.success) throw new Error(res?.error || 'triage provider failed');
+          return {
+            text: typeof res.result === 'string' ? res.result : JSON.stringify(res.result ?? ''),
+            provider: res.provider,
+          };
+        },
+      );
+      log.info('analyze.triage', {
+        mode,
+        healthStatus: triage.healthStatus,
+        confidence: triage.confidence,
+        triageMs: triage.triageMs,
+      });
+      if (mode === 'triage') {
+        return addSecurityHeaders(NextResponse.json({
+          success: true,
+          mode: 'triage',
+          triage,
+        }));
+      }
+      triageFindings = formatTriageForPrompt(triage);
+    }
+
     // Generate V2 enhanced analysis prompt with structured JSON schema
     const prompt = generateAnalysisPromptV2({
       strain,
@@ -486,6 +535,7 @@ export async function POST(request: NextRequest) {
       urgency,
       additionalNotes,
       observationScope,
+      triageFindings,
       expectedPlantCount,
       hasImage: !!imageBase64ForAI
     });
@@ -834,7 +884,10 @@ export async function POST(request: NextRequest) {
     // Create comprehensive success response with enhanced metadata
     const response = NextResponse.json({
       success: true,
+      mode,
       analysis: analysisResult,
+      // Present in `auto` mode: the stage-1 triage that focused the analysis.
+      triage: triage ?? undefined,
       imageInfo: processedImageInfo,
       metadata: {
         analysisId: crypto.randomUUID(),

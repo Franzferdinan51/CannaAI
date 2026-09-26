@@ -23,6 +23,8 @@ export interface AnalysisPromptParams {
   hasImage: boolean;
   observationScope?: 'single-plant' | 'multiple-plants' | 'crop';
   expectedPlantCount?: number;
+  /** Stage-1 triage findings to focus the deep analysis (optional). */
+  triageFindings?: string;
 }
 
 /**
@@ -43,7 +45,8 @@ export function generateAnalysisPromptV2(params: AnalysisPromptParams): string {
     additionalNotes,
     hasImage,
     observationScope = 'single-plant',
-    expectedPlantCount
+    expectedPlantCount,
+    triageFindings
   } = params;
 
   return `🌿 **EXPERT CANNABIS/HEMP DIAGNOSTIC SYSTEM v5.0 - EXPLAINABLE AI ANALYSIS** 🌿
@@ -61,6 +64,7 @@ export function generateAnalysisPromptV2(params: AnalysisPromptParams): string {
 📝 Additional Notes: ${additionalNotes || 'None'}
 ${hasImage ? '📸 IMAGE ANALYSIS: High-resolution visual examination of plant provided' : '📸 TEXT-BASED ANALYSIS ONLY - No image provided'}
 🔎 OBSERVATION SCOPE: ${observationScope}${expectedPlantCount ? ` (expected plants visible: ${expectedPlantCount})` : ''}
+${triageFindings ? `\n🩺 PRELIMINARY TRIAGE (verify, do not blindly trust):\n${triageFindings}\n` : ''}
 
 ## INDIVIDUAL VS CROP DIAGNOSIS
 ${observationScope === 'single-plant'
