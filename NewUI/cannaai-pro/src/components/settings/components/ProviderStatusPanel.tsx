@@ -120,17 +120,17 @@ export const ProviderStatusPanel: React.FC = () => {
   }, [load]);
 
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+    <div className="glass rounded-3xl p-5 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-emerald-400" />
-          <h3 className="text-base font-semibold text-white">Live Provider Status</h3>
+          <h3 className="font-display text-[15px] font-bold text-white tracking-tight">Live Provider Status</h3>
         </div>
         <button
           type="button"
           onClick={() => load(true)}
           disabled={loading || refreshing}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200 transition-colors hover:bg-gray-700 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2 text-xs font-semibold text-white/70 transition-all hover:bg-white/[0.09] disabled:opacity-50"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
           {refreshing ? 'Checking…' : 'Refresh'}
@@ -140,7 +140,7 @@ export const ProviderStatusPanel: React.FC = () => {
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-emerald-400" />
-          <span className="ml-2 text-sm text-gray-400">Detecting providers…</span>
+          <span className="ml-2 text-sm text-white/45">Detecting providers…</span>
         </div>
       ) : error ? (
         <div className="flex items-start gap-2 rounded-lg border border-red-900/50 bg-red-950/30 p-3">
@@ -151,7 +151,7 @@ export const ProviderStatusPanel: React.FC = () => {
           </div>
         </div>
       ) : providers.length === 0 ? (
-        <p className="py-4 text-center text-sm text-gray-500">
+        <p className="py-6 text-center text-sm text-white/35">
           No providers detected. Check that LM Studio or an agent runtime is running.
         </p>
       ) : (
@@ -171,7 +171,7 @@ export const ProviderStatusPanel: React.FC = () => {
                 className={`rounded-lg border p-3.5 ${
                   healthy
                     ? 'border-emerald-900/60 bg-emerald-950/20'
-                    : 'border-gray-800 bg-gray-900/40 opacity-80'
+                    : 'border-white/[0.08] bg-white/[0.02] opacity-75'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -199,11 +199,11 @@ export const ProviderStatusPanel: React.FC = () => {
                 </div>
 
                 {model ? (
-                  <p className="mt-2 truncate text-xs text-gray-400" title={model}>
-                    Model: <span className="text-gray-300">{model}</span>
+                  <p className="mt-2 truncate text-[11px] text-white/40 font-mono" title={model}>
+                    Model: <span className="text-white/60">{model}</span>
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs text-gray-600">Model: not configured</p>
+                  <p className="mt-2 text-[11px] text-white/30">Model: not configured</p>
                 )}
 
                 {capList.length > 0 && (
@@ -211,7 +211,7 @@ export const ProviderStatusPanel: React.FC = () => {
                     {capList.map((c) => (
                       <span
                         key={c}
-                        className="inline-flex items-center gap-1 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300"
+                        className="inline-flex items-center gap-1 rounded-lg bg-white/[0.06] border border-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white/60"
                       >
                         {c === 'Vision' && <Eye className="h-2.5 w-2.5" />}
                         {c === 'Tools' && <Wrench className="h-2.5 w-2.5" />}
@@ -233,7 +233,7 @@ export const ProviderStatusPanel: React.FC = () => {
         </div>
       )}
 
-      <p className="mt-4 text-[11px] text-gray-600">
+      <p className="mt-4 text-[11px] text-white/30 leading-relaxed">
         Detection order: LM Studio → OpenClaw → Hermes → MiniMax → Bailian → OpenRouter.
         Vision for LM Studio reflects the loaded model.
       </p>

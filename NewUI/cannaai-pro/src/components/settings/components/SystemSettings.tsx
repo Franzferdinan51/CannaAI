@@ -1,61 +1,66 @@
 import React from 'react';
-import { Cpu, Moon, Globe, Lock, Shield } from 'lucide-react';
+import { Cpu, Moon, Globe, Shield } from 'lucide-react';
 import SettingToggle from './SettingToggle';
+import { SettingsCard, SettingRow, SettingSelect } from './SettingsPrimitives';
 import { useSettingsStore } from '../store';
 
 const SystemSettings: React.FC = () => {
   const { settings, updateSettings } = useSettingsStore();
   const system = settings?.system;
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-          <Cpu className="w-5 h-5 text-emerald-400" />
-          System Settings
-        </h2>
-        <p className="text-gray-400 mb-6">
-          Configure system preferences and behavior
-        </p>
-
-        <div className="space-y-6">
-          <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <Moon className="w-5 h-5 text-gray-400" />
+    <div className="space-y-4">
+      <SettingsCard
+        icon={Cpu}
+        title="System"
+        subtitle="Configure system preferences and behavior"
+      >
+        <div className="space-y-3">
+          <SettingRow
+            icon={Moon}
+            title="Dark Mode"
+            description="Use the dark botanical theme"
+            control={
+              <SettingToggle
+                label="Dark Mode"
+                checked={system?.darkMode ?? true}
+                onCheckedChange={(darkMode) => system && updateSettings({ system: { ...system, darkMode } })}
+              />
+            }
+          />
+          <SettingRow
+            icon={Shield}
+            title="Auto-Save"
+            description="Automatically save settings as you change them"
+            control={
+              <SettingToggle
+                label="Auto-Save"
+                checked={system?.autoSave ?? true}
+                onCheckedChange={(autoSave) => system && updateSettings({ system: { ...system, autoSave } })}
+              />
+            }
+          />
+          <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
+            <div className="flex items-center gap-3 mb-3">
+              <Globe className="w-5 h-5 text-white/40 shrink-0" strokeWidth={2} />
               <div>
-                <h3 className="font-medium text-white">Dark Mode</h3>
-                <p className="text-sm text-gray-400">Use dark theme</p>
+                <h3 className="font-semibold text-white text-[14px]">Language</h3>
+                <p className="text-[12px] text-white/40 mt-0.5">Interface language</p>
               </div>
             </div>
-            <SettingToggle label="Dark Mode" checked={system?.darkMode ?? true} onCheckedChange={(darkMode) => system && updateSettings({ system: { ...system, darkMode } })} />
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <Shield className="w-5 h-5 text-gray-400" />
-              <div>
-                <h3 className="font-medium text-white">Auto-Save</h3>
-                <p className="text-sm text-gray-400">Automatically save settings</p>
-              </div>
-            </div>
-            <SettingToggle label="Auto-Save" checked={system?.autoSave ?? true} onCheckedChange={(autoSave) => system && updateSettings({ system: { ...system, autoSave } })} />
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <Globe className="w-5 h-5 text-gray-400" />
-              <div>
-                <h3 className="font-medium text-white">Language</h3>
-                <p className="text-sm text-gray-400">Interface language</p>
-              </div>
-            </div>
-            <select value={system?.language || 'en'} onChange={(event) => system && updateSettings({ system: { ...system, language: event.target.value } })} className="px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm">
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-            </select>
+            <SettingSelect
+              id="system-language"
+              label=""
+              value={system?.language || 'en'}
+              onChange={(language) => system && updateSettings({ system: { ...system, language } })}
+              options={[
+                { value: 'en', label: 'English' },
+                { value: 'es', label: 'Spanish' },
+                { value: 'fr', label: 'French' },
+              ]}
+            />
           </div>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 };

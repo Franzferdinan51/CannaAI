@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface SettingToggleProps {
   label: string;
@@ -22,11 +23,21 @@ const SettingToggle: React.FC<SettingToggleProps> = ({ label, defaultChecked = f
         if (controlledChecked === undefined) setInternalChecked(nextChecked);
         onCheckedChange?.(nextChecked);
       }}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        checked ? 'bg-emerald-600' : 'bg-gray-600'
+      className={`relative inline-flex h-7 w-[52px] shrink-0 items-center rounded-full transition-all duration-300 border ${
+        checked
+          ? 'bg-emerald-400/25 border-emerald-300/50 shadow-[0_0_16px_-4px_rgba(52,211,153,0.8)]'
+          : 'bg-white/[0.06] border-white/12 hover:border-white/20'
       }`}
     >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+      <motion.span
+        animate={{ x: checked ? 24 : 2 }}
+        transition={{ type: 'spring', damping: 26, stiffness: 400 }}
+        className={`inline-block h-[22px] w-[22px] rounded-full ${
+          checked
+            ? 'bg-gradient-to-br from-emerald-200 to-lime-300 shadow-[0_2px_10px_rgba(52,211,153,0.8)]'
+            : 'bg-white/50'
+        }`}
+      />
     </button>
   );
 };

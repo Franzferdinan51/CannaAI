@@ -1,56 +1,60 @@
 import React from 'react';
 import { Monitor, Smartphone, BarChart3 } from 'lucide-react';
 import SettingToggle from './SettingToggle';
+import { SettingsCard, SettingRow, SettingSelect } from './SettingsPrimitives';
 import { useSettingsStore } from '../store';
 
 const DisplaySettings: React.FC = () => {
   const { settings, updateSettings } = useSettingsStore();
   const display = settings?.display;
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-          <Monitor className="w-5 h-5 text-emerald-400" />
-          Display Settings
-        </h2>
-        <p className="text-gray-400 mb-6">
-          Customize the appearance and layout of the interface
-        </p>
-
-        <div className="space-y-6">
-          <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <Smartphone className="w-5 h-5 text-gray-400" />
-              <div>
-                <h3 className="font-medium text-white">Compact Mode</h3>
-                <p className="text-sm text-gray-400">Use more compact layout</p>
-              </div>
-            </div>
-            <SettingToggle label="Compact Mode" checked={display?.compactMode ?? false} onCheckedChange={(compactMode) => display && updateSettings({ display: { ...display, compactMode } })} />
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="w-5 h-5 text-gray-400" />
-              <div>
-                <h3 className="font-medium text-white">Animations</h3>
-                <p className="text-sm text-gray-400">Enable interface animations</p>
-              </div>
-            </div>
-            <SettingToggle label="Animations" checked={display?.animationsEnabled ?? true} onCheckedChange={(animationsEnabled) => display && updateSettings({ display: { ...display, animationsEnabled } })} />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Chart Refresh Rate</label>
-            <select value={String(display?.chartRefreshRate ?? 30)} onChange={(event) => display && updateSettings({ display: { ...display, chartRefreshRate: Number(event.target.value) } })} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-              <option value="1">Real-time (1s)</option>
-              <option value="5">Fast (5s)</option>
-              <option value="10">Normal (10s)</option>
-              <option value="30">Slow (30s)</option>
-            </select>
+    <div className="space-y-4">
+      <SettingsCard
+        icon={Monitor}
+        title="Display"
+        subtitle="Customize the appearance and layout of the interface"
+      >
+        <div className="space-y-3">
+          <SettingRow
+            icon={Smartphone}
+            title="Compact Mode"
+            description="Use a more compact layout"
+            control={
+              <SettingToggle
+                label="Compact Mode"
+                checked={display?.compactMode ?? false}
+                onCheckedChange={(compactMode) => display && updateSettings({ display: { ...display, compactMode } })}
+              />
+            }
+          />
+          <SettingRow
+            icon={BarChart3}
+            title="Animations"
+            description="Enable interface animations"
+            control={
+              <SettingToggle
+                label="Animations"
+                checked={display?.animationsEnabled ?? true}
+                onCheckedChange={(animationsEnabled) => display && updateSettings({ display: { ...display, animationsEnabled } })}
+              />
+            }
+          />
+          <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
+            <SettingSelect
+              id="chart-refresh-rate"
+              label="Chart Refresh Rate"
+              value={String(display?.chartRefreshRate ?? 30)}
+              onChange={(v) => display && updateSettings({ display: { ...display, chartRefreshRate: Number(v) } })}
+              options={[
+                { value: '1', label: 'Real-time (1s)' },
+                { value: '5', label: 'Fast (5s)' },
+                { value: '10', label: 'Normal (10s)' },
+                { value: '30', label: 'Slow (30s)' },
+              ]}
+            />
           </div>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 };

@@ -261,7 +261,7 @@ const AIProviderCard: React.FC = () => {
       case 'code-generation':
         return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        return 'bg-white/[0.06] text-white/50 border-white/15';
     }
   };
 
@@ -284,7 +284,7 @@ const AIProviderCard: React.FC = () => {
     return isConnected ? (
       <Wifi className="w-4 h-4 text-green-400" />
     ) : (
-      <WifiOff className="w-4 h-4 text-gray-500" />
+      <WifiOff className="w-4 h-4 text-white/30" />
     );
   };
 
@@ -328,32 +328,32 @@ const AIProviderCard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Provider Selection */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="glass rounded-3xl p-5 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2.5 tracking-tight">
               <Bot className="w-5 h-5 text-emerald-400" />
               AI Provider Selection
             </h2>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-white/40 text-sm mt-1.5">
               Choose and configure your preferred AI provider for plant analysis
             </p>
           </div>
 
           <Select.Root value={selectedProvider || ''} onValueChange={handleProviderSelect}>
-            <Select.Trigger className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 transition-colors">
+            <Select.Trigger className="input-glow flex items-center gap-2 px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-2xl text-white text-sm hover:border-emerald-300/30 transition-colors">
               <Select.Value placeholder="Select provider" />
               <Select.Icon />
             </Select.Trigger>
             <Select.Portal>
-              <Select.Content className="bg-gray-800 border border-gray-700 rounded-lg p-2 z-50">
+              <Select.Content className="glass-deep rounded-2xl p-1.5 z-50">
                 {providers.map((provider) => {
                   const colors = getColorClasses(provider.color);
                   return (
                     <Select.Item
                       key={provider.id}
                       value={provider.id}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-white hover:bg-gray-700 cursor-pointer transition-colors ${selectedProvider === provider.id ? 'bg-emerald-600/20 border border-emerald-600/50' : ''}`}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white hover:bg-white/[0.06] cursor-pointer transition-colors ${selectedProvider === provider.id ? 'bg-emerald-400/10 border border-emerald-300/30' : 'border border-transparent'} `}
                     >
                       <div className={`p-1 rounded ${colors.bg} ${colors.border}`}>
                         {provider.icon}
@@ -361,7 +361,7 @@ const AIProviderCard: React.FC = () => {
                       <Select.ItemText asChild>
                       <div className="flex-1">
                         <div className="font-medium">{provider.name}</div>
-                        <div className="text-xs text-gray-400">{provider.description}</div>
+                        <div className="text-[11px] text-white/40">{provider.description}</div>
                       </div>
                       </Select.ItemText>
                       {getStatusIcon(provider.id)}
@@ -386,10 +386,10 @@ const AIProviderCard: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{ y: -2 }}
-                className={`relative bg-gray-800/50 border rounded-xl p-4 transition-all cursor-pointer ${
+                className={`relative glass rounded-3xl p-4 sm:p-5 transition-all cursor-pointer ${
                   isSelected
-                    ? `border-emerald-500/50 ${colors.bg}`
-                    : 'border-gray-700 hover:border-gray-600'
+                    ? '!border-emerald-300/40 glow-leaf'
+                    : 'hover:!border-white/20'
                 }`}
                 role="button"
                 tabIndex={0}
@@ -417,27 +417,27 @@ const AIProviderCard: React.FC = () => {
                       {provider.icon}
                     </div>
                     <div>
-                      <h3 className="font-medium text-white">{provider.name}</h3>
-                      <p className="text-xs text-gray-400">{provider.type}</p>
+                      <h3 className="font-semibold text-white text-[15px]">{provider.name}</h3>
+                      <p className="text-[11px] text-white/40">{provider.type}</p>
                     </div>
                   </div>
                   {getStatusIcon(provider.id)}
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-gray-400 mb-4">{provider.description}</p>
+                <p className="text-sm text-white/45 mb-4 leading-relaxed">{provider.description}</p>
 
                 {/* Configuration Form */}
                 {isSelected && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="space-y-4 pt-4 border-t border-gray-700"
+                    className="space-y-4 pt-4 border-t border-white/10"
                   >
                     {/* API Key for cloud providers */}
                     {provider.needsApiKey && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-[13px] font-semibold text-white/60 mb-2">
                           API Key
                         </label>
                         <div className="relative">
@@ -446,7 +446,7 @@ const AIProviderCard: React.FC = () => {
                             value={config.apiKey || ''}
                             onChange={(e) => handleConfigChange(provider.id, 'apiKey', e.target.value)}
                             placeholder={`Enter your ${provider.name} API key`}
-                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white pr-10"
+                            className="input-glow w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-2xl text-white text-sm pr-11 placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors"
                           />
                           <button
                             type="button"
@@ -458,7 +458,7 @@ const AIProviderCard: React.FC = () => {
                                 [provider.id]: !prev[provider.id],
                               }));
                             }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-white"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.08] transition-colors"
                           >
                             {showApiKey[provider.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
@@ -467,25 +467,25 @@ const AIProviderCard: React.FC = () => {
                     )}
 
                     {(isOAuthProvider(provider.id) || isAgentConnection(provider.id)) && (
-                      <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-3 space-y-2">
+                      <div className="rounded-2xl border border-purple-400/25 bg-purple-400/[0.07] p-4 space-y-3">
                         <div className="flex items-center justify-between gap-2">
                           <div>
                             <p className="text-sm font-medium text-white">{isOAuthProvider(provider.id) ? 'Native OAuth connection' : 'Native agent connection'}</p>
-                            <p className="text-xs text-gray-400">{provider.id === 'grok' ? 'Uses xAI/Grok OAuth through OpenClaw.' : provider.id === 'openai' ? 'Uses OpenAI OAuth through the current OpenClaw provider.' : provider.id === 'openclaw' ? 'Uses the local OpenClaw Gateway and its configured model/auth profiles.' : 'Uses Hermes’ authenticated API server for tools, sessions, model routing, and native vision.'}</p>
+                            <p className="text-[11px] text-white/40">{provider.id === 'grok' ? 'Uses xAI/Grok OAuth through OpenClaw.' : provider.id === 'openai' ? 'Uses OpenAI OAuth through the current OpenClaw provider.' : provider.id === 'openclaw' ? 'Uses the local OpenClaw Gateway and its configured model/auth profiles.' : 'Uses Hermes’ authenticated API server for tools, sessions, model routing, and native vision.'}</p>
                           </div>
                           <Key className="w-4 h-4 text-purple-300" />
                         </div>
                         <div className="flex gap-2">
-                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'start'); }} className="flex-1 px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm">{isOAuthProvider(provider.id) ? 'Connect OAuth' : 'Connect / Check'}</button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'status'); }} className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm">Check</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'start'); }} className="flex-1 px-3 py-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white text-sm font-semibold shadow-[0_10px_30px_-10px_rgba(168,85,247,0.7)] hover:brightness-110 transition-all">{isOAuthProvider(provider.id) ? 'Connect OAuth' : 'Connect / Check'}</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOAuth(provider.id, 'status'); }} className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.05] hover:bg-white/[0.09] text-white/80 text-sm font-semibold transition-all">Check</button>
                         </div>
-                        {authState[provider.id]?.message && <p className="text-xs text-gray-300">{authState[provider.id].message}</p>}
+                        {authState[provider.id]?.message && <p className="text-[11px] text-white/50">{authState[provider.id].message}</p>}
                       </div>
                     )}
 
                     {/* Base URL */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-[13px] font-semibold text-white/60 mb-2">
                         Base URL
                       </label>
                       <input
@@ -493,14 +493,14 @@ const AIProviderCard: React.FC = () => {
                         value={provider.id === 'lm-studio' ? (config.url || provider.baseUrl || '') : (config.baseUrl || provider.baseUrl || '')}
                         onChange={(e) => handleConfigChange(provider.id, provider.id === 'lm-studio' ? 'url' : 'baseUrl', e.target.value)}
                         placeholder="API base URL"
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                        className="input-glow w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-2xl text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors"
                       />
                     </div>
 
                     {/* Model Selection */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-medium text-gray-300">
+                        <label className="block text-[13px] font-semibold text-white/60">
                           Model
                         </label>
                         <button
@@ -524,9 +524,9 @@ const AIProviderCard: React.FC = () => {
                             onChange={(e) => handleConfigChange(provider.id, 'model', e.target.value)}
                             placeholder="Any LM Studio model ID (blank = auto-discover)"
                             aria-label="LM Studio model ID"
-                            className="w-full px-3 py-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400"
+                            className="input-glow w-full px-4 py-3 mb-2 bg-white/[0.04] border border-white/10 rounded-2xl text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors"
                           />
-                          <p className="mb-2 text-xs text-gray-400">
+                          <p className="mb-2 text-[11px] text-white/40">
                             Enter the exact model ID from LM Studio, or leave blank to use the first available chat model.
                           </p>
                         </>
@@ -535,17 +535,17 @@ const AIProviderCard: React.FC = () => {
                         value={config.model || ''}
                         onValueChange={(value) => handleConfigChange(provider.id, 'model', value)}
                       >
-                        <Select.Trigger className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                        <Select.Trigger className="input-glow w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-2xl text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors">
                           <Select.Value placeholder="Select model" />
                           <Select.Icon />
                         </Select.Trigger>
                         <Select.Portal>
-                          <Select.Content className="bg-gray-800 border border-gray-700 rounded-lg p-2 z-50 max-h-60 overflow-y-auto">
+                          <Select.Content className="glass-deep rounded-2xl p-1.5 z-50 max-h-60 overflow-y-auto">
                             {availableModels[provider.id]?.map((model) => (
                               <Select.Item
                                 key={model.id}
                                 value={model.id}
-                                className="flex items-center gap-2 px-3 py-2 rounded-md text-white hover:bg-gray-700 cursor-pointer transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-white hover:bg-white/[0.06] cursor-pointer transition-colors"
                               >
                                 <Select.ItemText asChild>
                                 <div className="flex-1">
@@ -579,7 +579,7 @@ const AIProviderCard: React.FC = () => {
                           handleSaveConfig(provider.id, config);
                         }}
                         disabled={isSaving}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white rounded-lg transition-colors"
+                        className="btn-primary-glow flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm disabled:opacity-50"
                       >
                         {isSaving ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -595,7 +595,7 @@ const AIProviderCard: React.FC = () => {
                           handleTestConnection(provider.id);
                         }}
                         disabled={isTesting}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-lg transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-br from-sky-500 to-blue-600 shadow-[0_10px_30px_-10px_rgba(56,189,248,0.7)] hover:brightness-110 disabled:opacity-50 transition-all"
                       >
                         {isTesting ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -616,7 +616,7 @@ const AIProviderCard: React.FC = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center justify-center gap-1 px-3 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm text-white/40 hover:text-emerald-300 transition-colors"
                       >
                         <Info className="w-4 h-4" />
                         Documentation
@@ -654,10 +654,10 @@ const AIProviderCard: React.FC = () => {
                 <h4 className="font-medium text-white mb-1">
                   {testResult.success ? 'Connection Successful' : 'Connection Failed'}
                 </h4>
-                <p className="text-sm text-gray-400">{testResult.message}</p>
+                <p className="text-sm text-white/45">{testResult.message}</p>
                 {testResult.details && Object.keys(testResult.details).length > 0 && (
-                  <div className="mt-2 p-2 bg-gray-800/50 rounded-lg">
-                    <pre className="text-xs text-gray-300">
+                  <div className="mt-2 p-3 bg-black/30 rounded-xl border border-white/[0.07]">
+                    <pre className="text-[11px] text-white/50">
                       {JSON.stringify(testResult.details, null, 2)}
                     </pre>
                   </div>
@@ -669,22 +669,22 @@ const AIProviderCard: React.FC = () => {
       </AnimatePresence>
 
       {/* LM Studio Quick Access */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="glass rounded-3xl p-5 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h3 className="font-display text-base font-bold text-white flex items-center gap-2 tracking-tight">
             <Monitor className="w-5 h-5 text-blue-400" />
             LM Studio Setup
           </h3>
           <button
             type="button"
             onClick={() => setActiveTab('lm-studio')}
-            className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+            className="text-sm text-emerald-300 hover:text-emerald-200 font-semibold flex items-center gap-1.5 transition-colors"
           >
             Configure LM Studio
             <SettingsIcon className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-gray-400 text-sm">
+        <p className="text-white/45 text-sm leading-relaxed">
           Configure local AI models through LM Studio. Download models in LM Studio and configure the connection here.
         </p>
       </div>

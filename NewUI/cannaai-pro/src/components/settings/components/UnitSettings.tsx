@@ -1,66 +1,91 @@
 import React from 'react';
-import { Thermometer, Weight, Ruler, Gauge, Sun } from 'lucide-react';
+import { Thermometer, Weight, Ruler, Wind, Gauge } from 'lucide-react';
+import { SettingsCard, SettingSelect } from './SettingsPrimitives';
 import { useSettingsStore } from '../store';
 
 const UnitSettings: React.FC = () => {
   const { settings, updateSettings } = useSettingsStore();
   const units = settings?.units;
+  const set = <K extends keyof NonNullable<typeof units>>(key: K, value: string) => {
+    if (units) updateSettings({ units: { ...units, [key]: value } as NonNullable<typeof units> });
+  };
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-          <Gauge className="w-5 h-5 text-emerald-400" />
-          Unit Settings
-        </h2>
-        <p className="text-gray-400 mb-6">
-          Configure measurement units and display preferences
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Temperature</label>
-              <select value={units?.temperature || 'celsius'} onChange={(event) => units && updateSettings({ units: { ...units, temperature: event.target.value as any } })} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                <option value="celsius">Celsius (°C)</option>
-                <option value="fahrenheit">Fahrenheit (°F)</option>
-                <option value="kelvin">Kelvin (K)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Weight</label>
-              <select value={units?.weight || 'grams'} onChange={(event) => units && updateSettings({ units: { ...units, weight: event.target.value as any } })} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                <option value="grams">Grams (g)</option>
-                <option value="ounces">Ounces (oz)</option>
-                <option value="pounds">Pounds (lbs)</option>
-                <option value="kilograms">Kilograms (kg)</option>
-              </select>
+    <div className="space-y-4">
+      <SettingsCard
+        icon={Gauge}
+        title="Units"
+        subtitle="Configure measurement units and display preferences"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
+            <Thermometer className="w-5 h-5 text-white/40 shrink-0 mt-0.5" strokeWidth={2} />
+            <div className="flex-1 min-w-0">
+              <SettingSelect
+                id="unit-temperature"
+                label="Temperature"
+                value={units?.temperature || 'celsius'}
+                onChange={(v) => set('temperature', v)}
+                options={[
+                  { value: 'celsius', label: 'Celsius (°C)' },
+                  { value: 'fahrenheit', label: 'Fahrenheit (°F)' },
+                  { value: 'kelvin', label: 'Kelvin (K)' },
+                ]}
+              />
             </div>
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Distance</label>
-              <select value={units?.distance || 'centimeters'} onChange={(event) => units && updateSettings({ units: { ...units, distance: event.target.value as any } })} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                <option value="centimeters">Centimeters (cm)</option>
-                <option value="inches">Inches (in)</option>
-                <option value="meters">Meters (m)</option>
-                <option value="feet">Feet (ft)</option>
-              </select>
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
+            <Weight className="w-5 h-5 text-white/40 shrink-0 mt-0.5" strokeWidth={2} />
+            <div className="flex-1 min-w-0">
+              <SettingSelect
+                id="unit-weight"
+                label="Weight"
+                value={units?.weight || 'grams'}
+                onChange={(v) => set('weight', v)}
+                options={[
+                  { value: 'grams', label: 'Grams (g)' },
+                  { value: 'ounces', label: 'Ounces (oz)' },
+                  { value: 'pounds', label: 'Pounds (lbs)' },
+                  { value: 'kilograms', label: 'Kilograms (kg)' },
+                ]}
+              />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Pressure</label>
-              <select value={units?.pressure || 'psi'} onChange={(event) => units && updateSettings({ units: { ...units, pressure: event.target.value as any } })} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                <option value="psi">PSI</option>
-                <option value="bar">Bar</option>
-                <option value="kpa">kPa</option>
-                <option value="hpa">hPa</option>
-              </select>
+          </div>
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
+            <Ruler className="w-5 h-5 text-white/40 shrink-0 mt-0.5" strokeWidth={2} />
+            <div className="flex-1 min-w-0">
+              <SettingSelect
+                id="unit-distance"
+                label="Distance"
+                value={units?.distance || 'centimeters'}
+                onChange={(v) => set('distance', v)}
+                options={[
+                  { value: 'centimeters', label: 'Centimeters (cm)' },
+                  { value: 'inches', label: 'Inches (in)' },
+                  { value: 'meters', label: 'Meters (m)' },
+                  { value: 'feet', label: 'Feet (ft)' },
+                ]}
+              />
+            </div>
+          </div>
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
+            <Wind className="w-5 h-5 text-white/40 shrink-0 mt-0.5" strokeWidth={2} />
+            <div className="flex-1 min-w-0">
+              <SettingSelect
+                id="unit-pressure"
+                label="Pressure"
+                value={units?.pressure || 'psi'}
+                onChange={(v) => set('pressure', v)}
+                options={[
+                  { value: 'psi', label: 'PSI' },
+                  { value: 'bar', label: 'Bar' },
+                  { value: 'kpa', label: 'kPa' },
+                  { value: 'hpa', label: 'hPa' },
+                ]}
+              />
             </div>
           </div>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 };

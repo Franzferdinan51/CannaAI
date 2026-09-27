@@ -107,7 +107,7 @@ const LMStudioSection: React.FC = () => {
       case 'code-generation':
         return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        return 'bg-white/[0.06] text-white/50 border-white/15';
     }
   };
 
@@ -150,7 +150,7 @@ const LMStudioSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* LM Studio Status */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="glass rounded-3xl p-5 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
@@ -158,7 +158,7 @@ const LMStudioSection: React.FC = () => {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-white">LM Studio</h2>
-              <p className="text-gray-400 text-sm">Manage local AI models and configuration</p>
+              <p className="text-white/40 text-sm">Manage local AI models and configuration</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ const LMStudioSection: React.FC = () => {
               aria-label="Refresh LM Studio models"
               onClick={() => void loadLMStudioModels(draftUrl.trim() || undefined, draftApiKey)}
               disabled={isLoadingLMStudio}
-              className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2.5 rounded-xl border border-white/10 bg-white/[0.05] hover:bg-white/[0.09] transition-all"
             >
               {isLoadingLMStudio ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -192,7 +192,7 @@ const LMStudioSection: React.FC = () => {
         {/* Configuration */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-[13px] font-semibold text-white/60 mb-2">
               LM Studio URL
             </label>
             <div className="flex gap-2">
@@ -201,7 +201,7 @@ const LMStudioSection: React.FC = () => {
                 value={draftUrl}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 placeholder="http://localhost:1234"
-                className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                className="input-glow flex-1 px-4 py-3 bg-white/[0.04] border border-white/10 rounded-2xl text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors"
               />
               <button
                 type="button"
@@ -209,7 +209,7 @@ const LMStudioSection: React.FC = () => {
                 // Manual probes must remain available while the initial
                 // background discovery request is waiting on a local service.
                 disabled={isSaving || !draftUrl.trim()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-br from-sky-500 to-blue-600 shadow-[0_10px_30px_-10px_rgba(56,189,248,0.7)] hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-2"
               >
                 {isSaving || isLoadingLMStudio ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -222,8 +222,8 @@ const LMStudioSection: React.FC = () => {
             {saveWarning && (
               <p role="status" className="mt-2 text-sm text-amber-300">{saveWarning}</p>
             )}
-            <label className="block text-sm font-medium text-gray-300 mb-2 mt-4">
-              LM Studio API key <span className="font-normal text-gray-500">(only required when authentication is enabled)</span>
+            <label className="block text-[13px] font-semibold text-white/60 mb-2 mt-4">
+              LM Studio API key <span className="font-normal text-white/35">(only required when authentication is enabled)</span>
             </label>
             <input
               type="password"
@@ -231,7 +231,7 @@ const LMStudioSection: React.FC = () => {
               onChange={(e) => setDraftApiKey(e.target.value)}
               placeholder="Optional LM Studio API key"
               aria-label="LM Studio API key"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="input-glow w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-2xl text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors"
             />
           </div>
 
@@ -241,7 +241,7 @@ const LMStudioSection: React.FC = () => {
                 <Info className="w-5 h-5 text-yellow-400 mt-0.5" />
                 <div>
                   <h4 className="font-medium text-yellow-400 mb-1">LM Studio Not Running</h4>
-                  <p className="text-sm text-gray-300">
+                  <p className="text-sm text-white/55">
                     Start LM Studio and load some models to use local AI inference.
                   </p>
                   <a
@@ -262,32 +262,32 @@ const LMStudioSection: React.FC = () => {
 
       {/* Models Summary */}
       {lmStudioData && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="glass rounded-3xl p-5 sm:p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Model Summary</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <div className="text-2xl font-bold text-blue-400">
                 {lmStudioData.summary.total}
               </div>
-              <div className="text-sm text-gray-400">Total Models</div>
+              <div className="text-sm text-white/45">Total Models</div>
             </div>
             <div className="text-center p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
               <div className="text-2xl font-bold text-purple-400">
                 {lmStudioData.summary.vision}
               </div>
-              <div className="text-sm text-gray-400">Vision Models</div>
+              <div className="text-sm text-white/45">Vision Models</div>
             </div>
             <div className="text-center p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
               <div className="text-2xl font-bold text-emerald-400">
                 {lmStudioData.summary.plantAnalysis}
               </div>
-              <div className="text-sm text-gray-400">Plant Analysis</div>
+              <div className="text-sm text-white/45">Plant Analysis</div>
             </div>
-            <div className="text-center p-4 bg-gray-500/10 border border-gray-500/30 rounded-lg">
-              <div className="text-2xl font-bold text-gray-400">
+            <div className="text-center p-4 bg-white/[0.04] border border-white/10 rounded-2xl">
+              <div className="font-display text-2xl font-extrabold text-white">
                 {lmStudioData.summary.textOnly}
               </div>
-              <div className="text-sm text-gray-400">Text Only</div>
+              <div className="text-sm text-white/45">Text Only</div>
             </div>
           </div>
         </div>
@@ -295,7 +295,7 @@ const LMStudioSection: React.FC = () => {
 
       {/* Models List */}
       {lmStudioData?.models && lmStudioData.models.length > 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="glass rounded-3xl p-5 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white">
               Available Models ({sortedModels.length})
@@ -306,13 +306,13 @@ const LMStudioSection: React.FC = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search models..."
-                className="w-full pl-10 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                className="input-glow w-full pl-10 pr-4 py-3 bg-white/[0.04] border border-white/10 rounded-2xl text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors"
               />
             </div>
 
@@ -326,7 +326,7 @@ const LMStudioSection: React.FC = () => {
                   className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${
                     filterCapability === capability.value
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      : 'bg-white/[0.04] text-white/50 hover:bg-white/[0.08]'
                   }`}
                 >
                   {capability.icon}
@@ -338,13 +338,13 @@ const LMStudioSection: React.FC = () => {
 
           {/* Sort Options */}
           <div className="flex items-center justify-between mb-4">
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-white/45">
               Showing {sortedModels.length} of {uniqueModels.length} models
             </div>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm"
+              className="input-glow px-3 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-300/50 transition-colors"
             >
               <option value="name">Sort by Name</option>
               <option value="size">Sort by Size</option>
@@ -365,12 +365,12 @@ const LMStudioSection: React.FC = () => {
                   key={model.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:bg-gray-800 transition-colors"
+                  className="glass rounded-2xl p-4 hover:!border-white/20 transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-white mb-1 truncate">{model.name}</h4>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <div className="flex items-center gap-4 text-sm text-white/45">
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />
                           <span>{model.author}</span>
@@ -386,7 +386,7 @@ const LMStudioSection: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
+                      <span className="px-2 py-1 bg-white/[0.06] text-white/55 text-[11px] rounded-lg border border-white/10">
                         {quantizationLabel}
                       </span>
                     </div>
@@ -406,7 +406,7 @@ const LMStudioSection: React.FC = () => {
                   </div>
 
                   {/* File Info */}
-                  <div className="text-xs text-gray-500">
+                  <div className="text-[11px] text-white/35">
                     <div>{model.filename}</div>
                     <div>Modified: {new Date(model.modified).toLocaleDateString()}</div>
                   </div>
@@ -416,9 +416,9 @@ const LMStudioSection: React.FC = () => {
 
               {sortedModels.length === 0 && (
                 <div className="text-center py-12">
-                  <Monitor className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-400 mb-2">No Models Found</h3>
-                  <p className="text-gray-500">
+                  <Monitor className="w-12 h-12 text-white/20 mx-auto mb-4" />
+                  <h3 className="font-display text-lg font-bold text-white/70 mb-2">No Models Found</h3>
+                  <p className="text-white/35 text-sm">
                     Try adjusting your search or filter criteria
                   </p>
                 </div>
@@ -430,7 +430,7 @@ const LMStudioSection: React.FC = () => {
       )}
 
       {/* Setup Instructions */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="glass rounded-3xl p-5 sm:p-6">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <SettingsIcon className="w-5 h-5" />
           Setup Instructions
@@ -442,7 +442,7 @@ const LMStudioSection: React.FC = () => {
             </div>
             <div>
               <h4 className="font-medium text-white">Download LM Studio</h4>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-white/45">
                 Get LM Studio from{' '}
                 <a
                   href="https://lmstudio.ai/"
@@ -461,7 +461,7 @@ const LMStudioSection: React.FC = () => {
             </div>
             <div>
               <h4 className="font-medium text-white">Download Models</h4>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-white/45">
                 Browse and download AI models from the LM Studio model library. Look for models with vision capabilities for plant analysis.
               </p>
             </div>
@@ -472,7 +472,7 @@ const LMStudioSection: React.FC = () => {
             </div>
             <div>
               <h4 className="font-medium text-white">Load a Model</h4>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-white/45">
                 Select a model and load it in LM Studio. The default server URL is http://localhost:1234.
               </p>
             </div>
@@ -483,7 +483,7 @@ const LMStudioSection: React.FC = () => {
             </div>
             <div>
               <h4 className="font-medium text-white">Configure in CannaAI</h4>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-white/45">
                 Enter your LM Studio URL above and select a model to use for plant analysis.
               </p>
             </div>

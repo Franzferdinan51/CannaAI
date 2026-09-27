@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Globe, Webhook, Zap } from 'lucide-react';
+import { Globe, Webhook, Zap, Plus, X, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../store';
+import { SettingsCard } from './SettingsPrimitives';
 import { APIEndpoint, Webhook as WebhookConfig } from '../types';
 
 const IntegrationSettings: React.FC = () => {
@@ -31,74 +33,186 @@ const IntegrationSettings: React.FC = () => {
     setUrl('');
   };
 
+  const cards = [
+    {
+      id: 'endpoint' as const,
+      icon: Globe,
+      title: 'API Endpoints',
+      description: 'Manage external API connections',
+      cta: 'Add Endpoint',
+    },
+    {
+      id: 'webhook' as const,
+      icon: Webhook,
+      title: 'Webhooks',
+      description: 'Configure webhook notifications',
+      cta: 'Add Webhook',
+    },
+    {
+      id: 'services' as const,
+      icon: Zap,
+      title: 'Third-party Services',
+      description: 'Connect with external services',
+      cta: 'Browse Services',
+    },
+  ];
+
+  const savedCount = integrations
+    ? integrations.apiEndpoints.length + integrations.webhooks.length + integrations.thirdPartyServices.length
+    : 0;
+
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-emerald-400" />
-          Integration Settings
-        </h2>
-        <p className="text-gray-400 mb-6">
-          Configure third-party services and API integrations
-        </p>
+    <div className="space-y-4">
+      <SettingsCard
+        icon={Zap}
+        title="Integrations"
+        subtitle="Configure third-party services and API integrations"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          {cards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => { setNotice(''); setActiveForm(card.id); }}
+                className="group text-left p-4 rounded-2xl bg-white/[0.03] border border-white/[0.07] hover:border-emerald-300/30 hover:bg-emerald-400/[0.04] transition-all duration-300"
+              >
+                <div className="p-2 rounded-xl bg-emerald-400/10 border border-emerald-300/20 w-fit mb-3 group-hover:shadow-[0_0_16px_-4px_rgba(52,211,153,0.7)] transition-shadow">
+                  <Icon className="w-4 h-4 text-emerald-300" strokeWidth={2.2} />
+                </div>
+                <h3 className="font-semibold text-white text-[14px] mb-1">{card.title}</h3>
+                <p className="text-[12px] text-white/40 mb-3 leading-snug">{card.description}</p>
+                <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-300">
+                  <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  {card.cta}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-        <div className="space-y-6">
-          <div className="p-4 bg-gray-800/50 rounded-lg">
-            <h3 className="font-medium text-white mb-2">API Endpoints</h3>
-            <p className="text-sm text-gray-400 mb-4">Manage external API connections</p>
-            <button type="button" onClick={() => { setNotice(''); setActiveForm('endpoint'); }} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">
-              Add Endpoint
-            </button>
-          </div>
-
-          <div className="p-4 bg-gray-800/50 rounded-lg">
-            <h3 className="font-medium text-white mb-2">Webhooks</h3>
-            <p className="text-sm text-gray-400 mb-4">Configure webhook notifications</p>
-            <button type="button" onClick={() => { setNotice(''); setActiveForm('webhook'); }} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">
-              Add Webhook
-            </button>
-          </div>
-
-          <div className="p-4 bg-gray-800/50 rounded-lg">
-            <h3 className="font-medium text-white mb-2">Third-party Services</h3>
-            <p className="text-sm text-gray-400 mb-4">Connect with external services</p>
-            <button type="button" onClick={() => { setNotice(''); setActiveForm('services'); }} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">
-              Browse Services
-            </button>
-          </div>
-
-          {activeForm && activeForm !== 'services' && (
-            <form onSubmit={(event) => { event.preventDefault(); saveIntegration(activeForm); }} className="p-4 bg-gray-800/70 border border-emerald-500/30 rounded-lg space-y-3">
-              <h3 className="font-medium text-white">Add {activeForm === 'endpoint' ? 'API endpoint' : 'webhook'}</h3>
-              <input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Name" className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white" />
-              <input required type="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://example.com/..." className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white" />
-              <div className="flex gap-2">
-                <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">Save</button>
-                <button type="button" onClick={() => setActiveForm(null)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg">Cancel</button>
-              </div>
-            </form>
+        <AnimatePresence>
+          {notice && (
+            <motion.p
+              role="status"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-2 text-sm text-emerald-300 font-medium mb-3"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {notice}
+            </motion.p>
           )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {activeForm && activeForm !== 'services' && (
+            <motion.form
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              onSubmit={(event) => { event.preventDefault(); saveIntegration(activeForm); }}
+              className="p-4 sm:p-5 rounded-2xl bg-emerald-400/[0.05] border border-emerald-300/25 space-y-3"
+            >
+              <h3 className="font-semibold text-white text-[15px]">
+                Add {activeForm === 'endpoint' ? 'API endpoint' : 'webhook'}
+              </h3>
+              <input
+                required
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Name"
+                className="input-glow w-full px-4 py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors"
+              />
+              <input
+                required
+                type="url"
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                placeholder="https://example.com/..."
+                className="input-glow w-full px-4 py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-300/50 transition-colors"
+              />
+              <div className="flex flex-col-reverse sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveForm(null)}
+                  className="px-5 py-2.5 rounded-xl border border-white/10 bg-white/[0.05] hover:bg-white/[0.09] text-white/80 text-sm font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary-glow px-5 py-2.5 rounded-xl text-sm">
+                  Save
+                </button>
+              </div>
+            </motion.form>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
           {activeForm === 'services' && (
-            <div className="p-4 bg-gray-800/70 border border-emerald-500/30 rounded-lg space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-4"
+            >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-medium text-white">Configured integrations</h3>
-                  <p className="text-sm text-gray-400">Endpoints and webhooks saved in this workspace.</p>
+                  <h3 className="font-semibold text-white text-[15px]">Configured integrations</h3>
+                  <p className="text-[12px] text-white/40 mt-0.5">
+                    {savedCount > 0 ? `${savedCount} saved in this workspace` : 'Endpoints and webhooks saved in this workspace'}
+                  </p>
                 </div>
-                <button type="button" onClick={() => setActiveForm(null)} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm">Close</button>
+                <button
+                  type="button"
+                  onClick={() => setActiveForm(null)}
+                  aria-label="Close"
+                  className="p-2 rounded-xl hover:bg-white/[0.07] text-white/50 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              {integrations && integrations.apiEndpoints.length + integrations.webhooks.length + integrations.thirdPartyServices.length > 0 ? (
+              {integrations && savedCount > 0 ? (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {integrations.apiEndpoints.map((endpoint) => <div key={endpoint.id} className="rounded-lg border border-gray-700 bg-gray-900/60 p-3"><div className="flex items-center gap-2 text-white"><Globe className="h-4 w-4 text-emerald-400" />{endpoint.name}</div><p className="mt-1 break-all text-xs text-gray-400">{endpoint.method} {endpoint.url}</p></div>)}
-                  {integrations.webhooks.map((webhook) => <div key={webhook.id} className="rounded-lg border border-gray-700 bg-gray-900/60 p-3"><div className="flex items-center gap-2 text-white"><Webhook className="h-4 w-4 text-emerald-400" />{webhook.name}</div><p className="mt-1 break-all text-xs text-gray-400">{webhook.url}</p></div>)}
-                  {integrations.thirdPartyServices.map((service) => <div key={service.id} className="rounded-lg border border-gray-700 bg-gray-900/60 p-3"><div className="flex items-center gap-2 text-white"><Zap className="h-4 w-4 text-emerald-400" />{service.name}</div><p className="mt-1 text-xs text-gray-400">{service.status}</p></div>)}
+                  {integrations.apiEndpoints.map((endpoint) => (
+                    <div key={endpoint.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3.5">
+                      <div className="flex items-center gap-2 text-white text-sm font-semibold">
+                        <Globe className="h-4 w-4 text-emerald-300 shrink-0" />
+                        <span className="truncate">{endpoint.name}</span>
+                      </div>
+                      <p className="mt-1.5 break-all text-[11px] text-white/40 font-mono">{endpoint.method} {endpoint.url}</p>
+                    </div>
+                  ))}
+                  {integrations.webhooks.map((webhook) => (
+                    <div key={webhook.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3.5">
+                      <div className="flex items-center gap-2 text-white text-sm font-semibold">
+                        <Webhook className="h-4 w-4 text-emerald-300 shrink-0" />
+                        <span className="truncate">{webhook.name}</span>
+                      </div>
+                      <p className="mt-1.5 break-all text-[11px] text-white/40 font-mono">{webhook.url}</p>
+                    </div>
+                  ))}
+                  {integrations.thirdPartyServices.map((service) => (
+                    <div key={service.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3.5">
+                      <div className="flex items-center gap-2 text-white text-sm font-semibold">
+                        <Zap className="h-4 w-4 text-emerald-300 shrink-0" />
+                        <span className="truncate">{service.name}</span>
+                      </div>
+                      <p className="mt-1.5 text-[11px] text-white/40">{service.status}</p>
+                    </div>
+                  ))}
                 </div>
-              ) : <p className="rounded-lg border border-dashed border-gray-700 p-5 text-center text-sm text-gray-400">No integrations configured yet. Add an endpoint or webhook above.</p>}
-            </div>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-white/40">
+                  No integrations configured yet. Add an endpoint or webhook above.
+                </p>
+              )}
+            </motion.div>
           )}
-          {notice && <p role="status" className="text-sm text-emerald-300">{notice}</p>}
-        </div>
-      </div>
+        </AnimatePresence>
+      </SettingsCard>
     </div>
   );
 };
