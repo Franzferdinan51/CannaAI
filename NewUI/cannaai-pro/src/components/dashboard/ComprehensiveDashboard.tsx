@@ -33,6 +33,7 @@ import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
+import OverviewTab from './OverviewTab';
 
 // Types
 interface FormData {
@@ -332,384 +333,85 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
   ];
 
   return (
-    <div className="relative flex flex-1 flex-col bg-[#0f1419] text-gray-100">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-h-16 px-4 sm:px-6 py-3 border-b border-gray-800 bg-[#181b21]/90 backdrop-blur-sm sticky top-0 z-40">
-        <div className="flex min-w-0 items-center space-x-3 sm:space-x-4">
-          <h1 className="min-w-0 text-xl sm:text-2xl font-bold text-white">CannaAI Pro Dashboard</h1>
-          <Badge variant="outline" className={`${isConnected ? 'border-emerald-500 text-emerald-400' : 'border-red-500 text-red-400'}`}>
-            {isConnected ? 'Connected' : 'Offline'}
-          </Badge>
+    <div className="relative flex flex-1 flex-col text-gray-100">
+      {/* Tab bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1 sm:px-2 pt-1 pb-4">
+        <div className="glass inline-flex items-center gap-1 rounded-2xl p-1.5 self-start" role="tablist" aria-label="Dashboard sections">
+          {dashboardItems.map((item) => {
+            const active = activeDashboard === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setActiveDashboard(item.id as 'overview' | 'analysis' | 'environment' | 'strains');
+                  setShowMobileMenu(false);
+                }}
+                className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                  active ? 'text-white' : 'text-white/45 hover:text-white/85'
+                }`}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="dash-tab-pill"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-400/25 to-lime-400/10 border border-emerald-400/30 shadow-[0_0_20px_-6px_rgba(52,211,153,0.7)]"
+                    transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+                  />
+                )}
+                <item.icon className={`relative z-10 w-4 h-4 ${active ? 'text-emerald-300' : ''}`} />
+                <span className="relative z-10 hidden sm:inline">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center justify-end space-x-3 sm:justify-start">
-          <Button type="button" variant="outline" size="sm" onClick={() => navigate('/plants')} aria-label="Start a new grow" className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-700">
-            <Plus className="w-4 h-4 mr-2" />
+        <div className="flex items-center gap-2.5">
+          <Button type="button" variant="outline" size="sm" onClick={() => navigate('/plants')} aria-label="Start a new grow" className="rounded-xl">
+            <Plus className="w-4 h-4 mr-1.5" />
             New Grow
           </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setShowNotifications(!showNotifications)} aria-label="Show dashboard notifications" aria-expanded={showNotifications} aria-controls="dashboard-notifications" className="relative text-gray-400 hover:text-white hover:bg-gray-800">
-            <Bell className="w-5 h-5" />
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowNotifications(!showNotifications)} aria-label="Show dashboard notifications" aria-expanded={showNotifications} aria-controls="dashboard-notifications" className="relative rounded-xl !px-3">
+            <Bell className="w-4 h-4" />
             {notifications.length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399]" />
             )}
           </Button>
         </div>
       </div>
 
       {showNotifications && (
-        <div id="dashboard-notifications" className="absolute right-4 top-16 z-50 w-[calc(100vw-2rem)] max-w-80 rounded-xl border border-gray-700 bg-[#181b21] p-4 shadow-2xl sm:right-6" role="region" aria-label="Dashboard notifications panel">
-          <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold text-white">Notifications</h2><button type="button" aria-label="Close dashboard notifications" onClick={() => setShowNotifications(false)} className="text-sm text-gray-400 hover:text-white">Close</button></div>
-          {notifications.length === 0 ? <p className="text-sm text-gray-400">No notifications.</p> : <div className="space-y-2">{notifications.map((notification) => <div key={notification.id} className="rounded-lg bg-[#0f1419] p-3 text-sm text-gray-300"><p>{notification.message}</p><p className="mt-1 text-xs text-gray-500">{notification.time}</p></div>)}</div>}
+        <div id="dashboard-notifications" className="glass-deep absolute right-2 sm:right-4 top-20 z-50 w-[calc(100vw-2rem)] max-w-80 rounded-2xl p-4" role="region" aria-label="Dashboard notifications panel">
+          <div className="mb-3 flex items-center justify-between"><h2 className="font-display font-semibold text-white">Notifications</h2><button type="button" aria-label="Close dashboard notifications" onClick={() => setShowNotifications(false)} className="text-xs font-semibold text-white/40 hover:text-white">Close</button></div>
+          {notifications.length === 0 ? <p className="text-sm text-white/40">No notifications.</p> : <div className="space-y-2 max-h-80 overflow-y-auto">{notifications.map((notification) => <div key={notification.id} className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-3 text-sm text-white/70"><p>{notification.message}</p><p className="mt-1 text-xs text-white/30">{notification.time}</p></div>)}</div>}
         </div>
       )}
 
-      {/* Mobile Menu Toggle */}
-      <div className="lg:hidden px-4 py-2 border-b border-gray-800">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-gray-400 hover:text-white"
-          onClick={() => setShowMobileMenu(!showMobileMenu)}
-          aria-expanded={showMobileMenu}
-          aria-controls="dashboard-navigation"
-        >
-          <Menu className="w-5 h-5 mr-2" />
-          {showMobileMenu ? 'Hide Menu' : 'Show Menu'}
-        </Button>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-        {/* Sidebar */}
-        <aside id="dashboard-navigation" className={`${showMobileMenu ? 'block' : 'hidden'} w-full shrink-0 border-b border-gray-800 bg-[#181b21] overflow-y-auto lg:block lg:w-64 lg:border-b-0 lg:border-r`}>
-          <nav className="p-4 space-y-2" aria-label="Dashboard sections">
-            {dashboardItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                aria-current={activeDashboard === item.id ? 'page' : undefined}
-                onClick={() => {
-                  setActiveDashboard(item.id as 'overview' | 'analysis' | 'environment' | 'strains');
-                  setShowMobileMenu(false);
-                }}
-                className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  activeDashboard === item.id
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                }`}
-              >
-                <item.icon className={`w-5 h-5 mr-3 ${activeDashboard === item.id ? 'text-emerald-400' : 'text-gray-500'}`} />
-                {item.label}
-              </button>
-            ))}
-          </nav>
-
-          <div className="sticky bottom-0 border-t border-gray-800 bg-[#181b21] p-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs text-emerald-400">System Online</span>
-            </div>
-          </div>
-        </aside>
-
+      <div className="flex min-h-0 flex-1 flex-col">
         {/* Main Content */}
-        <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+        <main className="min-w-0 flex-1">
+          <div className="px-1 sm:px-2 pb-2">
             {/* Overview Dashboard */}
             {activeDashboard === 'overview' && (
-              <div className="space-y-6">
-                {/* Analysis and Results Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* New Analysis Card */}
-                  <Card className="bg-[#1a1f2e] border-gray-800">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center">
-                        <Brain className="w-5 h-5 mr-2 text-emerald-400" />
-                        New Analysis
-                      </CardTitle>
-                      <CardDescription className="text-gray-400">Upload a photo or enter details for AI diagnosis</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <form onSubmit={handleFormSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label className="text-gray-300">Strain</Label>
-                          <Select value={formData.strain} onValueChange={(val) => { setFormError(null); setFormData(prev => ({ ...prev, strain: val })); }}>
-                            <SelectTrigger aria-label="Select plant strain" className="bg-[#0f1419] border-gray-700 text-gray-200">
-                              <SelectValue placeholder="Select Strain" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1a1f2e] border-gray-700">
-                              {strains.map(s => (
-                                <SelectItem key={s.id} value={s.name} className="focus:bg-gray-800">
-                                  {s.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-gray-300">Plant Image</Label>
-                          <div className="flex items-center justify-center w-full">
-                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-lg cursor-pointer bg-[#0f1419] hover:bg-[#1a1f2e] transition-colors">
-                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                {image ? (
-                                  <img src={image} alt="Preview" className="h-24 object-contain rounded-md" />
-                                ) : (
-                                  <>
-                                    <Upload className="w-8 h-8 mb-3 text-gray-500" />
-                                    <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
-                                  </>
-                                )}
-                              </div>
-                              <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
-                            </label>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-gray-300">Symptoms / Notes</Label>
-                          <Textarea
-                            placeholder="Describe what you see..."
-                            value={formData.leafSymptoms}
-                            onChange={(e) => { setFormError(null); setFormData(prev => ({ ...prev, leafSymptoms: e.target.value })); }}
-                            className="bg-[#0f1419] border-gray-700 text-gray-200 min-h-[100px]"
-                          />
-                        </div>
-
-                        {formError && <p role="alert" className="text-sm text-red-300">{formError}</p>}
-                        {analysisError && (
-                          <div role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-                            Analysis failed: {analysisError}. Update the details and try again.
-                          </div>
-                        )}
-                        <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white" disabled={isLoading || !formData.strain || formData.strain === 'Select Strain' || (!formData.leafSymptoms.trim() && !image)}>
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Analyzing...
-                            </>
-                          ) : (
-                            <>
-                              <Brain className="w-4 h-4 mr-2" />
-                              Analyze Plant
-                            </>
-                          )}
-                        </Button>
-                      </form>
-                    </CardContent>
-                  </Card>
-
-                  {/* Analysis Results Card */}
-                  {analysisResult && (
-                    <Card className="bg-[#1a1f2e] border-emerald-500/20">
-                      <CardHeader>
-                        <CardTitle className="flex items-center text-emerald-400">
-                          <Activity className="w-5 h-5 mr-2" />
-                          Analysis Results
-                          {analysisMetadata?.provider && (
-                            <Badge variant="outline" className="ml-auto border-emerald-500/50 text-emerald-400">
-                              {analysisMetadata.provider}
-                            </Badge>
-                          )}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <div className="flex flex-col space-y-6">
-                          {/* Header Section: Health Score & Urgency */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-xl font-bold text-white">{analysisResult.diagnosis || 'Analysis Complete'}</h3>
-                              <div className="flex items-center space-x-2 mt-2">
-                                <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
-                                  analysisResult.urgency === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border border-red-500/50' :
-                                  analysisResult.urgency === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' :
-                                  analysisResult.urgency === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' :
-                                  'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
-                                }`}>
-                                  {analysisResult.urgency || 'NORMAL'}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  Confidence: {analysisResult.confidence || 0}%
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`text-4xl font-bold ${
-                                (analysisResult.healthScore || 0) > 70 ? "text-emerald-400" :
-                                (analysisResult.healthScore || 0) > 40 ? "text-amber-400" :
-                                "text-red-400"
-                              }`}>
-                                {analysisResult.healthScore || '?'}
-                              </div>
-                              <div className="text-xs text-gray-500 uppercase font-medium tracking-wider">Health Score</div>
-                            </div>
-                          </div>
-
-                          {/* Root Causes */}
-                          {analysisResult.causes && analysisResult.causes.length > 0 && (
-                            <div className="bg-[#0f1419] rounded-lg p-4 border border-gray-700">
-                              <h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center">
-                                <AlertTriangle className="w-4 h-4 mr-2 text-amber-400" />
-                                Identified Causes
-                              </h4>
-                              <ul className="list-disc list-inside space-y-1">
-                                {analysisResult.causes.map((cause, i) => (
-                                  <li key={i} className="text-sm text-gray-400">{cause}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {/* Recommendations */}
-                          {analysisResult.recommendations && (
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
-                                <ClipboardList className="w-4 h-4 mr-2 text-emerald-400" />
-                                Recommended Actions
-                              </h4>
-
-                              {Array.isArray(analysisResult.recommendations) ? (
-                                <ul className="space-y-2">
-                                  {analysisResult.recommendations.map((rec, i) => (
-                                    <li key={i} className="flex items-start text-sm text-gray-400">
-                                      <span className="mr-2 text-emerald-500">•</span>
-                                      {rec}
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : typeof analysisResult.recommendations === 'object' && (
-                                <div className="space-y-4">
-                                  {analysisResult.recommendations.immediate && (
-                                    <div>
-                                      <h5 className="text-xs font-semibold text-red-400 uppercase mb-2">Immediate Action</h5>
-                                      <ul className="space-y-2">
-                                        {analysisResult.recommendations.immediate.map((rec, i) => (
-                                          <li key={i} className="flex items-start text-sm text-gray-400">
-                                            <span className="mr-2 text-red-500">•</span>
-                                            {rec}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                  {analysisResult.recommendations.shortTerm && (
-                                    <div>
-                                      <h5 className="text-xs font-semibold text-amber-400 uppercase mb-2">Short Term</h5>
-                                      <ul className="space-y-2">
-                                        {analysisResult.recommendations.shortTerm.map((rec, i) => (
-                                          <li key={i} className="flex items-start text-sm text-gray-400">
-                                            <span className="mr-2 text-amber-500">•</span>
-                                            {rec}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                  {analysisResult.recommendations.longTerm && (
-                                    <div>
-                                      <h5 className="text-xs font-semibold text-blue-400 uppercase mb-2">Long Term</h5>
-                                      <ul className="space-y-2">
-                                        {analysisResult.recommendations.longTerm.map((rec, i) => (
-                                          <li key={i} className="flex items-start text-sm text-gray-400">
-                                            <span className="mr-2 text-blue-500">•</span>
-                                            {rec}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-
-                {/* Environmental Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {environmentalStats.slice(0, 8).map((stat, index) => (
-                    <Card key={index} className="bg-[#1a1f2e] border-gray-800 hover:bg-[#232937] transition-all duration-300">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-medium text-gray-500">{stat.label}</p>
-                          <h3 className="text-xl font-bold text-white mt-1">{stat.value}</h3>
-                        </div>
-                        <div className={`p-2 rounded-full ${stat.bg} ${stat.border} border`}>
-                          <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {/* Trends and Alerts */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Environmental Trends Chart */}
-                  <Card className="lg:col-span-2 bg-[#1a1f2e] border-gray-800">
-                    <CardHeader>
-                      <CardTitle className="text-white">Environmental Trends</CardTitle>
-                      <CardDescription className="text-gray-400">24-hour temperature and humidity monitoring</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={240} initialDimension={{ width: 1, height: 240 }}>
-                          <AreaChart data={environmentalTrendsData}>
-                            <defs>
-                              <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                              </linearGradient>
-                              <linearGradient id="colorHum" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
-                            <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                            <Tooltip
-                              contentStyle={{ backgroundColor: '#1a1f2e', border: '1px solid #374151', borderRadius: '8px' }}
-                              itemStyle={{ color: '#f3f4f6' }}
-                            />
-                            <Area type="monotone" dataKey="temp" stroke="#f97316" strokeWidth={2} fillOpacity={1} fill="url(#colorTemp)" name="Temperature (°C)" />
-                            <Area type="monotone" dataKey="hum" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorHum)" name="Humidity (%)" />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Recent Alerts */}
-                  <Card className="bg-[#1a1f2e] border-gray-800">
-                    <CardHeader>
-                      <CardTitle className="text-white">Recent Alerts</CardTitle>
-                      <CardDescription className="text-gray-400">System notifications and warnings</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {notifications.slice(0, 5).map((notification) => (
-                          <div key={notification.id} className="flex items-start space-x-3 p-3 rounded-lg bg-[#0f1419] border border-gray-800">
-                            {notification.type === 'alert' || notification.type === 'error' ? (
-                              <AlertCircle className="w-4 h-4 text-red-400 mt-0.5" />
-                            ) : notification.type === 'success' ? (
-                              <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5" />
-                            ) : (
-                              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5" />
-                            )}
-                            <div>
-                              <p className="text-sm font-medium text-gray-200">{notification.message}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+              <OverviewTab
+                sensorData={sensorData}
+                isConnected={isConnected}
+                strains={strains}
+                notifications={notifications}
+                formData={formData}
+                setFormData={setFormData}
+                image={image}
+                handleImageUpload={handleImageUpload}
+                handleFormSubmit={handleFormSubmit}
+                isLoading={isLoading}
+                formError={formError}
+                setFormError={setFormError}
+                analysisResult={analysisResult}
+                analysisMetadata={analysisMetadata}
+                analysisError={analysisError}
+                onOpenScanner={() => navigate('/scanner')}
+              />
             )}
 
             {/* Environment Tab */}
@@ -717,16 +419,16 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
               <div className="space-y-6">
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-white mb-2">Environmental Monitoring</h2>
-                  <p className="text-gray-400">Real-time sensor data and environmental controls</p>
+                  <p className="text-white/45">Real-time sensor data and environmental controls</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {environmentalStats.map((stat, index) => (
-                    <Card key={index} className="bg-[#1a1f2e] border-gray-800">
+                    <Card key={index} className="">
                       <CardContent className="p-6 flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                          <h3 className="text-2xl font-bold text-white mt-1">{stat.value}</h3>
+                          <p className="text-[13px] font-semibold text-white/40">{stat.label}</p>
+                          <h3 className="font-display text-2xl font-bold text-white mt-1">{stat.value}</h3>
                         </div>
                         <div className={`p-3 rounded-full ${stat.bg} ${stat.border} border`}>
                           <stat.icon className={`w-6 h-6 ${stat.color}`} />
@@ -736,21 +438,21 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                   ))}
                 </div>
 
-                <Card className="bg-[#1a1f2e] border-gray-800">
+                <Card className="">
                   <CardHeader>
-                    <CardTitle className="text-white">24-Hour Environmental Trends</CardTitle>
-                    <CardDescription className="text-gray-400">Comprehensive monitoring of all environmental parameters</CardDescription>
+                    <CardTitle className="text-white font-display">24-Hour Environmental Trends</CardTitle>
+                    <CardDescription className="text-white/45">Comprehensive monitoring of all environmental parameters</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[400px] w-full">
                       <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={320} initialDimension={{ width: 1, height: 320 }}>
                         <LineChart data={environmentalTrendsData}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
-                          <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.07)" />
+                          <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 12 }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 12 }} />
                           <Tooltip
-                            contentStyle={{ backgroundColor: '#1a1f2e', border: '1px solid #374151', borderRadius: '8px' }}
-                            itemStyle={{ color: '#f3f4f6' }}
+                            contentStyle={{ backgroundColor: 'rgba(10,15,13,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                            itemStyle={{ color: '#fff', fontSize: 12 }}
                           />
                           <Line type="monotone" dataKey="temp" stroke="#f97316" strokeWidth={2} name="Temperature (°C)" />
                           <Line type="monotone" dataKey="hum" stroke="#3b82f6" strokeWidth={2} name="Humidity (%)" />
@@ -767,18 +469,18 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
             {activeDashboard === 'strains' && (
               <div className="space-y-6">
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-white mb-2">Strain Database</h2>
-                  <p className="text-gray-400">Comprehensive cannabis strain information and growing requirements</p>
+                  <h2 className="font-display text-2xl font-bold text-white mb-2">Strain Database</h2>
+                  <p className="text-white/45">Comprehensive cannabis strain information and growing requirements</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {strains.map((strain) => (
-                    <Card key={strain.id} className="bg-[#1a1f2e] border-gray-800 hover:bg-[#232937] transition-all duration-300">
+                    <Card key={strain.id} className="card-hover">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-white">{strain.name}</CardTitle>
                           {strain.isPurpleStrain && (
-                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
+                            <Badge className="!bg-purple-400/10 !text-purple-300 !border-purple-400/30">
                               Purple
                             </Badge>
                           )}
@@ -789,17 +491,17 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                         <div className="space-y-3">
                           {strain.lineage && (
                             <div>
-                              <span className="text-xs font-medium text-gray-500">Lineage:</span>
-                              <p className="text-sm text-gray-300">{strain.lineage}</p>
+                              <span className="text-xs font-semibold text-white/40">Lineage:</span>
+                              <p className="text-sm text-white/70">{strain.lineage}</p>
                             </div>
                           )}
                           {strain.description && (
-                            <p className="text-sm text-gray-400">{strain.description}</p>
+                            <p className="text-sm text-white/50">{strain.description}</p>
                           )}
                           {strain.optimalConditions && (
                             <div className="space-y-2">
-                              <span className="text-xs font-medium text-gray-500">Optimal Conditions:</span>
-                              <div className="text-xs text-gray-400 space-y-1">
+                              <span className="text-xs font-semibold text-white/40">Optimal Conditions:</span>
+                              <div className="text-xs text-white/45 space-y-1">
                                 <div>pH: {strain.optimalConditions.ph.range[0]}-{strain.optimalConditions.ph.range[1]}</div>
                                 <div>Temp: {strain.optimalConditions.temperature.veg[0]}-{strain.optimalConditions.temperature.veg[1]}°C (veg)</div>
                                 <div>Humidity: {strain.optimalConditions.humidity.veg[0]}-{strain.optimalConditions.humidity.veg[1]}% (veg)</div>
@@ -808,10 +510,10 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                           )}
                           {strain.commonDeficiencies && strain.commonDeficiencies.length > 0 && (
                             <div>
-                              <span className="text-xs font-medium text-gray-500">Common Deficiencies:</span>
+                              <span className="text-xs font-semibold text-white/40">Common Deficiencies:</span>
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {strain.commonDeficiencies.map((deficiency, i) => (
-                                  <Badge key={i} variant="outline" className="text-xs border-gray-700 text-gray-400">
+                                  <Badge key={i} variant="outline" className="!text-[11px]">
                                     {deficiency}
                                   </Badge>
                                 ))}
@@ -830,20 +532,20 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
             {activeDashboard === 'analysis' && (
               <div className="space-y-6">
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-white mb-2">AI Analysis Center</h2>
-                  <p className="text-gray-400">Advanced plant health analysis and AI-powered recommendations</p>
+                  <h2 className="font-display text-2xl font-bold text-white mb-2">AI Analysis Center</h2>
+                  <p className="text-white/45">Advanced plant health analysis and AI-powered recommendations</p>
                 </div>
 
                 {!analysisResult ? (
-                  <Card className="bg-[#1a1f2e] border-gray-800">
+                  <Card className="">
                     <CardContent className="p-12 text-center">
                       <Brain className="w-16 h-16 mx-auto mb-4 text-gray-600" />
                       <h3 className="text-xl font-semibold text-white mb-2">No Analysis Available</h3>
-                      <p className="text-gray-400 mb-6">Start a new plant analysis from the Overview tab to see detailed results here.</p>
+                      <p className="text-white/45 mb-6">Start a new plant analysis from the Overview tab to see detailed results here.</p>
                       <Button
                         type="button"
                         onClick={() => setActiveDashboard('overview')}
-                        className="bg-emerald-600 hover:bg-emerald-500"
+                        className="btn-primary-glow"
                       >
                         Go to Overview
                       </Button>
@@ -852,9 +554,9 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                 ) : (
                   <div className="space-y-6">
                     {/* Detailed Analysis Results */}
-                    <Card className="bg-[#1a1f2e] border-emerald-500/20">
+                    <Card className="!border-emerald-400/25 glow-leaf">
                       <CardHeader>
-                        <CardTitle className="flex items-center text-emerald-400">
+                        <CardTitle className="flex items-center text-emerald-300 font-display">
                           <Activity className="w-6 h-6 mr-2" />
                           Complete Analysis Report
                         </CardTitle>
@@ -862,12 +564,12 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                       <CardContent className="space-y-6">
                         {/* Analysis Summary */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="bg-[#0f1419] rounded-lg p-4 border border-gray-700">
-                            <h4 className="text-sm font-medium text-gray-400 mb-1">Diagnosis</h4>
-                            <p className="text-lg font-bold text-white">{analysisResult.diagnosis}</p>
+                          <div className="rounded-2xl p-4 bg-white/[0.03] border border-white/[0.07]">
+                            <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/35 mb-1.5">Diagnosis</h4>
+                            <p className="font-display text-lg font-bold text-white">{analysisResult.diagnosis}</p>
                           </div>
-                          <div className="bg-[#0f1419] rounded-lg p-4 border border-gray-700">
-                            <h4 className="text-sm font-medium text-gray-400 mb-1">Health Score</h4>
+                          <div className="rounded-2xl p-4 bg-white/[0.03] border border-white/[0.07]">
+                            <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/35 mb-1.5">Health Score</h4>
                             <p className={`text-2xl font-bold ${
                               (analysisResult.healthScore || 0) > 70 ? "text-emerald-400" :
                               (analysisResult.healthScore || 0) > 40 ? "text-amber-400" :
@@ -876,16 +578,16 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                               {analysisResult.healthScore}/100
                             </p>
                           </div>
-                          <div className="bg-[#0f1419] rounded-lg p-4 border border-gray-700">
-                            <h4 className="text-sm font-medium text-gray-400 mb-1">Confidence</h4>
+                          <div className="rounded-2xl p-4 bg-white/[0.03] border border-white/[0.07]">
+                            <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/35 mb-1.5">Confidence</h4>
                             <p className="text-2xl font-bold text-blue-400">{analysisResult.confidence}%</p>
                           </div>
                         </div>
 
                         {/* Full Analysis Details */}
                         {analysisResult.reasoning && (
-                          <div className="bg-[#0f1419] rounded-lg p-4 border border-gray-700">
-                            <h4 className="text-sm font-medium text-gray-300 mb-4">Analysis Reasoning</h4>
+                          <div className="rounded-2xl p-4 bg-white/[0.03] border border-white/[0.07]">
+                            <h4 className="text-sm font-semibold text-white/70 mb-4">Analysis Reasoning</h4>
                             <div className="space-y-3">
                               {analysisResult.reasoning.map((step, i) => (
                                 <div key={i} className="flex items-start space-x-3">
@@ -894,8 +596,8 @@ const ComprehensiveDashboard: React.FC<ComprehensiveDashboardProps> = ({ initial
                                   </div>
                                   <div className="flex-1">
                                     <div className="flex items-center justify-between mb-1">
-                                      <span className="text-sm font-medium text-gray-200">{step.step}</span>
-                                      <span className="text-xs text-gray-500">{step.weight}% weight</span>
+                                      <span className="text-sm font-medium text-white/80">{step.step}</span>
+                                      <span className="text-xs text-white/35">{step.weight}% weight</span>
                                     </div>
                                     <p className="text-xs text-gray-400">{step.explanation}</p>
                                   </div>
