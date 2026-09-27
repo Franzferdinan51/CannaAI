@@ -318,7 +318,16 @@ export async function refreshProviderHealth(): Promise<Array<{
   reason: string;
 }>> {
   const detected = await detectAvailableProviders();
-  const { looksLikeVisionModel } = await import('./ai-provider-lmstudio');
+  const { looksLikeVisionModel, getVisionModels } = await import('./ai-provider-lmstudio');
+  // Metadata-backed LM Studio vision check: the native catalog reports
+  // capabilities.vision per model, so a text-only model whose name
+  // matches a vision heuristic (e.g. minicpm5-2b) cannot false-positive.
+  let lmStudioVision: boolean | null = null;
+  try {
+    lmStudioVision = (await getVisionModels()).length > 0;
+  } catch {
+    lmStudioVision = null;
+  }
   return (detected?.all || [])
     .filter((r: any) => r.provider && r.provider !== 'fallback')
     .map((r: any) => {
@@ -326,7 +335,7 @@ export async function refreshProviderHealth(): Promise<Array<{
       const models: string[] = Array.isArray(r.models) ? r.models : [];
       const vision =
         r.provider === 'lmstudio'
-          ? models.some(looksLikeVisionModel)
+          ? (lmStudioVision ?? models.some(looksLikeVisionModel))
           : r.provider === 'openclaw' || r.provider === 'hermes';
       return {
         name: r.provider,

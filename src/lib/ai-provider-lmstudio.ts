@@ -194,7 +194,10 @@ export function looksLikeVisionModel(id: string): boolean {
     // Known multimodal model families (matched by family, never specific IDs).
     value.includes('gemma-3') ||
     value.includes('gemma-4') ||
-    value.includes('minicpm')
+    // MiniCPM-V (vision) only - text-only MiniCPM (e.g. minicpm5-2b)
+    // must not match. Native capability metadata is authoritative
+    // when available (see getNativeVisionModelIds).
+    value.includes('minicpm-v')
   );
 }
 

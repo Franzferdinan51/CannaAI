@@ -18,12 +18,17 @@ import { looksLikeVisionModel } from '@/lib/ai-provider-lmstudio';
  */
 function providerEntryFromDetection(
   p: { provider: string; isAvailable: boolean; reason: string; models?: string[] },
+  lmStudioVisionModels: string[] | null,
 ) {
   const name = p.provider;
   const isLocal = name === 'lmstudio' || name === 'openclaw' || name === 'hermes';
-  // LM Studio vision depends on the loaded model — check the catalog.
+  // LM Studio vision depends on the loaded model - prefer native capability
+  // metadata (authoritative); fall back to the name heuristic only when the
+  // native catalog is unavailable.
   const lmStudioVision = name === 'lmstudio'
-    ? (p.models || []).some(looksLikeVisionModel)
+    ? (lmStudioVisionModels !== null
+        ? lmStudioVisionModels.length > 0
+        : (p.models || []).some(looksLikeVisionModel))
     : false;
   const isVision = lmStudioVision || name === 'openclaw' || name === 'hermes';
   // Agent runtimes are tool-aware; plain model APIs are not.
@@ -105,9 +110,21 @@ export async function GET(request: NextRequest) {
     }
     const liveByName = new Map(liveProviders.map((p) => [p.provider, p]));
 
+    // Metadata-backed LM Studio vision models (native capabilities.vision).
+    // providerEntryFromDetection falls back to the name heuristic when the
+    // native catalog cannot be reached.
+    const visionBaseUrl = request.nextUrl.searchParams.get('baseUrl')?.trim() || undefined;
+    let lmStudioVisionModels: string[] | null = null;
+    try {
+      const { getVisionModels } = await import('@/lib/ai-provider-lmstudio');
+      lmStudioVisionModels = await getVisionModels(visionBaseUrl);
+    } catch (visionError) {
+      console.warn('[providers] vision catalog check failed, using heuristic:', visionError);
+    }
+
     // Build the provider list from detection results with static capability
     // metadata per provider (detection reports availability, not capabilities).
-    const providerStatus = liveProviders.map((p) => providerEntryFromDetection(p));
+    const providerStatus = liveProviders.map((p) => providerEntryFromDetection(p, lmStudioVisionModels));
 
     // Group by capabilities
     const capabilities = {
