@@ -173,7 +173,7 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
 
   if (options.fastLocal) {
     const local = await runCheck(
-      checkLMStudio(false, options.lmStudioBaseUrl, options.lmStudioApiKey),
+      checkLMStudio(true, options.lmStudioBaseUrl, options.lmStudioApiKey),
       3000,
       'lmstudio',
     );
@@ -183,6 +183,7 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
         isAvailable: true,
         reason: (local.r as any)?.reason || 'LM Studio is running',
         recommendations: [],
+        models: (local.r as any)?.models || [],
         data: local.r,
       };
       // Local-first callers can begin inference immediately. They do not

@@ -8,11 +8,20 @@ export default defineConfig(({ mode }) => {
     const backendTarget = (configuredBackend || `http://127.0.0.1:${env.PORT || '3000'}`)
       .replace(/\/api\/?$/, '')
       .replace(/\/$/, '');
+    // Allow serving over Tailscale/LAN: CANNAI_FRONTEND_ALLOWED_HOSTS="100.68.208.113"
+    const allowedHosts = ['localhost', '127.0.0.1'];
+    const extraHosts = (env.CANNAAI_FRONTEND_ALLOWED_HOSTS || '')
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean);
+    for (const h of extraHosts) {
+      if (!allowedHosts.includes(h)) allowedHosts.push(h);
+    }
     return {
       server: {
         port: Number(env.CANNAAI_FRONTEND_PORT) || 5174,
         host: env.CANNAAI_FRONTEND_HOST || '127.0.0.1',
-        allowedHosts: ['localhost', '127.0.0.1'],
+        allowedHosts,
         // Keep browser-relative API calls on the same origin while routing
         // them to the CannaAI backend during local development.
         proxy: {
@@ -26,7 +35,7 @@ export default defineConfig(({ mode }) => {
       preview: {
         port: Number(env.CANNAAI_FRONTEND_PORT) || 5174,
         host: env.CANNAAI_FRONTEND_HOST || '127.0.0.1',
-        allowedHosts: ['localhost', '127.0.0.1'],
+        allowedHosts,
         proxy: {
           '/api': {
             target: backendTarget,

@@ -190,7 +190,11 @@ export function looksLikeVisionModel(id: string): boolean {
     value.includes('llava') ||
     value.includes('omni') ||
     value.includes('multimodal') ||
-    value.includes('mmproj')
+    value.includes('mmproj') ||
+    // Known multimodal model families (matched by family, never specific IDs).
+    value.includes('gemma-3') ||
+    value.includes('gemma-4') ||
+    value.includes('minicpm')
   );
 }
 
