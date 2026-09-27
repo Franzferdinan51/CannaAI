@@ -149,14 +149,11 @@ export class LocalMoaAdvisors {
           { role: 'user' as const, content: [`Task:\n${task}`, context ? `\nRelevant context:\n${context}` : ''].join('\n') }
         ];
     const response = await this.ai.execute({
-      type: 'chat',
       messages,
       provider: request.provider,
       model: request.model,
       temperature: role === 'skeptic' ? 0.45 : 0.3,
-      maxTokens,
-      quality: 'balanced',
-      metadata: { workflow: 'local-moa', stage: role }
+      maxTokens
     });
 
     return {
