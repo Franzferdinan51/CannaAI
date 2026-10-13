@@ -75,3 +75,7 @@ server.log
 
 src/mcp-server/node_modules/
 src/mcp-server/dist/
+
+# live local database (untracked 2026-10-12)
+/prisma/*.db
+/prisma/*.db-*

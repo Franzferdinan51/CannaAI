@@ -1,11 +1,11 @@
-import { NextRequest } from 'next/server';
-
-export async function GET(request: NextRequest) {
-  // Preserve the incoming host/protocol. An absolute localhost redirect
-  // breaks Vite-proxied, LAN, and phone clients by sending them to a
-  // different backend origin.
+export async function GET() {
+  // Relative redirect: a path-only Location keeps clients on whatever
+  // origin they already reached this backend through. Building an
+  // absolute URL from request.url leaks the backend's internal origin
+  // (an absolute localhost redirect breaks Vite-proxied, LAN, and phone
+  // clients by sending them to a different backend origin).
   return new Response(null, {
     status: 307,
-    headers: { location: new URL('/api/ai/providers', request.url).toString() },
+    headers: { location: '/api/ai/providers' },
   });
 }

@@ -116,7 +116,9 @@ class DatabaseMonitor {
         FROM pragma_page_count(), pragma_page_size()
       ` as any[];
 
-      const databaseSize = dbSizeResult[0]?.size || 0;
+      // Prisma returns BigInt for SQLite integer expressions; mixing it
+      // with Number arithmetic throws, so coerce before computing.
+      const databaseSize = Number(dbSizeResult[0]?.size || 0);
       const databaseSizeMB = databaseSize / (1024 * 1024);
 
       // Calculate average query time
@@ -131,9 +133,12 @@ class DatabaseMonitor {
           (SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL) as indexesWithSql
       ` as any[];
 
-      // Estimate index hit rate (simplified for SQLite)
+      // Estimate index hit rate (simplified for SQLite). COUNT(*) comes
+      // back as BigInt too — coerce before the arithmetic.
+      const totalIndexes = Number(indexStats[0]?.totalIndexes ?? 0);
+      const indexesWithSql = Number(indexStats[0]?.indexesWithSql ?? 0);
       const indexHitRate = indexStats.length > 0
-        ? (indexStats[0].indexesWithSql / Math.max(indexStats[0].totalIndexes, 1)) * 100
+        ? (indexesWithSql / Math.max(totalIndexes, 1)) * 100
         : 100;
 
       return {

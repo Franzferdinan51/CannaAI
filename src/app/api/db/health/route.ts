@@ -3,6 +3,20 @@ import { dbMonitor, getHealthMetrics } from '@/lib/db-monitoring';
 import { cleanup } from '@/lib/db-optimization';
 import { prisma } from '@/lib/prisma';
 
+/** Prisma hands back BigInt for SQLite integer aggregates and counts,
+ *  and JSON.stringify cannot serialize BigInt (it throws, turning the
+ *  response into a 500). Coerce any BigInt in a payload to Number first. */
+function coerceBigInts<T>(value: T): T {
+  if (typeof value === 'bigint') return Number(value) as T;
+  if (Array.isArray(value)) return value.map(coerceBigInts) as T;
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, coerceBigInts(v)]),
+    ) as T;
+  }
+  return value;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -17,13 +31,13 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
           success: true,
-          data: {
+          data: coerceBigInts({
             health: metrics,
             performance: stats,
             slowQueries,
             recommendations,
             timestamp: new Date().toISOString(),
-          },
+          }),
         });
       }
 
@@ -31,7 +45,7 @@ export async function GET(request: Request) {
         const stats = dbMonitor.getQueryStats();
         return NextResponse.json({
           success: true,
-          data: stats,
+          data: coerceBigInts(stats),
         });
       }
 
@@ -40,7 +54,7 @@ export async function GET(request: Request) {
         const slowQueries = dbMonitor.getSlowQueries(limit);
         return NextResponse.json({
           success: true,
-          data: slowQueries,
+          data: coerceBigInts(slowQueries),
         });
       }
 
@@ -48,7 +62,7 @@ export async function GET(request: Request) {
         const recommendations = dbMonitor.getOptimizationRecommendations();
         return NextResponse.json({
           success: true,
-          data: recommendations,
+          data: coerceBigInts(recommendations),
         });
       }
 

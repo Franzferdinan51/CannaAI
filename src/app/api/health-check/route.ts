@@ -69,7 +69,16 @@ async function checkOpenClaw() {
   try {
     const { checkOpenClaw: check } = await import('@/lib/ai-provider-openclaw');
     const result = await check();
-    return result.isAvailable ? { status: 'ok', transport: 'acp' } : { status: 'unreachable', transport: 'acp' };
+    if (result.isAvailable) {
+      return { status: 'ok', transport: 'acp' };
+    }
+    // Same treatment as Hermes below: the detector reports unavailable when
+    // the OpenClaw Gateway service is not installed/running on this host
+    // (or the CLI is missing) — unavailable *by absence*, not an outage of
+    // something this deployment runs. Report it 'unconfigured' so it stays
+    // visible in the components list without permanently degrading the
+    // roll-up (mirrors how an unconfigured Hermes is treated).
+    return { status: 'unconfigured', transport: 'acp' };
   } catch (e) {
     return { status: 'unreachable', error: String(e).slice(0, 80) };
   }
@@ -115,10 +124,11 @@ export async function GET() {
     withHealthTimeout<HealthComponent>(checkHermes(), { status: 'unreachable', error: 'health check timed out' }, 5000),
   ]);
 
-  const core: Array<{ status: string }> = [db, lmstudio, openclaw];
-  const monitored: Array<{ status: string }> = hermes.status === 'unconfigured'
-    ? core
-    : [...core, hermes];
+  // Components that are absent by configuration (Hermes unconfigured,
+  // OpenClaw not installed/running) are reported in `components` but do
+  // not decide the roll-up.
+  const monitored: Array<{ status: string }> = [db, lmstudio, openclaw, hermes]
+    .filter((s) => s.status !== 'unconfigured');
   const allUp = monitored.every((s) => s.status === 'ok');
   const degraded = monitored.some((s) => s.status === 'ok');
 
