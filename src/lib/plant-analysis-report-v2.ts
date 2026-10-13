@@ -460,7 +460,7 @@ function parseAnalysisPayload(rawResult: unknown, provider: string): {
     };
   }
 
-  const rawText = normalizeString(rawResult, '').trim();
+  const rawText = stripReasoningBlocks(normalizeString(rawResult, '').trim());
   if (!rawText) {
     return {
       structuredResult: createFallbackAnalysisFromText(
@@ -707,7 +707,15 @@ function extractStructuredJson(rawText: string): AnalysisRecord | null {
     }
   }
 
-  // Strategy 3: Extract largest valid object (fallback)
+  // Strategy 3: Salvage a truncated JSON object (reasoning models are often
+  // cut off mid-response; the diagnosis fields are emitted first)
+  const salvaged = salvageTruncatedJson(rawText);
+  if (salvaged) {
+    console.log('✅ JSON extracted with truncation-salvage strategy');
+    return salvaged;
+  }
+
+  // Strategy 4: Extract largest valid object (fallback)
   const largestValid = extractLargestValidObject(rawText);
   if (largestValid && hasRequiredKeys(largestValid)) {
     console.log('✅ JSON extracted with largest-object strategy');
@@ -719,16 +727,102 @@ function extractStructuredJson(rawText: string): AnalysisRecord | null {
 }
 
 /**
+ * Remove reasoning blocks (<think>...</think>) that reasoning models emit
+ * around their answer. An unterminated block runs to the end of the response;
+ * everything inside it is scratch reasoning, never report content.
+ */
+function stripReasoningBlocks(text: string): string {
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, ' ')
+    .replace(/<think>[\s\S]*$/i, ' ')
+    .replace(/<\/think>/gi, ' ')
+    .trim();
+}
+
+/**
+ * Recover the leading key/value pairs of a JSON object whose response was
+ * truncated mid-stream. Scans from the first '{' with a string/escape-aware
+ * stack, remembers the last point where a top-level pair was complete, then
+ * cuts there and closes the root object. Returns null when the object is
+ * balanced (other strategies own that case) or nothing salvageable remains.
+ */
+function salvageTruncatedJson(rawText: string): AnalysisRecord | null {
+  const start = rawText.indexOf('{');
+  if (start === -1) {
+    return null;
+  }
+
+  const text = rawText.slice(start);
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let lastPairEnd = -1;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (escape) {
+      escape = false;
+      continue;
+    }
+
+    if (inString) {
+      if (char === '\\') {
+        escape = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+    } else if (char === '{' || char === '[') {
+      depth += 1;
+    } else if (char === '}' || char === ']') {
+      depth -= 1;
+      if (depth === 0) {
+        return null; // Balanced object — not a truncation salvage case
+      }
+      if (depth === 1) {
+        lastPairEnd = index + 1; // A nested top-level value just completed
+      }
+    } else if (char === ',' && depth === 1) {
+      lastPairEnd = index; // Top-level pair boundary (comma excluded)
+    }
+  }
+
+  if (depth <= 0 || lastPairEnd <= 0) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(`${text.slice(0, lastPairEnd)}}`);
+    if (isRecord(parsed) && hasRequiredKeys(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // Salvage failed — fall through to the remaining strategies
+  }
+
+  return null;
+}
+
+/**
  * Check if parsed object has minimum required keys for plant analysis
  */
 function hasRequiredKeys(obj: AnalysisRecord): boolean {
-  const requiredKeys = ['diagnosis', 'urgency', 'healthScore', 'recommendations'];
-  const optionalButExpected = ['likelyCauses', 'evidenceObservations', 'uncertainties'];
-  
-  const hasRequired = requiredKeys.every(key => key in obj);
-  const hasSomeExpected = optionalButExpected.some(key => key in obj);
-  
-  return hasRequired && (hasSomeExpected || Object.keys(obj).length >= 6);
+  // The V2 schema leads with diagnosis/summary/urgency/healthScore and trails
+  // with recommendations. A response cut off before the trailing sections (or
+  // one that simply omits them) still carries a usable diagnosis — the
+  // normalizer fills the rest — so only the leading fields are required.
+  const diagnosis = typeof obj.diagnosis === 'string' && obj.diagnosis.trim().length > 0;
+  if (!diagnosis) {
+    return false;
+  }
+
+  const hasCoreField = ['summary', 'healthScore', 'urgency'].some(key => key in obj);
+  return hasCoreField && Object.keys(obj).length >= 4;
 }
 
 /**
@@ -2343,8 +2437,29 @@ function summarizeNarrative(value?: string): string {
     .split(/(?<=[.!?])\s+|\n+/)
     .map(item => item.trim())
     .filter(Boolean);
-  const summary = candidates.find(item => item.length >= 24 && !item.startsWith('{')) || normalized;
-  return clipText(summary, 160);
+  const summary = candidates.find(item => isMeaningfulNarrativeSentence(item)) || normalized;
+  return clipText(summary.replace(/\s+\d+\.$/, ''), 160);
+}
+
+/**
+ * A narrative sentence is usable as a fallback diagnosis only when it carries
+ * actual findings — not a reasoning preamble ("Let me analyze..."), a section
+ * lead-in ("What I'm seeing:"), or a flattened fragment of raw JSON.
+ */
+function isMeaningfulNarrativeSentence(item: string): boolean {
+  if (item.length < 24 || item.startsWith('{')) {
+    return false;
+  }
+  if (/^(let me|let's|i will|i'll|first,? let)\b/i.test(item)) {
+    return false;
+  }
+  if (/^(what i('m| am) seeing|in this (image|photo)|looking at (this|the) (image|photo)|here(?:'s| is))\b/i.test(item)) {
+    return false;
+  }
+  if (/^["}]/.test(item) || /"\s*:\s*"/.test(item) || /",\s*"\w+"\s*:/.test(item)) {
+    return false;
+  }
+  return true;
 }
 
 function clipText(value: string, maxLength: number): string {
