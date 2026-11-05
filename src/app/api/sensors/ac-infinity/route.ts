@@ -105,6 +105,28 @@ export async function POST(request: NextRequest) {
     if (band === 'high') alerts.push({ type: 'HIGH_VPD', value: normalized.vpdKpa, message: `VPD ${normalized.vpdKpa} kPa is high — air is dry for this stage; raise humidity or lower temp.` });
     if (band === 'low') alerts.push({ type: 'LOW_VPD', value: normalized.vpdKpa, message: `VPD ${normalized.vpdKpa} kPa is low — humid air; increase airflow or lower humidity to avoid mold.` });
 
+    // Mirror into SensorAnalytics, the rollup table the analytics
+    // endpoints read. It previously had no writer at all, so
+    // /api/analytics/sensors returned empty while readings piled up
+    // in SensorReading.
+    await prisma.sensorAnalytics.create({
+      data: {
+        sensorId,
+        reading: normalized.temperatureF,
+        value: {
+          temperature: normalized.temperatureF,
+          humidity: normalized.humidity,
+          vpd: normalized.vpdKpa,
+          vpdComputed: normalized.vpdComputed,
+          source: 'ac-infinity',
+        },
+        status: alerts.length > 0 ? 'warning' : 'ok',
+        temperature: normalized.temperatureF,
+        humidity: normalized.humidity,
+        timestamp: timestamp ? new Date(timestamp) : new Date(),
+      },
+    });
+
     log.info('sensors.ac_infinity_ingest', {
       sensorId,
       temperatureF: normalized.temperatureF,

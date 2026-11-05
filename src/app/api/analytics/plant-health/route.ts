@@ -88,17 +88,20 @@ export async function GET(request: Request) {
       : Prisma.empty;
     const trendData = await prisma.$queryRaw`
       SELECT
-        DATE(timestamp) as date,
+        DATE(timestamp / 1000, 'unixepoch') as date,
         AVG(healthScore) as avgScore,
         MIN(healthScore) as minScore,
         MAX(healthScore) as maxScore,
         COUNT(*) as count
       FROM PlantHealthAnalytics
-      WHERE timestamp >= ${startDate} AND timestamp <= ${endDate}
+      WHERE timestamp >= ${startDate.getTime()} AND timestamp <= ${endDate.getTime()}
       ${plantFilter}
-      GROUP BY DATE(timestamp)
+      GROUP BY DATE(timestamp / 1000, 'unixepoch')
       ORDER BY date ASC
     ` as any[];
+
+    // Prisma returns COUNT(*) as BigInt on SQLite; JSON cannot serialize it.
+    for (const row of trendData) row.count = Number(row.count);
 
     // Get average health score
     const avgHealthScore = healthData.length > 0
