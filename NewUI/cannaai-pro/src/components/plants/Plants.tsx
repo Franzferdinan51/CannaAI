@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plant,
   PlantStrain,
+  PlantLocation,
   PlantFilter,
   PlantFormData,
   PlantManagementState,
@@ -93,6 +94,7 @@ const Plants: React.FC = () => {
   });
 
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
+  const [rooms, setRooms] = useState<PlantLocation[]>([]);
   const [showPlantForm, setShowPlantForm] = useState(false);
   const [editingPlant, setEditingPlant] = useState<Plant | null>(null);
   const inventoryFileInput = useRef<HTMLInputElement>(null);
@@ -109,16 +111,20 @@ const Plants: React.FC = () => {
     setState(prev => ({ ...prev, isLoading: true, error: undefined }));
 
     try {
-      const [plantsResult, strainsResult, inventoryResult] = await Promise.allSettled([
+      const [plantsResult, strainsResult, inventoryResult, roomsResult] = await Promise.allSettled([
         plantsAPI.getPlants({ isActive: showArchivedPlants ? undefined : true, includeArchived: showArchivedPlants }),
         plantsAPI.getStrains(),
-        plantsAPI.getPlantInventory()
+        plantsAPI.getPlantInventory(),
+        plantsAPI.getRooms()
       ]);
+
+      if (roomsResult.status === 'fulfilled') setRooms(roomsResult.value);
 
       const failures = [
         plantsResult.status === 'rejected' ? 'plants' : null,
         strainsResult.status === 'rejected' ? 'strains' : null,
         inventoryResult.status === 'rejected' ? 'inventory' : null,
+        roomsResult.status === 'rejected' ? 'rooms' : null,
       ].filter((section): section is string => Boolean(section));
 
       setState(prev => ({
@@ -186,7 +192,7 @@ const Plants: React.FC = () => {
     }
   };
 
-  const handleUpdatePlant = async (id: string, updates: Partial<Plant>) => {
+  const handleUpdatePlant = async (id: string, updates: Partial<Plant>): Promise<boolean> => {
     setState(prev => ({ ...prev, isUpdating: true, error: undefined }));
 
     try {
@@ -199,7 +205,7 @@ const Plants: React.FC = () => {
         isUpdating: false,
         success: 'Plant updated successfully'
       }));
-      setEditingPlant(null);
+      return true;
     } catch (error) {
       console.error('Failed to update plant:', error);
       setState(prev => ({
@@ -207,7 +213,40 @@ const Plants: React.FC = () => {
         isUpdating: false,
         error: error instanceof Error ? error.message : 'Failed to update plant'
       }));
+      return false;
     }
+  };
+
+  const handlePlantFormSubmit = async (formData: PlantFormData) => {
+    if (!editingPlant) {
+      await handleCreatePlant(formData);
+      return;
+    }
+
+    const plantId = editingPlant.id;
+    const { images, ...updates } = formData;
+    const updated = await handleUpdatePlant(plantId, updates as Partial<Plant>);
+    if (!updated) return;
+
+    // New photos picked in the edit form go through the real image-storage
+    // route instead of being silently dropped with the JSON update.
+    try {
+      for (const file of images || []) {
+        await plantsAPI.uploadPlantImage(plantId, file);
+      }
+      if (images && images.length > 0) {
+        setState(prev => ({ ...prev, success: `Plant updated and ${images.length} photo${images.length === 1 ? '' : 's'} saved` }));
+      }
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? `Plant updated, but a photo failed to save: ${error.message}` : 'Plant updated, but a photo failed to save.'
+      }));
+    }
+
+    setShowPlantForm(false);
+    setEditingPlant(null);
+    await loadInitialData();
   };
 
   const handleDeletePlant = async (id: string) => {
@@ -581,19 +620,26 @@ const Plants: React.FC = () => {
               {state.activeTab === 'strains' && (
                 <StrainManager
                   strains={state.strains}
-                  onStrainCreate={(strain) => {
+                  onStrainCreate={async (strain) => {
+                    const { id: _id, images: _images, createdAt: _createdAt, updatedAt: _updatedAt, ...formData } = strain;
+                    const created = await plantsAPI.createStrain(formData as never);
                     setState(prev => ({
                       ...prev,
-                      strains: [...prev.strains, strain]
+                      strains: [...prev.strains, created],
+                      success: 'Strain added to the library'
                     }));
+                    return created;
                   }}
-                  onStrainUpdate={(updatedStrain) => {
+                  onStrainUpdate={async (updatedStrain) => {
+                    const saved = await plantsAPI.updateStrain(updatedStrain.id, updatedStrain);
                     setState(prev => ({
                       ...prev,
                       strains: prev.strains.map(strain =>
-                        strain.id === updatedStrain.id ? updatedStrain : strain
-                      )
+                        strain.id === saved.id ? saved : strain
+                      ),
+                      success: 'Strain updated'
                     }));
+                    return saved;
                   }}
                   onStrainDelete={async (strainId) => {
                     if (!window.confirm('Remove this strain from the library?')) return;
@@ -711,6 +757,7 @@ const Plants: React.FC = () => {
               <PlantForm
                 plant={editingPlant || undefined}
                 strains={state.strains}
+                rooms={rooms}
                 onRemoveExistingImage={async (imageId) => {
                   if (!editingPlant) return;
                   await plantsAPI.deletePlantImage(editingPlant.id, imageId);
@@ -727,14 +774,7 @@ const Plants: React.FC = () => {
                   );
                 }}
                 onSubmit={(formData) => {
-                  if (editingPlant) {
-                    // Image uploads are handled by the create multipart route;
-                    // do not send File objects to the JSON update endpoint.
-                    const { images: _images, ...updates } = formData;
-                    void handleUpdatePlant(editingPlant.id, updates as Partial<Plant>);
-                  } else {
-                    void handleCreatePlant(formData);
-                  }
+                  void handlePlantFormSubmit(formData);
                 }}
                 onCancel={() => {
                   setShowPlantForm(false);

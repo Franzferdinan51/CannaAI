@@ -63,13 +63,20 @@ export async function POST(request: NextRequest) {
     }
 
     const sensorId = acInfinitySensorId(deviceId);
+    const sensorName = deviceName || (deviceId ? `AC Infinity - ${deviceId}` : 'AC Infinity Controller');
+    // The controller name is also the room name in Duckets' setup
+    // ("3x3 Tent"). Link the sensor to that room so room views, plant
+    // locations, and the dashboard all agree about where a reading came from.
+    const rooms = await prisma.room.findMany({ select: { id: true, name: true } });
+    const matchingRoom = rooms.find((room) => room.name.toLowerCase() === sensorName.toLowerCase());
     let sensor = await prisma.sensor.findUnique({ where: { id: sensorId } });
     if (!sensor) {
       sensor = await prisma.sensor.create({
         data: {
           id: sensorId,
-          name: deviceName || (deviceId ? `AC Infinity - ${deviceId}` : 'AC Infinity Controller'),
+          name: sensorName,
           type: 'environmental',
+          locationId: matchingRoom?.id,
           enabled: true,
         },
       });
@@ -95,7 +102,12 @@ export async function POST(request: NextRequest) {
 
     await prisma.sensor.update({
       where: { id: sensorId },
-      data: { lastValue: normalized.temperatureF, lastUpdated: new Date() },
+      data: {
+        lastValue: normalized.temperatureF,
+        lastUpdated: new Date(),
+        ...(matchingRoom && sensor.locationId !== matchingRoom.id ? { locationId: matchingRoom.id } : {}),
+        ...(sensor.name !== sensorName ? { name: sensorName } : {}),
+      },
     });
 
     const band = vpdBand(normalized.vpdKpa, growthStage);

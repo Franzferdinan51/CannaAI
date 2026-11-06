@@ -190,10 +190,27 @@ export const analyzePlant = async (data: AnalysisRequest): Promise<AnalysisRespo
 };
 
 // Strain Management API
+interface StrainEnvelope {
+  success: boolean;
+  data?: Strain | { strains: Strain[]; total: number };
+  strain?: Strain;
+  strains?: Strain[];
+  error?: string;
+}
+
+function unwrapStrain(response: StrainEnvelope): Strain {
+  const data = response.data;
+  if (data && !Array.isArray(data) && 'id' in data) return data;
+  if (response.strain) return response.strain;
+  throw new Error(response.error || 'The strain API returned an unexpected response.');
+}
+
 export const getStrains = async (): Promise<Strain[]> => {
   try {
-    const response = await apiClient.get<StrainsResponse>('/api/strains');
-    return response.data.strains;
+    const response = await apiClient.get<StrainEnvelope>('/api/strains');
+    const data = response.data.data;
+    if (data && !Array.isArray(data) && 'strains' in data) return data.strains;
+    return response.data.strains || [];
   } catch (error) {
     console.error('Failed to fetch strains:', error);
     throw error;
@@ -202,8 +219,8 @@ export const getStrains = async (): Promise<Strain[]> => {
 
 export const addStrain = async (strain: Omit<Strain, 'id'>): Promise<Strain> => {
   try {
-    const response = await apiClient.post<Strain>('/api/strains', strain);
-    return response.data;
+    const response = await apiClient.post<StrainEnvelope>('/api/strains', strain);
+    return unwrapStrain(response.data);
   } catch (error) {
     console.error('Failed to add strain:', error);
     throw error;
@@ -212,8 +229,10 @@ export const addStrain = async (strain: Omit<Strain, 'id'>): Promise<Strain> => 
 
 export const updateStrain = async (id: string, strain: Partial<Strain>): Promise<Strain> => {
   try {
-    const response = await apiClient.put<Strain>(`/api/strains/${id}`, strain);
-    return response.data;
+    // The route identifies the record in the JSON body; there is no
+    // /api/strains/:id route in the backend.
+    const response = await apiClient.put<StrainEnvelope>('/api/strains', { ...strain, id });
+    return unwrapStrain(response.data);
   } catch (error) {
     console.error('Failed to update strain:', error);
     throw error;
@@ -222,7 +241,7 @@ export const updateStrain = async (id: string, strain: Partial<Strain>): Promise
 
 export const deleteStrain = async (id: string): Promise<void> => {
   try {
-    await apiClient.delete(`/api/strains/${id}`);
+    await apiClient.delete('/api/strains', { params: { id } });
   } catch (error) {
     console.error('Failed to delete strain:', error);
     throw error;
