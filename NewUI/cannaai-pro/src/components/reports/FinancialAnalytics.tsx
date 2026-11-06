@@ -407,7 +407,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
       {viewMode === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue vs Costs Chart */}
-          <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+          <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-emerald-400" />
               Revenue vs Costs Trend
@@ -434,7 +434,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
           </div>
 
           {/* Cost Breakdown Pie Chart */}
-          <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+          <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <PieChartIcon className="w-5 h-5 text-blue-400" />
               Cost Breakdown
@@ -502,7 +502,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
       {viewMode === 'kpis' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* KPI Radar Chart */}
-          <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+          <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <Target className="w-5 h-5 text-purple-400" />
               Performance vs Targets
@@ -568,7 +568,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
 
       {/* Financial Forecasts */}
       {viewMode === 'forecasts' && (
-        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-400" />
             Financial Forecasts

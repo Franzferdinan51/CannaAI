@@ -1,4 +1,4 @@
-import { AgentCommandProvider, normalizeAgentImage } from '@/lib/ai-providers/agent-command-provider';
+import { AgentCommandProvider, normalizeAgentImage } from '@/lib/agent-command-provider';
 import { executeWithHermes } from '@/lib/ai-provider-hermes';
 import { executeWithOpenClaw } from '@/lib/ai-provider-openclaw';
 

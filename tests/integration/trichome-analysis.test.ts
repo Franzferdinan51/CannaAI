@@ -55,6 +55,10 @@ describe('/api/trichome-analysis Integration Tests', () => {
           }
     );
     process.env.OPENROUTER_API_KEY = 'test-api-key';
+    // This suite deliberately routes through the OpenRouter test provider.
+    // The deployment local-only lock prunes cloud providers by default, so
+    // opt in explicitly (the lock itself is covered in the provider tests).
+    process.env.CANNAAI_ALLOW_CLOUD_AI = 'true';
     delete process.env.BUILD_MODE;
     (fetch as jest.Mock).mockResolvedValue({
       ok: true,

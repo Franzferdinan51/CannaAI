@@ -148,8 +148,10 @@ export const api = {
   strains: {
     list: () => apiClient.get<StrainsApiResponse>('/strains'),
     create: (data: any) => apiClient.post('/strains', data),
-    update: (id: string, data: any) => apiClient.put(`/strains/${id}`, data),
-    delete: (id: string) => apiClient.delete(`/strains/${id}`),
+    // The backend identifies the record in the JSON body / query param;
+    // there is no /api/strains/:id route.
+    update: (id: string, data: any) => apiClient.put('/strains', { ...data, id }),
+    delete: (id: string) => apiClient.delete(`/strains?id=${encodeURIComponent(id)}`),
   },
 
   history: {

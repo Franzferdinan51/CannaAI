@@ -372,7 +372,7 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
         )}
 
         {/* Main Chart */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-6">
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-6 min-w-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">Sensor Data Over Time</h3>
             <div className="flex items-center gap-2">

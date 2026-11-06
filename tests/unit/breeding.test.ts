@@ -89,7 +89,8 @@ describe('breeding lineage', () => {
 
   it('uses fatherDescription when the father is not a tracked strain', async () => {
     const loaders2: LineageLoaders = {
-      ...loaders,
+      // The child strain itself is tracked; only the father is not.
+      getStrain: async (id) => (id === 'x' ? { id: 'x', name: 'Mystery' } : strains[id] || null),
       getCrossByResultStrain: async (id) => id === 'x'
         ? { ...cross('c9', 'Mystery', 'F1', 'glh', null, 'x'), fatherDescription: 'bagseed pollen' }
         : null,

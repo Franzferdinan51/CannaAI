@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-
-function debugEndpointsEnabled(): boolean {
-  return process.env.NODE_ENV === 'development' || process.env.CANNAAI_ENABLE_DEBUG_ENDPOINTS === 'true';
-}
+import { debugEndpointsEnabled } from '@/lib/debug-endpoints';
 
 export async function POST(request: Request) {
   if (!debugEndpointsEnabled()) {

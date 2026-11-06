@@ -2,10 +2,31 @@
  * Regression coverage for local-model failures that previously made a healthy
  * LM Studio server look unavailable or caused successful completions to be
  * discarded by the fallback chain.
+ *
+ * The class-based `@/lib/ai-providers/lmstudio-provider` was deleted in the
+ * provider consolidation; the behaviors below are exercised against its
+ * replacement, the function module `@/lib/ai-provider-lmstudio`, via
+ * `jest.requireActual` (the module is mocked for the fallback-chain tests).
+ * Each ported test uses its own baseUrl so the module's 60-second catalog
+ * cache cannot leak one test's catalog into the next. Vision resolution no
+ * longer honors a caller baseUrl (it always uses the deployment endpoint),
+ * so the vision test that needs an empty catalog cache re-requires a fresh
+ * module instance instead. The fallback-chain tests exercise the unlocked
+ * provider chain, so the suite opts into CANNAAI_ALLOW_CLOUD_AI; the
+ * local-only lock itself is covered in ai-provider-detection.test.ts.
+ *
+ * Class-only coverage not carried over:
+ * - "preserves non-image data URL MIME types" and "refuses to send images to
+ *   an advertised text-only model" — already covered against the function
+ *   adapter in ai-provider-lmstudio-runtime.test.ts.
+ * - "detects image_url content arrays before selecting a model" — the
+ *   function adapter selects vision models from the explicit `image`
+ *   option, not from message content parts; no current equivalent.
+ * - "allows vision requests when native metadata omits capabilities" — the
+ *   function adapter treats a native catalog that omits a model from its
+ *   vision set as authoritative and rejects the request instead. Provider
+ *   behavior divergence, tracked outside this suite.
  */
-
-import { LMStudioProvider } from '@/lib/ai-providers/lmstudio-provider';
-import { executeWithLMStudio } from '@/lib/ai-provider-lmstudio';
 
 const mockCheckLMStudio = jest.fn();
 const mockExecuteWithLMStudio = jest.fn();
@@ -23,6 +44,7 @@ const mockExecuteWithHermes = jest.fn();
 jest.mock('@/lib/ai-provider-lmstudio', () => ({
   checkLMStudio: (...args: unknown[]) => mockCheckLMStudio(...args),
   executeWithLMStudio: (...args: unknown[]) => mockExecuteWithLMStudio(...args),
+  getLMStudioApiKey: () => '',
 }));
 
 jest.mock('@/lib/ai-provider-openclaw', () => ({
@@ -55,11 +77,8 @@ import {
   executeAIWithFallback,
 } from '@/lib/ai-provider-detection';
 
-class TestLMStudioProvider extends LMStudioProvider {
-  normalizeForTest(request: any) {
-    return this.normalizeRequest(request);
-  }
-}
+type LMStudioModule = typeof import('@/lib/ai-provider-lmstudio');
+const realLMStudio = jest.requireActual('@/lib/ai-provider-lmstudio') as LMStudioModule;
 
 describe('LM Studio local-model regressions', () => {
   beforeEach(() => {
@@ -67,6 +86,9 @@ describe('LM Studio local-model regressions', () => {
     delete process.env.NETLIFY;
     delete process.env.VERCEL;
     delete process.env.AWS_LAMBDA_FUNCTION_NAME;
+    // This suite exercises the unlocked fallback chain (incl. cloud
+    // providers); the local-only lock has its own coverage elsewhere.
+    process.env.CANNAAI_ALLOW_CLOUD_AI = 'true';
 
     mockCheckOpenClaw.mockResolvedValue({ available: false, isAvailable: false });
     mockCheckBailian.mockResolvedValue({ available: false, isAvailable: false });
@@ -78,6 +100,10 @@ describe('LM Studio local-model regressions', () => {
     mockExecuteWithOpenRouter.mockRejectedValue(new Error('OpenRouter unavailable'));
     mockExecuteWithMiniMax.mockRejectedValue(new Error('MiniMax unavailable'));
     mockExecuteWithHermes.mockRejectedValue(new Error('Hermes unavailable'));
+  });
+
+  afterAll(() => {
+    delete process.env.CANNAAI_ALLOW_CLOUD_AI;
   });
 
   test('provider detection waits for the LM Studio health check instead of racing an AbortSignal object', async () => {
@@ -134,62 +160,64 @@ describe('LM Studio local-model regressions', () => {
   });
 
   test('LM Studio is available with a downloaded JIT-loadable chat model even when no instance is preloaded', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          models: [
-            {
-              key: 'qwen/qwen3.5-9b',
-              type: 'llm',
-              loaded_instances: [],
-              capabilities: {
-                vision: false,
-                trained_for_tool_use: true,
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/api/v1/models')) {
+        return {
+          ok: true,
+          json: async () => ({
+            models: [
+              {
+                key: 'qwen/qwen3.5-9b',
+                type: 'llm',
+                loaded_instances: [],
+                capabilities: {
+                  vision: false,
+                  trained_for_tool_use: true,
+                },
               },
-            },
-          ],
-        }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          data: [{ id: 'qwen/qwen3.5-9b', object: 'model' }],
-        }),
-      } as Response);
-
-    const provider = new LMStudioProvider({
-      url: 'http://localhost:1234/api/v1',
-      apiKey: '',
-      model: '',
+            ],
+          }),
+        } as Response;
+      }
+      if (url.endsWith('/v1/models')) {
+        return { ok: true, json: async () => ({ data: [] }) } as Response;
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as Response;
     });
 
-    await expect(provider.isAvailable()).resolves.toBe(true);
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:1234/v1/models',
-      expect.objectContaining({ method: 'GET' }),
-    );
+    const result = await realLMStudio.checkLMStudio(true, 'http://localhost:1234/api/v1');
+
+    expect(result.available).toBe(true);
+    expect(result.isAvailable).toBe(true);
+    expect(result.models).toContain('qwen/qwen3.5-9b');
+    expect(fetchMock.mock.calls.some(([input]) => String(input) === 'http://localhost:1234/v1/models')).toBe(true);
     fetchMock.mockRestore();
   });
 
-  test('LM Studio preserves image messages for OpenAI-compatible multimodal models', () => {
-    const provider = new TestLMStudioProvider({
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'vision-model',
-    });
+  test('LM Studio preserves image messages for OpenAI-compatible multimodal models', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'vision-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'vision-model', type: 'llm', capabilities: { vision: true } }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'vision answer' } }] }),
+      } as Response);
 
-    const normalized = provider.normalizeForTest({
-      messages: [
-        {
-          role: 'user',
-          content: 'Inspect this leaf',
-          image: 'data:image/jpeg;base64,abc123',
-        },
-      ],
-    });
+    await realLMStudio.executeWithLMStudio(
+      [{ role: 'user', content: 'Inspect this leaf' }],
+      { image: 'data:image/jpeg;base64,abc123', useVision: true, baseUrl: 'http://localhost:1234' },
+    );
 
-    expect(normalized.messages[0].content).toEqual([
+    const completion = fetchMock.mock.calls[2];
+    const body = JSON.parse(String((completion[1] as RequestInit).body));
+    expect(body.messages[0].content).toEqual([
       { type: 'text', text: 'Inspect this leaf' },
       {
         type: 'image_url',
@@ -198,50 +226,8 @@ describe('LM Studio local-model regressions', () => {
     ]);
   });
 
-  test('LM Studio detects image_url content arrays before selecting a model', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ models: [
-          { key: 'text-model', type: 'llm', capabilities: { vision: false } },
-          { key: 'vision-model', type: 'llm', capabilities: { vision: true } },
-        ] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [{ id: 'text-model' }, { id: 'vision-model' }] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ model: 'vision-model', choices: [{ message: { content: 'vision answer' } }] }),
-      } as Response);
-
-    const provider = new LMStudioProvider({ url: 'http://localhost:1234' });
-    await provider.execute({
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: 'Inspect this leaf' },
-          { type: 'image_url', image_url: { url: 'data:image/png;base64,abc123' } },
-        ],
-      }] as any,
-    });
-
-    const completion = fetchMock.mock.calls[2];
-    const body = JSON.parse(String((completion[1] as RequestInit).body));
-    expect(body.model).toBe('vision-model');
-    expect(body.messages[0].content[1].image_url.url).toBe('data:image/png;base64,abc123');
-  });
-
   test('LM Studio does not select a reranker when a chat model is available', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ models: [
-          { key: 'qwen3-reranker-0.6b', type: 'llm' },
-          { key: 'chat-model', type: 'llm' },
-        ] }),
-      } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ data: [
@@ -254,69 +240,23 @@ describe('LM Studio local-model regressions', () => {
         json: async () => ({ choices: [{ message: { content: 'chat answer' } }] }),
       } as Response);
 
-    const provider = new LMStudioProvider({ url: 'http://localhost:1234' });
-    await provider.execute({ messages: [{ role: 'user', content: 'hello' }] });
-
-    const body = JSON.parse(String((fetchMock.mock.calls[2][1] as RequestInit).body));
-    expect(body.model).toBe('chat-model');
-  });
-
-  test('LM Studio preserves non-image data URL MIME types', () => {
-    const provider = new TestLMStudioProvider({
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'vision-model',
-    });
-
-    const normalized = provider.normalizeForTest({
-      messages: [{
-        role: 'user',
-        content: 'Inspect this capture',
-        image: 'data:application/octet-stream;base64,AAECAwQ=',
-      }],
-    });
-
-    expect(normalized.messages[0].content[1].image_url.url).toBe(
-      'data:application/octet-stream;base64,AAECAwQ=',
+    const result = await realLMStudio.executeWithLMStudio(
+      [{ role: 'user', content: 'hello' }],
+      { baseUrl: 'http://localhost:2234' },
     );
-  });
 
-  test('LM Studio refuses to send images to an advertised text-only model', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          models: [{
-            key: 'text-only-model',
-            type: 'llm',
-            capabilities: { vision: false },
-          }],
-        }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [{ id: 'text-only-model' }] }),
-      } as Response);
-
-    const provider = new LMStudioProvider({
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'text-only-model',
-    });
-
-    await expect(provider.execute({
-      messages: [{
-        role: 'user',
-        content: 'Inspect this leaf',
-        image: 'data:image/jpeg;base64,abc123',
-      }],
-    })).rejects.toThrow('no vision-capable model');
-
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result).toBe('chat answer');
+    const completion = fetchMock.mock.calls[1];
+    const body = JSON.parse(String((completion[1] as RequestInit).body));
+    expect(body.model).toBe('chat-model');
   });
 
   test('LM Studio accepts an arbitrarily named model when native metadata reports vision support', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'ornith-1.5-35b-a3b', object: 'model' }] }),
+      } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -330,31 +270,18 @@ describe('LM Studio local-model regressions', () => {
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: [{ id: 'ornith-1.5-35b-a3b', object: 'model' }] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
         json: async () => ({
           model: 'ornith-1.5-35b-a3b',
           choices: [{ message: { role: 'assistant', content: 'The plant appears healthy.' } }],
         }),
       } as Response);
 
-    const provider = new LMStudioProvider({
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'ornith-1.5-35b-a3b',
-    });
+    const result = await realLMStudio.executeWithLMStudio(
+      [{ role: 'user', content: 'Inspect this plant' }],
+      { model: 'ornith-1.5-35b-a3b', image: 'ZmFrZS1pbWFnZQ==', baseUrl: 'http://localhost:3234' },
+    );
 
-    const result = await provider.execute({
-      messages: [{
-        role: 'user',
-        content: 'Inspect this plant',
-        image: 'ZmFrZS1pbWFnZQ==',
-      }],
-    });
-
-    expect(result.choices[0].message.content).toBe('The plant appears healthy.');
+    expect(result).toBe('The plant appears healthy.');
     const request = fetchMock.mock.calls[2][1] as RequestInit;
     const body = JSON.parse(String(request.body));
     expect(body.model).toBe('ornith-1.5-35b-a3b');
@@ -364,51 +291,8 @@ describe('LM Studio local-model regressions', () => {
     ]);
   });
 
-  test('LM Studio allows vision requests when native metadata omits capabilities', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ models: [{ key: 'custom-local-model', type: 'llm' }] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [{ id: 'custom-local-model', object: 'model' }] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          model: 'custom-local-model',
-          choices: [{ message: { role: 'assistant', content: 'Image received.' } }],
-        }),
-      } as Response);
-
-    const provider = new LMStudioProvider({
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'custom-local-model',
-    });
-
-    await expect(provider.execute({
-      messages: [{ role: 'user', content: 'Describe this image', image: 'ZmFrZS1pbWFnZQ==' }],
-    })).resolves.toEqual(expect.objectContaining({
-      choices: [expect.objectContaining({
-        message: expect.objectContaining({ content: 'Image received.' }),
-      })],
-    }));
-
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-  });
-
   test('LM Studio forwards an explicit custom model omitted from both catalogs', async () => {
     const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ models: [{ key: 'another-model', type: 'llm' }] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [{ id: 'another-model', object: 'model' }] }),
-      } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -417,26 +301,25 @@ describe('LM Studio local-model regressions', () => {
         }),
       } as Response);
 
-    const provider = new LMStudioProvider({
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'custom-jit-model',
-    });
+    const result = await realLMStudio.executeWithLMStudio(
+      [{ role: 'user', content: 'Use the explicitly selected model.' }],
+      { model: 'custom-jit-model', baseUrl: 'http://localhost:4234' },
+    );
 
-    await expect(provider.execute({
-      messages: [{ role: 'user', content: 'Use the explicitly selected model.' }],
-    })).resolves.toEqual(expect.objectContaining({
-      choices: [expect.objectContaining({
-        message: expect.objectContaining({ content: 'Custom model answer.' }),
-      })],
-    }));
-
-    const requestBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(result).toBe('Custom model answer.');
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(requestBody.model).toBe('custom-jit-model');
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    // An explicit text model is authoritative: no catalog discovery happens.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   test('legacy LM Studio vision adapter forwards an explicit unknown JIT model', async () => {
+    // Vision resolution ignores caller baseUrl and always uses the
+    // deployment endpoint, whose catalog cache is shared with the earlier
+    // vision test in this file. Re-require a fresh module for an empty
+    // cache so this test's catalog is the one under test.
+    jest.resetModules();
+    const freshLMStudio = jest.requireActual('@/lib/ai-provider-lmstudio') as LMStudioModule;
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({
         ok: true,
@@ -453,9 +336,9 @@ describe('LM Studio local-model regressions', () => {
         }),
       } as Response);
 
-    await expect(executeWithLMStudio(
+    await expect(freshLMStudio.executeWithLMStudio(
       [{ role: 'user', content: 'Describe this image.' }],
-      { model: 'custom-jit-vision-model', image: 'ZmFrZS1pbWFnZQ==' },
+      { model: 'custom-jit-vision-model', image: 'ZmFrZS1pbWFnZQ==', baseUrl: 'http://localhost:5234' },
     )).resolves.toBe('JIT vision answer.');
 
     const requestBody = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));

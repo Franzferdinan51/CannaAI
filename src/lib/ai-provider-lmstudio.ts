@@ -394,15 +394,65 @@ function getConfiguredModel(type: 'vision' | 'text'): string {
   return process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL || LM_STUDIO_TEXT_MODEL || '';
 }
 
+/**
+ * Vision analysis is pinned by deployment configuration
+ * (LM_STUDIO_VISION_MODEL). The pin always wins:
+ *
+ * - Caller-supplied model IDs and base URLs are ignored for vision
+ *   requests. Analyze routes accept them from request bodies, and letting
+ *   them through would silently run plant diagnosis on a different model
+ *   (or a different server) than the operator configured.
+ * - Availability is judged against the deployment's own LM Studio
+ *   endpoint, never a caller-supplied URL.
+ * - If the pinned model cannot be confirmed available and vision-capable,
+ *   this throws an explicit error. It never substitutes another vision
+ *   model: a wrong local model can produce confident nonsense, and some
+ *   local vision models are known to crash the LM Studio server.
+ */
+async function resolvePinnedVisionModel(pinned: string, apiKeyOverride?: string): Promise<string> {
+  const available = await getAvailableModels(false, undefined, apiKeyOverride);
+  const visionCatalog = await getVisionModelCatalog(undefined, apiKeyOverride);
+
+  if (available.length === 0) {
+    throw new Error(
+      `Pinned vision model "${pinned}" (LM_STUDIO_VISION_MODEL) could not be verified: LM Studio returned no available models. Refusing to substitute another vision model.`,
+    );
+  }
+
+  if (!available.includes(pinned)) {
+    throw new Error(
+      `Pinned vision model "${pinned}" (LM_STUDIO_VISION_MODEL) is not available in LM Studio. Refusing to substitute another vision model.`,
+    );
+  }
+
+  if (visionCatalog.metadataAvailable && !visionCatalog.models.includes(pinned)) {
+    throw new Error(
+      `Pinned vision model "${pinned}" (LM_STUDIO_VISION_MODEL) is not vision-capable according to LM Studio metadata. Refusing to substitute another vision model.`,
+    );
+  }
+
+  return pinned;
+}
+
 async function resolveModel(type: 'vision' | 'text', explicitModel?: string, configuredBaseUrl?: string, apiKeyOverride?: string): Promise<string> {
   const requested = explicitModel?.trim();
   if (requested && type === 'text') return requested;
 
   const configured = getConfiguredModel(type).trim();
-  const available = await getAvailableModels(false, configuredBaseUrl, apiKeyOverride);
+
+  if (type === 'vision' && configured) {
+    // Deployment pin configured: it decides, callers do not.
+    return resolvePinnedVisionModel(configured, apiKeyOverride);
+  }
+
+  const available = await getAvailableModels(
+    false,
+    type === 'vision' ? undefined : configuredBaseUrl,
+    apiKeyOverride,
+  );
 
   if (type === 'vision') {
-    const visionCatalog = await getVisionModelCatalog(configuredBaseUrl, apiKeyOverride);
+    const visionCatalog = await getVisionModelCatalog(undefined, apiKeyOverride);
     const candidate = requested || configured;
 
     if (candidate && (available.length === 0 || available.includes(candidate))) {
@@ -498,7 +548,13 @@ export async function executeWithLMStudio(
     }).reverse();
   }
 
-  const endpoint = options.baseUrl ? getLMStudioBaseUrl(options.baseUrl) : cacheBaseUrl || getLMStudioBaseUrl();
+  // Vision inference always targets the deployment's LM Studio endpoint
+  // (the catalog query in resolveModel has already pinned cacheBaseUrl to
+  // it). A caller-supplied baseUrl must not redirect image analysis — or
+  // the pinned vision model — to a different server.
+  const endpoint = !wantsVision && options.baseUrl
+    ? getLMStudioBaseUrl(options.baseUrl)
+    : cacheBaseUrl || getLMStudioBaseUrl();
   const response = await fetch(`${endpoint}/v1/chat/completions`, {
     method: 'POST',
     headers: getHeaders(true, options.apiKey),

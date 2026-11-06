@@ -143,7 +143,7 @@ export async function checkThresholds(
   }
 }
 
-function checkCondition(condition: string, actual: number, expected: number): boolean {
+export function checkCondition(condition: string, actual: number, expected: number): boolean {
   switch (condition) {
     case 'gt':
       return actual > expected;

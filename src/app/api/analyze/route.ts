@@ -9,6 +9,7 @@ import { executeWithBailian } from '@/lib/ai-provider-bailian';
 import { executeWithOpenRouter } from '@/lib/ai-provider-openrouter';
 import { executeWithMiniMax } from '@/lib/ai-provider-minimax';
 import { normalizePlantAnalysisResult } from '@/lib/plant-analysis-report-v2';
+import { flattenRecommendations, landAnalysisOnPlant } from '@/lib/analysis-landing';
 import { generateAnalysisPromptV2 } from '@/lib/analysis-prompt-v2';
 import { enrichReport, mergeEnrichmentWithAnalysis, validateEnrichedReport } from '@/lib/report-enrichment';
 import { getAnalyzeCache } from '@/lib/analyze-cache';
@@ -948,8 +949,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Persist analysis result for history/plant linkage (best-effort)
+    let savedAnalysisId: string | undefined;
     try {
-      await withAnalysisDatabaseTimeout(
+      const savedAnalysis = await withAnalysisDatabaseTimeout(
         prisma.plantAnalysis.create({
           data: {
             plantId: body.plantId,
@@ -976,8 +978,52 @@ export async function POST(request: NextRequest) {
           }
         }),
       );
+      savedAnalysisId = savedAnalysis?.id;
     } catch (persistError) {
       console.warn('Failed to persist plant analysis record:', persistError);
+    }
+
+    // When the analysis names a real plant, land the result on the plant
+    // itself (health analytics row, analysis history entry, Plant.health)
+    // so the plants UI reflects it. Report-v2 carries confidence on the
+    // 0-100 scale; the landing stores it on the 0-1 scale. Guarded
+    // internally: a landing failure never fails this analysis.
+    if (body.plantId) {
+      const detectedIssues = Array.isArray(analysisResult?.detectedIssues)
+        ? analysisResult.detectedIssues
+        : [];
+      const flatRecommendations = flattenRecommendations(analysisResult?.recommendations);
+      const confidence01 = typeof analysisResult?.confidence === 'number'
+        ? analysisResult.confidence / 100
+        : undefined;
+      await landAnalysisOnPlant({
+        plantId: body.plantId,
+        analysisId: savedAnalysisId,
+        analysisType: 'manual_comprehensive',
+        source: 'api_analyze',
+        provider: usedProvider,
+        diagnosis: typeof analysisResult?.diagnosis === 'string' ? analysisResult.diagnosis : undefined,
+        healthScore: typeof analysisResult?.healthScore === 'number' ? analysisResult.healthScore : undefined,
+        confidence: confidence01,
+        urgency: typeof analysisResult?.urgency === 'string' ? analysisResult.urgency : undefined,
+        issues: detectedIssues,
+        recommendations: flatRecommendations,
+        historyData: {
+          diagnosis: analysisResult?.diagnosis,
+          confidence: confidence01,
+          recommendations: flatRecommendations,
+          urgency: analysisResult?.urgency,
+          potentialIssues: detectedIssues
+            .map((issue: any) => issue?.name)
+            .filter((name: unknown): name is string => typeof name === 'string'),
+          suggestedActions: Array.isArray(analysisResult?.priorityActions)
+            ? analysisResult.priorityActions
+            : undefined,
+          nextSteps: Array.isArray(analysisResult?.uncertainties)
+            ? analysisResult.uncertainties
+            : undefined,
+        },
+      });
     }
 
     // Add enhanced security headers to response

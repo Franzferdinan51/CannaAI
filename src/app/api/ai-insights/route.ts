@@ -26,13 +26,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-const VPD_IDEAL = { min: 1.0, max: 1.5 };
-const VPD_WARN = { min: 0.8, max: 1.6 };
-const TEMP_IDEAL = { min: 72, max: 80 };
-const TEMP_WARN = { min: 65, max: 85 };
-const HUM_IDEAL = { min: 40, max: 55 };
-const HUM_WARN = { min: 30, max: 65 };
+import { resolveEnvTargets, widenEnvTargets } from '@/lib/env-targets';
 
 interface Insight {
   id: string;
@@ -127,6 +121,37 @@ export async function GET(request: Request) {
     });
   }
 
+  // Bands come from the shared env-targets source (strain conditions first,
+  // stage defaults underneath) for the room being analyzed — not fixed
+  // constants, so a seedling room is no longer judged against flower bands.
+  const contextPlant = await prisma.plant.findFirst({
+    where: {
+      isActive: true,
+      ...(room !== 'all' ? {
+        room: {
+          OR: [
+            { id: room },
+            { name: room },
+            { name: room.replace(/[-_]/g, ' ') }
+          ]
+        }
+      } : {}),
+    },
+    include: { strain: { select: { optimalConditions: true } } },
+    orderBy: { name: 'asc' },
+  });
+  const idealTargets = resolveEnvTargets({
+    stage: contextPlant?.stage,
+    optimalConditions: contextPlant?.strain?.optimalConditions,
+  });
+  const warnTargets = widenEnvTargets(idealTargets);
+  const VPD_IDEAL = { min: idealTargets.vpd[0], max: idealTargets.vpd[1] };
+  const VPD_WARN = { min: warnTargets.vpd[0], max: warnTargets.vpd[1] };
+  const TEMP_IDEAL = { min: idealTargets.temperatureF[0], max: idealTargets.temperatureF[1] };
+  const TEMP_WARN = { min: warnTargets.temperatureF[0], max: warnTargets.temperatureF[1] };
+  const HUM_IDEAL = { min: idealTargets.humidity[0], max: idealTargets.humidity[1] };
+  const HUM_WARN = { min: warnTargets.humidity[0], max: warnTargets.humidity[1] };
+
   const insights: Insight[] = [];
   const typedReadings = readings as SensorReadingWithData[];
   const vpds = typedReadings
@@ -159,12 +184,12 @@ export async function GET(request: Request) {
           ? 'Low humidity or high temperature causing leaf moisture stress and reduced nutrient uptake.'
           : 'High humidity preventing adequate transpiration, creating mold/bud-rot conditions.',
         recommended_actions: currentVPD > VPD_IDEAL.max
-          ? ['Increase airflow/exhaust fan speed', 'Lower temperature 2-3°F', 'Reduce humidity if above 55%']
+          ? ['Increase airflow/exhaust fan speed', 'Lower temperature 2-3°F', `Reduce humidity if above ${HUM_IDEAL.max}%`]
           : ['Decrease airflow slightly', 'Increase target temperature 1-2°F', 'Check dehumidifier operation'],
         timestamp: new Date().toISOString(),
         source_readings: vpds.length,
       });
-    } else if (vpdTrend === 'rising' && currentVPD > 1.3) {
+    } else if (vpdTrend === 'rising' && currentVPD > VPD_IDEAL.max - 0.2) {
       insights.push({
         id: 'vpd-rising',
         severity: 'medium',
@@ -235,7 +260,7 @@ export async function GET(request: Request) {
         type: 'temperature',
         title: '❄️ Temperature too LOW — slow growth',
         description: `Current temperature: ${currentTemp.toFixed(0)}°F (ideal: ${TEMP_IDEAL.min}–${TEMP_IDEAL.max}°F). ${tempTrend} trend.`,
-        predicted_cause: 'Cold ambient temperature affecting metabolic rate. Growth slows significantly below 72°F.',
+        predicted_cause: `Cold ambient temperature affecting metabolic rate. Growth slows significantly below ${TEMP_IDEAL.min}°F.`,
         recommended_actions: ['Increase HVAC setting', 'Check heater operation', 'Reduce exhaust until temp recovers'],
         timestamp: new Date().toISOString(),
         source_readings: temps.length,

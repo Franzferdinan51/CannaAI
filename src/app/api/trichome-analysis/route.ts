@@ -75,6 +75,9 @@ interface TrichomeAnalysis {
     magnificationLevel: string;
     focusQuality: 'sharp' | 'adequate' | 'blurry' | 'unknown';
     lightingCondition: 'optimal' | 'adequate' | 'poor' | 'unknown';
+    /** Focus and lighting sub-analyses are not implemented: their values
+        are 'unknown' placeholders, never measurements of the image. */
+    availability: { focusQuality: boolean; lightingCondition: boolean };
   };
   recommendations: string[];
 }
@@ -155,7 +158,8 @@ export async function POST(request: NextRequest) {
           imageQuality: assessImageQuality(processedImageInfo, deviceInfo),
           magnificationLevel: determineMagnificationLevel(deviceInfo),
           focusQuality: assessFocusQuality(),
-          lightingCondition: assessLightingCondition()
+          lightingCondition: assessLightingCondition(),
+          availability: { focusQuality: false, lightingCondition: false }
         },
         recommendations: generateTrichomeRecommendations(trichomeResult, deviceInfo)
       };
@@ -455,7 +459,8 @@ function createStructuredTrichomeResponse(textResponse: string, provider: string
       imageQuality: 'unknown',
       magnificationLevel: 'Unknown',
       focusQuality: 'unknown',
-      lightingCondition: 'unknown'
+      lightingCondition: 'unknown',
+      availability: { focusQuality: false, lightingCondition: false }
     },
     recommendations: [
       'Review the preserved provider response manually.'
@@ -500,7 +505,8 @@ function enhanceTrichomeAnalysis(analysisResult: any, deviceInfo: any, options: 
     imageQuality: 'unknown',
     magnificationLevel: 'Unknown',
     focusQuality: 'unknown',
-    lightingCondition: 'unknown'
+    lightingCondition: 'unknown',
+    availability: { focusQuality: false, lightingCondition: false }
   };
 
   // Ensure required fields exist
@@ -565,7 +571,13 @@ function enhanceTrichomeAnalysis(analysisResult: any, deviceInfo: any, options: 
   if (!enhanced.technicalAnalysis) {
     enhanced.technicalAnalysis = unknownTechnical;
   } else {
-    enhanced.technicalAnalysis = { ...unknownTechnical, ...enhanced.technicalAnalysis };
+    enhanced.technicalAnalysis = {
+      ...unknownTechnical,
+      ...enhanced.technicalAnalysis,
+      // Focus/lighting sub-analyses are not implemented; never let an
+      // upstream payload present them as available measurements.
+      availability: { focusQuality: false, lightingCondition: false }
+    };
   }
 
   if (!Array.isArray(enhanced.recommendations) || enhanced.recommendations.length === 0) {

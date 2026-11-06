@@ -557,7 +557,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
               </div>
             </div>
           ) : (
-            <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+            <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
               <h3 className="text-lg font-semibold text-white mb-4">Growth Comparison Chart</h3>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={chartData}>
@@ -710,7 +710,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
       {/* Distribution Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Health Distribution */}
-        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Heart className="w-5 h-5 text-emerald-400" />
             Health Distribution
@@ -737,7 +737,7 @@ export const PlantGrowthAnalytics: React.FC<PlantGrowthAnalyticsProps> = ({
         </div>
 
         {/* Growth Stage Distribution */}
-        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-blue-400" />
             Growth Stage Distribution

@@ -7,6 +7,7 @@ import {
   vpdBand,
 } from '@/lib/ac-infinity';
 import { withRequest } from '@/lib/logger';
+import { evaluateEnvironmentAlerts } from '@/lib/alert-evaluation';
 
 const AcInfinityPayloadSchema = z.object({
   deviceId: z.string().max(100).optional(),
@@ -111,11 +112,36 @@ export async function POST(request: NextRequest) {
     });
 
     const band = vpdBand(normalized.vpdKpa, growthStage);
-    const alerts: Array<{ type: string; value: number; message: string }> = [];
-    if (normalized.temperatureF > 85) alerts.push({ type: 'HIGH_TEMP', value: normalized.temperatureF, message: `Tent temp ${normalized.temperatureF}°F is above the 85°F comfort ceiling.` });
-    if (normalized.temperatureF < 65) alerts.push({ type: 'LOW_TEMP', value: normalized.temperatureF, message: `Tent temp ${normalized.temperatureF}°F is below the 65°F comfort floor.` });
-    if (band === 'high') alerts.push({ type: 'HIGH_VPD', value: normalized.vpdKpa, message: `VPD ${normalized.vpdKpa} kPa is high — air is dry for this stage; raise humidity or lower temp.` });
-    if (band === 'low') alerts.push({ type: 'LOW_VPD', value: normalized.vpdKpa, message: `VPD ${normalized.vpdKpa} kPa is low — humid air; increase airflow or lower humidity to avoid mold.` });
+
+    // Persist real Alert rows for out-of-band conditions: stage bands from
+    // the shared env-targets source (strain conditions first, stage
+    // defaults underneath) plus any user-defined AlertThreshold rows.
+    // This replaces the old hardcoded 65/85 °F warnings, which were never
+    // persisted — they only lived in the SensorAnalytics JSON below.
+    // Alerting must never fail ingest: on error we log and carry on with
+    // no per-reading warnings.
+    let alerts: Array<{ type: string; value: number; message: string }> = [];
+    let persistedAlerts = 0;
+    try {
+      const evaluation = await evaluateEnvironmentAlerts({
+        sensorId,
+        roomId: matchingRoom?.id ?? sensor.locationId ?? null,
+        roomName: matchingRoom?.name ?? sensor.name,
+        values: {
+          temperatureF: normalized.temperatureF,
+          humidity: normalized.humidity,
+          vpdKpa: normalized.vpdKpa,
+        },
+        growthStage,
+      });
+      alerts = evaluation.bandAlerts;
+      persistedAlerts = evaluation.bandAlertsCreated + evaluation.thresholdAlertsCreated;
+    } catch (err) {
+      log.error('sensors.ac_infinity_alert_evaluation_failed', {
+        sensorId,
+        error: err instanceof Error ? err.message : 'unknown',
+      });
+    }
 
     // Mirror into SensorAnalytics, the rollup table the analytics
     // endpoints read. It previously had no writer at all, so
@@ -145,6 +171,7 @@ export async function POST(request: NextRequest) {
       vpdKpa: normalized.vpdKpa,
       vpdComputed: normalized.vpdComputed,
       alerts: alerts.length,
+      persistedAlerts,
     });
 
     return addSecurityHeaders(NextResponse.json({

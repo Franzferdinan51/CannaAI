@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 import { publicPlantImage } from '@/lib/plant-images';
+import { resolveEnvTargets } from '@/lib/env-targets';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,16 +26,6 @@ function stats(values: Array<number | null>) {
     average: Math.round((present.reduce((sum, value) => sum + value, 0) / present.length) * 100) / 100,
     count: present.length,
   };
-}
-
-function targetsForStage(stage: string | null | undefined) {
-  if (stage === 'seedling' || stage === 'germination') {
-    return { temperatureF: [70, 80], humidity: [30, 50], vpd: [0.8, 1.2] };
-  }
-  if (stage === 'flowering' || stage === 'ripening') {
-    return { temperatureF: [65, 80], humidity: [40, 55], vpd: [1.0, 1.6] };
-  }
-  return { temperatureF: [65, 85], humidity: [40, 65], vpd: [0.8, 1.4] };
 }
 
 function publicImages(images: unknown) {
@@ -136,7 +127,10 @@ export async function GET() {
       rooms,
       plants: plantSummaries,
       primaryPlant,
-      targets: targetsForStage(primaryPlant?.stage),
+      targets: resolveEnvTargets({
+        stage: primaryPlant?.stage,
+        optimalConditions: primaryPlant?.strain?.optimalConditions,
+      }),
       climate: latestReading
         ? {
             sensorId: latestReading.sensorId,

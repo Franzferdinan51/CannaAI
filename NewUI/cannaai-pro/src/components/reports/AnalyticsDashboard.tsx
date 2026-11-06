@@ -429,7 +429,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       {/* Main Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Environmental Trends Chart */}
-        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Thermometer className="w-5 h-5 text-blue-400" />
             Environmental Trends
@@ -510,7 +510,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </div>
 
         {/* Financial Performance Chart */}
-        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-purple-400" />
             Financial Performance
@@ -544,7 +544,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </div>
 
         {/* Yield Analysis */}
-        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Sprout className="w-5 h-5 text-emerald-400" />
             Yield Analysis by Strain
@@ -561,7 +561,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </div>
 
         {/* Environmental Performance Radar */}
-        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6">
+        <div className="bg-[#1A1D23] border border-gray-800 rounded-xl p-6 min-w-0">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-cyan-400" />
             Environmental Performance

@@ -92,6 +92,49 @@ function normalizeProviderName(provider?: string): string | undefined {
 }
 
 /**
+ * Local-only lock (deployment safety).
+ *
+ * CannaAI is deployed local-first: plant photos and grow data must not be
+ * sent to third-party cloud AI APIs unless the operator explicitly opts in
+ * with CANNAAI_ALLOW_CLOUD_AI=true. While the lock is on (the default),
+ * cloud providers are pruned from provider detection and from the
+ * execution fallback chain entirely — they are not probed, not listed as
+ * primary/fallback, and cannot be promoted back in by a caller-supplied
+ * primaryProvider. Before this lock, simply configuring a cloud API key
+ * (for an unrelated experiment, say) silently armed cloud fallback for
+ * every plant image LM Studio failed to answer.
+ *
+ * "Local" means the operator's own self-hosted endpoints:
+ * - lmstudio — LM Studio on the operator's machine (loopback/tailnet).
+ * - openclaw — the operator's OpenClaw gateway (local process, ACP).
+ * - hermes   — the operator's Hermes agent server (defaults to
+ *   http://127.0.0.1:8642; HERMES_API_URL is the operator's own choice of
+ *   where their agent runs, not a third-party API).
+ * "Cloud" means third-party hosted APIs: minimax (api.minimax.io),
+ * bailian (Alibaba DashScope), and openrouter (openrouter.ai).
+ */
+export const CLOUD_AI_PROVIDERS: ReadonlySet<string> = new Set([
+  'minimax',
+  'bailian',
+  'openrouter',
+]);
+
+export function isCloudAIAllowed(): boolean {
+  // Read at call time, not module load, so the operator (and tests) can
+  // toggle the lock without restarting the process.
+  return process.env.CANNAAI_ALLOW_CLOUD_AI === 'true';
+}
+
+export function isCloudProvider(provider?: string): boolean {
+  const normalized = normalizeProviderName(provider);
+  return normalized !== undefined && CLOUD_AI_PROVIDERS.has(normalized);
+}
+
+export function isLocalProvider(provider?: string): boolean {
+  return !isCloudProvider(provider);
+}
+
+/**
  * Promise timeout helper.
  *
  * AbortSignal.timeout(ms) returns an AbortSignal object immediately; it is not
@@ -219,6 +262,11 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
     }
   }
 
+  // Local-only lock: while it is on, cloud providers are not even probed —
+  // a health check would still send request metadata to a third-party API.
+  const cloudAllowed = isCloudAIAllowed();
+  const cloudDisabled = { r: false as any, isAvailable: false };
+
   // Run local / inexpensive probes together. These timeouts are outer safety
   // rails; provider implementations may also abort their own fetch calls.
   const [lmstudio, openclaw, hermes, bailian, openrouter, minimax] = await Promise.all([
@@ -227,9 +275,9 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
     // can legitimately take longer than an HTTP health probe.
     runCheck(checkOpenClaw(), 20000, 'openclaw'),
     runCheck(checkHermes(), 10000, 'hermes'),
-    runCheck(checkBailian(), 10000, 'bailian'),
-    runCheck(checkOpenRouter(), 20000, 'openrouter'),
-    runCheck(checkMiniMax(), 20000, 'minimax'),
+    cloudAllowed ? runCheck(checkBailian(), 10000, 'bailian') : Promise.resolve(cloudDisabled),
+    cloudAllowed ? runCheck(checkOpenRouter(), 20000, 'openrouter') : Promise.resolve(cloudDisabled),
+    cloudAllowed ? runCheck(checkMiniMax(), 20000, 'minimax') : Promise.resolve(cloudDisabled),
   ]);
 
   const results = [
@@ -277,8 +325,17 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
     },
   ];
 
-  const available = results.filter(result => result.isAvailable);
-  const unavailableRecommendations = results.flatMap(result => result.recommendations);
+  // Local-only lock: prune cloud providers from the reported set entirely,
+  // so no status surface or fallback list can offer them while locked.
+  const effectiveResults = cloudAllowed
+    ? results
+    : results.filter(result => isLocalProvider(result.provider));
+  if (!cloudAllowed) {
+    console.log('[Detection] Local-only lock on: cloud AI providers pruned (set CANNAAI_ALLOW_CLOUD_AI=true to allow)');
+  }
+
+  const available = effectiveResults.filter(result => result.isAvailable);
+  const unavailableRecommendations = effectiveResults.flatMap(result => result.recommendations);
   const primary = available[0] || {
     provider: 'fallback',
     isAvailable: false,
@@ -297,8 +354,8 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
     // Keep all non-primary providers here, not only the available ones. The
     // chat/status APIs use this collection for both available and unavailable
     // diagnostics.
-    fallback: results.filter(result => result.provider !== primary.provider),
-    all: results,
+    fallback: effectiveResults.filter(result => result.provider !== primary.provider),
+    all: effectiveResults,
     recommendations: primary.isAvailable
       ? []
       : primary.recommendations,
@@ -427,7 +484,7 @@ export async function executeAIWithFallback(
     : { ...imageOrOptions, ...legacyOptions };
 
   const prompt = getPromptFromMessages(messages);
-  const providers = [
+  const providerChain = [
     {
       name: 'lmstudio',
       fn: () => executeWithLMStudio(messages, {
@@ -474,6 +531,15 @@ export async function executeAIWithFallback(
       }),
     },
   ];
+
+  // Local-only lock (default on): cloud providers are pruned from the
+  // fallback chain entirely unless the operator set
+  // CANNAAI_ALLOW_CLOUD_AI=true. Filtering runs before primary promotion,
+  // so a caller-supplied primaryProvider cannot resurrect a pruned cloud
+  // provider.
+  const providers = isCloudAIAllowed()
+    ? providerChain
+    : providerChain.filter(provider => isLocalProvider(provider.name));
 
   const requestedPrimary = normalizeProviderName(options.primaryProvider);
   if (requestedPrimary) {

@@ -1,17 +1,33 @@
 /**
  * Regression tests for the legacy LM Studio adapter used by /api/chat.
+ *
+ * The adapter is the function module `@/lib/ai-provider-lmstudio`. (The
+ * class-based `@/lib/ai-providers/lmstudio-provider` was deleted in the
+ * provider consolidation; its one remaining test here guarded a behavior
+ * the function adapter does not share — an explicitly selected text-only
+ * model plus another available vision model: the class refused, the
+ * function adapter substitutes the vision model. That divergence is a
+ * provider-behavior question, tracked outside this suite.)
+ *
+ * The module keeps a 60-second model-catalog cache, so each test re-imports
+ * a fresh module instance; otherwise one test's catalog would leak into the
+ * next test's discovery.
  */
 
-import {
-  executeWithLMStudio,
-  getConfiguredModels,
-  setModel,
-} from '@/lib/ai-provider-lmstudio';
-import { LMStudioProvider } from '@/lib/ai-providers/lmstudio-provider';
+type LMStudioModule = typeof import('@/lib/ai-provider-lmstudio');
+
+let executeWithLMStudio: LMStudioModule['executeWithLMStudio'];
+let getConfiguredModels: LMStudioModule['getConfiguredModels'];
+let setModel: LMStudioModule['setModel'];
 
 describe('legacy LM Studio runtime configuration', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    jest.resetModules();
     jest.restoreAllMocks();
+    const mod = await import('@/lib/ai-provider-lmstudio');
+    executeWithLMStudio = mod.executeWithLMStudio;
+    getConfiguredModels = mod.getConfiguredModels;
+    setModel = mod.setModel;
     delete process.env.LM_STUDIO_MODEL;
     delete process.env.LM_STUDIO_TEXT_MODEL;
     delete process.env.LM_STUDIO_VISION_MODEL;
@@ -204,40 +220,6 @@ describe('legacy LM Studio runtime configuration', () => {
       [{ role: 'user', content: 'Inspect this leaf' }],
       { model: 'text-only-model', image: 'data:image/jpeg;base64,abc123', useVision: true },
     )).rejects.toThrow('advertised as text-only');
-
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-
-  test('does not replace an explicit text-only model when another vision model exists', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ models: [
-          { key: 'text-only-model', type: 'llm', capabilities: { vision: false } },
-          { key: 'other-vision-model', type: 'llm', capabilities: { vision: true } },
-        ] }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [
-          { id: 'text-only-model' },
-          { id: 'other-vision-model' },
-        ] }),
-      } as Response);
-
-    const provider = new LMStudioProvider({
-      url: 'http://localhost:1234',
-      apiKey: '',
-      model: 'text-only-model',
-    });
-
-    await expect(provider.execute({
-      messages: [{
-        role: 'user',
-        content: 'Inspect this leaf',
-        image: 'data:image/jpeg;base64,abc123',
-      }],
-    })).rejects.toThrow('no vision-capable model');
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

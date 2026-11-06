@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { analyzePlantHealth } from '@/lib/ai';
+import { landAnalysisOnPlant } from '@/lib/analysis-landing';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -114,13 +115,39 @@ export async function POST(request: NextRequest, { params }: Params) {
       createdAt: new Date().toISOString(),
     };
 
-    await prisma.plantAnalysis.create({
+    const savedAnalysis = await prisma.plantAnalysis.create({
       data: {
         plantId: id,
         request: { ...input, image: undefined },
         result,
         provider: analysis.provider || 'local-first',
         imageInfo: { mimeType: imageMimeType, sizeBytes: imageSizeBytes },
+      },
+    });
+
+    // Land the result on the plant itself (health analytics row, analysis
+    // history entry, Plant.health). Guarded internally: a landing failure
+    // never fails this analysis.
+    await landAnalysisOnPlant({
+      plantId: id,
+      analysisId: savedAnalysis.id,
+      analysisType: 'manual_health',
+      source: 'plant_analyze',
+      provider: analysis.provider || 'local-first',
+      diagnosis: analysis.diagnosis,
+      healthScore: result.healthScore,
+      confidence: analysis.confidence,
+      urgency: analysis.urgency,
+      issues: analysis.potentialIssues,
+      recommendations: analysis.recommendations,
+      historyData: {
+        diagnosis: analysis.diagnosis,
+        confidence: analysis.confidence,
+        recommendations: analysis.recommendations,
+        urgency: analysis.urgency,
+        potentialIssues: analysis.potentialIssues,
+        suggestedActions: analysis.suggestedActions,
+        nextSteps: analysis.nextSteps,
       },
     });
 

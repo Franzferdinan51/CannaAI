@@ -4,6 +4,7 @@ import { normalizeBase64ImageData, base64ToBuffer } from '@/lib/base64';
 import { executeAIWithFallback } from '@/lib/ai-provider-detection';
 import { runTriageStage } from '@/lib/diagnosis-pipeline';
 import { withRequest } from '@/lib/logger';
+import { debugEndpointsEnabled } from '@/lib/debug-endpoints';
 
 // processImageForVisionModel is loaded dynamically to avoid sharp/heic-convert
 // crashing on android-arm64 server
@@ -28,6 +29,9 @@ function addSecurityHeaders(response: NextResponse) {
  * phone/PWA before committing to a full analysis.
  */
 export async function POST(request: NextRequest) {
+  if (!debugEndpointsEnabled()) {
+    return addSecurityHeaders(NextResponse.json({ error: 'Not found' }, { status: 404 }));
+  }
   const log = withRequest(request);
   try {
     const body = await request.json();

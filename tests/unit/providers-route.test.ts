@@ -3,10 +3,6 @@
 const mockCheckLMStudio = jest.fn();
 const mockDetectAvailableProviders = jest.fn();
 
-jest.mock('@/lib/ai-providers/unified-ai', () => ({
-  getUnifiedAI: () => ({ getProviderStatus: () => [] }),
-}));
-
 jest.mock('@/lib/ai-provider-detection', () => ({
   checkLMStudio: (...args: unknown[]) => mockCheckLMStudio(...args),
   detectAvailableProviders: (...args: unknown[]) => mockDetectAvailableProviders(...args),
@@ -23,7 +19,13 @@ describe('/api/providers redirect', () => {
     const response = await GET(new Request('https://phone.example:5174/api/providers') as any);
 
     expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe('https://phone.example:5174/api/ai/providers');
+    // The route answers with a path-only Location on purpose: resolved
+    // against the request URL it lands on the client's own origin, instead
+    // of leaking the backend's internal origin in an absolute URL.
+    const location = response.headers.get('location');
+    expect(location).toBeTruthy();
+    expect(new URL(location!, 'https://phone.example:5174').href)
+      .toBe('https://phone.example:5174/api/ai/providers');
   });
 });
 

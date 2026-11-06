@@ -85,8 +85,12 @@ describe('Vite frontend runtime contracts', () => {
       'utf8'
     );
 
-    expect(viteConfig).toContain("host: '127.0.0.1'");
-    expect(viteConfig).not.toContain("allowedHosts: true");
+    // The host is env-overridable for the Tailscale deployment, but the
+    // default must stay loopback and the host allowlist must stay an
+    // explicit list — never the wide-open `allowedHosts: true`.
+    expect(viteConfig).toContain("CANNAAI_FRONTEND_HOST || '127.0.0.1'");
+    expect(viteConfig).toContain("const allowedHosts = ['localhost', '127.0.0.1']");
+    expect(viteConfig).not.toContain('allowedHosts: true');
     expect(serviceWorker).not.toContain("'/index.css'");
   });
 });

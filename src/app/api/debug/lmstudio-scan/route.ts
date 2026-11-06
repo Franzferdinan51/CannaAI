@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { debugEndpointsEnabled } from '@/lib/debug-endpoints';
 import fs from 'fs';
 import path from 'path';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
@@ -18,10 +19,6 @@ const TEST_PATHS = [
   path.join(process.env.HOME || '', 'Library', 'Application Support', 'LM-Studio', 'models'),
   path.join(process.env.HOME || '', '.local', 'share', 'LM-Studio', 'models'),
 ];
-
-function debugEndpointsEnabled(): boolean {
-  return process.env.NODE_ENV === 'development' || process.env.CANNAAI_ENABLE_DEBUG_ENDPOINTS === 'true';
-}
 
 async function scanDirectory(dirPath: string, depth: number = 0): Promise<any> {
   const maxDepth = 5;

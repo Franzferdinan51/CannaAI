@@ -1,23 +1,24 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
+import { getLatestSensorMetric } from '@/lib/sensor-metrics';
+import { unavailableApiResponse } from '@/lib/unavailable-api';
 
+// Single-value shortcut over the real sensor fleet (same resolution as
+// /api/sensors/data/latest). Metrics no installed sensor reports — today
+// that is co2 and light — answer with the honest unavailable response
+// instead of a not-found error or an invented number.
+// VPD is served exactly as the device reported it in the stored payload;
+// it is never recomputed locally (the previous route ran a °C saturation
+// formula over °F values and produced garbage).
 export async function GET() {
   await ensureSeedData();
-  // Calculate VPD from temp and humidity
-  const temp = await prisma.sensorReading.findFirst({ 
-    where: { sensorId: 'sensor_temp' },
-    orderBy: { timestamp: 'desc' }
+  const metric = await getLatestSensorMetric('vpd');
+  if (!metric) return unavailableApiResponse('VPD sensing');
+  return NextResponse.json({
+    success: true,
+    value: metric.value,
+    unit: 'kPa',
+    sensorId: metric.sensorId,
+    timestamp: metric.timestamp,
   });
-  const humidity = await prisma.sensorReading.findFirst({ 
-    where: { sensorId: 'sensor_humidity' },
-    orderBy: { timestamp: 'desc' }
-  });
-  
-  if (!temp || !humidity) return NextResponse.json({ success: false, error: 'Sensors not found' });
-  
-  // Simple VPD calculation (kPa)
-  const vpd = ((100 - humidity.value) / 100) * (0.61078 * Math.exp((17.27 * temp.value) / (temp.value + 237.3)));
-  
-  return NextResponse.json({ success: true, value: vpd.toFixed(2), unit: 'kPa' });
 }

@@ -389,22 +389,23 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
     }
   }, []);
 
-  // Check AI connection
+  // Check AI connection. Status comes from the backend's own provider
+  // detection (/api/ai/providers): the backend reaches LM Studio through
+  // its server-side tunnel, so the answer is correct from any browser.
+  // (The old probe keyed off the browser-side lmStudio URL setting, which
+  // defaults to localhost:1234 and means a different machine everywhere.)
   const checkConnection = useCallback(async () => {
     try {
-      const configuredUrl = settings.providers.lmStudio.url.trim();
-      const statusUrl = configuredUrl
-        ? `${apiUrl('/chat')}?baseUrl=${encodeURIComponent(configuredUrl)}`
-        : apiUrl('/chat');
-      const response = await fetch(statusUrl, {
+      const response = await fetch(apiUrl('/ai/providers'), {
         headers: apiAuthHeaders(),
         signal: createTimeoutSignal(getProviderConnectionTimeoutMs('lmstudio')),
       });
       const data = await response.json();
+      const primary = data?.liveDetection?.primary;
 
-      if (data.success && data.currentProvider !== 'fallback') {
+      if (data.success && primary) {
         setIsConnected(true);
-        setCurrentProvider(data.currentProvider);
+        setCurrentProvider(primary);
       } else {
         setIsConnected(false);
         setCurrentProvider('fallback');
@@ -413,7 +414,7 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
       setIsConnected(false);
       setCurrentProvider('fallback');
     }
-  }, [settings.providers.lmStudio.url]);
+  }, []);
 
   // Send message to AI
   const sendMessage = useCallback(async (
@@ -951,22 +952,23 @@ export function useChat({ initialConversation, sensorData = {} }: UseChatOptions
     return success;
   }, [testProvider]);
 
-  // Get provider status
+  // Get provider status — same backend detection probe as checkConnection,
+  // normalized to keep the legacy { success, currentProvider } shape.
   const getProviderStatus = useCallback(async () => {
     try {
-      const configuredUrl = settings.providers.lmStudio.url.trim();
-      const statusUrl = configuredUrl
-        ? `${apiUrl('/chat')}?baseUrl=${encodeURIComponent(configuredUrl)}`
-        : apiUrl('/chat');
-      const response = await fetch(statusUrl, {
+      const response = await fetch(apiUrl('/ai/providers'), {
         headers: apiAuthHeaders(),
         signal: createTimeoutSignal(getProviderConnectionTimeoutMs('lmstudio')),
       });
-      return await response.json();
+      const data = await response.json();
+      return {
+        ...data,
+        currentProvider: data?.liveDetection?.primary ?? 'fallback',
+      };
     } catch {
-      return { success: false, error: 'Connection failed' };
+      return { success: false, error: 'Connection failed', currentProvider: 'fallback' };
     }
-  }, [settings.providers.lmStudio.url]);
+  }, []);
 
   // Add notification
   const addNotification = useCallback((notification: Omit<ChatNotification, 'id' | 'timestamp' | 'read'>) => {

@@ -20,6 +20,7 @@ import {
 } from '@/lib/ai-provider-detection';
 import { checkHermes, executeWithHermes } from '@/lib/ai-provider-hermes';
 import * as minimaxProvider from '@/lib/ai-provider-minimax';
+import * as openclawProvider from '@/lib/ai-provider-openclaw';
 
 describe('AI Provider Detection', () => {
   beforeEach(() => {
@@ -43,6 +44,11 @@ describe('AI Provider Detection', () => {
     delete process.env.VERCEL;
     delete process.env.NETLIFY;
     delete process.env.AWS_LAMBDA_FUNCTION_NAME;
+    // Most of this suite exercises the full provider chain, including
+    // cloud fallbacks. The deployment local-only lock is on by default,
+    // so opt in explicitly here; the lock itself has a dedicated test
+    // below that turns it back off.
+    process.env.CANNAAI_ALLOW_CLOUD_AI = 'true';
     process.env.OPENCLAW_AGENT_COMMAND = '/definitely/missing/cannaai-openclaw-test';
     (checkHermes as jest.Mock).mockResolvedValue({
       isAvailable: false,
@@ -470,6 +476,30 @@ describe('AI Provider Detection', () => {
         image: image,
         imageBase64: image,
       }));
+    });
+
+    test('local-only lock prunes cloud providers unless CANNAAI_ALLOW_CLOUD_AI=true', async () => {
+      delete process.env.CANNAAI_ALLOW_CLOUD_AI;
+      const executeMiniMax = jest.spyOn(minimaxProvider, 'executeWithMiniMax').mockResolvedValue({
+        content: 'MiniMax vision answer',
+        provider: 'minimax',
+      });
+      // Keep the local OpenClaw attempt deterministic: the real executor
+      // spawns a (deliberately missing) CLI binary, whose async ENOENT
+      // otherwise leaks into this test as an unhandled rejection.
+      jest.spyOn(openclawProvider, 'executeWithOpenClaw')
+        .mockRejectedValue(new Error('OpenClaw unavailable'));
+
+      // Even an explicit primaryProvider request must not resurrect a
+      // pruned cloud provider: with every local provider failing, the
+      // chain must end in AIProviderUnavailableError without ever
+      // invoking MiniMax.
+      await expect(
+        executeAIWithFallback('Inspect this plant', 'data:image/jpeg;base64,phone-photo', {
+          primaryProvider: 'minimax',
+        })
+      ).rejects.toThrow(AIProviderUnavailableError);
+      expect(executeMiniMax).not.toHaveBeenCalled();
     });
 
     test('should throw AIProviderUnavailableError when no providers configured', async () => {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { debugEndpointsEnabled } from '@/lib/debug-endpoints';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { createTimeoutSignal } from '@/lib/abort-signal';
 
@@ -6,10 +7,6 @@ const lmStudioHeaders = () => {
   const apiKey = getLMStudioApiKey();
   return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
 };
-
-function debugEndpointsEnabled(): boolean {
-  return process.env.NODE_ENV === 'development' || process.env.CANNAAI_ENABLE_DEBUG_ENDPOINTS === 'true';
-}
 
 // Export configuration for dual-mode compatibility
 // This diagnostic performs live localhost requests and is runtime-only.
