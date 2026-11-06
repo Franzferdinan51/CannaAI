@@ -17,6 +17,7 @@ import {
   PlantImage,
   PlantTask,
   PlantAction,
+  PlantLocation,
   SearchFacets
 } from './types';
 import { API_ORIGIN } from '../../lib/api-origin';
@@ -232,6 +233,33 @@ class PlantsAPIClient {
     } catch (error) {
       console.error('Failed to fetch plant inventory:', error);
       throw error instanceof Error ? error : new Error('Unknown error fetching plant inventory');
+    }
+  }
+
+  // Grow rooms / locations
+  async getRooms(): Promise<PlantLocation[]> {
+    try {
+      const response: AxiosResponse<PlantAPIResponse> = await this.api.get('/api/rooms', { timeout: PLANTS_READ_TIMEOUT_MS });
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to fetch grow rooms');
+      }
+      const rooms = Array.isArray(response.data.data) ? response.data.data : [];
+      return rooms.map((room: any) => ({
+        id: String(room.id),
+        name: String(room.name || 'Grow room'),
+        type: 'tent' as const,
+        environment: {
+          idealTemperature: { min: 65, max: 85 },
+          idealHumidity: { min: 30, max: 65 },
+          idealPH: { min: 5.8, max: 6.5 },
+          idealEC: { min: 1.0, max: 2.0 },
+          lightSchedule: { vegetativeHours: 18, floweringHours: 12, currentSchedule: 18 },
+          medium: 'soil' as const,
+        },
+      }));
+    } catch (error) {
+      console.error('Failed to fetch grow rooms:', error);
+      throw error instanceof Error ? error : new Error('Unknown error fetching grow rooms');
     }
   }
 

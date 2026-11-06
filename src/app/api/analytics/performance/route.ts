@@ -103,18 +103,24 @@ export async function GET(request: Request) {
       : Prisma.empty;
     const trends = await prisma.$queryRaw`
       SELECT
-        strftime('%Y-%m-%d %H:00:00', timestamp) as hour,
+        strftime('%Y-%m-%d %H:00:00', timestamp / 1000, 'unixepoch') as hour,
         endpoint,
         AVG(responseTime) as avgResponseTime,
         COUNT(*) as requestCount,
         SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successCount
       FROM APIPerformanceMetrics
-      WHERE timestamp >= ${startDate.toISOString()} AND timestamp <= ${endDate.toISOString()}
+      WHERE timestamp >= ${startDate.getTime()} AND timestamp <= ${endDate.getTime()}
       ${endpointFilter}
       GROUP BY hour, endpoint
       ORDER BY hour ASC
       LIMIT 100
     ` as any[];
+
+    // Prisma returns COUNT(*) as BigInt on SQLite; JSON cannot serialize it.
+    for (const row of trends) {
+      row.requestCount = Number(row.requestCount);
+      row.successCount = Number(row.successCount ?? 0);
+    }
 
     // Calculate 95th percentile response time
     const sortedResponseTimes = metrics.map(m => m.responseTime).sort((a, b) => a - b);

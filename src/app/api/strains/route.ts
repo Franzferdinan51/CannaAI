@@ -1,256 +1,270 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
+import { ensureSeedData } from '@/lib/seed-data';
 
-// Export configuration for dual-mode compatibility
-export const dynamic = 'auto';
-export const revalidate = false;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-// Default strains data
-const defaultStrains = [
-  {
-    id: 'strain_001',
-    name: 'Blue Dream',
-    type: 'Hybrid (60% Sativa)',
-    lineage: 'Blueberry x Haze',
-    description: 'Popular hybrid known for balanced effects and resilience',
-    isPurpleStrain: false,
-    optimalConditions: {
-      ph: { range: [6.0, 6.5], medium: 'soil' },
-      temperature: { veg: [22, 26], flower: [20, 24] },
-      humidity: { veg: [60, 70], flower: [40, 50] },
-      light: { veg: '18/6', flower: '12/12' }
-    },
-    commonDeficiencies: ['Magnesium', 'Calcium'],
-    specialNotes: ''
-  },
-  {
-    id: 'strain_002',
-    name: 'OG Kush',
-    type: 'Hybrid (75% Indica)',
-    lineage: 'Chemdawg x Hindu Kush',
-    description: 'Classic strain with high resin production',
-    isPurpleStrain: false,
-    optimalConditions: {
-      ph: { range: [5.8, 6.2], medium: 'soil' },
-      temperature: { veg: [20, 24], flower: [18, 22] },
-      humidity: { veg: [50, 60], flower: [30, 40] },
-      light: { veg: '18/6', flower: '12/12' }
-    },
-    commonDeficiencies: ['Phosphorus', 'Potassium'],
-    specialNotes: ''
-  },
-  {
-    id: 'strain_003',
-    name: 'Granddaddy Purple',
-    type: 'Indica (100%)',
-    lineage: 'Purple Urkle x Big Bud',
-    description: 'Famous purple strain known for deep coloration and relaxing effects',
-    isPurpleStrain: true,
-    optimalConditions: {
-      ph: { range: [6.0, 6.5], medium: 'soil' },
-      temperature: { veg: [20, 24], flower: [18, 22] },
-      humidity: { veg: [50, 60], flower: [30, 40] },
-      light: { veg: '18/6', flower: '12/12' }
-    },
-    commonDeficiencies: ['Calcium', 'Iron'],
-    specialNotes: 'Naturally develops purple/pink pigmentation during flowering due to anthocyanins. This is not a nutrient deficiency but a genetic trait. Magnesium deficiency symptoms must be carefully distinguished from natural coloration.'
+const STRING_FIELDS = [
+  'name',
+  'type',
+  'lineage',
+  'description',
+  'growingDifficulty',
+] as const;
+
+const NUMBER_FIELDS = ['floweringTime', 'thcLevel', 'cbdLevel'] as const;
+
+const JSON_FIELDS = [
+  'optimalConditions',
+  'commonDeficiencies',
+  'characteristics',
+  'effects',
+  'medicalUses',
+  'flavors',
+  'aroma',
+] as const;
+
+type StrainRecord = Awaited<ReturnType<typeof prisma.strain.findFirst>>;
+
+function serializeStrain(strain: NonNullable<StrainRecord>) {
+  const characteristics =
+    strain.characteristics && typeof strain.characteristics === 'object' && !Array.isArray(strain.characteristics)
+      ? (strain.characteristics as Record<string, unknown>)
+      : {};
+  return {
+    ...strain,
+    commonDeficiencies: Array.isArray(strain.commonDeficiencies) ? strain.commonDeficiencies : [],
+    specialNotes: typeof characteristics.specialNotes === 'string' ? characteristics.specialNotes : '',
+  };
+}
+
+function strainDataFromBody(body: Record<string, unknown>, partial: boolean) {
+  const data: Record<string, unknown> = {};
+
+  for (const field of STRING_FIELDS) {
+    if (body[field] !== undefined) {
+      const value = typeof body[field] === 'string' ? (body[field] as string).trim() : body[field];
+      if (!partial && (field === 'name' || field === 'type') && !value) continue;
+      data[field] = value === '' ? null : value;
+    }
   }
-];
+  for (const field of NUMBER_FIELDS) {
+    if (body[field] !== undefined) {
+      if (body[field] === null || body[field] === '') data[field] = null;
+      else {
+        const value = Number(body[field]);
+        if (!Number.isFinite(value)) throw new Error(`${field} must be a number`);
+        data[field] = field === 'floweringTime' ? Math.round(value) : value;
+      }
+    }
+  }
+  for (const field of JSON_FIELDS) {
+    if (body[field] !== undefined) data[field] = body[field];
+  }
+  if (body.isPurpleStrain !== undefined) data.isPurpleStrain = Boolean(body.isPurpleStrain);
 
-// In-memory storage for strains (in production, use database)
-let strains = [...defaultStrains];
+  // The historical UI used a top-level specialNotes field. The database keeps
+  // strain facts in characteristics, so preserve the note there instead of
+  // dropping it at the API boundary.
+  if (body.specialNotes !== undefined) {
+    const existing =
+      data.characteristics && typeof data.characteristics === 'object' && !Array.isArray(data.characteristics)
+        ? (data.characteristics as Record<string, unknown>)
+        : {};
+    data.characteristics = { ...existing, specialNotes: body.specialNotes || '' };
+  }
+
+  return data;
+}
+
+function errorResponse(error: unknown, fallback: string, status = 500) {
+  const message = error instanceof Error ? error.message : fallback;
+  const isValidation = /must be|required/i.test(message);
+  return NextResponse.json(
+    { success: false, error: message || fallback },
+    { status: isValidation ? 400 : status },
+  );
+}
 
 export async function GET(request: NextRequest) {
-  // For static export, provide client-side compatibility response
-  const isStaticExport = process.env.BUILD_MODE === 'static';
-  if (isStaticExport) {
+  if (process.env.BUILD_MODE === 'static') {
     return NextResponse.json({
       success: false,
       message: 'This API is handled client-side in static export mode.',
       clientSide: true,
-      buildMode: 'static'
+      buildMode: 'static',
     });
   }
 
   try {
+    await ensureSeedData();
     const id = request.nextUrl.searchParams.get('id');
     if (id) {
-      const strain = strains.find((candidate) => candidate.id === id);
+      const strain = await prisma.strain.findUnique({ where: { id } });
       if (!strain) {
         return NextResponse.json({ success: false, error: 'Strain not found' }, { status: 404 });
       }
-      return NextResponse.json({ success: true, data: strain, strain });
+      const serialized = serializeStrain(strain);
+      return NextResponse.json({ success: true, data: serialized, strain: serialized });
     }
 
+    const strains = (await prisma.strain.findMany({ orderBy: { name: 'asc' } })).map(serializeStrain);
     return NextResponse.json({
       success: true,
+      data: { strains, total: strains.length },
       strains,
-      count: strains.length
+      count: strains.length,
     });
   } catch (error) {
     console.error('Get strains error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch strains' },
-      { status: 500 }
-    );
+    return errorResponse(error, 'Failed to fetch strains');
   }
 }
 
 export async function POST(request: NextRequest) {
-  // For static export, provide client-side compatibility response
-  const isStaticExport = process.env.BUILD_MODE === 'static';
-  if (isStaticExport) {
+  if (process.env.BUILD_MODE === 'static') {
     return NextResponse.json({
       success: false,
       message: 'This API is handled client-side in static export mode.',
       clientSide: true,
-      buildMode: 'static'
+      buildMode: 'static',
     });
   }
 
   try {
-    const body = await request.json();
-    const { name, type, lineage, description, isPurpleStrain, optimalConditions, commonDeficiencies, specialNotes } = body;
-
-    // Validate required fields
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Missing required field: name' },
-        { status: 400 }
-      );
+    await ensureSeedData();
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    if (typeof body.name !== 'string' || !body.name.trim()) {
+      return NextResponse.json({ success: false, error: 'Missing required field: name' }, { status: 400 });
     }
 
-    // Create new strain
-    const newStrain = {
-      id: `strain_${Date.now()}`,
-      name,
-      type: type || 'Hybrid',
-      lineage: lineage || '',
-      description: description || '',
-      isPurpleStrain: isPurpleStrain || false,
-      optimalConditions: optimalConditions || {
-        ph: { range: [6.0, 6.5], medium: 'soil' },
-        temperature: { veg: [22, 26], flower: [20, 24] },
-        humidity: { veg: [60, 70], flower: [40, 50] },
-        light: { veg: '18/6', flower: '12/12' }
+    const data = strainDataFromBody(body, false);
+    const created = await prisma.strain.create({
+      data: {
+        name: String(data.name),
+        type: typeof data.type === 'string' && data.type ? data.type : 'Hybrid',
+        lineage: typeof data.lineage === 'string' ? data.lineage : null,
+        description: typeof data.description === 'string' ? data.description : null,
+        isPurpleStrain: Boolean(data.isPurpleStrain),
+        optimalConditions: (data.optimalConditions as never) ?? undefined,
+        commonDeficiencies: (data.commonDeficiencies as never) ?? [],
+        characteristics: (data.characteristics as never) ?? undefined,
+        growingDifficulty: typeof data.growingDifficulty === 'string' ? data.growingDifficulty : null,
+        floweringTime: typeof data.floweringTime === 'number' ? data.floweringTime : null,
+        thcLevel: typeof data.thcLevel === 'number' ? data.thcLevel : null,
+        cbdLevel: typeof data.cbdLevel === 'number' ? data.cbdLevel : null,
+        effects: (data.effects as never) ?? undefined,
+        medicalUses: (data.medicalUses as never) ?? undefined,
+        flavors: (data.flavors as never) ?? undefined,
+        aroma: (data.aroma as never) ?? undefined,
       },
-      commonDeficiencies: commonDeficiencies || [],
-      specialNotes: specialNotes || '',
-      createdAt: new Date().toISOString()
-    };
-
-    // Add to strains array
-    strains.push(newStrain);
-
-    return NextResponse.json({
-      success: true,
-      strain: newStrain,
-      message: 'Strain created successfully'
     });
-
+    const serialized = serializeStrain(created);
+    return NextResponse.json(
+      { success: true, data: serialized, strain: serialized, message: 'Strain created successfully' },
+      { status: 201 },
+    );
   } catch (error) {
     console.error('Create strain error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create strain' },
-      { status: 500 }
-    );
+    return errorResponse(error, 'Failed to create strain');
   }
 }
 
 export async function PUT(request: NextRequest) {
-  // For static export, provide client-side compatibility response
-  const isStaticExport = process.env.BUILD_MODE === 'static';
-  if (isStaticExport) {
+  if (process.env.BUILD_MODE === 'static') {
     return NextResponse.json({
       success: false,
       message: 'This API is handled client-side in static export mode.',
       clientSide: true,
-      buildMode: 'static'
+      buildMode: 'static',
     });
   }
 
   try {
-    const body = await request.json();
-    const { id, ...updateData } = body;
-
+    await ensureSeedData();
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const id = typeof body.id === 'string' ? body.id : request.nextUrl.searchParams.get('id');
     if (!id) {
-      return NextResponse.json(
-        { error: 'Missing required field: id' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Missing required field: id' }, { status: 400 });
     }
 
-    // Find and update strain
-    const strainIndex = strains.findIndex(strain => strain.id === id);
-    if (strainIndex === -1) {
-      return NextResponse.json(
-        { error: 'Strain not found' },
-        { status: 404 }
-      );
+    const existing = await prisma.strain.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ success: false, error: 'Strain not found' }, { status: 404 });
     }
 
-    strains[strainIndex] = { ...strains[strainIndex], ...updateData };
+    const data = strainDataFromBody(body, true);
+    // If only specialNotes changed, merge it into the stored characteristics
+    // instead of replacing unrelated characteristics with a one-key object.
+    if (body.specialNotes !== undefined && body.characteristics === undefined) {
+      const current =
+        existing.characteristics && typeof existing.characteristics === 'object' && !Array.isArray(existing.characteristics)
+          ? (existing.characteristics as Record<string, unknown>)
+          : {};
+      data.characteristics = { ...current, specialNotes: body.specialNotes || '' };
+    }
 
+    const updated = await prisma.strain.update({ where: { id }, data: data as never });
+    const serialized = serializeStrain(updated);
     return NextResponse.json({
       success: true,
-      strain: strains[strainIndex],
-      message: 'Strain updated successfully'
+      data: serialized,
+      strain: serialized,
+      message: 'Strain updated successfully',
     });
-
   } catch (error) {
     console.error('Update strain error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update strain' },
-      { status: 500 }
-    );
+    return errorResponse(error, 'Failed to update strain');
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  // For static export, provide client-side compatibility response
-  const isStaticExport = process.env.BUILD_MODE === 'static';
-  if (isStaticExport) {
+  if (process.env.BUILD_MODE === 'static') {
     return NextResponse.json({
       success: false,
       message: 'This API is handled client-side in static export mode.',
       clientSide: true,
-      buildMode: 'static'
+      buildMode: 'static',
     });
   }
 
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
+    await ensureSeedData();
+    const id = request.nextUrl.searchParams.get('id');
     if (!id) {
       return NextResponse.json(
-        { error: 'Missing required parameter: id' },
-        { status: 400 }
+        { success: false, error: 'Missing required parameter: id' },
+        { status: 400 },
       );
     }
 
-    // Find and delete strain
-    const strainIndex = strains.findIndex(strain => strain.id === id);
-    if (strainIndex === -1) {
+    const existing = await prisma.strain.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ success: false, error: 'Strain not found' }, { status: 404 });
+    }
+
+    const plantCount = await prisma.plant.count({ where: { strainId: id } });
+    if (plantCount > 0) {
       return NextResponse.json(
-        { error: 'Strain not found' },
-        { status: 404 }
+        {
+          success: false,
+          error: `This strain is used by ${plantCount} plant${plantCount === 1 ? '' : 's'} and cannot be removed yet.`,
+        },
+        { status: 409 },
       );
     }
 
-    const deletedStrain = strains.splice(strainIndex, 1)[0];
-
+    const deleted = await prisma.strain.delete({ where: { id } });
+    const serialized = serializeStrain(deleted);
     return NextResponse.json({
       success: true,
-      strain: deletedStrain,
-      message: 'Strain deleted successfully'
+      data: serialized,
+      strain: serialized,
+      message: 'Strain deleted successfully',
     });
-
   } catch (error) {
     console.error('Delete strain error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete strain' },
-      { status: 500 }
-    );
+    return errorResponse(error, 'Failed to delete strain');
   }
 }

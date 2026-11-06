@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
+import { publicPlantImage } from '@/lib/plant-images';
 
 export async function POST(request: NextRequest) {
   await ensureSeedData();
@@ -29,7 +30,19 @@ export async function POST(request: NextRequest) {
   const skip = Math.max(Number(filter.offset) || 0, 0);
   const candidates = await prisma.plant.findMany({
     where,
-    include: { strain: { select: { id: true, name: true, type: true } } },
+    include: {
+      strain: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          lineage: true,
+          description: true,
+          isPurpleStrain: true,
+        },
+      },
+      room: { select: { id: true, name: true, active: true } },
+    },
   });
   const filtered = candidates.filter((plant: any) => {
     const health = plant.health && typeof plant.health === 'object' ? plant.health : {};
@@ -48,7 +61,15 @@ export async function POST(request: NextRequest) {
     return sortOrder === 'asc' ? comparison : -comparison;
   });
   const total = filtered.length;
-  const plants = filtered.slice(skip, skip + take);
+  const plants = filtered.slice(skip, skip + take).map((plant: any) => ({
+    ...plant,
+    images: Array.isArray(plant.images)
+      ? plant.images.map((image: unknown) =>
+          image && typeof image === 'object' ? publicPlantImage(image as Record<string, unknown>) : image,
+        )
+      : plant.images,
+    location: plant.room ? { id: plant.room.id, name: plant.room.name, type: 'tent', environment: {} } : null,
+  }));
   return NextResponse.json({
     success: true,
     data: { plants, facets: {}, inventory: { totalPlants: total } },

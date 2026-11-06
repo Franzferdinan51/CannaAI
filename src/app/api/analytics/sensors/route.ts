@@ -85,7 +85,7 @@ export async function GET(request: Request) {
     // Get time-series data for charts
     const timeSeriesData = await prisma.$queryRaw`
       SELECT
-        strftime('%Y-%m-%d %H:00:00', timestamp) as hour,
+        strftime('%Y-%m-%d %H:00:00', timestamp / 1000, 'unixepoch') as hour,
         sensorId,
         AVG(reading) as avgReading,
         MIN(reading) as minReading,
@@ -93,11 +93,14 @@ export async function GET(request: Request) {
         AVG(anomalyScore) as avgAnomaly,
         COUNT(*) as count
       FROM SensorAnalytics
-      WHERE timestamp >= ${startDate.toISOString()} AND timestamp <= ${endDate.toISOString()}
+      WHERE timestamp >= ${startDate.getTime()} AND timestamp <= ${endDate.getTime()}
       ${sensorId ? Prisma.sql`AND sensorId = ${sensorId}` : Prisma.empty}
       GROUP BY hour, sensorId
       ORDER BY hour ASC
     ` as any[];
+
+    // Prisma returns COUNT(*) as BigInt on SQLite; JSON cannot serialize it.
+    for (const row of timeSeriesData) row.count = Number(row.count);
 
     // Get sensor-specific stats
     const sensorStats: Record<string, any> = {};

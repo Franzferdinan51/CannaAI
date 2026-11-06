@@ -63,13 +63,20 @@ export async function POST(request: NextRequest) {
     }
 
     const sensorId = acInfinitySensorId(deviceId);
+    const sensorName = deviceName || (deviceId ? `AC Infinity - ${deviceId}` : 'AC Infinity Controller');
+    // The controller name is also the room name in Duckets' setup
+    // ("3x3 Tent"). Link the sensor to that room so room views, plant
+    // locations, and the dashboard all agree about where a reading came from.
+    const rooms = await prisma.room.findMany({ select: { id: true, name: true } });
+    const matchingRoom = rooms.find((room) => room.name.toLowerCase() === sensorName.toLowerCase());
     let sensor = await prisma.sensor.findUnique({ where: { id: sensorId } });
     if (!sensor) {
       sensor = await prisma.sensor.create({
         data: {
           id: sensorId,
-          name: deviceName || (deviceId ? `AC Infinity - ${deviceId}` : 'AC Infinity Controller'),
+          name: sensorName,
           type: 'environmental',
+          locationId: matchingRoom?.id,
           enabled: true,
         },
       });
@@ -95,7 +102,12 @@ export async function POST(request: NextRequest) {
 
     await prisma.sensor.update({
       where: { id: sensorId },
-      data: { lastValue: normalized.temperatureF, lastUpdated: new Date() },
+      data: {
+        lastValue: normalized.temperatureF,
+        lastUpdated: new Date(),
+        ...(matchingRoom && sensor.locationId !== matchingRoom.id ? { locationId: matchingRoom.id } : {}),
+        ...(sensor.name !== sensorName ? { name: sensorName } : {}),
+      },
     });
 
     const band = vpdBand(normalized.vpdKpa, growthStage);
@@ -104,6 +116,28 @@ export async function POST(request: NextRequest) {
     if (normalized.temperatureF < 65) alerts.push({ type: 'LOW_TEMP', value: normalized.temperatureF, message: `Tent temp ${normalized.temperatureF}°F is below the 65°F comfort floor.` });
     if (band === 'high') alerts.push({ type: 'HIGH_VPD', value: normalized.vpdKpa, message: `VPD ${normalized.vpdKpa} kPa is high — air is dry for this stage; raise humidity or lower temp.` });
     if (band === 'low') alerts.push({ type: 'LOW_VPD', value: normalized.vpdKpa, message: `VPD ${normalized.vpdKpa} kPa is low — humid air; increase airflow or lower humidity to avoid mold.` });
+
+    // Mirror into SensorAnalytics, the rollup table the analytics
+    // endpoints read. It previously had no writer at all, so
+    // /api/analytics/sensors returned empty while readings piled up
+    // in SensorReading.
+    await prisma.sensorAnalytics.create({
+      data: {
+        sensorId,
+        reading: normalized.temperatureF,
+        value: {
+          temperature: normalized.temperatureF,
+          humidity: normalized.humidity,
+          vpd: normalized.vpdKpa,
+          vpdComputed: normalized.vpdComputed,
+          source: 'ac-infinity',
+        },
+        status: alerts.length > 0 ? 'warning' : 'ok',
+        temperature: normalized.temperatureF,
+        humidity: normalized.humidity,
+        timestamp: timestamp ? new Date(timestamp) : new Date(),
+      },
+    });
 
     log.info('sensors.ac_infinity_ingest', {
       sensorId,

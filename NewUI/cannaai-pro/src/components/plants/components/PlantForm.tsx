@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Plant,
   PlantFormData,
+  PlantLocation,
   PlantStrain,
   GrowthStage,
   PlantSource,
@@ -35,6 +36,7 @@ import {
 interface PlantFormProps {
   plant?: Plant;
   strains: PlantStrain[];
+  rooms?: PlantLocation[];
   onSubmit: (data: PlantFormData) => void;
   onCancel: () => void;
   onRemoveExistingImage?: (imageId: string) => Promise<void>;
@@ -50,6 +52,7 @@ interface ImagePreview {
 const PlantForm: React.FC<PlantFormProps> = ({
   plant,
   strains,
+  rooms = [],
   onSubmit,
   onCancel,
   onRemoveExistingImage,
@@ -252,13 +255,25 @@ const PlantForm: React.FC<PlantFormProps> = ({
 
           <div>
             <Label htmlFor="location" className="text-gray-300">Location</Label>
-            <Input
-              id="location"
-              value={formData.locationId}
-              onChange={(e) => handleInputChange('locationId', e.target.value)}
-              placeholder="e.g., Room 1, Tent A, Position 1"
-              className="bg-[#181b21] border-gray-700 text-white"
-            />
+            <Select
+              value={formData.locationId || '__none'}
+              onValueChange={(value) => handleInputChange('locationId', value === '__none' ? '' : value)}
+            >
+              <SelectTrigger id="location" className="bg-[#181b21] border-gray-700 text-white">
+                <SelectValue placeholder="Choose a grow room" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#181b21] border-gray-700">
+                <SelectItem value="__none" className="text-white">No location set</SelectItem>
+                {rooms.map(room => (
+                  <SelectItem key={room.id} value={room.id} className="text-white">
+                    {room.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {rooms.length === 0 && (
+              <p className="mt-1 text-xs text-gray-500">Rooms could not be loaded. You can save without a location and set it later.</p>
+            )}
           </div>
 
           <div>
