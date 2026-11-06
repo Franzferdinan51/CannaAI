@@ -18,6 +18,8 @@ model Room {
   updatedAt DateTime @updatedAt
   plants    Plant[]
   sensors   Sensor[]
+  costRecords        CostRecord[]
+  canopyMeasurements CanopyMeasurement[]
 
   @@index([active])
   @@index([name])
@@ -298,6 +300,9 @@ model Plant {
   healthAnalytics    PlantHealthAnalytics[]
   tasks              Task[]
   harvests           Harvest[]
+  cloneBatches       CloneBatch[]
+  costRecords        CostRecord[]
+  canopyMeasurements CanopyMeasurement[]
   motherOfCrosses    BreedingCross[] @relation("CrossMotherPlant")
   fatherOfCrosses    BreedingCross[] @relation("CrossFatherPlant")
 
@@ -371,6 +376,90 @@ model Harvest {
 
   @@index([plantId])
   @@index([harvestedAt])
+}
+
+// One row per cloning event: cuttings taken from a mother plant.
+// rootedCount is filled in as the batch roots; rooted clones become
+// Plant rows through the normal plant flow, this record is the log.
+model CloneBatch {
+  id            String   @id @default(cuid())
+  motherPlantId String
+  takenAt       DateTime @default(now())
+  cuttings      Int
+  rootedCount   Int?
+  method        String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  motherPlant   Plant    @relation(fields: [motherPlantId], references: [id])
+
+  @@index([motherPlantId])
+  @@index([takenAt])
+}
+
+// One row per grow cost or revenue entry. Amounts are in the grow's
+// operating currency; negative amounts read as refunds/credits.
+model CostRecord {
+  id         String   @id @default(cuid())
+  occurredAt DateTime @default(now())
+  category   String
+  amount     Float
+  note       String?
+  plantId    String?
+  roomId     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  plant      Plant?   @relation(fields: [plantId], references: [id])
+  room       Room?    @relation(fields: [roomId], references: [id])
+
+  @@index([occurredAt])
+  @@index([category])
+}
+
+// Supplies and equipment on hand.
+model InventoryItem {
+  id                String   @id @default(cuid())
+  name              String
+  category          String?
+  quantity          Float    @default(0)
+  unit              String?
+  lowStockThreshold Float?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([name])
+  @@index([category])
+}
+
+// One canopy measurement for a plant or a whole room.
+model CanopyMeasurement {
+  id              String   @id @default(cuid())
+  plantId         String?
+  roomId          String?
+  measuredAt      DateTime @default(now())
+  coveragePercent Float?
+  heightCm        Float?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  plant           Plant?   @relation(fields: [plantId], references: [id])
+  room            Room?    @relation(fields: [roomId], references: [id])
+
+  @@index([plantId])
+  @@index([roomId])
+  @@index([measuredAt])
+}
+
+// Server-backed documents, keyed. Replaces the browser-only IndexedDB
+// store the legacy /api/storage route used to import into Node.
+model Document {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  title     String?
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PlantAnalysis {

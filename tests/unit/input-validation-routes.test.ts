@@ -10,6 +10,7 @@ jest.mock('@/lib/prisma', () => ({
     plantHealthAnalytics: { findMany: mockFindMany, count: mockCount },
     aPIPerformanceMetrics: { findMany: mockFindMany, count: mockCount },
     sensorReading: { findMany: mockFindMany },
+    inventoryItem: { findMany: mockFindMany },
   },
 }));
 
@@ -45,11 +46,19 @@ describe('API input validation', () => {
   });
 
   it('does not claim unsupported legacy features succeeded', async () => {
-    for (const response of [await getInventory(), await runAutomationAction(), await runSimpleAnalysis()]) {
+    for (const response of [await runAutomationAction(), await runSimpleAnalysis()]) {
       expect(response.status).toBe(503);
       const body = await response.json();
       expect(body.success).toBe(false);
       expect(body.available).toBe(false);
     }
+  });
+
+  it('serves the inventory list from persisted records', async () => {
+    const response = await getInventory(new Request('http://localhost/api/inventory'));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(body.count).toBe(0);
   });
 });

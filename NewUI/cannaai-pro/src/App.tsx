@@ -70,6 +70,7 @@ const Scanner = lazy(() => import('./components/scanner/Scanner'));
 const Plants = lazy(() => import('./components/plants/Plants'));
 const Sensors = lazy(() => import('./components/sensors').then(module => ({ default: module.default })));
 const Reports = lazy(() => import('./components/reports/Reports'));
+const Harvest = lazy(() => import('./components/harvest/Harvest'));
 // Use the full chat surface so image attachments and local vision providers
 // are available from the shipped route, rather than the old text-only shell.
 const Chat = lazy(() => import('./components/chat/ChatInterface'));
@@ -108,6 +109,7 @@ function AppWithSocket() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/scanner" element={<Scanner />} />
                 <Route path="/plants" element={<Plants />} />
+                <Route path="/harvest" element={<Harvest />} />
                 <Route path="/sensors" element={<Sensors />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/chat" element={<Chat />} />

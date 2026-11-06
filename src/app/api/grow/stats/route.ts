@@ -4,23 +4,50 @@ import { ensureSeedData } from '@/lib/seed-data';
 
 export async function GET() {
   await ensureSeedData();
-  
+
   const plants = await prisma.plant.count({ where: { isActive: true } });
-  // Harvest persistence landed with the Harvest model + /api/harvest CRUD,
-  // so the count is real now. Yield/efficiency below stay null until they
-  // can be computed from persisted harvest + sensor history.
-  const harvests = await prisma.harvest.count();
+
+  // Yield metrics are computed from persisted Harvest rows:
+  // - avgYield: mean dry weight (grams) across harvests that recorded one.
+  // - efficiency: mean dry-matter yield, dry / wet * 100 (percent), across
+  //   harvests that recorded both weights.
+  // A metric with no qualifying rows stays null and is listed as
+  // unavailable rather than being presented as a measured zero.
+  const harvests = await prisma.harvest.findMany({
+    select: { wetWeightGrams: true, dryWeightGrams: true },
+  });
+
+  const dryWeights = harvests
+    .map((h) => h.dryWeightGrams)
+    .filter((v): v is number => typeof v === 'number');
+  const avgYield = dryWeights.length
+    ? Math.round((dryWeights.reduce((a, b) => a + b, 0) / dryWeights.length) * 10) / 10
+    : null;
+
+  const ratios = harvests
+    .filter(
+      (h) =>
+        typeof h.dryWeightGrams === 'number' &&
+        typeof h.wetWeightGrams === 'number' &&
+        h.wetWeightGrams > 0,
+    )
+    .map((h) => ((h.dryWeightGrams as number) / (h.wetWeightGrams as number)) * 100);
+  const efficiency = ratios.length
+    ? Math.round((ratios.reduce((a, b) => a + b, 0) / ratios.length) * 10) / 10
+    : null;
+
+  const unavailableMetrics: string[] = [];
+  if (avgYield === null) unavailableMetrics.push('avgYield');
+  if (efficiency === null) unavailableMetrics.push('efficiency');
 
   return NextResponse.json({
     success: true,
     data: {
       activePlants: plants,
-      totalHarvests: harvests,
-      // These metrics require persisted harvest and sensor history. Do not
-      // present hard-coded values as if they were measured in this install.
-      avgYield: null,
-      efficiency: null,
-      unavailableMetrics: ['avgYield', 'efficiency'],
+      totalHarvests: harvests.length,
+      avgYield,
+      efficiency,
+      unavailableMetrics,
     }
   });
 }

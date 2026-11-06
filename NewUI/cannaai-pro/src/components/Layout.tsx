@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu, X, Wifi, WifiOff, LayoutDashboard, ScanLine, Sprout,
   Activity, FileText, MessageSquare, Settings, Zap, ChevronRight,
-  BrainCircuit, Plus, Leaf
+  BrainCircuit, Plus, Leaf, Scale
 } from "lucide-react";
 import { useSettingsStore } from './settings/store';
 
@@ -15,6 +15,7 @@ const navGroups = [
       { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { path: "/scanner", label: "Plant Analysis", icon: ScanLine, highlight: true },
       { path: "/plants", label: "Plants", icon: Sprout },
+      { path: "/harvest", label: "Harvest", icon: Scale },
       { path: "/sensors", label: "Sensors", icon: Activity },
     ],
   },
