@@ -323,6 +323,10 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
             {analyticsData.slice(0, 4).map((analytic) => {
               const sensor = sensors.find(s => s.id === analytic.sensorId);
               const stats = analytic.statistics;
+              // The analytics API zero-fills statistics for a sensor with no
+              // readings in the window; render '—' instead of presenting
+              // those zeros as measurements.
+              const hasData = analytic.data.length > 0;
 
               return (
                 <div key={analytic.sensorId} className="bg-gray-800 border border-gray-700 rounded-xl p-4">
@@ -333,15 +337,15 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <p className="text-gray-500 text-xs">Current</p>
-                      <p className="text-white font-semibold">{stats.current.toFixed(2)}{sensor?.type ? getUnit(sensor.type) : ''}</p>
+                      <p className="text-white font-semibold">{hasData ? `${stats.current.toFixed(2)}${sensor?.type ? getUnit(sensor.type) : ''}` : '—'}</p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-xs">Average</p>
-                      <p className="text-white font-semibold">{stats.avg.toFixed(2)}</p>
+                      <p className="text-white font-semibold">{hasData ? stats.avg.toFixed(2) : '—'}</p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-xs">Min / Max</p>
-                      <p className="text-white text-xs">{stats.min.toFixed(1)} / {stats.max.toFixed(1)}</p>
+                      <p className="text-white text-xs">{hasData ? `${stats.min.toFixed(1)} / ${stats.max.toFixed(1)}` : '—'}</p>
                     </div>
                     <div className="flex items-center gap-1">
                       <p className="text-gray-500 text-xs">Trend</p>
@@ -490,6 +494,7 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
                 {analyticsData.map((analytic) => {
                   const sensor = sensors.find(s => s.id === analytic.sensorId);
                   const stats = analytic.statistics;
+                  const hasData = analytic.data.length > 0;
 
                   return (
                     <tr key={analytic.sensorId} className="hover:bg-gray-900/50">
@@ -507,15 +512,15 @@ const SensorAnalytics: React.FC<SensorAnalyticsProps> = ({
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-white">
-                          {stats.current.toFixed(2)}{sensor?.type ? getUnit(sensor.type) : ''}
+                          {hasData ? `${stats.current.toFixed(2)}${sensor?.type ? getUnit(sensor.type) : ''}` : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm text-gray-300">{stats.avg.toFixed(2)}</span>
+                        <span className="text-sm text-gray-300">{hasData ? stats.avg.toFixed(2) : '—'}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm text-gray-300">
-                          {stats.min.toFixed(1)} / {stats.max.toFixed(1)}
+                          {hasData ? `${stats.min.toFixed(1)} / ${stats.max.toFixed(1)}` : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3">

@@ -56,6 +56,8 @@ interface GrowToday {
     temperature: number | null;
     humidity: number | null;
     vpd: number | null;
+    vpdDevice: number | null;
+    vpdCalculated: number | null;
     ports: Array<{ port: number; speed?: number; mode?: string; on?: boolean }>;
     source?: string | null;
   } | null;
@@ -278,7 +280,9 @@ const GrowCommandDashboard: React.FC = () => {
       label: 'VPD',
       icon: Wind,
       value: climate?.vpd != null ? `${climate.vpd.toFixed(2)} kPa` : '—',
-      sub: `Target ${data.targets.vpd[0].toFixed(1)}–${data.targets.vpd[1].toFixed(1)} kPa for this stage`,
+      sub: climate
+        ? `Device ${climate.vpdDevice != null ? climate.vpdDevice.toFixed(2) : '—'} · Computed ${climate.vpdCalculated != null ? climate.vpdCalculated.toFixed(2) : '—'} · Target ${data.targets.vpd[0].toFixed(1)}–${data.targets.vpd[1].toFixed(1)} kPa`
+        : `Target ${data.targets.vpd[0].toFixed(1)}–${data.targets.vpd[1].toFixed(1)} kPa for this stage`,
       status: vpdStatus,
       range: data.last24Hours.vpd,
       rangeLabel: '24h low / high',
@@ -303,7 +307,7 @@ const GrowCommandDashboard: React.FC = () => {
               {data.alerts.length > 0 && <span className="pill pill-warn">{data.alerts.length} open alert{data.alerts.length === 1 ? '' : 's'}</span>}
             </div>
             <h1 className="font-display text-3xl font-extrabold tracking-tight text-white sm:text-[38px]">
-              {strain ? <>{strain.name} <span className="gradient-text text-glow-leaf">grow command</span></> : 'Grow command'}
+              Grow <span className="gradient-text text-glow-leaf">command</span>
             </h1>
             <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-white/50">
               {primary

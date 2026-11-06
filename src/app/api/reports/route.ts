@@ -12,7 +12,10 @@ export async function GET(request: Request) {
   const where = {
     ...(searchParams.get('category') && searchParams.get('category') !== 'all' ? { category: searchParams.get('category')! } : {}),
     ...(searchParams.get('type') && searchParams.get('type') !== 'all' ? { type: searchParams.get('type')! } : {}),
-    ...(searchParams.get('status') && searchParams.get('status') !== 'all' ? { status: searchParams.get('status')! } : {}),
+    // Report templates persist as CustomReport rows with status 'template'
+    // (see reports/[...segments]); keep them out of the report list unless
+    // that status is requested explicitly.
+    ...(searchParams.get('status') && searchParams.get('status') !== 'all' ? { status: searchParams.get('status')! } : { status: { not: 'template' } }),
     ...(searchParams.get('search') ? { name: { contains: searchParams.get('search')! } } : {}),
   };
   const [reports, total] = await Promise.all([

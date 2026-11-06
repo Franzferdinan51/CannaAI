@@ -297,8 +297,9 @@ export async function sendDiscordWebhook(webhookUrl: string, notification: Notif
           value: new Date().toISOString(),
           inline: true
         }
-      ],
-      metadata: notification.metadata
+      ]
+      // Discord embeds reject unknown keys (a `metadata` field here made
+      // the API return 400), so the embed carries only documented fields.
     };
 
     const response = await fetch(webhookUrl, {
@@ -495,7 +496,8 @@ export async function sendNotification(data: NotificationData): Promise<{
   }
 
   if (data.channels.includes('discord') && (preferences?.discordEnabled ?? false)) {
-    // TODO: Get Discord webhook URL from preferences
+    // Discord targets are the enabled webhook subscriptions whose URL
+    // points at Discord; there is no separate per-user Discord URL.
     const discordWebhooks = await prisma.webhookSubscription.findMany({
       where: {
         enabled: true,
@@ -512,7 +514,8 @@ export async function sendNotification(data: NotificationData): Promise<{
   }
 
   if (data.channels.includes('slack') && (preferences?.slackEnabled ?? false)) {
-    // TODO: Get Slack webhook URL from preferences
+    // Slack targets are the enabled webhook subscriptions whose URL
+    // points at Slack; there is no separate per-user Slack URL.
     const slackWebhooks = await prisma.webhookSubscription.findMany({
       where: {
         enabled: true,

@@ -297,6 +297,7 @@ model Plant {
   analyses           PlantAnalysis[]
   healthAnalytics    PlantHealthAnalytics[]
   tasks              Task[]
+  harvests           Harvest[]
   motherOfCrosses    BreedingCross[] @relation("CrossMotherPlant")
   fatherOfCrosses    BreedingCross[] @relation("CrossFatherPlant")
 
@@ -347,6 +348,29 @@ model Action {
   @@index([status, createdAt])
   @@index([type, status])
   @@index([createdAt])
+}
+
+// One row per harvest event for a plant. A plant can be harvested in
+// stages (partial harvests), so there is deliberately no unique
+// constraint on plantId. Weights are grams; dry/cure milestones are
+// optional timestamps filled in as the harvest progresses.
+model Harvest {
+  id             String    @id @default(cuid())
+  plantId        String
+  harvestedAt    DateTime  @default(now())
+  wetWeightGrams Float?
+  dryWeightGrams Float?
+  dryStartedAt   DateTime?
+  dryEndedAt     DateTime?
+  cureStartedAt  DateTime?
+  cureEndedAt    DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  plant          Plant     @relation(fields: [plantId], references: [id])
+
+  @@index([plantId])
+  @@index([harvestedAt])
 }
 
 model PlantAnalysis {

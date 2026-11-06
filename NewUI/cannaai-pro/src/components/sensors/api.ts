@@ -92,23 +92,35 @@ function normalizeSensors(payload: any): SensorConfig[] {
     // sensor identity rather than the individual reading id.
     const id = String(reading.sensorId || reading.id || `sensor-${index + 1}`);
     const type = sensorTypeFromId(String(reading.sensorId || id));
-    const numericValue = typeof reading.value === 'number' ? reading.value : Number(reading.value) || 0;
-    const timestamp = reading.timestamp || new Date().toISOString();
+    // A reading row carries its value directly; a config row carries it as
+    // lastValue/lastUpdated instead. Never invent a reading: when neither
+    // exists the sensor gets an empty history (the UI renders '--'), not a
+    // fabricated 0 stamped with the current time, which would read as a
+    // live 0-value measurement from a sensor that reported nothing.
+    const rawValue = typeof reading.value === 'number' ? reading.value
+      : typeof reading.value === 'string' ? Number(reading.value)
+      : typeof reading.lastValue === 'number' ? reading.lastValue
+      : null;
+    const numericValue = rawValue !== null && Number.isFinite(rawValue) ? rawValue : null;
+    const timestamp = typeof reading.timestamp === 'string' ? reading.timestamp
+      : typeof reading.lastUpdated === 'string' ? reading.lastUpdated
+      : null;
     return {
       ...reading,
       id,
       name: reading.name || String(reading.sensorId || id).replace(/[_-]/g, ' '),
       type: reading.type || type,
-      location: reading.location || 'Main Grow Room',
-      roomName: reading.roomName || reading.room?.name || 'Main Grow Room',
+      location: reading.location || reading.room?.name || 'Unknown location',
+      roomName: reading.roomName || reading.room?.name || 'Unassigned room',
       enabled: reading.enabled !== false,
       alerts: Array.isArray(reading.alerts) ? reading.alerts : [],
-      dataHistory: Array.isArray(reading.dataHistory) ? reading.dataHistory : [{
-        timestamp,
-        value: numericValue,
-        quality: 'good' as const,
-        source: 'sensor' as const,
-      }],
+      dataHistory: Array.isArray(reading.dataHistory) ? reading.dataHistory
+        : numericValue !== null && timestamp !== null ? [{
+          timestamp,
+          value: numericValue,
+          quality: 'good' as const,
+          source: 'sensor' as const,
+        }] : [],
     } as SensorConfig;
   });
 }

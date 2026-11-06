@@ -289,6 +289,9 @@ export const analyticsApi = {
   }): Promise<FinancialAnalytics | null> {
     try {
       const response = await api.get('/analytics/financial', { params, ...analyticsRequestConfig });
+      // The backend answers with an explicit { available: false } marker
+      // when no financial data source exists; render the empty state.
+      if ((response.data as any)?.available === false) return null;
       return response.data;
     } catch (error) {
       console.error('Failed to fetch financial analytics:', error);
@@ -304,6 +307,9 @@ export const analyticsApi = {
   }): Promise<YieldAnalytics | null> {
     try {
       const response = await api.get('/analytics/yield', { params, ...analyticsRequestConfig });
+      // Explicit { available: false } marker (no harvests recorded yet)
+      // maps to the empty state.
+      if ((response.data as any)?.available === false) return null;
       return response.data;
     } catch (error) {
       console.error('Failed to fetch yield analytics:', error);

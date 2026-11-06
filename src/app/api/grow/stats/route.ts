@@ -6,10 +6,10 @@ export async function GET() {
   await ensureSeedData();
   
   const plants = await prisma.plant.count({ where: { isActive: true } });
-  // Harvests are currently managed by the legacy in-memory harvest endpoint;
-  // there is no Harvest model in the Prisma schema. Return an honest zero
-  // until harvest persistence is migrated instead of failing the whole route.
-  const harvests = 0;
+  // Harvest persistence landed with the Harvest model + /api/harvest CRUD,
+  // so the count is real now. Yield/efficiency below stay null until they
+  // can be computed from persisted harvest + sensor history.
+  const harvests = await prisma.harvest.count();
 
   return NextResponse.json({
     success: true,

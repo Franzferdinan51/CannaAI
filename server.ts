@@ -251,6 +251,19 @@ async function createCustomServer() {
       // Don't fail startup, just log the error
     }
 
+    // Start the in-process scheduler: due automation schedules, analysis
+    // schedulers, daily reports, and a notification-queue drain backstop.
+    // Independent of the notification system so due work still moves even
+    // if that failed to initialize. Disable with
+    // CANNAAI_SCHEDULER_DISABLED=true.
+    try {
+      const { startScheduler } = await import('@/lib/scheduler');
+      startScheduler();
+    } catch (error) {
+      console.error('❌ Failed to start scheduler:', error);
+      // Don't fail startup, just log the error
+    }
+
     // Native WebSocket endpoint for chat UI
     const wss = new WebSocketServer({ noServer: true });
     wss.on('connection', (ws) => {
@@ -331,6 +344,11 @@ async function createCustomServer() {
       }
       shuttingDown = true;
       console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+
+      // Stop the scheduler so no new tick starts while we drain.
+      import('@/lib/scheduler')
+        .then(({ stopScheduler }) => stopScheduler())
+        .catch(() => { /* scheduler may not be loaded; nothing to stop */ });
 
       // Stop accepting new HTTP connections; existing connections finish.
       // closeAllConnections() is needed in newer Node to drop keep-alive

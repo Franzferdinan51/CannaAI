@@ -18,6 +18,43 @@ function reportNotFound() {
   return NextResponse.json({ success: false, error: 'Report not found.' }, { status: 404 });
 }
 
+// Report templates persist as CustomReport rows with status 'template'.
+// Report statuses are draft/scheduled/generating/completed/failed/archived,
+// so the value never collides, and the reports list route excludes this
+// status so templates never leak into the report list. The row's
+// `parameters` hold the template parameters; `metadata` carries
+// { template: true, layout, isDefault } (the layout has no column of its own).
+const TEMPLATE_STATUS = 'template';
+
+type CustomReportRow = NonNullable<Awaited<ReturnType<typeof findReport>>>;
+
+function toTemplate(row: CustomReportRow) {
+  const metadata = (row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
+    ? row.metadata
+    : {}) as Record<string, unknown>;
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    category: row.category,
+    type: row.type,
+    parameters: row.parameters ?? {},
+    layout: metadata.layout ?? { sections: [], charts: [], tables: [] },
+    isDefault: metadata.isDefault === true,
+    isCustom: true,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+async function findTemplate(id: string) {
+  return prisma.customReport.findFirst({ where: { id, status: TEMPLATE_STATUS } });
+}
+
+function templateNotFound() {
+  return NextResponse.json({ success: false, error: 'Template not found.' }, { status: 404 });
+}
+
 function csvCell(value: unknown) {
   return `"${String(value ?? '').replace(/"/g, '""')}"`;
 }
@@ -47,12 +84,29 @@ function buildPdf(title: string, lines: string[]) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: RouteContext,
 ) {
   const { segments } = await params;
   if (segments[0] === 'templates') {
-    return NextResponse.json([]);
+    if (segments.length === 1) {
+      const { searchParams } = new URL(request.url);
+      const templates = await prisma.customReport.findMany({
+        where: {
+          status: TEMPLATE_STATUS,
+          ...(searchParams.get('category') ? { category: searchParams.get('category')! } : {}),
+          ...(searchParams.get('type') ? { type: searchParams.get('type')! } : {}),
+          ...(searchParams.get('search') ? { name: { contains: searchParams.get('search')! } } : {}),
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+      return NextResponse.json(templates.map(toTemplate));
+    }
+    if (segments.length === 2) {
+      const template = await findTemplate(segments[1]);
+      return template ? NextResponse.json(toTemplate(template)) : templateNotFound();
+    }
+    return templateNotFound();
   }
   if (segments.length !== 1) return reportNotFound();
   const report = await findReport(segments[0]);
@@ -61,6 +115,32 @@ export async function GET(
 
 export async function PUT(request: Request, { params }: RouteContext) {
   const { segments } = await params;
+  if (segments[0] === 'templates') {
+    if (segments.length !== 2) return templateNotFound();
+    const existing = await findTemplate(segments[1]);
+    if (!existing) return templateNotFound();
+    const body = await request.json();
+    const existingMetadata = (existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
+      ? existing.metadata
+      : {}) as Record<string, unknown>;
+    const updated = await prisma.customReport.update({
+      where: { id: segments[1] },
+      data: {
+        ...(typeof body.name === 'string' && body.name.trim() ? { name: body.name.trim() } : {}),
+        ...(typeof body.description === 'string' ? { description: body.description } : {}),
+        ...(typeof body.type === 'string' && body.type ? { type: body.type } : {}),
+        ...(typeof body.category === 'string' && body.category ? { category: body.category } : {}),
+        ...(body.parameters ? { parameters: body.parameters } : {}),
+        metadata: {
+          ...existingMetadata,
+          template: true,
+          ...(body.layout ? { layout: body.layout } : {}),
+          ...(typeof body.isDefault === 'boolean' ? { isDefault: body.isDefault } : {}),
+        },
+      },
+    });
+    return NextResponse.json(toTemplate(updated));
+  }
   if (segments.length !== 1) return reportNotFound();
   if (!(await findReport(segments[0]))) return reportNotFound();
   const body = await request.json();
@@ -79,6 +159,12 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { segments } = await params;
+  if (segments[0] === 'templates') {
+    if (segments.length !== 2) return templateNotFound();
+    if (!(await findTemplate(segments[1]))) return templateNotFound();
+    await prisma.customReport.delete({ where: { id: segments[1] } });
+    return NextResponse.json({ success: true });
+  }
   if (segments.length !== 1) return reportNotFound();
   if (!(await findReport(segments[0]))) return reportNotFound();
   await prisma.customReport.delete({ where: { id: segments[0] } });
@@ -88,7 +174,51 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
 export async function POST(request: Request, { params }: RouteContext) {
   const { segments } = await params;
   const [id, action] = segments;
-  if (id === 'templates') return NextResponse.json({ success: false, error: 'Report templates are not persisted yet.' }, { status: 501 });
+  if (id === 'templates') {
+    const body = await request.json().catch(() => ({}));
+    // POST /reports/templates/from-report/:reportId — snapshot a report.
+    if (action === 'from-report') {
+      const source = segments[2] ? await findReport(segments[2]) : null;
+      if (!source || source.status === TEMPLATE_STATUS) return reportNotFound();
+      const created = await prisma.customReport.create({
+        data: {
+          name: typeof body.name === 'string' && body.name.trim() ? body.name.trim() : `${source.name} Template`,
+          description: typeof body.description === 'string' ? body.description : source.description,
+          type: typeof body.type === 'string' && body.type ? body.type : source.type,
+          category: typeof body.category === 'string' && body.category ? body.category : source.category,
+          status: TEMPLATE_STATUS,
+          parameters: body.parameters ?? source.parameters ?? {},
+          metadata: {
+            ...reportMetadata,
+            template: true,
+            isDefault: false,
+            ...(body.layout ? { layout: body.layout } : {}),
+          },
+        },
+      });
+      return NextResponse.json(toTemplate(created), { status: 201 });
+    }
+    // POST /reports/templates — create a template directly.
+    if (segments.length !== 1) return templateNotFound();
+    if (!body?.name?.trim()) return NextResponse.json({ success: false, error: 'Template name is required.' }, { status: 400 });
+    const created = await prisma.customReport.create({
+      data: {
+        name: body.name.trim(),
+        description: typeof body.description === 'string' ? body.description : '',
+        type: typeof body.type === 'string' && body.type ? body.type : 'summary',
+        category: typeof body.category === 'string' && body.category ? body.category : 'overview',
+        status: TEMPLATE_STATUS,
+        parameters: body.parameters ?? {},
+        metadata: {
+          ...reportMetadata,
+          template: true,
+          isDefault: body.isDefault === true,
+          ...(body.layout ? { layout: body.layout } : {}),
+        },
+      },
+    });
+    return NextResponse.json(toTemplate(created), { status: 201 });
+  }
   const report = await findReport(id);
   if (!report) return reportNotFound();
 

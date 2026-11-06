@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 import { publicPlantImage } from '@/lib/plant-images';
 import { resolveEnvTargets } from '@/lib/env-targets';
+import { calculateVPD, toCelsius } from '@/lib/ac-infinity';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -15,6 +16,18 @@ function record(value: unknown): Record<string, unknown> {
 
 function finite(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Display-only VPD computed from a reading's own temp/RH, shown next to the
+ * device-reported value so the two can be compared. Never used for alerts
+ * or control — alert evaluation keeps using the stored reading value.
+ */
+function computedVpd(details: Record<string, unknown>, fallbackTemp: number | null): number | null {
+  const temperature = finite(details.temperature) ?? fallbackTemp;
+  const humidity = finite(details.humidity);
+  if (temperature === null || humidity === null) return null;
+  return calculateVPD(toCelsius(temperature), humidity);
 }
 
 function stats(values: Array<number | null>) {
@@ -139,6 +152,12 @@ export async function GET() {
             temperature: finite(latestDetails.temperature) ?? finite(latestReading.value),
             humidity: finite(latestDetails.humidity),
             vpd: finite(latestDetails.vpd),
+            // The stored `vpd` is the device-reported value unless ingest
+            // marked it computed (vpdComputed). Expose both sides so the UI
+            // can label them honestly: the value the device reported, and
+            // the value calculated from this same reading.
+            vpdDevice: latestDetails.vpdComputed === true ? null : finite(latestDetails.vpd),
+            vpdCalculated: computedVpd(latestDetails, finite(latestReading.value)),
             ports: Array.isArray(latestDetails.ports) ? latestDetails.ports : [],
             source: typeof latestDetails.source === 'string' ? latestDetails.source : null,
           }
