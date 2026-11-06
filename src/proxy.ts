@@ -101,6 +101,16 @@ export function proxy(request: NextRequest) {
       'Access-Control-Allow-Headers',
       'Content-Type, Authorization, X-Requested-With, X-CannaAI-API-Token',
     );
+
+    // Plant photos are embedded with <img> by the web UI, which lives on a
+    // different port of the same tailnet host. Chrome blocks those loads
+    // under Cross-Origin-Resource-Policy: same-site
+    // (ERR_BLOCKED_BY_RESPONSE.NotSameSite), so served plant images
+    // explicitly allow cross-origin embedding. The tailnet-only bind is
+    // the access control here; API data routes keep the stricter policy.
+    if (/^\/api\/plants\/[^/]+\/images\/[^/]+$/.test(request.nextUrl.pathname)) {
+      securedResponse.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    }
   }
 
   if (isApi && request.method === 'OPTIONS') {

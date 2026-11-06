@@ -361,8 +361,8 @@ const GrowCommandDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {/* Trend + photo */}
-        <div className="space-y-4 xl:col-span-2">
-          <Card>
+        <div className="min-w-0 space-y-4 xl:col-span-2">
+          <Card className="min-w-0">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-[17px]">
                 <Activity className="h-5 w-5 text-blue-300" /> Last 24 hours in the tent
@@ -371,7 +371,7 @@ const GrowCommandDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               {chartData.length > 1 ? (
-                <div className="h-[260px] w-full">
+                <div className="h-[260px] w-full min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -18, bottom: 0 }}>
                       <defs>
@@ -553,7 +553,7 @@ const GrowCommandDashboard: React.FC = () => {
               <input
                 value={taskTitle}
                 onChange={(event) => setTaskTitle(event.target.value)}
-                placeholder="Add a task — e.g. Water PK2 pots"
+                placeholder="Add a task — e.g. Water the seedlings"
                 className="h-10 flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/25"
               />
               <Button type="submit" disabled={taskBusy || !taskTitle.trim()} className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500">
