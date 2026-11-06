@@ -21,6 +21,7 @@ import {
 import { checkHermes, executeWithHermes } from '@/lib/ai-provider-hermes';
 import * as minimaxProvider from '@/lib/ai-provider-minimax';
 import * as openclawProvider from '@/lib/ai-provider-openclaw';
+import * as lmstudioProvider from '@/lib/ai-provider-lmstudio';
 
 describe('AI Provider Detection', () => {
   beforeEach(() => {
@@ -500,6 +501,45 @@ describe('AI Provider Detection', () => {
         })
       ).rejects.toThrow(AIProviderUnavailableError);
       expect(executeMiniMax).not.toHaveBeenCalled();
+    });
+
+    test('lmStudioOnly vision requests never degrade to another provider', async () => {
+      const executeLMStudio = jest.spyOn(lmstudioProvider, 'executeWithLMStudio')
+        .mockRejectedValue(new Error('LM Studio catalog unavailable'));
+      (executeWithHermes as jest.Mock).mockResolvedValue({
+        success: true,
+        provider: 'hermes',
+        result: 'Hermes must not answer a pinned vision request',
+      });
+
+      await expect(
+        executeAIWithFallback('Inspect this plant', 'data:image/jpeg;base64,phone-photo', {
+          lmStudioOnly: true,
+          primaryProvider: 'hermes',
+        })
+      ).rejects.toThrow('Pinned LM Studio vision path is unavailable');
+      expect(executeLMStudio).toHaveBeenCalledTimes(1);
+      expect(executeWithHermes).not.toHaveBeenCalled();
+    });
+
+    test('lmStudioOnly vision requests succeed on LM Studio even when another primary is requested', async () => {
+      const executeLMStudio = jest.spyOn(lmstudioProvider, 'executeWithLMStudio')
+        .mockResolvedValue({ content: 'Pinned vision answer', result: 'Pinned vision answer', model: 'pinned-vision-model' });
+      (executeWithHermes as jest.Mock).mockResolvedValue({
+        success: true,
+        provider: 'hermes',
+        result: 'Hermes answer',
+      });
+
+      const result = await executeAIWithFallback('Inspect this plant', 'data:image/jpeg;base64,phone-photo', {
+        lmStudioOnly: true,
+        primaryProvider: 'hermes',
+      });
+
+      expect(result.provider).toBe('lmstudio');
+      expect(result.result).toBe('Pinned vision answer');
+      expect(executeLMStudio).toHaveBeenCalledTimes(1);
+      expect(executeWithHermes).not.toHaveBeenCalled();
     });
 
     test('should throw AIProviderUnavailableError when no providers configured', async () => {

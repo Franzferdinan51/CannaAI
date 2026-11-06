@@ -19,13 +19,10 @@
  * - "preserves non-image data URL MIME types" and "refuses to send images to
  *   an advertised text-only model" — already covered against the function
  *   adapter in ai-provider-lmstudio-runtime.test.ts.
- * - "detects image_url content arrays before selecting a model" — the
- *   function adapter selects vision models from the explicit `image`
- *   option, not from message content parts; no current equivalent.
- * - "allows vision requests when native metadata omits capabilities" — the
- *   function adapter treats a native catalog that omits a model from its
- *   vision set as authoritative and rejects the request instead. Provider
- *   behavior divergence, tracked outside this suite.
+ * - "detects image_url content arrays before selecting a model" and
+ *   "allows vision requests when native metadata omits capabilities" —
+ *   the function adapter now matches both behaviors; covered in
+ *   ai-provider-lmstudio-runtime.test.ts.
  */
 
 const mockCheckLMStudio = jest.fn();

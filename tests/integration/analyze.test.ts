@@ -5,6 +5,7 @@ const mockExecuteAIWithFallback = jest.fn();
 const mockExecuteWithOpenClaw = jest.fn();
 const mockExecuteWithHermes = jest.fn();
 const mockExecuteWithBailian = jest.fn();
+const mockExecuteWithLMStudio = jest.fn();
 const mockProcessImageForVisionModel = jest.fn();
 const mockGetImageMetadata = jest.fn();
 const mockSharpMetadata = jest.fn();
@@ -89,6 +90,10 @@ jest.mock('@/lib/ai-provider-hermes', () => ({
 
 jest.mock('@/lib/ai-provider-bailian', () => ({
   executeWithBailian: mockExecuteWithBailian
+}));
+
+jest.mock('@/lib/ai-provider-lmstudio', () => ({
+  executeWithLMStudio: mockExecuteWithLMStudio
 }));
 
 import { POST } from '@/app/api/analyze/route';
@@ -238,6 +243,7 @@ describe('/api/analyze integration', () => {
       provider: 'bailian',
       result: buildStructuredAnalysis()
     });
+    mockExecuteWithLMStudio.mockResolvedValue(JSON.stringify(buildStructuredAnalysis()));
     mockProcessImageForVisionModel.mockResolvedValue({
       data: Buffer.from('processed-image'),
       metadata: {
@@ -308,11 +314,11 @@ describe('/api/analyze integration', () => {
   });
 
   test('supports combined image and text analysis requests', async () => {
+    // Detection naming OpenClaw must not route a photo there: image
+    // requests are pinned to LM Studio unless an image provider is
+    // explicitly configured.
     mockDetectAvailableProviders.mockResolvedValue(createProviderDetection('openclaw'));
-    mockExecuteWithOpenClaw.mockResolvedValue({
-      success: true,
-      provider: 'openclaw',
-      result: buildStructuredAnalysis({
+    mockExecuteWithLMStudio.mockResolvedValue(buildStructuredAnalysis({
         diagnosis: 'Powdery mildew risk with humidity-driven stress',
         severity: 'high',
         urgency: 'high',
@@ -331,8 +337,7 @@ describe('/api/analyze integration', () => {
             symptoms: ['White speckling on fan leaves']
           }
         ]
-      })
-    });
+      }));
 
     const response = await POST(
       createAnalyzeRequest(
@@ -350,7 +355,7 @@ describe('/api/analyze integration', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.provider.used).toBe('openclaw');
+    expect(data.provider.used).toBe('lmstudio');
     expect(data.imageInfo).toEqual(
       expect.objectContaining({
         originalSize: 4096,
@@ -364,12 +369,36 @@ describe('/api/analyze integration', () => {
       expect.arrayContaining(['White speckling is visible on upper leaf surfaces'])
     );
     expect(mockProcessImageForVisionModel).toHaveBeenCalledTimes(1);
-    expect(mockExecuteWithOpenClaw).toHaveBeenCalledWith(
+    expect(mockExecuteWithLMStudio).toHaveBeenCalledWith(
+      [{ role: 'user', content: expect.stringContaining('IMAGE ANALYSIS: High-resolution visual examination of plant provided') }],
       expect.objectContaining({
-        image: 'processed-image-base64',
-        prompt: expect.stringContaining('IMAGE ANALYSIS: High-resolution visual examination of plant provided')
+        image: 'processed-image-base64'
       })
     );
+    expect(mockExecuteWithOpenClaw).not.toHaveBeenCalled();
+  });
+
+  test('fails image requests closed when the pinned LM Studio path fails', async () => {
+    mockDetectAvailableProviders.mockResolvedValue(createProviderDetection('openclaw'));
+    mockExecuteWithLMStudio.mockRejectedValue(new Error(
+      'Pinned vision model "ornith-1.5-9b-mlx-vision" is not available in LM Studio. Refusing to substitute another vision model.'
+    ));
+
+    const response = await POST(
+      createAnalyzeRequest({
+        strain: 'Test Plant',
+        leafSymptoms: 'Check these leaves for stress.',
+        plantImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+      }, 44)
+    );
+    const data = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(data.success).toBe(false);
+    expect(data.error.type).toBe('ai_provider_unavailable');
+    expect(mockExecuteWithOpenClaw).not.toHaveBeenCalled();
+    expect(mockExecuteWithHermes).not.toHaveBeenCalled();
+    expect(mockExecuteAIWithFallback).not.toHaveBeenCalled();
   });
 
   test('does not silently downgrade a failed image request to text-only analysis', async () => {

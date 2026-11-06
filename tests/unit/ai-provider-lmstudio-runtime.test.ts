@@ -3,11 +3,12 @@
  *
  * The adapter is the function module `@/lib/ai-provider-lmstudio`. (The
  * class-based `@/lib/ai-providers/lmstudio-provider` was deleted in the
- * provider consolidation; its one remaining test here guarded a behavior
- * the function adapter does not share — an explicitly selected text-only
- * model plus another available vision model: the class refused, the
- * function adapter substitutes the vision model. That divergence is a
- * provider-behavior question, tracked outside this suite.)
+ * provider consolidation. The function adapter now matches the class
+ * behavior the old suite guarded: an explicitly selected text-only model
+ * is refused for image requests even when another vision model is
+ * available, images embedded as message content parts select vision, and
+ * a native catalog entry that omits capability metadata is not treated
+ * as authoritatively text-only.)
  *
  * The module keeps a 60-second model-catalog cache, so each test re-imports
  * a fresh module instance; otherwise one test's catalog would leak into the
@@ -222,6 +223,116 @@ describe('legacy LM Studio runtime configuration', () => {
     )).rejects.toThrow('advertised as text-only');
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('refuses an explicitly selected text-only model even when another vision model is available', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'text-only-model' }, { id: 'vision-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          models: [
+            { key: 'text-only-model', type: 'llm', capabilities: { vision: false } },
+            { key: 'vision-model', type: 'llm', capabilities: { vision: true } },
+          ],
+        }),
+      } as Response);
+
+    await expect(executeWithLMStudio(
+      [{ role: 'user', content: 'Inspect this leaf' }],
+      { model: 'text-only-model', image: 'data:image/jpeg;base64,abc123', useVision: true },
+    )).rejects.toThrow('advertised as text-only');
+
+    // No completion call: the image was not silently rerouted to the
+    // other vision model either.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('treats an image_url message part as a vision request without an explicit image option', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'vision-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'vision-model', type: 'llm', capabilities: { vision: true } }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'vision answer' } }] }),
+      } as Response);
+
+    const result = await executeWithLMStudio([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Inspect this leaf' },
+          { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,abc123' } },
+        ],
+      },
+    ]);
+
+    expect(result).toBe('vision answer');
+    const body = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(body.model).toBe('vision-model');
+    expect(body.messages[0].content).toEqual([
+      { type: 'text', text: 'Inspect this leaf' },
+      { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,abc123' } },
+    ]);
+  });
+
+  test('forwards an explicitly selected model whose native entry omits capability metadata', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'mystery-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'mystery-model', type: 'llm' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'mystery answer' } }] }),
+      } as Response);
+
+    const result = await executeWithLMStudio(
+      [{ role: 'user', content: 'Inspect this leaf' }],
+      { model: 'mystery-model', image: 'data:image/jpeg;base64,abc123', useVision: true },
+    );
+
+    expect(result).toBe('mystery answer');
+    const body = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(body.model).toBe('mystery-model');
+  });
+
+  test('auto-selects a vision-named model whose native entry omits capability metadata', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ id: 'mystery-vision-model' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ models: [{ key: 'mystery-vision-model', type: 'llm' }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'auto vision answer' } }] }),
+      } as Response);
+
+    const result = await executeWithLMStudio(
+      [{ role: 'user', content: 'Inspect this leaf' }],
+      { image: 'data:image/jpeg;base64,abc123', useVision: true },
+    );
+
+    expect(result).toBe('auto vision answer');
+    const body = JSON.parse(String(fetchMock.mock.calls[2][1]?.body));
+    expect(body.model).toBe('mystery-vision-model');
   });
 
   test('preserves non-image data URLs such as application/octet-stream captures', async () => {

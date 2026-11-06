@@ -32,6 +32,13 @@ export interface AIExecutionOptions {
   primaryProvider?: string;
   timeout?: number;
   maxRetries?: number;
+  /**
+   * Restrict execution to LM Studio only. Plant image analysis sets this:
+   * a vision request must run on the pinned LM Studio path or fail with an
+   * explicit AI-unavailable error — it must never degrade to an agent or
+   * cloud provider because detection flapped or the pinned path hiccuped.
+   */
+  lmStudioOnly?: boolean;
 }
 
 // Backwards-compatible names used by the MiniMax adapter and older callers.
@@ -217,7 +224,12 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
   if (options.fastLocal) {
     const local = await runCheck(
       checkLMStudio(true, options.lmStudioBaseUrl, options.lmStudioApiKey),
-      3000,
+      // The catalog probe walks up to two endpoints x two paths with its
+      // own per-request timeouts; a 3s outer race lost to that sequence
+      // whenever LM Studio was busy or the tunnel was slow, which made a
+      // healthy server flap to "unavailable" in live logs. Give the probe
+      // room to finish.
+      10000,
       'lmstudio',
     );
     if (local.isAvailable) {
@@ -270,7 +282,7 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
   // Run local / inexpensive probes together. These timeouts are outer safety
   // rails; provider implementations may also abort their own fetch calls.
   const [lmstudio, openclaw, hermes, bailian, openrouter, minimax] = await Promise.all([
-    runCheck(checkLMStudio(false, options.lmStudioBaseUrl, options.lmStudioApiKey), 3000, 'lmstudio'),
+    runCheck(checkLMStudio(false, options.lmStudioBaseUrl, options.lmStudioApiKey), 10000, 'lmstudio'),
     // OpenClaw's ACP/gateway status check includes a local RPC handshake and
     // can legitimately take longer than an HTTP health probe.
     runCheck(checkOpenClaw(), 20000, 'openclaw'),
@@ -541,7 +553,18 @@ export async function executeAIWithFallback(
     ? providerChain
     : providerChain.filter(provider => isLocalProvider(provider.name));
 
-  const requestedPrimary = normalizeProviderName(options.primaryProvider);
+  // Pinned-vision policy: callers analysing a plant image can require the
+  // LM Studio path only. Filtering runs before primary promotion, so a
+  // caller-supplied primaryProvider cannot reroute the image elsewhere.
+  if (options.lmStudioOnly) {
+    const lmStudioOnly = providers.filter(provider => provider.name === 'lmstudio');
+    providers.length = 0;
+    providers.push(...lmStudioOnly);
+  }
+
+  const requestedPrimary = options.lmStudioOnly
+    ? undefined
+    : normalizeProviderName(options.primaryProvider);
   if (requestedPrimary) {
     const index = providers.findIndex(provider => provider.name === requestedPrimary);
     if (index > 0) {
@@ -597,6 +620,21 @@ export async function executeAIWithFallback(
       console.log(`${provider.name} failed: ${error?.message || error}`);
       attempted.push(provider.name);
     }
+  }
+
+  if (options.lmStudioOnly) {
+    throw new AIProviderUnavailableError(
+      'Pinned LM Studio vision path is unavailable; no other provider was tried for this image request',
+      {
+        recommendations: [
+          'Check LM Studio is running locally and the pinned vision model is available',
+          'Check the LM Studio connection (tunnel/endpoint) and try again',
+        ],
+        availableProviders: [],
+        setupRequired: true,
+        attemptedProviders: attempted,
+      },
+    );
   }
 
   throw new AIProviderUnavailableError('All AI providers failed', {

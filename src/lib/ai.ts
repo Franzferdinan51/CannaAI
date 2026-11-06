@@ -82,6 +82,10 @@ export async function analyzePlantHealth(
     baseUrl: context.baseUrl,
     primaryProvider: context.primaryProvider,
     requireVision: true,
+    // Plant photos only ever run on the pinned LM Studio vision path. If
+    // it is unavailable the caller gets an explicit AI-unavailable error,
+    // never an answer from a different provider.
+    lmStudioOnly: true,
     // Phone and microscope captures always use vision. Large local models
     // may need several minutes for their first image pass; the old two-minute
     // ceiling caused healthy LM Studio requests to fail before completion.

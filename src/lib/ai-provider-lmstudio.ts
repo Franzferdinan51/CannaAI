@@ -196,7 +196,7 @@ export function looksLikeVisionModel(id: string): boolean {
     value.includes('gemma-4') ||
     // MiniCPM-V (vision) only - text-only MiniCPM (e.g. minicpm5-2b)
     // must not match. Native capability metadata is authoritative
-    // when available (see getNativeVisionModelIds).
+    // when available (see getNativeVisionCatalog).
     value.includes('minicpm-v')
   );
 }
@@ -327,7 +327,16 @@ export async function getAvailableModels(forceRefresh = false, configuredBaseUrl
   return [];
 }
 
-async function getNativeVisionModelIds(configuredBaseUrl?: string, apiKeyOverride?: string): Promise<string[] | null> {
+/**
+ * Native capability catalog, split by what LM Studio actually states.
+ * A model whose entry OMITS capability metadata lands in neither set:
+ * missing metadata is not authoritative evidence that a model is
+ * text-only, and callers must not treat it that way.
+ */
+async function getNativeVisionCatalog(configuredBaseUrl?: string, apiKeyOverride?: string): Promise<{
+  visionIds: string[];
+  textOnlyIds: string[];
+} | null> {
   const baseUrl = configuredBaseUrl ? getLMStudioBaseUrl(configuredBaseUrl) : cacheBaseUrl || getLMStudioBaseUrl();
   try {
     const response = await fetch(`${baseUrl}/api/v1/models`, {
@@ -340,9 +349,11 @@ async function getNativeVisionModelIds(configuredBaseUrl?: string, apiKeyOverrid
     const data = await response.json();
     if (!Array.isArray(data?.models)) return null;
 
-    const ids = new Set<string>();
+    const visionIds = new Set<string>();
+    const textOnlyIds = new Set<string>();
     for (const model of data.models) {
-      if (model?.type === 'embedding' || model?.capabilities?.vision !== true) continue;
+      if (model?.type === 'embedding') continue;
+      const ids = new Set<string>();
       if (typeof model?.key === 'string' && model.key) ids.add(model.key);
       if (typeof model?.id === 'string' && model.id) ids.add(model.id);
       if (Array.isArray(model?.loaded_instances)) {
@@ -350,8 +361,13 @@ async function getNativeVisionModelIds(configuredBaseUrl?: string, apiKeyOverrid
           if (typeof instance?.id === 'string' && instance.id) ids.add(instance.id);
         }
       }
+      if (model?.capabilities?.vision === true) {
+        for (const id of ids) visionIds.add(id);
+      } else if (model?.capabilities?.vision === false) {
+        for (const id of ids) textOnlyIds.add(id);
+      }
     }
-    return Array.from(ids);
+    return { visionIds: Array.from(visionIds), textOnlyIds: Array.from(textOnlyIds) };
   } catch {
     return null;
   }
@@ -359,22 +375,29 @@ async function getNativeVisionModelIds(configuredBaseUrl?: string, apiKeyOverrid
 
 async function getVisionModelCatalog(configuredBaseUrl?: string, apiKeyOverride?: string): Promise<{
   models: string[];
+  textOnlyModels: string[];
   metadataAvailable: boolean;
 }> {
   const models = await getAvailableModels(false, configuredBaseUrl, apiKeyOverride);
-  if (models.length === 0) return { models: [], metadataAvailable: false };
+  if (models.length === 0) return { models: [], textOnlyModels: [], metadataAvailable: false };
 
-  const nativeVision = await getNativeVisionModelIds(configuredBaseUrl, apiKeyOverride);
-  if (nativeVision !== null) {
+  const native = await getNativeVisionCatalog(configuredBaseUrl, apiKeyOverride);
+  if (native !== null) {
     return {
-      models: models.filter(id => nativeVision.includes(id)),
-      metadataAvailable: true,
+      // Vision-capable = native metadata says so, OR the entry omits
+      // capability metadata and the name heuristic says vision. Only an
+      // explicit native `vision: false` marks a model text-only.
+      models: models.filter(id => native.visionIds.includes(id)
+        || (!native.textOnlyIds.includes(id) && looksLikeVisionModel(id))),
+      textOnlyModels: models.filter(id => native.textOnlyIds.includes(id)),
+      metadataAvailable: native.visionIds.length > 0 || native.textOnlyIds.length > 0,
     };
   }
 
   // Older LM Studio builds may not expose native capability metadata.
   return {
     models: models.filter(looksLikeVisionModel),
+    textOnlyModels: [],
     metadataAvailable: false,
   };
 }
@@ -425,9 +448,9 @@ async function resolvePinnedVisionModel(pinned: string, apiKeyOverride?: string)
     );
   }
 
-  if (visionCatalog.metadataAvailable && !visionCatalog.models.includes(pinned)) {
+  if (visionCatalog.textOnlyModels.includes(pinned)) {
     throw new Error(
-      `Pinned vision model "${pinned}" (LM_STUDIO_VISION_MODEL) is not vision-capable according to LM Studio metadata. Refusing to substitute another vision model.`,
+      `Pinned vision model "${pinned}" (LM_STUDIO_VISION_MODEL) is marked text-only in LM Studio metadata. Refusing to substitute another vision model.`,
     );
   }
 
@@ -455,32 +478,26 @@ async function resolveModel(type: 'vision' | 'text', explicitModel?: string, con
     const visionCatalog = await getVisionModelCatalog(undefined, apiKeyOverride);
     const candidate = requested || configured;
 
-    if (candidate && (available.length === 0 || available.includes(candidate))) {
-      if (available.length === 0 || visionCatalog.models.includes(candidate) || !visionCatalog.metadataAvailable) {
-        return candidate;
-      }
-    }
-
-    if (requested && available.length > 0 && visionCatalog.metadataAvailable && visionCatalog.models.length === 0) {
-      // A model missing from /v1/models may still be a downloaded JIT target.
-      // Only reject an explicit ID when the catalog actually contains that ID
-      // and native metadata says it is not vision-capable.
-      if (available.includes(requested)) {
+    if (candidate) {
+      // An explicitly selected (or configured) model is authoritative:
+      // never silently swap it for a different vision model. The one hard
+      // refusal is a model LM Studio's native metadata explicitly marks
+      // text-only — sending it an image would produce a text-only answer
+      // dressed up as vision analysis.
+      if (visionCatalog.textOnlyModels.includes(candidate)) {
         throw new Error(
-          `LM Studio model "${requested}" is advertised as text-only and cannot process images.`,
+          `LM Studio model "${candidate}" is advertised as text-only and cannot process images.`,
         );
       }
+      // Known vision-capable, capability-unknown (the native entry omits
+      // metadata, which is not authoritative), or absent from the catalog
+      // entirely (a possible JIT target): forward the caller's model and
+      // let LM Studio itself validate it.
+      return candidate;
     }
-
-    // Explicit model IDs are authoritative. Forward an unknown ID and let
-    // LM Studio validate or JIT-load it instead of silently choosing another
-    // vision model.
-    if (requested && !available.includes(requested)) return requested;
 
     const visionModels = visionCatalog.models;
     if (visionModels.length > 0) return visionModels[0];
-
-    if (configured && available.length === 0) return configured;
 
     throw new Error(
       'LM Studio is reachable but no vision-capable model is available. Load a vision model or configure LM_STUDIO_VISION_MODEL.',
@@ -501,6 +518,33 @@ async function resolveModel(type: 'vision' | 'text', explicitModel?: string, con
   );
 }
 
+/**
+ * Find an image embedded in message content: an OpenAI-style `image_url`
+ * part, a loose `image` part, or a direct `image` field on the message.
+ * Callers that build chat messages by hand often embed the image this way
+ * instead of using the explicit `image` option; both forms are vision.
+ */
+function findMessageImage(messages: any[]): string | undefined {
+  if (!Array.isArray(messages)) return undefined;
+  for (const message of messages) {
+    if (typeof message?.image === 'string') {
+      const direct = normalizeImageUrl(message.image);
+      if (direct) return direct;
+    }
+    if (!Array.isArray(message?.content)) continue;
+    for (const part of message.content) {
+      if (part?.type === 'image_url' && typeof part?.image_url?.url === 'string' && part.image_url.url) {
+        return normalizeImageUrl(part.image_url.url);
+      }
+      if (part?.type === 'image') {
+        const url = typeof part?.image_url === 'string' ? part.image_url : part?.image_url?.url;
+        if (typeof url === 'string' && url) return normalizeImageUrl(url);
+      }
+    }
+  }
+  return undefined;
+}
+
 export async function executeWithLMStudio(
   messages: any[],
   options: {
@@ -514,11 +558,12 @@ export async function executeWithLMStudio(
     apiKey?: string;
   } = {},
 ) {
-  const wantsVision = Boolean(options.image) && options.useVision !== false;
+  const messageImage = findMessageImage(messages);
+  const wantsVision = options.useVision !== false && (Boolean(options.image) || Boolean(messageImage));
   const model = await resolveModel(wantsVision ? 'vision' : 'text', options.model, options.baseUrl, options.apiKey);
 
   let formattedMessages = messages;
-  const normalizedImage = normalizeImageUrl(options.image);
+  const normalizedImage = normalizeImageUrl(options.image) || (wantsVision ? messageImage : undefined);
 
   if (normalizedImage && options.useVision !== false) {
     // Attach the image only to the last user turn. The previous implementation
@@ -528,6 +573,12 @@ export async function executeWithLMStudio(
     formattedMessages = [...messages].reverse().map((message: any) => {
       if (!imageAttached && message?.role === 'user') {
         imageAttached = true;
+        // The image may already be embedded in this message as an
+        // image_url part; keep it as-is instead of attaching a duplicate.
+        const existingParts = Array.isArray(message.content) ? message.content : [];
+        if (existingParts.some((part: any) => part?.type === 'image_url' && typeof part?.image_url?.url === 'string')) {
+          return message;
+        }
         const text = typeof message.content === 'string'
           ? message.content
           : Array.isArray(message.content)

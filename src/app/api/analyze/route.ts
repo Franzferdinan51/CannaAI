@@ -21,12 +21,16 @@ import {
 } from '@/lib/diagnosis-pipeline';
 
 /**
- * Provider Priority Chain:
- * 1. LM Studio - Local models (PRIMARY for vision)
- * 2. OpenClaw Gateway - Local model management fallback
- * 3. Hermes Agent - authenticated local agent fallback
- * 4. Alibaba Bailian - Cloud fallback
- * 5. OpenRouter - Emergency fallback
+ * Provider routing:
+ * - Requests WITH a plant image are pinned: LM Studio's configured vision
+ *   model, or an explicitly configured image provider
+ *   (CANNAAI_IMAGE_PROVIDER=openclaw|hermes) — a deliberate operator
+ *   setting, not a fallback. If that path fails, the request fails with
+ *   an explicit AI-unavailable error; a photo is never silently rerouted
+ *   to another provider.
+ * - Text-only requests use the local-first provider chain (LM Studio,
+ *   OpenClaw, Hermes, then cloud providers when the local-only lock is
+ *   explicitly lifted).
  */
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -498,6 +502,9 @@ export async function POST(request: NextRequest) {
             temperature: options.temperature ?? 0.2,
             timeout: options.timeout ?? 45000,
             maxRetries: 1,
+            // Triage looks at the same photo, so it is pinned to the same
+            // LM Studio vision path as the full analysis.
+            lmStudioOnly: true,
           });
           if (!res?.success) throw new Error(res?.error || 'triage provider failed');
           return {
@@ -574,7 +581,7 @@ export async function POST(request: NextRequest) {
     });
     const imageProviderOverride = imageBase64ForAI && process.env.CANNAAI_IMAGE_PROVIDER;
     const detectedPrimary = providerDetection.primary;
-    const primaryProvider = imageProviderOverride === 'openclaw'
+    const detectedPrimaryProvider = imageProviderOverride === 'openclaw'
       ? { isAvailable: true, provider: 'openclaw', reason: 'Configured image provider: OpenClaw/MiniMax M3' }
       : imageProviderOverride === 'hermes'
         ? { isAvailable: true, provider: 'hermes', reason: 'Configured image provider: Hermes Agent' }
@@ -591,6 +598,19 @@ export async function POST(request: NextRequest) {
               : detectedPrimary.provider === 'minimax'
                 ? { isAvailable: true, provider: 'minimax', reason: 'MiniMax API is available' }
                 : { isAvailable: false, provider: 'fallback', reason: 'No AI providers detected' };
+
+    // Image requests ignore the detection result entirely. Provider
+    // health detection flapped in production (a busy LM Studio lost its
+    // probe race) and silently rerouted a plant photo to an agent chat
+    // provider; with a photo attached, the route is the pinned LM Studio
+    // vision path, or the explicitly configured image provider when one
+    // is set. Detection remains in use for text-only requests and for
+    // the status metadata in the response.
+    const primaryProvider = imageBase64ForAI
+      && imageProviderOverride !== 'openclaw'
+      && imageProviderOverride !== 'hermes'
+      ? { isAvailable: true, provider: 'lmstudio', reason: 'Image analysis is pinned to LM Studio' }
+      : detectedPrimaryProvider;
 
     console.log(`📡 AI provider detected: ${primaryProvider.provider} (${primaryProvider.reason})`);
 
@@ -642,20 +662,42 @@ export async function POST(request: NextRequest) {
         const lmStudioModel = effectiveModel || (imageBase64ForAI
           ? process.env.LM_STUDIO_VISION_MODEL || process.env.LM_STUDIO_MODEL
           : process.env.LM_STUDIO_TEXT_MODEL || process.env.LM_STUDIO_MODEL);
-        const lmStudioRaw = await executeWithLMStudio(
-          [{ role: 'user', content: prompt }],
-          {
-            image: imageBase64ForAI,
-            ...(lmStudioModel ? { model: lmStudioModel } : {}),
-            ...(effectiveBaseUrl ? { baseUrl: effectiveBaseUrl } : {}),
-            ...(effectiveApiKey ? { apiKey: effectiveApiKey } : {}),
-            temperature: 0.15,
-            useVision: !!imageBase64ForAI,
-            // Match the route and browser deadlines for slow local vision
-            // models instead of letting the adapter's shorter default abort.
-            timeout: imageBase64ForAI ? 600000 : 120000,
+        let lmStudioRaw;
+        try {
+          lmStudioRaw = await executeWithLMStudio(
+            [{ role: 'user', content: prompt }],
+            {
+              image: imageBase64ForAI,
+              ...(lmStudioModel ? { model: lmStudioModel } : {}),
+              ...(effectiveBaseUrl ? { baseUrl: effectiveBaseUrl } : {}),
+              ...(effectiveApiKey ? { apiKey: effectiveApiKey } : {}),
+              temperature: 0.15,
+              useVision: !!imageBase64ForAI,
+              // Match the route and browser deadlines for slow local vision
+              // models instead of letting the adapter's shorter default abort.
+              timeout: imageBase64ForAI ? 600000 : 120000,
+            }
+          );
+        } catch (lmError) {
+          if (imageBase64ForAI) {
+            // Fail closed: an image request that cannot run on the pinned
+            // LM Studio vision path returns an explicit AI-unavailable
+            // error. It never degrades to another provider.
+            throw new AIProviderUnavailableError(
+              `Pinned LM Studio vision path failed: ${lmError instanceof Error ? lmError.message : 'unknown error'}`,
+              {
+                recommendations: [
+                  'Check LM Studio is running and the pinned vision model is available',
+                  'Retry the analysis once LM Studio is reachable',
+                ],
+                availableProviders: [],
+                setupRequired: false,
+                attemptedProviders: ['lmstudio'],
+              },
+            );
           }
-        );
+          throw lmError;
+        }
         aiResult = {
           success: true,
           provider: 'lmstudio',
@@ -672,41 +714,26 @@ export async function POST(request: NextRequest) {
         });
 
         // A gateway can return HTTP success with an empty/unsupported vision
-        // response. Treat that as a failure so image analysis reaches a real
-        // vision provider instead of generating a misleading fallback report.
+        // response. For an image request that is a hard failure: this
+        // branch only runs when OpenClaw is the explicitly configured
+        // image provider, and the photo is never rerouted elsewhere.
         if (!aiResult.success || !hasUsableResult(aiResult.result)) {
-          console.log('⚠️ OpenClaw returned no usable content, trying vision fallback...');
-
           if (imageBase64ForAI) {
-            const visionFallbacks = [
-              () => executeWithBailian({
-                prompt,
-                image: imageBase64ForAI,
-                model: process.env.QWEN_MODEL
-              }),
-              () => executeWithOpenRouter({
-                prompt,
-                image: imageBase64ForAI,
-                requireVision: true
-              })
-            ];
-
-            for (const fallback of visionFallbacks) {
-              const candidate = await fallback();
-              if (candidate.success && hasUsableResult(candidate.result)) {
-                aiResult = candidate;
-                break;
-              }
-            }
-          }
-
-          if (!aiResult.success || !hasUsableResult(aiResult.result)) {
-            console.log('⚠️ Vision fallbacks unavailable, trying configured provider chain...');
-            aiResult = await executeAIWithFallback(
-              [{ role: 'user', content: prompt }],
-              { image: imageBase64ForAI || undefined }
+            throw new AIProviderUnavailableError(
+              'Configured image provider (OpenClaw) returned no usable vision result; the image was not rerouted to another provider.',
+              {
+                recommendations: ['Check the configured image provider and retry'],
+                availableProviders: [],
+                setupRequired: false,
+                attemptedProviders: ['openclaw'],
+              },
             );
           }
+          console.log('⚠️ OpenClaw returned no usable content, trying configured provider chain...');
+          aiResult = await executeAIWithFallback(
+            [{ role: 'user', content: prompt }],
+            { image: imageBase64ForAI || undefined }
+          );
         }
       } else if (primaryProvider.provider === 'hermes') {
         console.log('🟢 Using Hermes Agent as vision provider...');
@@ -717,6 +744,19 @@ export async function POST(request: NextRequest) {
         });
 
         if (!aiResult.success || !hasUsableResult(aiResult.result)) {
+          if (imageBase64ForAI) {
+            // Same fail-closed rule as OpenClaw: a configured image
+            // provider that fails ends the request honestly.
+            throw new AIProviderUnavailableError(
+              'Configured image provider (Hermes) returned no usable vision result; the image was not rerouted to another provider.',
+              {
+                recommendations: ['Check the configured image provider and retry'],
+                availableProviders: [],
+                setupRequired: false,
+                attemptedProviders: ['hermes'],
+              },
+            );
+          }
           console.log('⚠️ Hermes returned no usable content, trying configured provider chain...');
           aiResult = await executeAIWithFallback(
             [{ role: 'user', content: prompt }],
