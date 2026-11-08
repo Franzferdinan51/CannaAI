@@ -234,6 +234,48 @@ export const templatesApi = {
   },
 };
 
+// The backend answers financial requests with an explicit
+// { available: false, message } marker when no financial data source
+// exists. That message is part of the result — callers that can render
+// an honest empty state should use getFinancialResult() so it is not
+// discarded. getFinancial() keeps the older null-on-unavailable
+// contract for callers that already render their own empty state.
+export interface FinancialUnavailable {
+  available: false;
+  message: string;
+}
+
+export type FinancialAnalyticsResult = FinancialAnalytics | FinancialUnavailable;
+
+const FINANCIAL_UNAVAILABLE_FALLBACK =
+  'Financial analytics are unavailable: no financial data is available for the selected period.';
+
+type FinancialParams = {
+  dateRange: { start: Date; end: Date };
+  type?: 'monthly' | 'quarterly' | 'yearly';
+};
+
+async function fetchFinancial(
+  params?: FinancialParams,
+): Promise<FinancialAnalyticsResult | null> {
+  try {
+    const response = await api.get('/analytics/financial', { params, ...analyticsRequestConfig });
+    if ((response.data as any)?.available === false) {
+      return {
+        available: false,
+        message:
+          typeof response.data.message === 'string' && response.data.message
+            ? response.data.message
+            : FINANCIAL_UNAVAILABLE_FALLBACK,
+      };
+    }
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch financial analytics:', error);
+    return null;
+  }
+}
+
 // Analytics API
 export const analyticsApi = {
   // Get overview analytics
@@ -282,21 +324,20 @@ export const analyticsApi = {
     }
   },
 
+  // Get financial analytics, preserving the backend's unavailable
+  // message so the UI can show it instead of fabricated zero metrics.
+  async getFinancialResult(
+    params?: FinancialParams,
+  ): Promise<FinancialAnalyticsResult | null> {
+    return fetchFinancial(params);
+  },
+
   // Get financial analytics
-  async getFinancial(params?: {
-    dateRange: { start: Date; end: Date };
-    type?: 'monthly' | 'quarterly' | 'yearly';
-  }): Promise<FinancialAnalytics | null> {
-    try {
-      const response = await api.get('/analytics/financial', { params, ...analyticsRequestConfig });
-      // The backend answers with an explicit { available: false } marker
-      // when no financial data source exists; render the empty state.
-      if ((response.data as any)?.available === false) return null;
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch financial analytics:', error);
-      return null;
-    }
+  // Legacy contract: an unavailable result maps to null (empty state).
+  async getFinancial(params?: FinancialParams): Promise<FinancialAnalytics | null> {
+    const result = await fetchFinancial(params);
+    if (!result || (result as FinancialUnavailable).available === false) return null;
+    return result as FinancialAnalytics;
   },
 
   // Get yield analytics

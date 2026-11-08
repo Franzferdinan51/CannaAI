@@ -80,8 +80,11 @@ import {
   CostBreakdown
 } from './types';
 
-import { analyticsApi } from './api';
+import { analyticsApi, type FinancialUnavailable } from './api';
 import { dateUtils, numberUtils } from './utils';
+
+const FINANCIAL_UNAVAILABLE_FALLBACK =
+  'Financial analytics are unavailable: no financial data is available for the selected period.';
 
 interface FinancialAnalyticsProps {
   className?: string;
@@ -100,6 +103,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
 }) => {
   // State management
   const [financialData, setFinancialData] = useState<FinancialAnalyticsData | null>(null);
+  const [unavailableMessage, setUnavailableMessage] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<FinancialPeriod['type']>(period.type);
   const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'costs' | 'profit' | 'roi'>('revenue');
   const [viewMode, setViewMode] = useState<'overview' | 'detailed' | 'forecasts' | 'kpis'>('overview');
@@ -116,20 +120,32 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   const loadFinancialData = async () => {
     setIsLoading(true);
     try {
-      const data = await analyticsApi.getFinancial({
+      const result = await analyticsApi.getFinancialResult({
         dateRange: period,
         type: selectedPeriod === 'daily' || selectedPeriod === 'weekly' ? 'monthly' : selectedPeriod
       });
 
-      if (data) {
-        setFinancialData(data);
-      } else {
+      if (!result) {
+        // No data (or the request failed): show the honest empty state
+        // below instead of zeroed metrics.
         setFinancialData(null);
+        setUnavailableMessage(FINANCIAL_UNAVAILABLE_FALLBACK);
+      } else if ((result as FinancialUnavailable).available === false) {
+        // Backend explicitly reported no financial data source; surface
+        // its message verbatim rather than discarding it.
+        setFinancialData(null);
+        setUnavailableMessage(
+          (result as FinancialUnavailable).message || FINANCIAL_UNAVAILABLE_FALLBACK
+        );
+      } else {
+        setFinancialData(result as FinancialAnalyticsData);
+        setUnavailableMessage(null);
       }
 
     } catch (error) {
       console.error('Failed to load financial data:', error);
       setFinancialData(null);
+      setUnavailableMessage(FINANCIAL_UNAVAILABLE_FALLBACK);
     } finally {
       setIsLoading(false);
     }
@@ -255,6 +271,37 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
     return (
       <div className="flex items-center justify-center h-96">
         <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
+      </div>
+    );
+  }
+
+  // Honest empty state: without data there are no metrics to show.
+  // Rendering the cards below in this state would present $0 / +0% /
+  // 0 saved — and an "Excellent" ROI verdict — as if they were real
+  // results, so show the backend's unavailable message instead.
+  if (!financialData) {
+    return (
+      <div ref={analyticsRef} className={`space-y-6 ${className}`}>
+        <div
+          className="bg-[#1A1D23] border border-gray-800 rounded-xl p-8 text-center"
+          role="status"
+        >
+          <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">
+            Financial analytics unavailable
+          </h3>
+          <p className="text-sm text-gray-400 max-w-xl mx-auto">
+            {unavailableMessage || FINANCIAL_UNAVAILABLE_FALLBACK}
+          </p>
+          <button
+            type="button"
+            onClick={loadFinancialData}
+            className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 hover:text-white transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
       </div>
     );
   }

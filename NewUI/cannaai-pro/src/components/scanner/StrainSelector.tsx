@@ -23,71 +23,8 @@ interface CustomStrainForm {
   optimalHumidityMax: string;
 }
 
-const defaultStrains: Strain[] = [
-  {
-    id: 'strain_001',
-    name: 'Blue Dream',
-    type: 'Hybrid (60% Sativa)',
-    lineage: 'Blueberry x Haze',
-    description: 'Popular hybrid known for balanced effects and resilience',
-    isPurpleStrain: false,
-    optimalConditions: {
-      ph: { range: [6.0, 6.5], medium: 'soil' },
-      temperature: { veg: [22, 26], flower: [20, 24] },
-      humidity: { veg: [60, 70], flower: [40, 50] },
-      light: { veg: '18/6', flower: '12/12' }
-    },
-    commonDeficiencies: ['Magnesium', 'Calcium']
-  },
-  {
-    id: 'strain_002',
-    name: 'Granddaddy Purple',
-    type: 'Indica',
-    lineage: 'Purple Urkle x Big Bud',
-    description: 'Classic purple strain known for vibrant colors',
-    isPurpleStrain: true,
-    optimalConditions: {
-      ph: { range: [6.2, 6.8], medium: 'soil' },
-      temperature: { veg: [20, 24], flower: [18, 22] },
-      humidity: { veg: [50, 60], flower: [40, 50] },
-      light: { veg: '18/6', flower: '12/12' }
-    },
-    commonDeficiencies: ['Phosphorus', 'Magnesium']
-  },
-  {
-    id: 'strain_003',
-    name: 'Girl Scout Cookies',
-    type: 'Hybrid',
-    lineage: 'OG Kush x Durban Poison',
-    description: 'Potent hybrid with complex flavor profile',
-    isPurpleStrain: false,
-    optimalConditions: {
-      ph: { range: [6.0, 6.5], medium: 'soil' },
-      temperature: { veg: [22, 26], flower: [20, 24] },
-      humidity: { veg: [50, 60], flower: [40, 50] },
-      light: { veg: '18/6', flower: '12/12' }
-    },
-    commonDeficiencies: ['Calcium', 'Magnesium']
-  },
-  {
-    id: 'strain_004',
-    name: 'Sour Diesel',
-    type: 'Sativa Dominant',
-    lineage: 'Chemdawg 91 x Super Skunk',
-    description: 'Energetic sativa with pungent aroma',
-    isPurpleStrain: false,
-    optimalConditions: {
-      ph: { range: [6.0, 6.5], medium: 'soil' },
-      temperature: { veg: [24, 28], flower: [22, 26] },
-      humidity: { veg: [50, 60], flower: [40, 50] },
-      light: { veg: '18/6', flower: '12/12' }
-    },
-    commonDeficiencies: ['Nitrogen', 'Iron']
-  }
-];
-
 const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrainSelect, className = '' }) => {
-  const [strains, setStrains] = useState<Strain[]>(defaultStrains);
+  const [strains, setStrains] = useState<Strain[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [selectedStrainInfo, setSelectedStrainInfo] = useState<Strain | null>(null);
@@ -114,11 +51,14 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
   const fetchStrains = async () => {
     try {
       const response = await api.strains.list();
-      if (response && response.strains && response.strains.length > 0) {
-        setStrains([...response.strains, ...defaultStrains]);
+      if (response && response.strains) {
+        setStrains(response.strains);
+      } else {
+        setStrains([]);
       }
     } catch (error) {
-      console.warn('Failed to fetch strains, using defaults:', error);
+      console.warn('Failed to fetch strains:', error);
+      setStrains([]);
     }
   };
 
