@@ -23,8 +23,13 @@ process.on('unhandledRejection', (reason, promise) => {
 
 const dev = process.env.NODE_ENV !== 'production';
 const currentPort = Number(process.env.PORT) || 3000;
-// Bind to all interfaces (0.0.0.0) for remote access via Tailscale
-const hostname = process.env.HOST || '0.0.0.0';
+// Fail closed on bind address: never default to 0.0.0.0. The systemd unit
+// sets HOST to the tailnet IP explicitly; without it we bind loopback only
+// and say so loudly, so a dropped env var can't silently expose the API.
+const hostname = process.env.HOST || '127.0.0.1';
+if (!process.env.HOST) {
+  console.warn('⚠️  HOST is not set — binding to 127.0.0.1 only. Set HOST to the tailnet IP for remote access.');
+}
 
 // Enhanced CORS configuration for local and remote access
 const allowedOrigins = process.env.SOCKET_IO_ORIGINS
@@ -314,7 +319,7 @@ async function createCustomServer() {
       console.log(`🔒 Security: ${enableSocketAuth ? 'Enabled' : 'Disabled'}`);
       console.log(`\n📍 Access URLs:`);
       console.log(`   • Local: http://localhost:${currentPort}`);
-      console.log(`   • Network: http://0.0.0.0:${currentPort}`);
+      console.log(`   • Network: http://${hostname}:${currentPort}`);
 
       // Get local IP addresses for better guidance
       const nets = networkInterfaces();

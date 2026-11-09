@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
+import { evaluateEnvironmentAlerts } from '@/lib/alert-evaluation';
+import { calculateVPD } from '@/lib/ac-infinity';
 
 type SensorConfigInput = {
   name?: unknown;
@@ -65,8 +67,22 @@ function parseNum(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-// Helper: Get or create sensor (keeps /api/sensors backward-compatible with the newer schema)
+/** Resolve a caller-supplied room reference (id or exact name) to a Room. */
+async function resolveRoom(roomRef?: string | null) {
+  if (!roomRef || typeof roomRef !== 'string' || !roomRef.trim()) return null;
+  const ref = roomRef.trim();
+  return (
+    (await prisma.room.findUnique({ where: { id: ref } })) ??
+    (await prisma.room.findFirst({ where: { name: ref } }))
+  );
+}
+
+// Helper: Get or create sensor (keeps /api/sensors backward-compatible with the newer schema).
+// The sensor is linked to its room (locationId) so room views and alert
+// evaluation know where the reading came from; an existing unlinked sensor
+// gets linked on its next ingest.
 async function getOrCreateSensor(sensorId: string, roomId?: string) {
+  const room = await resolveRoom(roomId);
   let sensor = await prisma.sensor.findUnique({ where: { id: sensorId } });
 
   if (!sensor) {
@@ -76,11 +92,17 @@ async function getOrCreateSensor(sensorId: string, roomId?: string) {
         name: roomId ? `Grow Monitor - ${roomId}` : 'Grow Monitor',
         type: 'environmental',
         enabled: true,
+        ...(room ? { locationId: room.id } : {}),
       },
+    });
+  } else if (room && !sensor.locationId) {
+    sensor = await prisma.sensor.update({
+      where: { id: sensorId },
+      data: { locationId: room.id },
     });
   }
 
-  return sensor;
+  return { sensor, room };
 }
 
 export async function POST(request: Request) {
@@ -100,6 +122,8 @@ export async function POST(request: Request) {
       light,
       source,
       roomId,
+      roomName,
+      growthStage,
       sensorId: sensorIdFromBody,
       timestamp,
     } = body;
@@ -143,7 +167,11 @@ export async function POST(request: Request) {
 
     // Schema requires SensorReading.sensorId relation
     const sensorId = sensorIdFromBody || roomId || 'grow-monitor';
-    await getOrCreateSensor(sensorId, roomId);
+    const { sensor, room } = await getOrCreateSensor(sensorId, roomId || roomName);
+
+    // VPD: use the reported value, or compute it from temp/RH (same Tetens
+    // helper the AC Infinity path uses) so band evaluation always has one.
+    const vpdKpa = v !== null ? v : calculateVPD((t - 32) * (5 / 9), h);
 
     // Create sensor reading
     const reading = await prisma.sensorReading.create({
@@ -154,29 +182,41 @@ export async function POST(request: Request) {
         data: {
           temperature: t,
           humidity: h,
-          vpd: v,
+          vpd: vpdKpa,
           co2: c,
           light: l,
           source: source || 'manual',
-          roomId: roomId || null,
+          roomId: room?.id || roomId || null,
         },
         timestamp: timestamp ? new Date(timestamp) : new Date(),
       },
     });
 
-    // Check for alerts (simple defaults; refine per-stage elsewhere).
-    // Alert thresholds intentionally tight so they trigger only when a reading
-    // is genuinely off-target for a cannabis grow room, not on sensor noise.
-    const alerts: Array<{ type: string; value: number }> = [];
-    if (t > 85) alerts.push({ type: 'HIGH_TEMP', value: t });
-    if (t < 65) alerts.push({ type: 'LOW_TEMP', value: t });
-    if (h > 70) alerts.push({ type: 'HIGH_HUMIDITY', value: h });
-    if (h < 35) alerts.push({ type: 'LOW_HUMIDITY', value: h });
+    // Evaluate against the shared stage/strain bands and persist real Alert
+    // rows, exactly like the AC Infinity ingest path — no hardcoded
+    // one-size-fits-all thresholds, and breaches are not lost. Alerting must
+    // never fail ingest: on error we log and carry on with no warnings.
+    let alerts: Array<{ type: string; value: number; message: string }> = [];
+    let persistedAlerts = 0;
+    try {
+      const evaluation = await evaluateEnvironmentAlerts({
+        sensorId,
+        roomId: room?.id ?? sensor.locationId ?? null,
+        roomName: room?.name ?? roomName ?? sensor.name,
+        values: { temperatureF: t, humidity: h, vpdKpa },
+        growthStage: typeof growthStage === 'string' ? growthStage : null,
+      });
+      alerts = evaluation.bandAlerts;
+      persistedAlerts = evaluation.bandAlertsCreated + evaluation.thresholdAlertsCreated;
+    } catch (err) {
+      console.error('Generic sensor alert evaluation failed:', err);
+    }
 
     return NextResponse.json({
       success: true,
       readingId: reading.id,
       alerts: alerts.length > 0 ? alerts : null,
+      persistedAlerts,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
