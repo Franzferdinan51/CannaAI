@@ -1,5 +1,6 @@
 // Main Sensors Component - Comprehensive Sensor Monitoring System
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { useSocketContext } from '../../contexts/SocketContext';
 
 // Import all sensor components
@@ -49,6 +50,8 @@ const Sensors: React.FC<SensorsProps> = ({
   initialView = 'dashboard'
 }) => {
   const { lastSensorData, isConnected } = useSocketContext();
+  const { sensorId } = useParams<{ sensorId: string }>();
+  const appliedSensorId = useRef<string | undefined>(undefined);
 
   // State management
   const [activeView, setActiveView] = useState<'dashboard' | 'config' | 'alerts' | 'analytics' | 'map'>(initialView);
@@ -175,6 +178,19 @@ const Sensors: React.FC<SensorsProps> = ({
       setActiveView('config');
     }
   };
+
+  // Deep link: /sensors/:sensorId selects that sensor once per distinct id
+  // (ref guard, so later list updates do not steal the user's current view).
+  useEffect(() => {
+    if (!sensorId || isLoading) return;
+    if (appliedSensorId.current === sensorId) return;
+    appliedSensorId.current = sensorId;
+    if (sensors.some(s => s.id === sensorId)) {
+      handleSensorSelect(sensorId);
+    } else {
+      setError(`Sensor ${sensorId} was not found.`);
+    }
+  }, [sensorId, isLoading, sensors]);
 
   // Navigation items
   const navItems = [

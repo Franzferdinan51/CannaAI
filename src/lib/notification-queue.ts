@@ -122,8 +122,17 @@ export function stopQueueProcessor(): void {
   console.log('[QUEUE] Stopped queue processor');
 }
 
+// Result of one queue drain pass. Callers that report health (the
+// scheduler) need to know when a pass was SKIPPED — e.g. the queue table
+// does not exist yet — instead of treating silence as a successful drain.
+export interface ProcessQueueResult {
+  processed: number;
+  skipped: boolean;
+  skipReason?: string;
+}
+
 // Process the notification queue
-export async function processQueue(now: Date = new Date()): Promise<void> {
+export async function processQueue(now: Date = new Date()): Promise<ProcessQueueResult> {
   try {
     const scheduledNotifications = await prisma.notificationQueueItem.findMany({
       where: {
@@ -163,12 +172,19 @@ export async function processQueue(now: Date = new Date()): Promise<void> {
     if (scheduledNotifications.length > 0) {
       console.log(`[QUEUE] Processed ${scheduledNotifications.length} scheduled notifications`);
     }
+    return { processed: scheduledNotifications.length, skipped: false };
   } catch (error: any) {
     if (error.code === 'P2021') {
-      // Table doesn't exist yet - silently skip
-      return;
+      // Table doesn't exist yet — the queue was NOT drained. Warn (not
+      // silent) and report the skip so the scheduler/health surface it
+      // instead of claiming queueDrained.
+      const skipReason = 'Notification queue table missing (Prisma P2021)';
+      console.warn(`[QUEUE] Skipping queue processing: ${skipReason}`);
+      return { processed: 0, skipped: true, skipReason };
     }
-    console.error('[QUEUE] Error processing queue:', error.message);
+    const message = error instanceof Error ? error.message : String(error?.message ?? error);
+    console.error('[QUEUE] Error processing queue:', message);
+    return { processed: 0, skipped: true, skipReason: message };
   }
 }
 

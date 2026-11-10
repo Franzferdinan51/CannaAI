@@ -25,6 +25,10 @@ type HealthComponent = {
   models?: number;
   modelsLoaded?: number | null;
   latency?: number | null;
+  running?: boolean;
+  lastTickAt?: string | null;
+  lastErrors?: string[];
+  lastQueueDrained?: boolean | null;
 };
 
 async function checkPrisma() {
@@ -109,8 +113,45 @@ async function checkHermes() {
   }
 }
 
+async function checkScheduler(): Promise<HealthComponent> {
+  try {
+    // Dynamic import: the scheduler module is already loaded by server.ts
+    // in the live process (so this reads its real last-tick state), and a
+    // static import would drag the whole automation/AI dependency chain
+    // into this route — and into every test that imports it.
+    const { getSchedulerStatus } = await import('@/lib/scheduler');
+    const scheduler = getSchedulerStatus();
+    const base: HealthComponent = {
+      status: 'pending',
+      running: scheduler.running,
+      lastTickAt: scheduler.lastTickAt,
+      lastErrors: scheduler.lastErrors,
+      lastQueueDrained: scheduler.lastQueueDrained,
+    };
+    if (!scheduler.lastTickAt) {
+      // No tick has run yet (e.g. just after boot) — visible in the
+      // components list, but must not degrade the roll-up (same treatment
+      // as 'unconfigured' below).
+      return base;
+    }
+    return {
+      ...base,
+      status: scheduler.lastErrors.length > 0 ? 'degraded' : 'ok',
+    };
+  } catch (e) {
+    return {
+      status: 'pending',
+      running: false,
+      lastTickAt: null,
+      lastErrors: [],
+      lastQueueDrained: null,
+      error: String(e).slice(0, 80),
+    };
+  }
+}
+
 export async function GET() {
-  const [db, lmstudio, openclaw, hermes] = await Promise.all([
+  const [db, lmstudio, openclaw, hermes, scheduler] = await Promise.all([
     checkPrisma(),
     checkLMStudio(),
     // OpenClaw's supported status command starts a CLI process and can take
@@ -122,13 +163,20 @@ export async function GET() {
       Number(process.env.OPENCLAW_HEALTH_TIMEOUT_MS || 45000),
     ),
     withHealthTimeout<HealthComponent>(checkHermes(), { status: 'unreachable', error: 'health check timed out' }, 5000),
+    checkScheduler(),
   ]);
 
   // Components that are absent by configuration (Hermes unconfigured,
   // OpenClaw not installed/running) are reported in `components` but do
-  // not decide the roll-up.
+  // not decide the roll-up. The scheduler joins the roll-up only once it
+  // has a verdict — 'ok' or 'degraded'; a 'pending' scheduler (no tick
+  // yet) is listed but does not degrade the roll-up, same treatment as
+  // 'unconfigured'.
   const monitored: Array<{ status: string }> = [db, lmstudio, openclaw, hermes]
     .filter((s) => s.status !== 'unconfigured');
+  if (scheduler.status === 'ok' || scheduler.status === 'degraded') {
+    monitored.push(scheduler);
+  }
   const allUp = monitored.every((s) => s.status === 'ok');
   const degraded = monitored.some((s) => s.status === 'ok');
 
@@ -136,6 +184,6 @@ export async function GET() {
     status: allUp ? 'ok' : degraded ? 'degraded' : 'down',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    components: { db, lmstudio, openclaw, hermes },
+    components: { db, lmstudio, openclaw, hermes, scheduler },
   }, { status: allUp ? 200 : degraded ? 200 : 503 });
 }

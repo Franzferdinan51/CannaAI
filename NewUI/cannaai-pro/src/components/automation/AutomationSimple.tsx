@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, Bot, Calendar, CheckCircle2, Clock3, Droplets, History, Lightbulb, RefreshCw, Settings, Shield, Thermometer, Wind, XCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { apiUrl } from '../../lib/api';
 
 type AutomationTab = 'overview' | 'controls' | 'scheduling' | 'history' | 'safety';
@@ -11,6 +11,21 @@ const systems = [
   { name: 'Lighting', detail: 'Schedules and intensity control', icon: Lightbulb, color: 'text-yellow-300' },
   { name: 'Air Quality', detail: 'CO₂ and circulation monitoring', icon: Wind, color: 'text-cyan-300' },
 ];
+
+// Deep link: /automation/:system — a tab id selects that tab; a system slug
+// or full system name (lowercased) lands on 'overview', where the system
+// cards live. Anything else resolves to null and is ignored.
+function resolveAutomationTab(param: string | undefined): AutomationTab | null {
+  if (!param) return null;
+  const normalized = param.toLowerCase();
+  if (normalized === 'overview' || normalized === 'controls' || normalized === 'scheduling' || normalized === 'history' || normalized === 'safety') {
+    return normalized;
+  }
+  if (normalized === 'climate' || normalized === 'climate control' || normalized === 'irrigation' || normalized === 'lighting' || normalized === 'air-quality' || normalized === 'air quality') {
+    return 'overview';
+  }
+  return null;
+}
 
 function createTimeoutSignal(timeoutMs: number): AbortSignal {
   const nativeTimeout = (AbortSignal as typeof AbortSignal & {
@@ -25,7 +40,14 @@ function createTimeoutSignal(timeoutMs: number): AbortSignal {
 
 export default function AutomationSimple() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<AutomationTab>('overview');
+  const { system } = useParams<{ system: string }>();
+  const [tab, setTab] = useState<AutomationTab>(() => resolveAutomationTab(system) ?? 'overview');
+  // Re-apply when the deep-link param changes while the page stays mounted;
+  // manual tab clicks do not retrigger this (the param has not changed).
+  useEffect(() => {
+    const target = resolveAutomationTab(system);
+    if (target) setTab(target);
+  }, [system]);
   const [state, setState] = useState<AutomationState>({ config: {}, checkedAt: null, loading: true, error: null });
   const refresh = useCallback(async () => {
     setState((current) => ({ ...current, loading: true, error: null }));

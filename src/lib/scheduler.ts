@@ -53,6 +53,48 @@ let intervalHandle: NodeJS.Timeout | null = null;
 let initialHandle: NodeJS.Timeout | null = null;
 let ticksSinceMaintenance = 0;
 
+// Last completed (non-skipped) tick, kept so the health endpoint can
+// surface scheduler/queue failures instead of them being log-only.
+// The state lives on globalThis (the same singleton pattern as
+// src/lib/prisma.ts): under tsx the custom server and the API-route
+// module graph can hold SEPARATE instances of this module, so plain
+// module-level state written by the server's scheduler is invisible to
+// the health route's copy. globalThis is shared by both.
+interface SchedulerSharedState {
+  running: boolean;
+  lastTickAt: string | null;
+  lastTickSummary: SchedulerTickSummary | null;
+}
+
+const sharedState: SchedulerSharedState = ((
+  globalThis as { __cannaaiSchedulerState?: SchedulerSharedState }
+).__cannaaiSchedulerState ??= {
+  running: false,
+  lastTickAt: null,
+  lastTickSummary: null,
+});
+
+export interface SchedulerStatus {
+  running: boolean;
+  lastTickAt: string | null;
+  lastErrors: string[];
+  lastQueueDrained: boolean | null;
+  lastSummary: SchedulerTickSummary | null;
+}
+
+export function getSchedulerStatus(): SchedulerStatus {
+  const { lastTickSummary } = sharedState;
+  return {
+    running: sharedState.running,
+    lastTickAt: sharedState.lastTickAt,
+    lastErrors: lastTickSummary ? [...lastTickSummary.errors] : [],
+    lastQueueDrained: lastTickSummary ? lastTickSummary.queueDrained : null,
+    lastSummary: lastTickSummary
+      ? { ...lastTickSummary, errors: [...lastTickSummary.errors] }
+      : null,
+  };
+}
+
 export interface SchedulerTickSummary {
   skipped?: boolean;
   schedulesChecked?: number;
@@ -137,8 +179,17 @@ export async function runSchedulerTick(now: Date = new Date()): Promise<Schedule
     //    item by flipping its status before sending, so items are never
     //    sent twice; failed items follow its built-in retry semantics.
     try {
-      await processQueue(now);
-      summary.queueDrained = true;
+      const queueResult = await processQueue(now);
+      if (queueResult?.skipped) {
+        // The queue was NOT drained (e.g. its table is missing, P2021) —
+        // say so in the summary instead of reporting a false drain.
+        summary.queueDrained = false;
+        const reason = queueResult.skipReason || 'queue processing skipped';
+        summary.errors.push(`queue: ${reason}`);
+        console.warn(`${TAG} Queue drain skipped: ${reason}`);
+      } else {
+        summary.queueDrained = true;
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       summary.errors.push(`queue: ${message}`);
@@ -168,6 +219,12 @@ export async function runSchedulerTick(now: Date = new Date()): Promise<Schedule
       }
     }
 
+    // Record the tick for getSchedulerStatus()/health. Only non-skipped
+    // ticks reach here — the overlapping-tick guard returns earlier and
+    // must not overwrite the last real tick's state.
+    sharedState.lastTickAt = now.toISOString();
+    sharedState.lastTickSummary = { ...summary, errors: [...summary.errors] };
+
     return summary;
   } finally {
     tickRunning = false;
@@ -190,6 +247,7 @@ export function startScheduler(): void {
   }
 
   started = true;
+  sharedState.running = true;
   const intervalMs = schedulerIntervalMs();
   console.log(`${TAG} Started (tick every ${intervalMs}ms, maintenance every ${schedulerMaintenanceEveryTicks()} ticks)`);
 
@@ -219,4 +277,5 @@ export function stopScheduler(): void {
     console.log(`${TAG} Stopped`);
   }
   started = false;
+  sharedState.running = false;
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Plant,
   PlantStrain,
@@ -66,6 +66,7 @@ import {
 
 const Plants: React.FC = () => {
   const navigate = useNavigate();
+  const { plantId } = useParams<{ plantId: string }>();
   // State management
   const [state, setState] = useState<PlantManagementState>({
     plants: [],
@@ -94,6 +95,8 @@ const Plants: React.FC = () => {
   });
 
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
+  const [plantsLoaded, setPlantsLoaded] = useState(false);
+  const appliedPlantId = useRef<string | undefined>(undefined);
   const [rooms, setRooms] = useState<PlantLocation[]>([]);
   const [showPlantForm, setShowPlantForm] = useState(false);
   const [editingPlant, setEditingPlant] = useState<Plant | null>(null);
@@ -119,6 +122,7 @@ const Plants: React.FC = () => {
       ]);
 
       if (roomsResult.status === 'fulfilled') setRooms(roomsResult.value);
+      if (plantsResult.status === 'fulfilled') setPlantsLoaded(true);
 
       const failures = [
         plantsResult.status === 'rejected' ? 'plants' : null,
@@ -315,6 +319,21 @@ const Plants: React.FC = () => {
     setSelectedPlant(plant);
     setState(prev => ({ ...prev, activeTab: 'details' }));
   };
+
+  // Deep link: /plants/:plantId selects that plant once per distinct id.
+  // The ref guard keeps the 60s auto-refresh (and later re-renders) from
+  // re-selecting after the user has navigated to another tab themselves.
+  useEffect(() => {
+    if (!plantId || !plantsLoaded) return;
+    if (appliedPlantId.current === plantId) return;
+    appliedPlantId.current = plantId;
+    const plant = state.plants.find(candidate => candidate.id === plantId);
+    if (plant) {
+      handleSelectPlant(plant);
+    } else {
+      setState(prev => ({ ...prev, error: `Plant ${plantId} was not found.` }));
+    }
+  }, [plantId, plantsLoaded, state.plants]);
 
   const handleEditPlant = (plant: Plant) => {
     setEditingPlant(plant);

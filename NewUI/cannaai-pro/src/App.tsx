@@ -123,7 +123,6 @@ function AppWithSocket() {
                 <Route path="/automation/:system" element={<Automation />} />
 
                 {/* Legacy route support */}
-                <Route path="/dashboard/:tab" element={<Dashboard />} />
                 <Route path="/analytics" element={<Navigate to="/reports" replace />} />
                 <Route path="/assistant" element={<Navigate to="/chat" replace />} />
 
