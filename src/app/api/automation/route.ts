@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 import { getLiveLmStudioStatus } from '@/lib/lmstudio-status';
+import { markUnprobedProviders } from '@/lib/provider-status';
 
 export async function GET() {
   await ensureSeedData();
   const setting = await prisma.automationSetting.findFirst();
-  const config = (setting?.config || {}) as Record<string, unknown>;
+  // Same honesty rule as /api/settings: only lmStudio is live-probed;
+  // every other provider's stored `connected` is marked not-probed
+  // rather than presented as a live reading.
+  const config = markUnprobedProviders((setting?.config || {}) as Record<string, unknown>);
   // The stored config's lmStudio.connected is a seed-time value, not a
   // live reading — overlay the live probe (same one /api/health-check
   // uses) so this payload stops reporting "disconnected" while LM

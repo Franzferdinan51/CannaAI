@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { createTimeoutSignal } from '@/lib/abort-signal';
 import { getLiveLmStudioStatus } from '@/lib/lmstudio-status';
+import { markUnprobedProviders } from '@/lib/provider-status';
 import { getLogger } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
@@ -173,7 +174,12 @@ export async function GET() {
 
   try {
     await loadSettings();
-    const masked = maskSettings(settings);
+    // Every provider's stored `connected` is a seed-time value, not a
+    // live reading. lmStudio gets the live probe overlaid below; the
+    // rest are marked not-probed (connected: null) instead of parroting
+    // the stored boolean as if it were measured (see
+    // @/lib/provider-status).
+    const masked = markUnprobedProviders(maskSettings(settings));
     // The stored config's lmStudio.connected is a seed-time value, not a
     // live reading — overlay the live probe so this payload stops
     // reporting "disconnected" while LM Studio is up (see

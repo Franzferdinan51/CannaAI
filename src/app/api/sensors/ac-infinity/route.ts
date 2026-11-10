@@ -8,6 +8,7 @@ import {
 } from '@/lib/ac-infinity';
 import { withRequest } from '@/lib/logger';
 import { evaluateEnvironmentAlerts } from '@/lib/alert-evaluation';
+import { summarizePortDuty } from '@/lib/device-duty';
 
 const AcInfinityPayloadSchema = z.object({
   deviceId: z.string().max(100).optional(),
@@ -23,6 +24,10 @@ const AcInfinityPayloadSchema = z.object({
     speed: z.number().int().min(0).max(10).optional(),
     mode: z.string().max(20).optional(),
     on: z.boolean().optional(),
+    // Device name as configured in the AC Infinity app (e.g.
+    // "Humidifier") — carried so device state can be surfaced by name,
+    // not just by port number.
+    name: z.string().max(60).optional(),
   })).optional(),
   timestamp: z.string().datetime().optional(),
   growthStage: z.string().max(50).optional(),
@@ -210,23 +215,47 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/** Window the per-port duty summaries below aggregate over. */
+const DEVICE_DUTY_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 /**
  * GET /api/sensors/ac-infinity
- * Latest reading from each AC Infinity controller, newest first.
+ * Latest reading from each AC Infinity controller, newest first. Each
+ * controller also carries `devices`: per-port UIS device summaries
+ * (name, current state, on-duty over the last 24h of stored readings)
+ * aggregated by device-duty — display only, nothing here drives the
+ * hardware.
  */
 export async function GET() {
   const sensors = await prisma.sensor.findMany({
     where: { id: { startsWith: 'ac-infinity-' } },
     include: { readings: { orderBy: { timestamp: 'desc' }, take: 1 } },
   });
-  return addSecurityHeaders(NextResponse.json({
-    success: true,
-    controllers: sensors.map((s) => ({
+  const windowStart = new Date(Date.now() - DEVICE_DUTY_WINDOW_MS);
+  const controllers = await Promise.all(sensors.map(async (s) => {
+    const windowReadings = await prisma.sensorReading.findMany({
+      where: { sensorId: s.id, timestamp: { gte: windowStart } },
+      select: { timestamp: true, data: true },
+      orderBy: { timestamp: 'asc' },
+    });
+    const devices = summarizePortDuty(windowReadings.map((r) => {
+      const data = r.data && typeof r.data === 'object' && !Array.isArray(r.data)
+        ? (r.data as Record<string, unknown>)
+        : {};
+      return { timestamp: r.timestamp, ports: data.ports };
+    }));
+    return {
       sensorId: s.id,
       name: s.name,
       lastValue: s.lastValue,
       lastUpdated: s.lastUpdated,
       latestReading: s.readings[0] || null,
-    })),
+      devices,
+      deviceWindowHours: 24,
+    };
+  }));
+  return addSecurityHeaders(NextResponse.json({
+    success: true,
+    controllers,
   }));
 }

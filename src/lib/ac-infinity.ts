@@ -68,8 +68,10 @@ export function toCelsius(tempF: number): number {
 export function vpdBand(vpdKpa: number, growthStage?: string): 'low' | 'optimal' | 'high' {
   const stage = (growthStage || '').toLowerCase();
   // Seedlings/clones like it humid (low VPD); flower likes it drier.
-  const low = stage.includes('seedling') || stage.includes('clone') ? 0.4 : 0.8;
-  const high = stage.includes('flower') ? 1.4 : 1.2;
+  // Bounds mirror the stage bands in env-targets.ts.
+  const isSeedling = stage.includes('seedling') || stage.includes('clone');
+  const low = isSeedling ? 0.4 : 0.8;
+  const high = stage.includes('flower') ? 1.4 : isSeedling ? 0.8 : 1.2;
   if (vpdKpa < low) return 'low';
   if (vpdKpa > high) return 'high';
   return 'optimal';

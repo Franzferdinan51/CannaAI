@@ -9,7 +9,8 @@
  * Resolution precedence, per metric:
  *   1. The strain's `optimalConditions` (when it carries a usable band for
  *      the plant's stage, or a flat band that applies to every stage).
- *   2. Stage defaults — the exact numbers /api/grow/today has always used.
+ *   2. Stage defaults — the grower-consensus bands in stageEnvTargets
+ *      below (this is also what /api/grow/today returns).
  *
  * Strain optimalConditions in the wild (see seed data and the dashboard)
  * look like:
@@ -135,17 +136,39 @@ function temperatureBandFromConditions(
 }
 
 /**
- * Stage default bands — verbatim the numbers /api/grow/today has always
- * returned. Do not retune here without updating the dashboard contract.
+ * Stage default bands — grower-consensus stage targets (checked against
+ * multiple grow references on 2026-11-10). Until wave 9 the seedling
+ * bucket carried early-veg numbers (30–50% RH, VPD 0.8–1.2): alert
+ * evaluation flagged healthy seedling humidity as HIGH_HUMIDITY (a real
+ * 50.1% reading fired one on 2026-11-06) and stayed silent while
+ * seedlings sat far too dry. Duckets caught the same mistake in his
+ * controller program that day and corrected it by hand. Seedlings and
+ * clones have minimal root systems and take up water through their
+ * leaves, so they want high humidity and a gentle VPD; bands step down
+ * as the plant matures. Stage matching is case-insensitive.
  */
 export function stageEnvTargets(stage: string | null | undefined): EnvTargets {
-  if (stage === 'seedling' || stage === 'germination') {
-    return { temperatureF: [70, 80], humidity: [30, 50], vpd: [0.8, 1.2] };
+  const normalized = (stage || '').toLowerCase().trim();
+  if (
+    normalized === 'seedling' ||
+    normalized === 'germination' ||
+    normalized === 'clone' ||
+    normalized === 'clones' ||
+    normalized === 'cloning'
+  ) {
+    return { temperatureF: [72, 78], humidity: [65, 75], vpd: [0.4, 0.8] };
   }
-  if (stage === 'flowering' || stage === 'ripening') {
+  if (
+    normalized === 'flowering' ||
+    normalized === 'flower' ||
+    normalized === 'bloom' ||
+    normalized === 'ripening'
+  ) {
     return { temperatureF: [65, 80], humidity: [40, 55], vpd: [1.0, 1.6] };
   }
-  return { temperatureF: [65, 85], humidity: [40, 65], vpd: [0.8, 1.4] };
+  // Vegetative — and any stage this map does not name — uses the
+  // early-veg consensus band.
+  return { temperatureF: [72, 82], humidity: [55, 65], vpd: [0.8, 1.2] };
 }
 
 /**

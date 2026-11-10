@@ -47,6 +47,12 @@ describe('ac-infinity', () => {
       expect(vpdBand(0.6, 'seedling')).toBe('optimal');
       expect(vpdBand(0.6)).toBe('low');
     });
+
+    it('caps the seedling band at the seedling VPD target (0.8)', () => {
+      expect(vpdBand(1.0, 'seedling')).toBe('high');
+      expect(vpdBand(1.0)).toBe('optimal');
+      expect(vpdBand(0.3, 'seedling')).toBe('low');
+    });
   });
 
   describe('normalizeAcInfinityReading', () => {
