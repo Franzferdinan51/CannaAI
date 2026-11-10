@@ -29,6 +29,8 @@ type HealthComponent = {
   lastTickAt?: string | null;
   lastErrors?: string[];
   lastQueueDrained?: boolean | null;
+  unhandledRejections?: number;
+  lastUnhandledRejection?: { message: string; at: string } | null;
 };
 
 async function checkPrisma() {
@@ -150,8 +152,30 @@ async function checkScheduler(): Promise<HealthComponent> {
   }
 }
 
+async function checkProcess(): Promise<HealthComponent> {
+  try {
+    // Dynamic import for the same reason as checkScheduler: keep this
+    // route's static graph small, and read the globalThis-backed state
+    // server.ts increments.
+    const { getProcessHealth } = await import('@/lib/process-health');
+    const processHealth = getProcessHealth();
+    return {
+      status: 'ok',
+      unhandledRejections: processHealth.unhandledRejections,
+      lastUnhandledRejection: processHealth.lastUnhandledRejection,
+    };
+  } catch (e) {
+    return {
+      status: 'ok',
+      unhandledRejections: 0,
+      lastUnhandledRejection: null,
+      error: String(e).slice(0, 80),
+    };
+  }
+}
+
 export async function GET() {
-  const [db, lmstudio, openclaw, hermes, scheduler] = await Promise.all([
+  const [db, lmstudio, openclaw, hermes, scheduler, processHealth] = await Promise.all([
     checkPrisma(),
     checkLMStudio(),
     // OpenClaw's supported status command starts a CLI process and can take
@@ -164,6 +188,7 @@ export async function GET() {
     ),
     withHealthTimeout<HealthComponent>(checkHermes(), { status: 'unreachable', error: 'health check timed out' }, 5000),
     checkScheduler(),
+    checkProcess(),
   ]);
 
   // Components that are absent by configuration (Hermes unconfigured,
@@ -184,6 +209,8 @@ export async function GET() {
     status: allUp ? 'ok' : degraded ? 'degraded' : 'down',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    components: { db, lmstudio, openclaw, hermes, scheduler },
+    // `process` is informational only (unhandled-rejection counter): it
+    // is listed in components but never joins the roll-up above.
+    components: { db, lmstudio, openclaw, hermes, scheduler, process: processHealth },
   }, { status: allUp ? 200 : degraded ? 200 : 503 });
 }

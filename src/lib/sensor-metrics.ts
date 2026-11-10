@@ -69,3 +69,48 @@ export async function getLatestSensorMetric(metric: SensorMetric): Promise<Lates
   }
   return best;
 }
+
+export interface LatestRoomClimate {
+  temperature: number | null;
+  humidity: number | null;
+  sensorId: string;
+  sensorName: string;
+  timestamp: string;
+}
+
+/**
+ * Latest climate values for one room, from the newest reading among the
+ * sensors linked to it (Sensor.locationId). Temperature and humidity come
+ * from the same reading so the pair is coherent; either stays null when
+ * that reading's payload doesn't carry it. Returns null when no sensor
+ * linked to the room has ever reported temperature or humidity — callers
+ * must show nulls, not invented values.
+ */
+export async function getLatestRoomClimate(roomId: string): Promise<LatestRoomClimate | null> {
+  const sensors = await prisma.sensor.findMany({
+    where: { locationId: roomId },
+    include: { readings: { orderBy: { timestamp: 'desc' }, take: 1 } },
+  });
+
+  let best: LatestRoomClimate | null = null;
+  for (const sensor of sensors) {
+    const latest = sensor.readings[0];
+    if (!latest) continue;
+    const details = record(latest.data);
+    let temperature = numberOrNull(details.temperature);
+    // Same fallback as getLatestSensorMetric: SensorReading.value mirrors
+    // the primary climate value (temperature for AC Infinity ingest).
+    if (temperature === null) temperature = numberOrNull(latest.value);
+    const humidity = numberOrNull(details.humidity);
+    if (temperature === null && humidity === null) continue;
+    const candidate: LatestRoomClimate = {
+      temperature,
+      humidity,
+      sensorId: sensor.id,
+      sensorName: sensor.name,
+      timestamp: latest.timestamp.toISOString(),
+    };
+    if (!best || candidate.timestamp > best.timestamp) best = candidate;
+  }
+  return best;
+}

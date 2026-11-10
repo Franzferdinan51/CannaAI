@@ -34,6 +34,7 @@ import {
 import { ChatTemplate, FileAttachment } from './types';
 import { createFileAttachment, fileToDataUrl, validateAttachment } from './attachments';
 import { Button } from '../ui/button';
+import toast from 'react-hot-toast';
 
 interface ChatInputProps {
   onSend: (content: string, image?: string, attachments?: FileAttachment[]) => void;
@@ -226,7 +227,7 @@ export function ChatInput({
         if (file.type.startsWith('image/')) {
           handleImageUpload(file);
         } else {
-          alert('Please select an image file');
+          toast.error('Please select an image file');
         }
       } else {
         handleFileUpload(file);
@@ -238,7 +239,7 @@ export function ChatInput({
   const handleImageUpload = useCallback((file: File) => {
     const validation = validateAttachment(file, 'image');
     if (!validation.valid) {
-      alert(validation.error);
+      toast.error(validation.error);
       return;
     }
 
@@ -254,7 +255,7 @@ export function ChatInput({
   const handleFileUpload = useCallback(async (file: File) => {
     const validation = validateAttachment(file, 'file');
     if (!validation.valid) {
-      alert(validation.error);
+      toast.error(validation.error);
       return;
     }
 
@@ -262,7 +263,7 @@ export function ChatInput({
     try {
       payload = await fileToDataUrl(file);
     } catch {
-      alert('Unable to read this attachment');
+      toast.error('Unable to read this attachment');
       return;
     }
 

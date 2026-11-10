@@ -5,6 +5,8 @@ import { providerAuthStatus } from '@/lib/provider-auth';
 import { prisma } from '@/lib/prisma';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { createTimeoutSignal } from '@/lib/abort-signal';
+import { getLiveLmStudioStatus } from '@/lib/lmstudio-status';
+import { getLogger } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -171,12 +173,20 @@ export async function GET() {
 
   try {
     await loadSettings();
+    const masked = maskSettings(settings);
+    // The stored config's lmStudio.connected is a seed-time value, not a
+    // live reading — overlay the live probe so this payload stops
+    // reporting "disconnected" while LM Studio is up (see
+    // @/lib/lmstudio-status).
+    if (masked.lmStudio && typeof masked.lmStudio === 'object' && !Array.isArray(masked.lmStudio)) {
+      masked.lmStudio = { ...masked.lmStudio, ...(await getLiveLmStudioStatus()) };
+    }
     return NextResponse.json({
       success: true,
-      settings: maskSettings(settings)
+      settings: masked
     });
   } catch (error) {
-    console.error('Get settings error:', error);
+    getLogger().error('settings_get_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       { error: 'Failed to fetch settings' },
       { status: 500 }

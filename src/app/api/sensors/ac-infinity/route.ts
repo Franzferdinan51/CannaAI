@@ -17,7 +17,9 @@ const AcInfinityPayloadSchema = z.object({
   humidity: z.number(),
   vpd: z.number().optional(),
   ports: z.array(z.object({
-    port: z.number().int(),
+    // AC Infinity controllers expose ports 1-8; anything outside that
+    // range is a malformed payload, not a real device state.
+    port: z.number().int().min(1).max(8),
     speed: z.number().int().min(0).max(10).optional(),
     mode: z.string().max(20).optional(),
     on: z.boolean().optional(),
@@ -25,6 +27,12 @@ const AcInfinityPayloadSchema = z.object({
   timestamp: z.string().datetime().optional(),
   growthStage: z.string().max(50).optional(),
 });
+
+// Readings timestamped too far in the future would poison every "latest"
+// query (they would win ordering indefinitely). 10 minutes tolerates
+// ordinary clock drift on the collector/phone while rejecting garbage;
+// the collector posts current UTC, so real readings sit seconds out.
+const MAX_TIMESTAMP_FUTURE_SKEW_MS = 10 * 60 * 1000;
 
 function addSecurityHeaders(response: NextResponse) {
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -52,6 +60,13 @@ export async function POST(request: NextRequest) {
       ));
     }
     const { deviceId, deviceName, timestamp, ports, growthStage } = parsed.data;
+
+    if (timestamp && new Date(timestamp).getTime() - Date.now() > MAX_TIMESTAMP_FUTURE_SKEW_MS) {
+      return addSecurityHeaders(NextResponse.json(
+        { success: false, error: 'Timestamp is too far in the future' },
+        { status: 400 },
+      ));
+    }
 
     let normalized;
     try {

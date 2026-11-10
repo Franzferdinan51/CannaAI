@@ -1,6 +1,9 @@
 import { prisma } from './prisma';
 import { scheduleWebhookDelivery as enqueueWebhookDelivery } from './webhooks';
+import { getLogger } from './logger';
 import crypto from 'crypto';
+
+const log = getLogger();
 
 // Notification types
 export type NotificationType =
@@ -251,7 +254,9 @@ export async function sendEmail(to: string, subject: string, body: string, data?
   }
 }
 
-// SMS service (mock implementation - integrate with real service)
+// SMS service — NOT configured in this deployment: no SMS provider is
+// wired up, so this fails honestly (success:false, nothing sent) rather
+// than pretending to deliver. It is not a mock; there is no send path.
 export async function sendSMS(phone: string, message: string): Promise<DeliveryResult> {
   void phone;
   void message;
@@ -262,7 +267,9 @@ export async function sendSMS(phone: string, message: string): Promise<DeliveryR
   };
 }
 
-// Web push notification (mock implementation)
+// Web push notification — NOT configured in this deployment: no push
+// provider or subscription store is wired up, so this fails honestly
+// (success:false, nothing sent). It is not a mock; there is no send path.
 export async function sendPushNotification(token: string, title: string, body: string): Promise<DeliveryResult> {
   void token;
   void title;
@@ -434,14 +441,14 @@ export async function sendNotification(data: NotificationData): Promise<{
     const quietEnd = endHour * 60 + endMin;
 
     if (currentTime >= quietStart && currentTime <= quietEnd) {
-      console.log(`[NOTIFICATION] Skipping notification during quiet hours: ${data.title}`);
+      log.info('notification_skipped_quiet_hours', { title: data.title });
       return { notification, deliveries: [] };
     }
   }
 
   // Check severity threshold
   if (preferences && !isSeverityMet(data.severity, preferences.minSeverity)) {
-    console.log(`[NOTIFICATION] Notification severity ${data.severity} below threshold ${preferences.minSeverity}`);
+    log.info('notification_skipped_severity', { severity: data.severity, threshold: preferences.minSeverity });
     return { notification, deliveries: [] };
   }
 
@@ -490,7 +497,7 @@ export async function sendNotification(data: NotificationData): Promise<{
       try {
         await scheduleWebhookDelivery(webhook.id, notification.id, data.type, data);
       } catch (error) {
-        console.error(`[WEBHOOK] Failed to schedule delivery: ${error}`);
+        log.error('webhook_schedule_delivery_failed', { error: error instanceof Error ? error.message : String(error) });
       }
     }
   }

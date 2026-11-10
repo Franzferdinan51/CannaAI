@@ -77,6 +77,7 @@ const Chat = lazy(() => import('./components/chat/ChatInterface'));
 const Settings = lazy(() => import('./components/settings/Settings'));
 const Automation = lazy(() => import('./components/automation/AutomationSimple').then(module => ({ default: module.default })));
 const Advisors = lazy(() => import('./components/advisors/LocalMoaAdvisors'));
+const NotFound = lazy(() => import('./components/NotFound'));
 
 import { SocketProvider } from './contexts/SocketContext';
 
@@ -127,7 +128,7 @@ function AppWithSocket() {
                 <Route path="/assistant" element={<Navigate to="/chat" replace />} />
 
                 {/* 404 fallback */}
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
           </Layout>

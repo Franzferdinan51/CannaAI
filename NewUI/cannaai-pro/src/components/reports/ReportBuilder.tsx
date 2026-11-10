@@ -81,6 +81,7 @@ import {
 
 import { reportsApi, templatesApi, exportApi } from './api';
 import { dateUtils, numberUtils, exportUtils, reportUtils } from './utils';
+import toast from 'react-hot-toast';
 
 interface ReportBuilderProps {
   className?: string;
@@ -304,11 +305,11 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
       const savedReport = await reportsApi.createReport(report);
       if (savedReport) {
         onSave?.(savedReport);
-        alert('Report saved successfully!');
+        toast.success('Report saved successfully!');
       }
     } catch (error) {
       console.error('Failed to save report:', error);
-      alert('Failed to save report. Please try again.');
+      toast.error('Failed to save report. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -344,7 +345,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({
       }
     } catch (error) {
       console.error('Failed to export report:', error);
-      alert('Failed to export report. Please try again.');
+      toast.error('Failed to export report. Please try again.');
     } finally {
       setIsLoading(false);
     }

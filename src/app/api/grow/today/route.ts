@@ -4,6 +4,7 @@ import { ensureSeedData } from '@/lib/seed-data';
 import { publicPlantImage } from '@/lib/plant-images';
 import { resolveEnvTargets } from '@/lib/env-targets';
 import { calculateVPD, toCelsius } from '@/lib/ac-infinity';
+import { getLatestRoomClimate } from '@/lib/sensor-metrics';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -110,11 +111,27 @@ export async function GET() {
     };
   });
 
+  // Rooms carry stored temp/humidity columns that nothing writes, so they
+  // read null forever. Populate them from each room's latest sensor
+  // reading instead; a room with no linked sensor keeps honest nulls.
+  const roomsWithClimate = await Promise.all(
+    rooms.map(async (room) => {
+      const climate = await getLatestRoomClimate(room.id);
+      return {
+        ...room,
+        temp: climate?.temperature ?? room.temp,
+        humidity: climate?.humidity ?? room.humidity,
+      };
+    }),
+  );
+
   const plantSummaries = plants.map((plant) => ({
     ...plant,
     images: publicImages(plant.images),
     location: plant.room
-      ? { id: plant.room.id, name: plant.room.name, type: 'tent', environment: {} }
+      // Room has no stored type — the old payload fabricated 'tent' for
+      // every location. Report null rather than inventing one.
+      ? { id: plant.room.id, name: plant.room.name, type: null, environment: {} }
       : null,
   }));
   const primaryPlant = plantSummaries[0] || null;
@@ -137,7 +154,7 @@ export async function GET() {
     success: true,
     data: {
       generatedAt: now.toISOString(),
-      rooms,
+      rooms: roomsWithClimate,
       plants: plantSummaries,
       primaryPlant,
       targets: resolveEnvTargets({

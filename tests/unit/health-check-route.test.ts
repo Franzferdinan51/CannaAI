@@ -89,4 +89,22 @@ describe('/api/health-check agent coverage', () => {
     expect(result.status).toBe(200);
     expect(body.components.hermes).toEqual({ status: 'ok', source: 'hermes-proxy' });
   });
+
+  test('exposes the unhandled-rejection counter as an informational process component', async () => {
+    const { recordUnhandledRejection } = await import('@/lib/process-health');
+    (globalThis as any).__cannaaiProcessHealth = undefined;
+    recordUnhandledRejection(new Error('boom-one'));
+    recordUnhandledRejection('boom-two');
+
+    const result = await GET();
+    const body = await result.json();
+
+    expect(result.status).toBe(200);
+    // Informational only: recorded rejections must not degrade the roll-up.
+    expect(body.status).toBe('ok');
+    expect(body.components.process.status).toBe('ok');
+    expect(body.components.process.unhandledRejections).toBe(2);
+    expect(body.components.process.lastUnhandledRejection.message).toBe('boom-two');
+    expect(typeof body.components.process.lastUnhandledRejection.at).toBe('string');
+  });
 });

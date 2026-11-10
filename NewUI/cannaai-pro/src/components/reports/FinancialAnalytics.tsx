@@ -309,10 +309,10 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   return (
     <div ref={analyticsRef} className={`space-y-6 ${className}`}>
       {/* Header Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           {/* Period Selector */}
-          <div className="flex bg-[#1A1D23] border border-gray-700 rounded-lg">
+          <div className="flex flex-wrap bg-[#1A1D23] border border-gray-700 rounded-lg">
             {(['daily', 'weekly', 'monthly', 'quarterly', 'yearly'] as const).map((periodType) => (
               <button
                 key={periodType}
@@ -331,7 +331,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
           </div>
 
           {/* View Mode Selector */}
-          <div className="flex bg-[#1A1D23] border border-gray-700 rounded-lg">
+          <div className="flex flex-wrap bg-[#1A1D23] border border-gray-700 rounded-lg">
             {(['overview', 'detailed', 'forecasts', 'kpis'] as const).map((mode) => (
               <button
                 key={mode}
@@ -369,7 +369,7 @@ export const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button type="button" aria-label="Export financial analytics" onClick={exportSnapshot} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
             <Download className="w-4 h-4" />
           </button>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Sprout, Plus, Info } from 'lucide-react';
 import { api, CustomStrainApiResponse } from '../../lib/api';
 import { Strain } from '../../types/scanner';
+import toast from 'react-hot-toast';
 
 interface StrainSelectorProps {
   selectedStrain: string;
@@ -70,7 +71,7 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
 
   const handleAddCustomStrain = async () => {
     if (!customForm.name.trim()) {
-      alert('Please enter a strain name');
+      toast.error('Please enter a strain name');
       return;
     }
 
@@ -111,7 +112,7 @@ const StrainSelector: React.FC<StrainSelectorProps> = ({ selectedStrain, onStrai
       }
     } catch (error) {
       console.error('Failed to add custom strain:', error);
-      alert('Failed to add custom strain. Please try again.');
+      toast.error('Failed to add custom strain. Please try again.');
     } finally {
       setIsLoading(false);
     }

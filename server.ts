@@ -9,6 +9,7 @@ if (loadEnvFile) {
   try { loadEnvFile.call(process, '.env'); } catch { /* optional */ }
 }
 import { setupSocket } from '@/lib/socket';
+import { recordUnhandledRejection } from '@/lib/process-health';
 import { createServer } from 'http';
 import { networkInterfaces } from 'node:os';
 import { Server } from 'socket.io';
@@ -17,6 +18,9 @@ import next from 'next';
 
 // Prevent server crashes from unhandled promise rejections (e.g., libheif-js localStorage in Node.js)
 process.on('unhandledRejection', (reason, promise) => {
+  // Counted + surfaced in /api/health-check (see @/lib/process-health):
+  // continuing forever is fine, continuing invisibly is not.
+  recordUnhandledRejection(reason);
   console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
   // Don't exit - let the server continue running
 });

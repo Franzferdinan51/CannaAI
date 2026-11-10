@@ -141,7 +141,6 @@ export const api = {
   lmstudio: {
     chat: (message: string) => apiClient.post('/lmstudio/chat', { message }),
     models: () => apiClient.get('/lmstudio/models'),
-    scan: (data: any) => apiClient.post('/debug/lmstudio-scan', data),
   },
 
   // Data Management
@@ -172,7 +171,6 @@ export const api = {
   // Utility
   health: () => apiClient.get('/health'),
   version: () => apiClient.get('/version'),
-  costs: () => apiClient.get('/costs'),
 };
 
 export default api;
