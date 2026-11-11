@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { debugEndpointsEnabled } from '@/lib/debug-endpoints';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { createTimeoutSignal } from '@/lib/abort-signal';
+import { withRequest } from '@/lib/logger';
 
 const lmStudioHeaders = () => {
   const apiKey = getLMStudioApiKey();
@@ -16,6 +17,7 @@ export const runtime = 'nodejs';
 export const revalidate = false;
 
 export async function GET(_request: Request) {
+  const log = withRequest(_request);
   if (!debugEndpointsEnabled()) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -34,10 +36,10 @@ export async function GET(_request: Request) {
   const appOrigin = new URL(_request.url).origin;
 
   try {
-    console.log('=== Testing LM Studio Models API ===');
+    log.info('debug.models_test_started');
 
     // Test 1: Direct LM Studio API call
-    console.log('1. Testing direct LM Studio API...');
+    log.info('debug.models_test_direct_started');
     let lmStudioDirect = null;
     try {
       const response = await fetch('http://localhost:1234/v1/models', {
@@ -61,24 +63,24 @@ export async function GET(_request: Request) {
             mapping: m.mapping
           })) || []
         };
-        console.log(`✓ LM Studio API works: ${lmStudioDirect.count} models found`);
+        log.info('debug.models_test_direct_ok', { count: lmStudioDirect.count });
       } else {
         lmStudioDirect = {
           success: false,
           error: `${response.status} ${response.statusText}`
         };
-        console.log(`✗ LM Studio API failed: ${lmStudioDirect.error}`);
+        log.warn('debug.models_test_direct_failed', { error: lmStudioDirect.error });
       }
     } catch (error) {
       lmStudioDirect = {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
-      console.log(`✗ LM Studio API error: ${lmStudioDirect.error}`);
+      log.error('debug.models_test_direct_error', { error: lmStudioDirect.error });
     }
 
     // Test 2: Our local scanner API
-    console.log('\n2. Testing our local scanner...');
+    log.info('debug.models_test_scanner_started');
     let localScanner = null;
     try {
       const response = await fetch(`${appOrigin}/api/lmstudio/models`, {
@@ -101,26 +103,25 @@ export async function GET(_request: Request) {
             capabilities: m.capabilities
           })) || []
         };
-        console.log(`✓ Local scanner works: ${localScanner.count} models found`);
-        console.log(`  LM Studio running: ${localScanner.lmStudioRunning}`);
+        log.info('debug.models_test_scanner_ok', { count: localScanner.count, lmStudioRunning: localScanner.lmStudioRunning });
       } else {
         localScanner = {
           success: false,
           error: `${response.status} ${response.statusText}`,
           status: response.status
         };
-        console.log(`✗ Local scanner failed: ${localScanner.error}`);
+        log.warn('debug.models_test_scanner_failed', { error: localScanner.error });
       }
     } catch (error) {
       localScanner = {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
-      console.log(`✗ Local scanner error: ${localScanner.error}`);
+      log.error('debug.models_test_scanner_error', { error: localScanner.error });
     }
 
     // Test 3: Our AI providers API
-    console.log('\n3. Testing AI providers API...');
+    log.info('debug.models_test_providers_started');
     let aiProviders = null;
     try {
       const response = await fetch(`${appOrigin}/api/ai/providers`, {
@@ -143,24 +144,24 @@ export async function GET(_request: Request) {
             firstModel: p.models?.[0]?.name || 'N/A'
           })) || []
         };
-        console.log(`✓ AI providers API works: ${aiProviders.totalProviders} providers, ${aiProviders.totalModels} models`);
+        log.info('debug.models_test_providers_ok', { totalProviders: aiProviders.totalProviders, totalModels: aiProviders.totalModels });
       } else {
         aiProviders = {
           success: false,
           error: `${response.status} ${response.statusText}`
         };
-        console.log(`✗ AI providers API failed: ${aiProviders.error}`);
+        log.warn('debug.models_test_providers_failed', { error: aiProviders.error });
       }
     } catch (error) {
       aiProviders = {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
-      console.log(`✗ AI providers API error: ${aiProviders.error}`);
+      log.error('debug.models_test_providers_error', { error: aiProviders.error });
     }
 
     // Test 4: Settings API
-    console.log('\n4. Testing settings API...');
+    log.info('debug.models_test_settings_started');
     let settings = null;
     try {
       const response = await fetch(`${appOrigin}/api/settings`, {
@@ -176,20 +177,20 @@ export async function GET(_request: Request) {
           openRouterModel: data.settings?.openRouter?.model,
           hasOpenRouterKey: !!data.settings?.openRouter?.apiKey
         };
-        console.log(`✓ Settings API works: current provider = ${settings.aiProvider}`);
+        log.info('debug.models_test_settings_ok', { aiProvider: settings.aiProvider });
       } else {
         settings = {
           success: false,
           error: `${response.status} ${response.statusText}`
         };
-        console.log(`✗ Settings API failed: ${settings.error}`);
+        log.warn('debug.models_test_settings_failed', { error: settings.error });
       }
     } catch (error) {
       settings = {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
-      console.log(`✗ Settings API error: ${settings.error}`);
+      log.error('debug.models_test_settings_error', { error: settings.error });
     }
 
     const results = {
@@ -200,11 +201,20 @@ export async function GET(_request: Request) {
       settings
     };
 
-    console.log('\n=== Test Summary ===');
-    console.log(`LM Studio Direct: ${lmStudioDirect?.success ? '✓' : '✗'} (${lmStudioDirect?.success ? lmStudioDirect.count + ' models' : lmStudioDirect?.error})`);
-    console.log(`Local Scanner: ${localScanner?.success ? '✓' : '✗'} (${localScanner?.success ? localScanner.count + ' models' : localScanner?.error})`);
-    console.log(`AI Providers: ${aiProviders?.success ? '✓' : '✗'} (${aiProviders?.success ? aiProviders.totalModels + ' models' : aiProviders?.error})`);
-    console.log(`Settings: ${settings?.success ? '✓' : '✗'} (${settings?.success ? 'provider: ' + settings.aiProvider : settings?.error})`);
+    log.info('debug.models_test_summary', {
+      lmStudioDirectSuccess: !!lmStudioDirect?.success,
+      lmStudioDirectCount: lmStudioDirect?.success ? lmStudioDirect.count : undefined,
+      lmStudioDirectError: lmStudioDirect?.success ? undefined : lmStudioDirect?.error,
+      localScannerSuccess: !!localScanner?.success,
+      localScannerCount: localScanner?.success ? localScanner.count : undefined,
+      localScannerError: localScanner?.success ? undefined : localScanner?.error,
+      aiProvidersSuccess: !!aiProviders?.success,
+      aiProvidersTotalModels: aiProviders?.success ? aiProviders.totalModels : undefined,
+      aiProvidersError: aiProviders?.success ? undefined : aiProviders?.error,
+      settingsSuccess: !!settings?.success,
+      settingsAiProvider: settings?.success ? settings.aiProvider : undefined,
+      settingsError: settings?.success ? undefined : settings?.error,
+    });
 
     return NextResponse.json({
       success: true,
@@ -212,7 +222,7 @@ export async function GET(_request: Request) {
     });
 
   } catch (error) {
-    console.error('Test API error:', error);
+    log.error('debug.models_test_error', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

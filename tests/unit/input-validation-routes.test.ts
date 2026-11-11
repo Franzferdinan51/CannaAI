@@ -18,7 +18,6 @@ import { GET as exportAnalytics } from '@/app/api/analytics/export/route';
 import { GET as getInsights } from '@/app/api/ai-insights/route';
 import { GET as getInventory } from '@/app/api/inventory/route';
 import { POST as runAutomationAction } from '@/app/api/automation/action/route';
-import { POST as runSimpleAnalysis } from '@/app/api/analyze-simple/route';
 
 describe('API input validation', () => {
   beforeEach(() => {
@@ -46,7 +45,7 @@ describe('API input validation', () => {
   });
 
   it('does not claim unsupported legacy features succeeded', async () => {
-    for (const response of [await runAutomationAction(), await runSimpleAnalysis()]) {
+    for (const response of [await runAutomationAction()]) {
       expect(response.status).toBe(503);
       const body = await response.json();
       expect(body.success).toBe(false);

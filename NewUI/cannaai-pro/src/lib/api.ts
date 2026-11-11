@@ -125,7 +125,6 @@ export const apiClient = new ApiClient();
 export const api = {
   // Plant Analysis - Enhanced
   analyze: (data: any) => apiClient.post<AnalysisResponse>('/analyze', data, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
-  analyzeSimple: (data: any) => apiClient.post('/analyze-simple', data, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
   autoAnalyze: (file: File) => apiClient.upload('/auto-analyze', file, undefined, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
   trichomeAnalysis: (file: File) => apiClient.upload('/trichome-analysis', file, undefined, { timeout: LOCAL_ANALYSIS_TIMEOUT_MS }),
 

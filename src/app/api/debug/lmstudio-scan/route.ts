@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { createTimeoutSignal } from '@/lib/abort-signal';
+import { withRequest, getLogger } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
 // This endpoint inspects the host filesystem and a live LM Studio service.
@@ -21,6 +22,7 @@ const TEST_PATHS = [
 ];
 
 async function scanDirectory(dirPath: string, depth: number = 0): Promise<any> {
+  const log = getLogger();
   const maxDepth = 5;
   if (depth > maxDepth) {
     return { error: 'Max depth reached' };
@@ -37,7 +39,7 @@ async function scanDirectory(dirPath: string, depth: number = 0): Promise<any> {
       totalFiles: 0
     };
 
-    console.log(`Scanning directory: ${dirPath}, found ${entries.length} entries`);
+    log.debug('debug.lmstudio_scan_directory', { path: dirPath, entries: entries.length });
 
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
@@ -58,7 +60,7 @@ async function scanDirectory(dirPath: string, depth: number = 0): Promise<any> {
           sizeFormatted: `${(stats.size / (1024 * 1024)).toFixed(1)} MB`,
           modified: stats.mtime.toISOString()
         });
-        console.log(`  Found GGUF file: ${entry.name} (${(stats.size / (1024 * 1024)).toFixed(1)} MB)`);
+        log.debug('debug.lmstudio_scan_gguf_found', { name: entry.name, sizeMb: Number((stats.size / (1024 * 1024)).toFixed(1)) });
       } else if (entry.isFile()) {
         result.files.push({
           name: entry.name,
@@ -112,6 +114,7 @@ async function checkLMStudioRunning() {
 }
 
 export async function GET(_request: Request) {
+  const log = withRequest(_request);
   if (!debugEndpointsEnabled()) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -128,9 +131,7 @@ export async function GET(_request: Request) {
   }
 
   try {
-    console.log('=== LM Studio Debug Scan Started ===');
-    console.log('Platform:', process.platform);
-    console.log('User Profile:', process.env.USERPROFILE);
+    log.info('debug.lmstudio_scan_started', { platform: process.platform, userProfile: process.env.USERPROFILE ?? null });
 
     const results = {
       timestamp: new Date().toISOString(),
@@ -151,13 +152,13 @@ export async function GET(_request: Request) {
     };
 
     // Test LM Studio connection
-    console.log('Checking if LM Studio is running...');
+    log.info('debug.lmstudio_scan_checking_lmstudio');
     results.lmStudioRunning = await checkLMStudioRunning();
-    console.log('LM Studio running:', results.lmStudioRunning.running);
+    log.info('debug.lmstudio_scan_lmstudio_status', { running: results.lmStudioRunning.running });
 
     // Test each path
     for (const testPath of TEST_PATHS) {
-      console.log(`\nTesting path: ${testPath}`);
+      log.info('debug.lmstudio_scan_path', { path: testPath });
 
       const pathInfo = {
         path: testPath,
@@ -166,7 +167,7 @@ export async function GET(_request: Request) {
       };
 
       if (pathInfo.exists) {
-        console.log(`  ✓ Path exists, scanning...`);
+        log.debug('debug.lmstudio_scan_path_exists', { path: testPath });
         results.summary.pathsExist++;
         pathInfo.scanResult = await scanDirectory(testPath);
 
@@ -197,29 +198,30 @@ export async function GET(_request: Request) {
         results.summary.totalGgufFiles += ggufCount;
         results.summary.totalDirectories += dirCount;
 
-        console.log(`  ✓ Found ${ggufCount} GGUF files in ${dirCount} directories`);
+        log.info('debug.lmstudio_scan_path_result', { path: testPath, ggufCount, dirCount });
 
         // Log first few models for debugging
         if (pathInfo.scanResult.ggufFiles.length > 0) {
-          console.log(`  First few models:`);
-          pathInfo.scanResult.ggufFiles.slice(0, 5).forEach((file: any) => {
-            console.log(`    - ${file.name} (${file.sizeFormatted})`);
+          log.debug('debug.lmstudio_scan_first_models', {
+            path: testPath,
+            models: pathInfo.scanResult.ggufFiles.slice(0, 5).map((file: any) => ({ name: file.name, sizeFormatted: file.sizeFormatted })),
           });
         }
       } else {
-        console.log(`  ✗ Path does not exist`);
+        log.info('debug.lmstudio_scan_path_missing', { path: testPath });
       }
 
       results.paths.push(pathInfo);
       results.summary.totalScanned++;
     }
 
-    console.log('\n=== Final Summary ===');
-    console.log(`Paths scanned: ${results.summary.totalScanned}`);
-    console.log(`Paths that exist: ${results.summary.pathsExist}`);
-    console.log(`Total directories: ${results.summary.totalDirectories}`);
-    console.log(`Total GGUF files: ${results.summary.totalGgufFiles}`);
-    console.log(`LM Studio running: ${results.lmStudioRunning.running}`);
+    log.info('debug.lmstudio_scan_summary', {
+      totalScanned: results.summary.totalScanned,
+      pathsExist: results.summary.pathsExist,
+      totalDirectories: results.summary.totalDirectories,
+      totalGgufFiles: results.summary.totalGgufFiles,
+      lmStudioRunning: results.lmStudioRunning.running,
+    });
 
     return NextResponse.json({
       success: true,
@@ -227,7 +229,7 @@ export async function GET(_request: Request) {
     });
 
   } catch (error) {
-    console.error('Debug scan error:', error);
+    log.error('debug.lmstudio_scan_error', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: error.message,

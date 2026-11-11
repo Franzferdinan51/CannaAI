@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { testLMStudioConnection } from '@/lib/ai/lmstudioService';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
+import { withRequest } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const maxDuration = 10;
@@ -14,6 +15,7 @@ export const maxDuration = 10;
  * - endpoint: string (LM Studio server URL)
  */
 export async function POST(req: NextRequest) {
+  const log = withRequest(req);
   try {
     const body = await req.json();
     const { endpoint, apiKey } = body;
@@ -25,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[CONNECTION TEST] Testing connection to ${endpoint}...`);
+    log.info('test_connection.started', { endpoint });
 
     const result = await testLMStudioConnection(
       endpoint,
@@ -33,9 +35,12 @@ export async function POST(req: NextRequest) {
     );
 
     if (result.success) {
-      console.log(`[CONNECTION TEST] Success! Available models:`, result.models);
+      log.info('test_connection.success', {
+        endpoint,
+        modelCount: Array.isArray(result.models) ? result.models.length : 0,
+      });
     } else {
-      console.log(`[CONNECTION TEST] Failed:`, result.error);
+      log.warn('test_connection.failed', { endpoint, error: result.error ?? 'unknown' });
     }
 
     return NextResponse.json({
@@ -46,7 +51,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('[CONNECTION TEST] Error:', error);
+    log.error('test_connection.error', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,
