@@ -290,8 +290,8 @@ export async function POST(request: NextRequest) {
 
       body = AnalysisRequestSchema.parse(rawBody);
     } catch (validationError) {
-      console.error('❌ Validation failed:', validationError);
-      console.error('❌ Request summary:', {
+      log.error('analyze.validation_failed', { error: validationError instanceof Error ? validationError.message : 'unknown' });
+      log.error('analyze.validation_request_summary', {
         fields: Object.keys(rawBody),
         hasImage: Boolean(rawBody.plantImage),
         imageBytes: typeof rawBody.plantImage === 'string' ? rawBody.plantImage.length : 0,
@@ -455,10 +455,17 @@ export async function POST(request: NextRequest) {
         // Calculate compression efficiency
         const compressionEfficiency = ((originalSize - processedImage.compressedSize) / originalSize) * 100;
 
-        console.log(`🖼️ Ultra-high resolution image processed:`);
-        console.log('   Original: ' + formatFileSize(originalSize) + ' (' + metadata.width + 'x' + metadata.height + ', ' + originalMegapixels.toFixed(1) + 'MP)');
-        console.log('   Processed: ' + formatFileSize(processedImage.compressedSize) + ' (' + processedImage.metadata.width + 'x' + processedImage.metadata.height + ')');
-        console.log(`   Size change: ${compressionEfficiency >= 0 ? `${compressionEfficiency.toFixed(1)}% reduction` : `${Math.abs(compressionEfficiency).toFixed(1)}% increase`}, Quality preserved: ${processingOptions.quality}%`);
+        log.info('analyze.image_processed', {
+          originalBytes: originalSize,
+          originalWidth: metadata.width,
+          originalHeight: metadata.height,
+          originalMegapixels: Number(originalMegapixels.toFixed(1)),
+          processedBytes: processedImage.compressedSize,
+          processedWidth: processedImage.metadata.width,
+          processedHeight: processedImage.metadata.height,
+          compressionEfficiencyPercent: Number(compressionEfficiency.toFixed(1)),
+          quality: processingOptions.quality
+        });
 
         processedImageInfo = {
           originalSize: processedImage.originalSize,
@@ -478,7 +485,7 @@ export async function POST(request: NextRequest) {
         // Never silently downgrade an explicitly requested vision analysis to
         // text-only output. That produced confident-looking reports that had
         // not seen the submitted photo.
-        console.warn('Image processing failed:', imageError);
+        log.warn('analyze.image_processing_failed', { error: imageError instanceof Error ? imageError.message : 'unknown' });
         const response = NextResponse.json({
           success: false,
           error: 'Image processing failed; the photo was not analyzed.',
@@ -548,8 +555,11 @@ export async function POST(request: NextRequest) {
       hasImage: !!imageBase64ForAI
     });
 
-    console.log('🚀 Starting enhanced cannabis plant analysis (V2 Explainable Prompt)...');
-    console.log(`📊 Analysis parameters: ${strain}, Stage: ${growthStage}, Urgency: ${urgency}`);
+    log.info('analyze.started', {
+      strain,
+      growthStage,
+      urgency
+    });
 
     // Result-cache lookup — same image + same inputs in the last 10 minutes
     // returns the prior analysis instantly with cached:true so the UI can
@@ -612,13 +622,13 @@ export async function POST(request: NextRequest) {
       ? { isAvailable: true, provider: 'lmstudio', reason: 'Image analysis is pinned to LM Studio' }
       : detectedPrimaryProvider;
 
-    console.log(`📡 AI provider detected: ${primaryProvider.provider} (${primaryProvider.reason})`);
+    log.info('analyze.provider_detected', { provider: primaryProvider.provider, reason: primaryProvider.reason });
 
     const allProviderNames = (providerDetection.all ?? []).map((r: any) => r.provider);
     const fallbackProviders = allProviderNames
       .filter((name: string) => name !== primaryProvider.provider);
     if (fallbackProviders.length > 0) {
-      console.log(`🔄 Available fallback providers: ${fallbackProviders.join(', ')}`);
+      log.info('analyze.fallback_providers_available', { fallbackProviders });
     }
 
     let analysisResult;
@@ -655,7 +665,7 @@ export async function POST(request: NextRequest) {
 
       if (primaryProvider.provider === 'lmstudio') {
         // PRIMARY: Use LM Studio locally for vision and text
-        console.log('🟣 Using LM Studio as primary provider...');
+        log.info('analyze.provider_lmstudio', { provider: 'lmstudio' });
         // Let the LM Studio adapter resolve the configured or currently
         // advertised model. Hard-coding a Qwen id here made healthy local
         // installs using Ornith (or any other model) fail before inference.
@@ -706,7 +716,7 @@ export async function POST(request: NextRequest) {
           result: lmStudioRaw,
         };
       } else if (primaryProvider.provider === 'openclaw') {
-        console.log('🚀 Using OpenClaw Gateway as fallback provider...');
+        log.info('analyze.provider_openclaw', { provider: 'openclaw' });
         aiResult = await executeWithOpenClaw({
           prompt: prompt,
           image: imageBase64ForAI,
@@ -729,14 +739,14 @@ export async function POST(request: NextRequest) {
               },
             );
           }
-          console.log('⚠️ OpenClaw returned no usable content, trying configured provider chain...');
+          log.info('analyze.openclaw_no_result_fallback', { provider: 'openclaw', fallback: 'provider_chain' });
           aiResult = await executeAIWithFallback(
             [{ role: 'user', content: prompt }],
             { image: imageBase64ForAI || undefined }
           );
         }
       } else if (primaryProvider.provider === 'hermes') {
-        console.log('🟢 Using Hermes Agent as vision provider...');
+        log.info('analyze.provider_hermes', { provider: 'hermes' });
         aiResult = await executeWithHermes({
           prompt,
           image: imageBase64ForAI,
@@ -757,7 +767,7 @@ export async function POST(request: NextRequest) {
               },
             );
           }
-          console.log('⚠️ Hermes returned no usable content, trying configured provider chain...');
+          log.info('analyze.hermes_no_result_fallback', { provider: 'hermes', fallback: 'provider_chain' });
           aiResult = await executeAIWithFallback(
             [{ role: 'user', content: prompt }],
             {
@@ -768,7 +778,7 @@ export async function POST(request: NextRequest) {
         }
       } else if (primaryProvider.provider === 'bailian') {
         // FALLBACK 1: Use Alibaba Qwen directly (Singapore endpoint) - VISION CAPABLE
-        console.log('🔷 Using Alibaba Qwen (Singapore endpoint) - vision analysis...');
+        log.info('analyze.provider_bailian', { provider: 'bailian' });
         aiResult = await executeWithBailian({
           prompt: prompt,
           image: imageBase64ForAI,
@@ -776,7 +786,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (!aiResult.success) {
-          console.log('⚠️ Bailian failed, trying OpenRouter FREE fallback...');
+          log.info('analyze.bailian_failed_fallback', { failedProvider: 'bailian', nextProvider: 'openrouter' });
           aiResult = await executeWithOpenRouter({
             prompt: prompt,
             image: imageBase64ForAI,
@@ -784,7 +794,7 @@ export async function POST(request: NextRequest) {
           });
 
           if (!aiResult.success) {
-            console.log('⚠️ OpenRouter failed, trying LM Studio...');
+            log.info('analyze.openrouter_failed_fallback', { failedProvider: 'openrouter', nextProvider: 'lmstudio' });
             aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
               primaryProvider: 'lm-studio',
               timeout: 90000,
@@ -795,8 +805,8 @@ export async function POST(request: NextRequest) {
         }
       } else if (primaryProvider.provider === 'minimax') {
         // PRIMARY: Use MiniMax API directly - VISION CAPABLE
-        console.log('🟠 Using MiniMax as primary provider...');
-        console.log('🟠 primaryProvider.provider =', primaryProvider.provider, '| typeof =', typeof primaryProvider.provider);
+        log.info('analyze.provider_minimax', { provider: 'minimax' });
+        log.debug('analyze.minimax_provider_probe', { provider: primaryProvider.provider, providerType: typeof primaryProvider.provider });
         const minimaxResult = await executeWithMiniMax(
           [{ role: 'user', content: prompt }],
           {
@@ -813,7 +823,7 @@ export async function POST(request: NextRequest) {
         };
       } else {
         // FALLBACK 2: Use standard fallback chain (vision-aware)
-        console.log(`🔄 Using fallback provider: ${primaryProvider.provider} (typeof: ${typeof primaryProvider.provider})`);
+        log.info('analyze.provider_fallback', { provider: primaryProvider.provider, providerType: typeof primaryProvider.provider });
         aiResult = await executeAIWithFallback(prompt, imageBase64ForAI, {
           primaryProvider: primaryProvider.provider as 'lm-studio' | 'openrouter' | 'bailian',
           timeout: 90000,
@@ -827,21 +837,22 @@ export async function POST(request: NextRequest) {
       fallbackUsed = false;
       processingTime = Date.now() - analysisStartTime;
 
-      console.log(`✅ Analysis completed successfully:`);
-      console.log(`   Provider: ${aiResult.provider}`);
-      console.log(`   Model: ${aiResult.model || 'default'}`);
-      console.log(`   Vision Used: ${aiResult.visionUsed || false}`);
-      console.log(`   Processing time: ${processingTime}ms`);
-      console.log(`   Image analysis: ${!!imageBase64ForAI}`);
+      log.info('analyze.completed', {
+        provider: aiResult.provider,
+        model: aiResult.model || 'default',
+        visionUsed: aiResult.visionUsed || false,
+        processingTimeMs: processingTime,
+        imageAnalysis: !!imageBase64ForAI
+      });
 
-      console.log('🔍 Normalizing provider response into explainable report-v2 contract...');
+      log.info('analyze.normalizing_report');
       analysisResult = normalizePlantAnalysisResult(analysisResult, {
         inputParameters: { strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage, observationScope, expectedPlantCount },
         imageAnalysis: !!imageBase64ForAI,
         processingTime,
         provider: usedProvider
       });
-      console.log('✅ Explainable report ready:', {
+      log.info('analyze.report_ready', {
         parsedFromStructuredJson: Boolean(analysisResult.analysisMetadata?.parsedFromStructuredJson),
         urgency: analysisResult.urgency,
         detectedIssues: Array.isArray(analysisResult.detectedIssues)
@@ -850,7 +861,7 @@ export async function POST(request: NextRequest) {
       });
 
       // 🔬 ENRICHMENT PASS: Add production-quality explanations for medium/high urgency
-      console.log('🔬 Running report enrichment pass for detailed explanations...');
+      log.info('analyze.enrichment_started');
       const enrichmentContext = {
         analysis: analysisResult,
         inputParameters: { strain, leafSymptoms, phLevel, temperature, humidity, medium, growthStage, observationScope, expectedPlantCount },
@@ -863,7 +874,7 @@ export async function POST(request: NextRequest) {
 
       if (validation.valid) {
         analysisResult = mergeEnrichmentWithAnalysis(analysisResult, enriched);
-        console.log('✅ Enrichment complete:', {
+        log.info('analyze.enrichment_completed', {
           urgencyLevel: enriched.urgencyDeepDive.urgencyLevel,
           primaryDrivers: enriched.urgencyDeepDive.primaryDrivers.length,
           healthCategories: enriched.healthScoreAnalysis.categoryAnalysis.length,
@@ -875,7 +886,7 @@ export async function POST(request: NextRequest) {
           }
         });
       } else {
-        console.warn('⚠️ Enrichment validation issues:', validation.issues);
+        log.warn('analyze.enrichment_validation_failed', { issues: validation.issues });
         // Still merge partial enrichment even if validation has issues
         analysisResult = mergeEnrichmentWithAnalysis(analysisResult, enriched);
       }
@@ -883,7 +894,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       // Handle AI provider unavailability specifically
       if (error instanceof AIProviderUnavailableError) {
-        console.error('❌ AI provider unavailable:', error.message);
+        log.error('analyze.provider_unavailable', { error: error.message });
 
         const errorResponse = NextResponse.json({
           success: false,
@@ -918,7 +929,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Other errors during AI analysis
-      console.error('❌ AI analysis failed:', error instanceof Error ? error.message : 'Unknown error');
+      log.error('analyze.ai_failed', { error: error instanceof Error ? error.message : 'Unknown error' });
       throw error; // Re-throw to be handled by outer catch block
     }
 
@@ -1020,7 +1031,7 @@ export async function POST(request: NextRequest) {
       );
       savedAnalysisId = savedAnalysis?.id;
     } catch (persistError) {
-      console.warn('Failed to persist plant analysis record:', persistError);
+      log.warn('analyze.persist_failed', { error: persistError instanceof Error ? persistError.message : 'unknown' });
     }
 
     // When the analysis names a real plant, land the result on the plant
@@ -1098,10 +1109,8 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error('❌ Comprehensive analysis error:', {
+    log.error('analyze.failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
     });
 
     // Enhanced error classification and response

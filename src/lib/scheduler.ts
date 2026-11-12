@@ -40,8 +40,10 @@ import { startOfDay, subDays } from 'date-fns';
 import { checkSchedules, checkForAnomalies, generateMilestones } from '@/lib/automation-engine';
 import { processQueue } from '@/lib/notification-queue';
 import { generateDailyReport } from '@/lib/analytics-utils';
+import { getLogger } from './logger';
 
 const TAG = '[SCHEDULER]';
+const log = getLogger().child({ tag: TAG });
 const DEFAULT_INTERVAL_MS = 60_000;
 const MIN_INTERVAL_MS = 5_000;
 const DEFAULT_MAINTENANCE_EVERY_TICKS = 15;
@@ -130,7 +132,7 @@ export function isSchedulerDisabled(): boolean {
  */
 export async function runSchedulerTick(now: Date = new Date()): Promise<SchedulerTickSummary> {
   if (tickRunning) {
-    console.log(`${TAG} Tick skipped — previous tick still running`);
+    log.info('scheduler.tick_skipped', { reason: 'previous_tick_running' });
     return { skipped: true, dailyReport: 'exists', queueDrained: false, errors: [] };
   }
 
@@ -145,12 +147,12 @@ export async function runSchedulerTick(now: Date = new Date()): Promise<Schedule
       summary.schedulesChecked = result.checked;
       summary.schedulesExecuted = result.executed;
       if (result.checked > 0) {
-        console.log(`${TAG} Schedules: checked ${result.checked}, executed ${result.executed}`);
+        log.info('scheduler.schedules_executed', { checked: result.checked, executed: result.executed });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       summary.errors.push(`schedules: ${message}`);
-      console.error(`${TAG} Schedule pass failed:`, error);
+      log.error('scheduler.schedule_pass_failed', { error: error instanceof Error ? error.message : String(error) });
     }
 
     // 2. Daily report for yesterday (the manual scheduled-tasks endpoint
@@ -166,13 +168,13 @@ export async function runSchedulerTick(now: Date = new Date()): Promise<Schedule
       } else {
         await generateDailyReport(yesterday);
         summary.dailyReport = 'generated';
-        console.log(`${TAG} Daily report generated for ${startOfDay(yesterday).toISOString().split('T')[0]}`);
+        log.info('scheduler.daily_report_generated', { date: startOfDay(yesterday).toISOString().split('T')[0] });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       summary.dailyReport = 'error';
       summary.errors.push(`dailyReport: ${message}`);
-      console.error(`${TAG} Daily report pass failed:`, error);
+      log.error('scheduler.daily_report_pass_failed', { error: error instanceof Error ? error.message : String(error) });
     }
 
     // 3. Notification queue drain — the existing processor claims each
@@ -186,14 +188,14 @@ export async function runSchedulerTick(now: Date = new Date()): Promise<Schedule
         summary.queueDrained = false;
         const reason = queueResult.skipReason || 'queue processing skipped';
         summary.errors.push(`queue: ${reason}`);
-        console.warn(`${TAG} Queue drain skipped: ${reason}`);
+        log.warn('scheduler.queue_drain_skipped', { reason });
       } else {
         summary.queueDrained = true;
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       summary.errors.push(`queue: ${message}`);
-      console.error(`${TAG} Queue drain failed:`, error);
+      log.error('scheduler.queue_drain_failed', { error: error instanceof Error ? error.message : String(error) });
     }
 
     // 4. Maintenance cadence: anomaly scan + milestone generation over
@@ -209,13 +211,13 @@ export async function runSchedulerTick(now: Date = new Date()): Promise<Schedule
           milestonesGenerated: milestones.generated
         };
         if (anomalies.checked > 0 || milestones.generated > 0) {
-          console.log(`${TAG} Maintenance: anomaly scan checked ${anomalies.checked}, milestones generated ${milestones.generated}`);
+          log.info('scheduler.maintenance_completed', { anomaliesChecked: anomalies.checked, milestonesGenerated: milestones.generated });
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         summary.maintenance = 'error';
         summary.errors.push(`maintenance: ${message}`);
-        console.error(`${TAG} Maintenance pass failed:`, error);
+        log.error('scheduler.maintenance_pass_failed', { error: error instanceof Error ? error.message : String(error) });
       }
     }
 
@@ -238,27 +240,27 @@ export async function runSchedulerTick(now: Date = new Date()): Promise<Schedule
  */
 export function startScheduler(): void {
   if (isSchedulerDisabled()) {
-    console.log(`${TAG} Disabled via CANNAAI_SCHEDULER_DISABLED=true`);
+    log.info('scheduler.disabled', { disabledBy: 'CANNAAI_SCHEDULER_DISABLED' });
     return;
   }
   if (started) {
-    console.log(`${TAG} Already running`);
+    log.info('scheduler.already_running');
     return;
   }
 
   started = true;
   sharedState.running = true;
   const intervalMs = schedulerIntervalMs();
-  console.log(`${TAG} Started (tick every ${intervalMs}ms, maintenance every ${schedulerMaintenanceEveryTicks()} ticks)`);
+  log.info('scheduler.started', { intervalMs, maintenanceEveryTicks: schedulerMaintenanceEveryTicks() });
 
   initialHandle = setTimeout(() => {
-    void runSchedulerTick().catch((error) => console.error(`${TAG} Initial tick failed:`, error));
+    void runSchedulerTick().catch((error) => log.error('scheduler.initial_tick_failed', { error: error instanceof Error ? error.message : String(error) }));
   }, INITIAL_TICK_DELAY_MS);
   // Background work must not keep short-lived processes alive.
   initialHandle.unref?.();
 
   intervalHandle = setInterval(() => {
-    void runSchedulerTick().catch((error) => console.error(`${TAG} Tick failed:`, error));
+    void runSchedulerTick().catch((error) => log.error('scheduler.tick_failed', { error: error instanceof Error ? error.message : String(error) }));
   }, intervalMs);
   intervalHandle.unref?.();
 }
@@ -274,7 +276,7 @@ export function stopScheduler(): void {
     intervalHandle = null;
   }
   if (started) {
-    console.log(`${TAG} Stopped`);
+    log.info('scheduler.stopped');
   }
   started = false;
   sharedState.running = false;

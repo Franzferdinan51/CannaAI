@@ -15,13 +15,16 @@ import { networkInterfaces } from 'node:os';
 import { Server } from 'socket.io';
 import { WebSocketServer } from 'ws';
 import next from 'next';
+import { getLogger } from './src/lib/logger';
+
+const log = getLogger();
 
 // Prevent server crashes from unhandled promise rejections (e.g., libheif-js localStorage in Node.js)
 process.on('unhandledRejection', (reason, promise) => {
   // Counted + surfaced in /api/health-check (see @/lib/process-health):
   // continuing forever is fine, continuing invisibly is not.
   recordUnhandledRejection(reason);
-  console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
+  log.error('server.unhandled_rejection', { reason: reason instanceof Error ? reason.message : String(reason) });
   // Don't exit - let the server continue running
 });
 
@@ -32,7 +35,7 @@ const currentPort = Number(process.env.PORT) || 3000;
 // and say so loudly, so a dropped env var can't silently expose the API.
 const hostname = process.env.HOST || '127.0.0.1';
 if (!process.env.HOST) {
-  console.warn('⚠️  HOST is not set — binding to 127.0.0.1 only. Set HOST to the tailnet IP for remote access.');
+  log.warn('server.host_not_set', { hostname, hint: 'Set HOST to the tailnet IP for remote access' });
 }
 
 // Enhanced CORS configuration for local and remote access
@@ -92,20 +95,20 @@ const securityConfig = {
 // Validate configuration
 function validateConfig() {
   if (!dev && allowedOrigins.length === 0) {
-    console.warn('⚠️  Production mode: No allowed origins configured. Please set SOCKET_IO_ORIGINS environment variable.');
+    log.warn('server.config_no_allowed_origins', { hint: 'Set SOCKET_IO_ORIGINS environment variable' });
   }
 
   if (allowedOrigins.length > 0) {
-    console.log('🔒 CORS allowed origins:', allowedOrigins);
+    log.info('server.cors_allowed_origins', { allowedOriginCount: allowedOrigins.length, allowedOrigins: allowedOrigins.map((o) => String(o)) });
   }
 
   if (enableSocketAuth) {
     if (!process.env.SOCKET_IO_TOKEN && !process.env.CANNAAI_API_TOKEN) {
       throw new Error('Socket authentication is required but SOCKET_IO_TOKEN or CANNAAI_API_TOKEN is not configured');
     }
-    console.log('🔐 Socket.IO authentication enabled');
+    log.info('server.socket_auth_enabled');
   } else {
-    console.log('⚠️  Socket.IO authentication disabled (development mode)');
+    log.warn('server.socket_auth_disabled', { mode: 'development' });
   }
 }
 
@@ -188,7 +191,7 @@ async function createCustomServer() {
           }
 
           // Log blocked origin for debugging
-          console.log(`🚫 Blocked CORS origin: ${origin}`);
+          log.warn('socket.cors_origin_blocked', { origin });
           callback(new Error('Not allowed by CORS'), false);
         },
         methods: ["GET", "POST"],
@@ -205,7 +208,7 @@ async function createCustomServer() {
         const clientIP = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
         // Log connection attempt with IP info
-        console.log(`🔌 Socket.IO connection attempt from: ${clientIP}`);
+        log.info('socket.connection_attempt', { clientIp: clientIP });
 
         // In development, allow all connections
         if (dev) {
@@ -228,7 +231,7 @@ async function createCustomServer() {
       connectionCount++;
 
       if (connectionCount > securityConfig.maxConnections) {
-        console.warn(`⚠️  Connection limit exceeded: ${connectionCount}/${securityConfig.maxConnections}`);
+        log.warn('socket.connection_limit_exceeded', { connectionCount, maxConnections: securityConfig.maxConnections });
         // `io.engine` exposes a raw Engine.IO socket, not a Socket.IO socket.
         // Calling disconnect() here caused an unhandled rejection on every
         // excess connection and destabilized long-running analysis requests.
@@ -236,11 +239,11 @@ async function createCustomServer() {
         return;
       }
 
-      console.log(`✅ Socket.IO connected: ${socket.id} (Total: ${connectionCount})`);
+      log.info('socket.connected', { socketId: socket.id, total: connectionCount });
 
       socket.on('disconnect', (reason) => {
         connectionCount--;
-        console.log(`❌ Socket.IO disconnected: ${socket.id} (${reason}) (Total: ${connectionCount})`);
+        log.info('socket.disconnected', { socketId: socket.id, reason, total: connectionCount });
       });
     });
 
@@ -254,9 +257,9 @@ async function createCustomServer() {
     try {
       const { initializeNotificationSystem } = await import('@/lib/notification-init');
       await initializeNotificationSystem(io);
-      console.log('✅ Notification system initialized');
+      log.info('server.notification_system_initialized');
     } catch (error) {
-      console.error('❌ Failed to initialize notification system:', error);
+      log.error('server.notification_system_init_failed', { error: error instanceof Error ? error.message : String(error) });
       // Don't fail startup, just log the error
     }
 
@@ -269,7 +272,7 @@ async function createCustomServer() {
       const { startScheduler } = await import('@/lib/scheduler');
       startScheduler();
     } catch (error) {
-      console.error('❌ Failed to start scheduler:', error);
+      log.error('server.scheduler_start_failed', { error: error instanceof Error ? error.message : String(error) });
       // Don't fail startup, just log the error
     }
 
@@ -318,41 +321,44 @@ async function createCustomServer() {
 
     // Start the server
     server.listen(currentPort, hostname, () => {
-      console.log(`🚀 CannaAI server running on port ${currentPort}`);
-      console.log(`📊 Environment: ${dev ? 'Development' : 'Production'}`);
-      console.log(`🔒 Security: ${enableSocketAuth ? 'Enabled' : 'Disabled'}`);
-      console.log(`\n📍 Access URLs:`);
-      console.log(`   • Local: http://localhost:${currentPort}`);
-      console.log(`   • Network: http://${hostname}:${currentPort}`);
-
       // Get local IP addresses for better guidance
       const nets = networkInterfaces();
-
-      console.log(`\n🌐 Available on your network:`);
+      const networkUrls: string[] = [];
       for (const name of Object.keys(nets)) {
         for (const net of nets[name] || []) {
           // Skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
           if (net.family === 'IPv4' && !net.internal) {
-            console.log(`   • http://${net.address}:${currentPort}`);
+            networkUrls.push(`http://${net.address}:${currentPort}`);
           }
         }
       }
 
-      console.log(`\n🔌 Socket.IO server at ws://${hostname}:${currentPort}/api/socketio`);
-      console.log(`\n💡 Tailscale Users:`);
-      console.log(`   • Access via your Tailscale IP: http://100.x.x.x:${currentPort}`);
-      console.log(`   • Or use Tailscale magic DNS: http://<machine-name>.tailnet-name.ts.net:${currentPort}`);
+      log.info('server.started', {
+        port: currentPort,
+        env: dev ? 'Development' : 'Production',
+        security: enableSocketAuth ? 'Enabled' : 'Disabled',
+      });
+      log.info('server.access_urls', {
+        localUrl: `http://localhost:${currentPort}`,
+        networkUrl: `http://${hostname}:${currentPort}`,
+        networkUrls,
+        socketIoUrl: `ws://${hostname}:${currentPort}/api/socketio`,
+      });
+      log.info('server.tailscale_hint', {
+        tailscaleUrl: `http://100.x.x.x:${currentPort}`,
+        magicDnsUrl: `http://<machine-name>.tailnet-name.ts.net:${currentPort}`,
+      });
     });
 
     // Graceful shutdown handling
     let shuttingDown = false;
     const gracefulShutdown = (signal: string) => {
       if (shuttingDown) {
-        console.log(`🛑 Already shutting down (received ${signal} again). Forcing exit.`);
+        log.warn('server.shutdown_already_in_progress', { signal });
         process.exit(1);
       }
       shuttingDown = true;
-      console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+      log.info('server.shutdown_started', { signal });
 
       // Stop the scheduler so no new tick starts while we drain.
       import('@/lib/scheduler')
@@ -367,7 +373,7 @@ async function createCustomServer() {
           (server as any).closeAllConnections();
         }
       } catch (e) {
-        console.warn('closeAllConnections failed (continuing):', e);
+        log.warn('server.close_all_connections_failed', { error: e instanceof Error ? e.message : String(e) });
       }
 
       let httpClosed = false;
@@ -379,27 +385,27 @@ async function createCustomServer() {
             .then(({ prisma }) => prisma.$disconnect())
             .catch((e: unknown) => {
               const message = e instanceof Error ? e.message : String(e);
-              console.warn('Prisma disconnect failed:', message);
+              log.warn('server.prisma_disconnect_failed', { error: message });
             })
             .finally(() => process.exit(0));
         }
       };
 
       server.close(() => {
-        console.log('✅ HTTP server closed');
+        log.info('server.http_closed');
         httpClosed = true;
         maybeExit();
       });
 
       io.close(() => {
-        console.log('✅ Socket.IO server closed');
+        log.info('server.socketio_closed');
         ioClosed = true;
         maybeExit();
       });
 
       // Force shutdown after 10 seconds — refuse to hang forever
       setTimeout(() => {
-        console.error('❌ Forced shutdown after 10s timeout');
+        log.error('server.shutdown_forced_timeout', { timeoutMs: 10000 });
         process.exit(1);
       }, 10000).unref();
     };
@@ -408,14 +414,14 @@ async function createCustomServer() {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   } catch (err) {
-    console.error('❌ Server startup error:', err);
+    log.error('server.startup_failed', { error: err instanceof Error ? err.message : String(err) });
     process.exit(1);
   }
 }
 
 // Error handling
 process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
+  log.error('server.uncaught_exception', { error: error instanceof Error ? error.message : String(error) });
   process.exit(1);
 });
 
