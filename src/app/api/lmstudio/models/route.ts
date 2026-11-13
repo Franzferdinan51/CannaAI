@@ -7,7 +7,9 @@ import { existsSync, readFileSync } from 'fs';
 import { getLMStudioApiKey } from '@/lib/ai-provider-lmstudio';
 import { normalizeRemoteModels } from '@/lib/lmstudio-models';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
 
+const log = getLogger().child({ tag: '[LMSTUDIO-MODELS]' });
 const execAsync = promisify(exec);
 const SETTINGS_LOOKUP_TIMEOUT_MS = 2000;
 const LM_STUDIO_CATALOG_TIMEOUT_MS = 20000;
@@ -93,7 +95,7 @@ async function getRemoteLMStudioConfig(urlOverride?: string, apiKeyOverride?: st
       });
     }
   } catch (error) {
-    console.warn('Unable to read LM Studio connection settings:', error);
+    log.warn('lmstudio_models.settings_read_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 
   return buildLMStudioConfig({ urlOverride, configuredUrl, fileUrl, providerUrl, apiKey: configuredKey });
@@ -199,22 +201,22 @@ async function findLMStudioModels(): Promise<any[]> {
   const platform = process.platform;
   const paths = LM_STUDIO_PATHS[platform as keyof typeof LM_STUDIO_PATHS] || [];
 
-  console.log(`Checking ${paths.length} potential LM Studio paths for platform ${platform}:`);
+  log.info('lmstudio_models.path_scan_started', { pathCount: paths.length, platform });
 
   for (const basePath of paths) {
     const exists = fs.existsSync(basePath);
-    console.log(`  ${exists ? '✓' : '✗'} ${basePath}`);
+    log.debug('lmstudio_models.path_checked', { path: basePath, exists });
 
     if (exists) {
-      console.log(`  → Scanning LM Studio path: ${basePath}`);
+      log.debug('lmstudio_models.path_scanning', { path: basePath });
       const initialModelCount = models.length;
       await scanDirectory(basePath, models);
       const modelsFound = models.length - initialModelCount;
-      console.log(`  → Found ${modelsFound} models in ${basePath}`);
+      log.debug('lmstudio_models.path_scan_complete', { path: basePath, modelsFound });
     }
   }
 
-  console.log(`Total models found across all paths: ${models.length}`);
+  log.info('lmstudio_models.path_scan_total', { total: models.length });
   return models;
 }
 
@@ -235,7 +237,7 @@ async function scanDirectory(dirPath: string, models: any[]): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn(`Error scanning directory ${dirPath}:`, error);
+    log.warn('lmstudio_models.directory_scan_failed', { path: dirPath, error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -252,7 +254,7 @@ async function extractModelInfo(filePath: string, basePath: string): Promise<any
     let version = '';
     let fullModelPath = '';
 
-    console.log(`Processing model: ${relativePath}, path parts:`, pathParts);
+    log.debug('lmstudio_models.model_processing', { relativePath, pathParts });
 
     // Try to extract author, model name, and version from nested path
     if (pathParts.length >= 1) {
@@ -348,14 +350,14 @@ async function extractModelInfo(filePath: string, basePath: string): Promise<any
       }
     };
 
-    console.log(`Extracted model: ${model.name} by ${model.author} (${model.sizeFormatted})`);
+    log.debug('lmstudio_models.model_extracted', { name: model.name, author: model.author, sizeFormatted: model.sizeFormatted });
 
     // Try to load additional metadata
     await loadAdditionalMetadata(model, filePath);
 
     return model;
   } catch (error) {
-    console.warn(`Error extracting model info from ${filePath}:`, error);
+    log.warn('lmstudio_models.model_extract_failed', { path: filePath, error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }
@@ -498,9 +500,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('=== LM Studio Model Scan Started ===');
-    console.log('Platform:', process.platform);
-    console.log('Netlify Detection:', process.env.NETLIFY || 'Not detected');
+    log.info('lmstudio_models.scan_started');
+    log.info('lmstudio_models.scan_platform', { platform: process.platform });
+    log.info('lmstudio_models.netlify_detection', { netlify: process.env.NETLIFY || 'Not detected' });
 
     // Check if we're running on Netlify or similar serverless platform
     const isNetlify = !!process.env.NETLIFY ||
@@ -508,7 +510,7 @@ export async function GET(request: NextRequest) {
                      !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
     if (isNetlify) {
-      console.log('Running on serverless platform - LM Studio is unavailable');
+      log.info('lmstudio_models.serverless_unavailable');
       return NextResponse.json({
         status: 'unavailable',
         message: 'LM Studio access is not available on serverless platforms.',
@@ -534,9 +536,9 @@ export async function GET(request: NextRequest) {
       }, { status: 503 });
     }
 
-    console.log('Platform:', process.platform);
-    console.log('User Profile:', process.env.USERPROFILE);
-    console.log('Local AppData:', process.env.LOCALAPPDATA);
+    log.info('lmstudio_models.scan_environment', { platform: process.platform });
+    log.info('lmstudio_models.scan_user_profile', { userProfile: process.env.USERPROFILE ?? null });
+    log.info('lmstudio_models.scan_local_app_data', { localAppData: process.env.LOCALAPPDATA ?? null });
 
     const { searchParams } = new URL(request.url);
     const urlOverride = searchParams.get('url') || undefined;
@@ -575,13 +577,13 @@ export async function GET(request: NextRequest) {
 
     // Scan for local models
     const models = await findLMStudioModels();
-    console.log(`Found ${models.length} models total (before deduplication)`);
+    log.info('lmstudio_models.models_found_before_dedup', { count: models.length });
 
     // Deduplicate models by ID (keep the first occurrence)
     const uniqueModels = Array.from(
       new Map(models.map(model => [model.id, model])).values()
     );
-    console.log(`Found ${uniqueModels.length} unique models after deduplication`);
+    log.info('lmstudio_models.models_found_after_dedup', { count: uniqueModels.length });
 
     // Sort models by name and size
     uniqueModels.sort((a, b) => {
@@ -619,7 +621,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result, { status: 503 });
 
   } catch (error) {
-    console.error('Error scanning LM Studio models:', error);
+    log.error('lmstudio_models.scan_failed', { error: error instanceof Error ? error.message : String(error) });
 
     // Check if the error is due to serverless limitations
     const isServerlessError = error.message.includes('EACCES') ||
@@ -682,7 +684,7 @@ export async function POST(request: NextRequest) {
     }, { status: 400 });
 
   } catch (error) {
-    console.error('Error in LM Studio models API:', error);
+    log.error('lmstudio_models.api_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({
       status: 'error',
       error: error.message

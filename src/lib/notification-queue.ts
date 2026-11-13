@@ -1,5 +1,8 @@
 import { prisma } from './prisma';
 import { sendNotification, NotificationData } from './notifications';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[QUEUE]' });
 
 // Queue item interface
 interface QueueItem {
@@ -48,7 +51,7 @@ export async function queueNotification(
     select: { id: true },
   });
 
-  console.log(`[QUEUE] Scheduled notification ${queuedItem.id} for ${options.scheduledAt.toISOString()}`);
+  log.info('notification_queue.notification_scheduled', { queueId: queuedItem.id, scheduledAt: options.scheduledAt.toISOString() });
   return { queueId: queuedItem.id };
 }
 
@@ -76,7 +79,7 @@ export async function queueBulkNotifications(
           await sendNotification(notification);
           queuedCount++;
         } catch (error) {
-          console.error(`[QUEUE] Failed to queue notification:`, error);
+          log.error('notification_queue.queue_notification_failed', { error: error instanceof Error ? error.message : String(error) });
         }
       })
     );
@@ -93,18 +96,18 @@ export async function queueBulkNotifications(
 // Start queue processor
 export function startQueueProcessor(intervalMs: number = 5000): void {
   if (isProcessing) {
-    console.log('[QUEUE] Processor already running');
+    log.info('notification_queue.processor_already_running');
     return;
   }
 
   isProcessing = true;
-  console.log('[QUEUE] Starting queue processor');
+  log.info('notification_queue.processor_started');
 
   queueWorkerInterval = setInterval(async () => {
     try {
       await processQueue();
     } catch (error) {
-      console.error('[QUEUE] Error processing queue:', error);
+      log.error('notification_queue.processing_failed', { error: error instanceof Error ? error.message : String(error) });
     }
   }, intervalMs);
   // The queue is background work and must not keep short-lived test, CLI, or
@@ -119,7 +122,7 @@ export function stopQueueProcessor(): void {
     queueWorkerInterval = null;
   }
   isProcessing = false;
-  console.log('[QUEUE] Stopped queue processor');
+  log.info('notification_queue.processor_stopped');
 }
 
 // Result of one queue drain pass. Callers that report health (the
@@ -165,12 +168,12 @@ export async function processQueue(now: Date = new Date()): Promise<ProcessQueue
             lastError,
           },
         });
-        console.error(`[QUEUE] Failed notification ${item.id} (attempt ${attempt}):`, lastError);
+        log.error('notification_queue.notification_failed', { queueItemId: item.id, attempt, error: lastError });
       }
     }
 
     if (scheduledNotifications.length > 0) {
-      console.log(`[QUEUE] Processed ${scheduledNotifications.length} scheduled notifications`);
+      log.info('notification_queue.notifications_processed', { processed: scheduledNotifications.length });
     }
     return { processed: scheduledNotifications.length, skipped: false };
   } catch (error: any) {
@@ -179,11 +182,11 @@ export async function processQueue(now: Date = new Date()): Promise<ProcessQueue
       // silent) and report the skip so the scheduler/health surface it
       // instead of claiming queueDrained.
       const skipReason = 'Notification queue table missing (Prisma P2021)';
-      console.warn(`[QUEUE] Skipping queue processing: ${skipReason}`);
+      log.warn('notification_queue.processing_skipped', { reason: skipReason });
       return { processed: 0, skipped: true, skipReason };
     }
     const message = error instanceof Error ? error.message : String(error?.message ?? error);
-    console.error('[QUEUE] Error processing queue:', message);
+    log.error('notification_queue.process_queue_failed', { error: message });
     return { processed: 0, skipped: true, skipReason: message };
   }
 }
@@ -238,7 +241,7 @@ export async function retryFailedNotifications(notificationId?: string): Promise
 
         retried++;
       } catch (error) {
-        console.error(`[QUEUE] Failed to retry delivery ${delivery.id}:`, error);
+        log.error('notification_queue.retry_delivery_failed', { deliveryId: delivery.id, error: error instanceof Error ? error.message : String(error) });
       }
     }
   }

@@ -1,6 +1,9 @@
 import { startWebhookWorker, stopWebhookWorker } from './webhooks';
 import { startQueueProcessor, stopQueueProcessor } from './notification-queue';
 import { Server } from 'socket.io';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[NOTIFICATION-SYSTEM]' });
 
 // Notification system initialization
 export class NotificationSystem {
@@ -22,16 +25,16 @@ export class NotificationSystem {
    */
   public async initialize(io?: Server): Promise<void> {
     if (this.initialized) {
-      console.log('[NOTIFICATION-SYSTEM] Already initialized');
+      log.info('notification_init.already_initialized');
       return;
     }
 
-    console.log('[NOTIFICATION-SYSTEM] Initializing...');
+    log.info('notification_init.initializing');
 
     // Set Socket.IO instance if provided
     if (io) {
       this.io = io;
-      console.log('[NOTIFICATION-SYSTEM] Socket.IO instance set');
+      log.info('notification_init.socket_io_instance_set');
     }
 
     // Do not start database-backed workers until the schema is available. A
@@ -46,9 +49,9 @@ export class NotificationSystem {
     } catch (error: any) {
       if (error.code === 'P2021') {
         databaseReady = false;
-        console.log('[NOTIFICATION-SYSTEM] Skipping template creation - tables not created yet. Run: npm run db:push');
+        log.info('notification_init.template_creation_skipped', { reason: 'tables_not_created', hint: 'Run: npm run db:push' });
       } else {
-        console.error('[NOTIFICATION-SYSTEM] Error creating templates:', error.message);
+        log.error('notification_init.templates_creation_failed', { error: error instanceof Error ? error.message : String(error) });
       }
     }
 
@@ -59,9 +62,9 @@ export class NotificationSystem {
       } catch (error: any) {
         if (error.code === 'P2021') {
           databaseReady = false;
-          console.log('[NOTIFICATION-SYSTEM] Skipping preferences creation - tables not created yet. Run: npm run db:push');
+          log.info('notification_init.preferences_creation_skipped', { reason: 'tables_not_created', hint: 'Run: npm run db:push' });
         } else {
-          console.error('[NOTIFICATION-SYSTEM] Error creating preferences:', error.message);
+          log.error('notification_init.preferences_creation_failed', { error: error instanceof Error ? error.message : String(error) });
         }
       }
     }
@@ -69,11 +72,11 @@ export class NotificationSystem {
     if (databaseReady) {
       this.startWorkers();
     } else {
-      console.log('[NOTIFICATION-SYSTEM] Background workers disabled until the database schema is initialized');
+      log.info('notification_init.workers_disabled', { reason: 'database_schema_not_initialized' });
     }
 
     this.initialized = true;
-    console.log('[NOTIFICATION-SYSTEM] Initialization complete');
+    log.info('notification_init.initialization_complete');
   }
 
   /**
@@ -83,13 +86,13 @@ export class NotificationSystem {
     try {
       // Start webhook delivery worker
       startWebhookWorker();
-      console.log('[NOTIFICATION-SYSTEM] Webhook worker started');
+      log.info('notification_init.webhook_worker_started');
 
       // Start notification queue processor
       startQueueProcessor(5000);
-      console.log('[NOTIFICATION-SYSTEM] Queue processor started');
+      log.info('notification_init.queue_processor_started');
     } catch (error) {
-      console.error('[NOTIFICATION-SYSTEM] Error starting workers:', error);
+      log.error('notification_init.workers_start_failed', { error: error instanceof Error ? error.message : String(error) });
       throw error;
     }
   }
@@ -145,12 +148,12 @@ export class NotificationSystem {
           update: template,
           create: template
         });
-        console.log(`[NOTIFICATION-SYSTEM] Template created: ${template.name}`);
+        log.info('notification_init.template_created', { templateName: template.name });
       } catch (error) {
         if ((error as any)?.code === 'P2021') {
           throw error;
         }
-        console.error(`[NOTIFICATION-SYSTEM] Error creating template ${template.name}:`, error);
+        log.error('notification_init.template_creation_failed', { templateName: template.name, error: error instanceof Error ? error.message : String(error) });
       }
     }
   }
@@ -194,13 +197,13 @@ export class NotificationSystem {
               throttleRate: 0
             }
           });
-          console.log(`[NOTIFICATION-SYSTEM] Default preference created: ${type}`);
+          log.info('notification_init.preference_created', { preferenceType: type });
         }
       } catch (error) {
         if ((error as any)?.code === 'P2021') {
           throw error;
         }
-        console.error(`[NOTIFICATION-SYSTEM] Error creating preference for ${type}:`, error);
+        log.error('notification_init.preference_creation_failed', { preferenceType: type, error: error instanceof Error ? error.message : String(error) });
       }
     }
   }
@@ -359,12 +362,12 @@ export class NotificationSystem {
    * Shutdown notification system
    */
   public shutdown(): void {
-    console.log('[NOTIFICATION-SYSTEM] Shutting down...');
+    log.info('notification_init.shutting_down');
     stopWebhookWorker();
     stopQueueProcessor();
     this.initialized = false;
     this.io = null;
-    console.log('[NOTIFICATION-SYSTEM] Shutdown complete');
+    log.info('notification_init.shutdown_complete');
   }
 }
 
@@ -376,7 +379,7 @@ export async function initializeNotificationSystem(io?: Server): Promise<void> {
   try {
     await notificationSystem.initialize(io);
   } catch (error) {
-    console.error('[NOTIFICATION-SYSTEM] Failed to initialize:', error);
+    log.error('notification_init.initialization_failed', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
