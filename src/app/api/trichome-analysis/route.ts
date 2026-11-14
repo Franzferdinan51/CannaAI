@@ -5,6 +5,9 @@ import { getImageMetadata, processImageForVisionModel } from '@/lib/image-simple
 import { executeAIWithFallback, detectAvailableProviders, getProviderConfig, AIProviderUnavailableError } from '@/lib/ai-provider-detection';
 import crypto from 'crypto';
 import { getPersistedLMStudioSettings } from '@/lib/lmstudio-settings';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[TRICHOME-ANALYSIS]' });
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -122,7 +125,7 @@ export async function POST(request: NextRequest) {
         const originalMetadata = await getImageMetadata(buffer);
         const originalMegapixels = (originalMetadata.width || 0) * (originalMetadata.height || 0) / 1000000;
 
-        console.log(`🔬 Processing trichome image: ${originalMetadata.width}x${originalMetadata.height}, ${originalMegapixels.toFixed(1)}MP`);
+        log.info('trichome_analysis.image_processing', { width: originalMetadata.width, height: originalMetadata.height, megapixels: Number(originalMegapixels.toFixed(1)) });
 
         // Trichome-specific processing with higher quality
         processedImageInfo = await processImageForVisionModel(buffer, {
@@ -132,9 +135,9 @@ export async function POST(request: NextRequest) {
           format: 'JPEG'
         });
 
-        console.log(`✅ Trichome image processed: ${processedImageInfo.metadata.width}x${processedImageInfo.metadata.height}, Quality: 95%`);
+        log.info('trichome_analysis.image_processed', { width: processedImageInfo.metadata.width, height: processedImageInfo.metadata.height, quality: 95 });
       } catch (imageError) {
-        console.error('Trichome image processing error:', imageError);
+        log.error('trichome_analysis.image_processing_failed', { error: imageError instanceof Error ? imageError.message : String(imageError) });
         return createAPIError(`Image processing failed: ${imageError.message}`, 400);
       }
 
@@ -177,7 +180,7 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (error: any) {
-      console.error('Trichome analysis error:', error);
+      log.error('trichome_analysis.failed', { error: error instanceof Error ? error.message : String(error) });
 
       let errorMessage = 'Trichome analysis failed';
       let statusCode = 500;
@@ -208,13 +211,13 @@ async function analyzeTrichomes(
   deviceInfo: any,
   options: any
 ): Promise<any> {
-  console.log('🔬 Starting AI-powered trichome analysis...');
+  log.info('trichome_analysis.ai_started');
 
   // Enhanced AI provider detection
   // Prefer a healthy local vision model immediately. If LM Studio is not
   // available, detection retains the normal fallback chain for this route.
   const providerDetection = await detectAvailableProviders({ fastLocal: true });
-  console.log(`📡 AI provider detected: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
+  log.info('trichome_analysis.provider_detected', { provider: providerDetection.primary.provider, reason: providerDetection.primary.reason });
 
   // Check if AI providers are available
   if (!providerDetection.primary.isAvailable || providerDetection.primary.provider === 'fallback') {
@@ -378,7 +381,7 @@ You are a world-renowned cannabis cultivation expert specializing in trichome an
 Analyze the provided microscopic image and return ONLY valid JSON.`;
 
   try {
-    console.log('🤖 Executing AI trichome analysis...');
+    log.info('trichome_analysis.ai_executing');
 
     // Execute AI analysis
     const aiResult = await executeAIWithFallback(trichomePrompt, imageBase64, {
@@ -397,7 +400,7 @@ Analyze the provided microscopic image and return ONLY valid JSON.`;
       try {
         analysisResult = JSON.parse(analysisResult);
       } catch (parseError) {
-        console.warn('⚠️ AI response not valid JSON, creating structured response...');
+        log.warn('trichome_analysis.ai_response_not_json');
         analysisResult = createStructuredTrichomeResponse(analysisResult, aiResult.provider);
       }
     }
@@ -405,12 +408,12 @@ Analyze the provided microscopic image and return ONLY valid JSON.`;
     // Validate and enhance the analysis
     analysisResult = enhanceTrichomeAnalysis(analysisResult, deviceInfo, options);
 
-    console.log(`✅ Trichome analysis completed: ${analysisResult.overallMaturity.stage} stage, ${analysisResult.harvestReadiness.ready ? 'Ready' : 'Not ready'} for harvest`);
+    log.info('trichome_analysis.completed', { stage: analysisResult.overallMaturity.stage, ready: analysisResult.harvestReadiness.ready });
 
     return analysisResult;
 
   } catch (error) {
-    console.error('❌ AI trichome analysis failed:', error);
+    log.error('trichome_analysis.ai_failed', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -777,7 +780,7 @@ export async function GET(request: NextRequest) {
       });
 
     } catch (error: any) {
-      console.error('Trichome capabilities error:', error);
+      log.error('trichome_analysis.capabilities_failed', { error: error instanceof Error ? error.message : String(error) });
       return createAPIError('Failed to get trichome analysis capabilities', 500, error.message);
     }
   });

@@ -9,6 +9,9 @@ import {
   subDays,
   format,
 } from 'date-fns';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[ANALYTICS-UTILS]' });
 
 export interface MetricData {
   name: string;
@@ -53,7 +56,7 @@ export async function recordAPIPerformance(
       },
     });
   } catch (error) {
-    console.error('Error recording API performance:', error);
+    log.error('analytics_utils.api_performance_record_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -69,7 +72,7 @@ export async function recordMetric(data: MetricData): Promise<void> {
       },
     });
   } catch (error) {
-    console.error('Error recording metric:', error);
+    log.error('analytics_utils.metric_record_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -98,7 +101,7 @@ export async function recordSensorAnalytics(
       },
     });
   } catch (error) {
-    console.error('Error recording sensor analytics:', error);
+    log.error('analytics_utils.sensor_analytics_record_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -139,7 +142,7 @@ export async function checkThresholds(
       }
     }
   } catch (error) {
-    console.error('Error checking thresholds:', error);
+    log.error('analytics_utils.threshold_check_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -170,7 +173,7 @@ export async function generateDailyReport(date: Date = new Date()): Promise<void
     });
 
     if (existing) {
-      console.log(`Report already exists for ${format(startDate, 'yyyy-MM-dd')}`);
+      log.info('analytics_utils.daily_report_already_exists', { date: format(startDate, 'yyyy-MM-dd') });
       return;
     }
 
@@ -220,9 +223,9 @@ export async function generateDailyReport(date: Date = new Date()): Promise<void
       },
     });
 
-    console.log(`Generated daily report for ${format(startDate, 'yyyy-MM-dd')}`);
+    log.info('analytics_utils.daily_report_generated', { date: format(startDate, 'yyyy-MM-dd') });
   } catch (error) {
-    console.error('Error generating daily report:', error);
+    log.error('analytics_utils.daily_report_generate_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -282,9 +285,9 @@ export async function aggregateData(
       });
     }
 
-    console.log(`Aggregated data for period ${period}`);
+    log.info('analytics_utils.data_aggregated', { period });
   } catch (error) {
-    console.error('Error aggregating data:', error);
+    log.error('analytics_utils.data_aggregation_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -339,9 +342,9 @@ export async function cleanupOldData(retentionDays: number = 90): Promise<void> 
       },
     });
 
-    console.log('Cleaned up old analytics data');
+    log.info('analytics_utils.old_data_cleaned_up');
   } catch (error) {
-    console.error('Error cleaning up old data:', error);
+    log.error('analytics_utils.old_data_cleanup_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 

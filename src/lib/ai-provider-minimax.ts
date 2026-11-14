@@ -1,4 +1,7 @@
 import { AIProviderResult, AIExecuteOptions } from './ai-provider-detection';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[MINIMAX]' });
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io/v1';
 const MINIMAX_DEFAULT_MODEL = 'MiniMax-M3';
@@ -35,17 +38,17 @@ export interface MiniMaxMessage {
 export async function checkMiniMax(): Promise<AIProviderResult> {
   const apiKey = getMiniMaxApiKey();
   const baseUrl = getMiniMaxBaseUrl();
-  console.log('[MiniMax] Checking... KEY=', apiKey ? 'SET' : 'MISSING', 'URL=', baseUrl);
+  log.info('minimax.check_started', { apiKeyStatus: apiKey ? 'SET' : 'MISSING' });
   if (!apiKey) {
-    console.log('[MiniMax] Not configured - no API key');
+    log.info('minimax.not_configured', { reason: 'no_api_key' });
     return { available: false, reason: 'MINIMAX_API_KEY not configured' };
   }
 
   try {
-    console.log('[MiniMax] Starting fetch...');
+    log.info('minimax.fetch_starting');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
-    console.log('[MiniMax] Fetch started, waiting for response...');
+    log.info('minimax.fetch_started');
 
     const response = await fetch(`${baseUrl}/models`, {
       headers: {
@@ -57,18 +60,18 @@ export async function checkMiniMax(): Promise<AIProviderResult> {
 
     clearTimeout(timeout);
 
-    console.log('[MiniMax] Response status:', response.status);
+    log.info('minimax.response_received', { status: response.status });
     if (response.ok) {
-      console.log('[MiniMax] SUCCESS - available');
-      console.log('[MiniMax] Returning SUCCESS'); return { available: true, reason: 'MiniMax API connected' };
+      log.info('minimax.check_succeeded');
+      log.info('minimax.check_returning_success'); return { available: true, reason: 'MiniMax API connected' };
     } else {
       const text = await response.text().catch(() => '?');
-      console.log('[MiniMax] FAIL:', response.status, text.substring(0, 100));
-      console.log('[MiniMax] Returning FAIL:', response.status); return { available: false, reason: `MiniMax API error: ${response.status}` };
+      log.info('minimax.check_failed', { status: response.status, responseText: text.substring(0, 100) });
+      log.info('minimax.check_returning_failure', { status: response.status }); return { available: false, reason: `MiniMax API error: ${response.status}` };
     }
   } catch (error: any) {
-    console.log('[MiniMax] EXCEPTION:', error.message);
-    console.log('[MiniMax] Returning EXCEPTION:', error.message); return { available: false, reason: `MiniMax unreachable: ${error.message}` };
+    log.info('minimax.check_exception', { error: error instanceof Error ? error.message : String(error) });
+    log.info('minimax.check_returning_exception', { error: error instanceof Error ? error.message : String(error) }); return { available: false, reason: `MiniMax unreachable: ${error.message}` };
   }
 }
 
