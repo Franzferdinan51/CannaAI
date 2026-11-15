@@ -52,7 +52,7 @@ LM_STUDIO_BASE_URL="http://127.0.0.1:1234/v1"
 # Optional when LM Studio server authentication is enabled:
 # LM_STUDIO_API_KEY="your-local-lm-studio-token"
 # Optional explicit model overrides; omit them for automatic discovery:
-# LM_STUDIO_VISION_MODEL="ornith-1.5-35b-a3b"
+# LM_STUDIO_VISION_MODEL="ornith-1.5-9b-mlx-vision"
 # LM_STUDIO_TEXT_MODEL="ornith-1.5-35b-a3b"
 ```
 

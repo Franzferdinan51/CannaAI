@@ -17,6 +17,8 @@
  * This is intentionally small — no Winston/Pino dep added.
  */
 
+// SERVER-ONLY: this module imports node:fs/path/crypto for its file sink.
+// Client-bundled modules must import ./logger-browser instead.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';

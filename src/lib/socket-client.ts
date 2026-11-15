@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { getLogger } from './logger';
+import { getLogger } from './logger-browser';
 
 const log = getLogger().child({ tag: '[SOCKET-CLIENT]' });
 
