@@ -1,4 +1,7 @@
 import { Server, Socket } from 'socket.io';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[SOCKET]' });
 
 type SocketOptions = {
   enableAuth?: boolean;
@@ -17,7 +20,7 @@ function getSocketToken(socket: Socket): string | null {
 
 export const setupSocket = (io: Server, options: SocketOptions = {}) => {
   io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    log.debug('socket.client_connected', { socketId: socket.id });
 
     // Basic optional auth (token in query or header)
     if (options.enableAuth) {
@@ -38,7 +41,7 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
     // Subscribe to analytics updates
     socket.on('subscribe-analytics', () => {
       socket.join('analytics');
-      console.log(`Client ${socket.id} subscribed to analytics updates`);
+      log.debug('socket.subscribed_analytics', { socketId: socket.id });
       socket.emit('analytics-subscribed', {
         message: 'Subscribed to analytics updates',
         timestamp: new Date().toISOString(),
@@ -48,7 +51,7 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
     // Unsubscribe from analytics updates
     socket.on('unsubscribe-analytics', () => {
       socket.leave('analytics');
-      console.log(`Client ${socket.id} unsubscribed from analytics updates`);
+      log.debug('socket.unsubscribed_analytics', { socketId: socket.id });
       socket.emit('analytics-unsubscribed', {
         message: 'Unsubscribed from analytics updates',
         timestamp: new Date().toISOString(),
@@ -58,7 +61,7 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
     // Subscribe to notifications
     socket.on('subscribe-notifications', () => {
       socket.join('notifications');
-      console.log(`Client ${socket.id} subscribed to notifications`);
+      log.debug('socket.subscribed_notifications', { socketId: socket.id });
       socket.emit('notifications-subscribed', {
         message: 'Subscribed to notifications',
         timestamp: new Date().toISOString(),
@@ -68,7 +71,7 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
     // Unsubscribe from notifications
     socket.on('unsubscribe-notifications', () => {
       socket.leave('notifications');
-      console.log(`Client ${socket.id} unsubscribed from notifications`);
+      log.debug('socket.unsubscribed_notifications', { socketId: socket.id });
       socket.emit('notifications-unsubscribed', {
         message: 'Unsubscribed from notifications',
         timestamp: new Date().toISOString(),
@@ -96,7 +99,7 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.error('Error fetching unread notifications:', error);
+        log.error('socket.unread_notifications_failed', { error: error instanceof Error ? error.message : String(error) });
         socket.emit('notifications-error', {
           message: 'Failed to fetch unread notifications',
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -128,7 +131,7 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.error('Error acknowledging notification:', error);
+        log.error('socket.acknowledge_notification_failed', { error: error instanceof Error ? error.message : String(error) });
         socket.emit('notifications-error', {
           message: 'Failed to acknowledge notification',
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -175,7 +178,7 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.error('Error fetching analytics snapshot:', error);
+        log.error('socket.analytics_snapshot_failed', { error: error instanceof Error ? error.message : String(error) });
         socket.emit('analytics-error', {
           message: 'Failed to fetch analytics snapshot',
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -185,7 +188,7 @@ export const setupSocket = (io: Server, options: SocketOptions = {}) => {
 
     // Handle disconnect
     socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
+      log.debug('socket.client_disconnected', { socketId: socket.id });
       clearInterval(refillInterval);
     });
 

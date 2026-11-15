@@ -1,4 +1,7 @@
 import { io, Socket } from 'socket.io-client';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[SOCKET-CLIENT]' });
 
 type SocketOptions = {
   autoConnect?: boolean;
@@ -28,7 +31,7 @@ class SocketService {
           ? window.location.origin
           : `http://${window.location.hostname}:3000`;
 
-        console.log(`🔌 Connecting to Socket.IO server at: ${serverUrl}`);
+        log.info('socket_client.connecting', { serverUrl });
 
         // Create socket connection with proper configuration
         this.socket = io(serverUrl, {
@@ -45,28 +48,28 @@ class SocketService {
 
         // Connection event handlers
         this.socket.on('connect', () => {
-          console.log('✅ Socket.IO connected:', this.socket?.id);
+          log.info('socket_client.connected', { socketId: this.socket?.id });
           resolve(this.socket!);
         });
 
         this.socket.on('connect_error', (error) => {
-          console.error('❌ Socket.IO connection error:', error);
+          log.error('socket_client.connection_error', { error: error instanceof Error ? error.message : String(error) });
           this.connectionPromise = null;
           reject(error);
         });
 
         this.socket.on('disconnect', (reason) => {
-          console.log('❌ Socket.IO disconnected:', reason);
+          log.info('socket_client.disconnected', { reason });
           this.connectionPromise = null;
         });
 
         // Message handler
         this.socket.on('message', (data) => {
-          console.log('📨 Socket.IO message received:', data);
+          log.debug('socket_client.message_received', { dataType: typeof data, keys: data && typeof data === 'object' ? Object.keys(data as Record<string, unknown>) : undefined });
         });
 
       } catch (error) {
-        console.error('❌ Failed to create Socket.IO connection:', error);
+        log.error('socket_client.connection_create_failed', { error: error instanceof Error ? error.message : String(error) });
         this.connectionPromise = null;
         reject(error);
       }
@@ -77,7 +80,7 @@ class SocketService {
 
   disconnect(): void {
     if (this.socket) {
-      console.log('🔌 Disconnecting Socket.IO...');
+      log.info('socket_client.disconnecting');
       this.socket.disconnect();
       this.socket = null;
       this.connectionPromise = null;
@@ -100,7 +103,7 @@ class SocketService {
         senderId: 'client-' + Math.random().toString(36).substr(2, 9)
       });
     } else {
-      console.warn('⚠️ Cannot send message - Socket.IO not connected');
+      log.warn('socket_client.send_failed_not_connected');
     }
   }
 

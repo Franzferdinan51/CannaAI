@@ -1,11 +1,14 @@
 import sharp from 'sharp';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[IMAGE]' });
 // heic-convert uses localStorage at module load time (browser-only) — load lazily
 export async function convertHeicToJpeg(
   heicBuffer: Buffer,
   quality: number = 90
 ): Promise<Buffer> {
   try {
-    console.log('🔄 Converting HEIC/HEIF to JPEG...');
+    log.info('image.heic_conversion_started', { quality });
 
     // Lazy-load heic-convert only when needed (avoids server-side localStorage crash)
     const { convert } = await import('heic-convert');
@@ -17,10 +20,10 @@ export async function convertHeicToJpeg(
       quality
     });
 
-    console.log('✅ HEIC/HEIF conversion successful');
+    log.info('image.heic_conversion_succeeded');
     return outputBuffer;
   } catch (error) {
-    console.error('❌ HEIC/HEIF conversion failed:', error);
+    log.error('image.heic_conversion_failed', { error: error instanceof Error ? error.message : String(error) });
     throw new HeicConversionError(
       'Failed to convert HEIC/HEIF image to JPEG',
       error as Error
@@ -422,7 +425,7 @@ export async function generateResponsiveImages(
         result
       });
     } catch (error) {
-      console.warn(`Failed to generate image size ${size.name}:`, error);
+      log.warn('image.responsive_size_failed', { sizeName: size.name, error: error instanceof Error ? error.message : String(error) });
       // Continue with other sizes even if one fails
     }
   }
@@ -588,14 +591,14 @@ export async function handleImageUpload(
       mimeType = `image/${originalFormat}`;
     }
 
-    console.log(`📸 Processing image: ${originalFormat.toUpperCase()}, size: ${formatBytes(inputBuffer.length)}`);
+    log.info('image.processing_started', { format: originalFormat, sizeBytes: inputBuffer.length, size: formatBytes(inputBuffer.length) });
 
     // Handle HEIC/HEIF conversion
     if (originalFormat === 'heic' || originalFormat === 'heif') {
-      console.log('🔄 Detected HEIC/HEIF format, converting to JPEG...');
+      log.info('image.heic_detected_converting', { format: originalFormat });
       inputBuffer = await convertHeicToJpeg(inputBuffer, options.quality || 90);
       mimeType = 'image/jpeg';
-      console.log('✅ HEIC/HEIF conversion completed');
+      log.info('image.heic_conversion_completed');
     }
 
     // Validate format (after conversion if needed)
@@ -617,7 +620,7 @@ export async function handleImageUpload(
 
     // Add original format info to the result
     if (originalFormat === 'heic' || originalFormat === 'heif') {
-      console.log(`📊 Converted ${originalFormat.toUpperCase()} to ${result.metadata.format.toUpperCase()}`);
+      log.info('image.heic_converted', { fromFormat: originalFormat, toFormat: result.metadata.format });
     }
 
     return result;

@@ -8,6 +8,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLMStudioApiKey, getLMStudioEndpointCandidates } from '@/lib/ai-provider-lmstudio';
 import { isServerless, isDevelopment } from '@/lib/ai-provider-detection';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[LMSTUDIO]' });
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -173,7 +176,7 @@ export async function POST(request: NextRequest) {
     // Check if LM Studio is running with timeout and use its model catalog as
     // the source of truth. LM Studio does not accept the OpenAI-style
     // `auto` sentinel on every release; chat completions need a real model ID.
-    console.log('🔍 Checking LM Studio availability at', LM_STUDIO_URL);
+    log.info('lmstudio.availability_check_started');
     let advertisedModels: Array<{ id?: string }> = [];
     let activeLMStudioUrl = LM_STUDIO_URL;
     let lastHealthError = 'connection refused';
@@ -213,7 +216,7 @@ export async function POST(request: NextRequest) {
           }));
           activeLMStudioUrl = candidate;
           discovered = true;
-          console.log(`✅ LM Studio is running with ${advertisedModels.length} models available at ${candidate}`);
+          log.info('lmstudio.running', { modelCount: advertisedModels.length });
           break;
         } catch (healthError) {
           lastHealthError = healthError instanceof Error ? healthError.message : lastHealthError;
@@ -309,7 +312,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call LM Studio API with extended timeout
-    console.log('📡 Sending request to LM Studio...');
+    log.info('lmstudio.request_sending');
     const lmStudioController = new AbortController();
     const lmStudioTimeoutId = setTimeout(() => lmStudioController.abort(), LM_STUDIO_TIMEOUT);
 
@@ -335,7 +338,7 @@ export async function POST(request: NextRequest) {
       }
 
       const result = await lmStudioResponse.json();
-      console.log('✅ LM Studio response received');
+      log.info('lmstudio.response_received');
 
       // Extract and return the response
       const response = {
@@ -364,7 +367,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ LM Studio API error:', error);
+    log.error('lmstudio.api_error', { error: error instanceof Error ? error.message : String(error) });
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('AbortError');
@@ -437,7 +440,7 @@ export async function GET() {
 
   // Health check and model listing endpoint for local development
   try {
-    console.log('🔍 Performing LM Studio health check...');
+    log.info('lmstudio.health_check_started');
 
     let response: Response | undefined;
     let activeLMStudioUrl = LM_STUDIO_URL;
@@ -492,7 +495,7 @@ export async function GET() {
       const id = String(model?.id || '').toLowerCase();
       return id && !isNonChatModel(model);
     });
-    console.log(`✅ LM Studio reachable with ${modelList.length} models (${chatModels.length} chat models)`);
+    log.info('lmstudio.reachable', { modelCount: modelList.length, chatModelCount: chatModels.length });
 
     if (chatModels.length === 0) {
       return NextResponse.json({
@@ -527,7 +530,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('❌ LM Studio health check failed:', error);
+    log.error('lmstudio.health_check_failed', { error: error instanceof Error ? error.message : String(error) });
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('AbortError');

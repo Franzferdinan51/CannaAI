@@ -11,6 +11,9 @@ import { checkOpenRouter, executeWithOpenRouter } from './ai-provider-openrouter
 import { executeWithLMStudio, checkLMStudio, getLMStudioApiKey } from './ai-provider-lmstudio';
 import { checkMiniMax, executeWithMiniMax } from './ai-provider-minimax';
 import { checkHermes, executeWithHermes } from './ai-provider-hermes';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[DETECTION]' });
 
 export interface ProviderDetectionResult {
   isAvailable: boolean;
@@ -213,10 +216,10 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
       const isAvailable = typeof result === 'boolean'
         ? result
         : Boolean((result as any)?.isAvailable ?? (result as any)?.available);
-      console.log(`[provider-check][${name}] resolved isAvailable=${isAvailable}`);
+      log.debug('detection.provider_check_resolved', { provider: name, isAvailable });
       return { r: result, isAvailable };
     } catch (error: any) {
-      console.log(`[provider-check][${name}] failed: ${error?.message || error}`);
+      log.debug('detection.provider_check_failed', { provider: name, error: error instanceof Error ? error.message : String(error) });
       return { r: false as any, isAvailable: false };
     }
   };
@@ -343,7 +346,7 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
     ? results
     : results.filter(result => isLocalProvider(result.provider));
   if (!cloudAllowed) {
-    console.log('[Detection] Local-only lock on: cloud AI providers pruned (set CANNAAI_ALLOW_CLOUD_AI=true to allow)');
+    log.info('detection.cloud_providers_pruned', { reason: 'local_only_lock' });
   }
 
   const available = effectiveResults.filter(result => result.isAvailable);
@@ -358,8 +361,8 @@ export async function detectAvailableProviders(options: { lmStudioBaseUrl?: stri
     data: false,
   };
 
-  console.log('[Detection] Available:', available.map(item => item.provider).join(', ') || 'none');
-  console.log('[Detection] Primary:', primary.provider, 'isAvailable:', primary.isAvailable);
+  log.info('detection.available_providers', { providers: available.map(item => item.provider).join(', ') || 'none' });
+  log.info('detection.primary_provider', { provider: primary.provider, isAvailable: primary.isAvailable });
 
   return {
     primary,
@@ -578,7 +581,7 @@ export async function executeAIWithFallback(
   for (const provider of providers) {
     const startedAt = Date.now();
     try {
-      console.log(`Trying ${provider.name}...`);
+      log.debug('detection.provider_attempt', { provider: provider.name });
       const rawResult: any = options.timeout && options.timeout > 0
         ? await withTimeout(provider.fn(), options.timeout, provider.name)
         : await provider.fn();
@@ -593,7 +596,7 @@ export async function executeAIWithFallback(
         throw new Error(rawResult?.error || `${provider.name} returned an empty response`);
       }
 
-      console.log(`${provider.name} succeeded`);
+      log.debug('detection.provider_succeeded', { provider: provider.name });
 
       if (typeof rawResult === 'string') {
         return {
@@ -617,7 +620,7 @@ export async function executeAIWithFallback(
         processingTime: rawResult?.processingTime ?? Math.max(1, Date.now() - startedAt),
       };
     } catch (error: any) {
-      console.log(`${provider.name} failed: ${error?.message || error}`);
+      log.info('detection.provider_failed', { provider: provider.name, error: error instanceof Error ? error.message : String(error) });
       attempted.push(provider.name);
     }
   }

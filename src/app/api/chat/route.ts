@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('💬 Chat request received, detecting AI providers...');
+    log.info('chat.request_received');
 
     // Detect available AI providers. detectAvailableProviders itself runs
     // up to 20 s (LM Studio + OpenClaw + Bailian + MiniMax + OpenRouter
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
         recommendations: ['AI provider detection timed out — try again'],
       };
     }
-    console.log(`📡 Primary chat provider: ${providerDetection.primary.provider} (${providerDetection.primary.reason})`);
+    log.info('chat.primary_provider', { provider: providerDetection.primary.provider, reason: providerDetection.primary.reason });
 
     // Check if AI providers are available before processing
     if (!providerDetection.primary.isAvailable || providerDetection.primary.provider === 'fallback') {
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
       const usedProvider = aiResult.provider;
       const fallbackUsed = aiResult.provider === 'fallback';
       const fallbackReason = aiResult.fallbackReason || '';
-      console.log(`✅ Chat completed using ${aiResult.provider} in ${aiResult.processingTime}ms`);
+      log.info('chat.completed', { provider: aiResult.provider, processingTimeMs: aiResult.processingTime });
 
       const responseText = getChatResponseText(chatResult);
       if (!responseText.trim()) {
@@ -329,7 +329,7 @@ export async function POST(request: NextRequest) {
 
     } catch (innerError) {
       // Handle specific AI execution errors
-      console.error('AI execution error:', innerError);
+      log.error('chat.execution_error', { error: innerError instanceof Error ? innerError.message : String(innerError) });
       throw innerError; // Re-throw to be handled by outer catch
     }
 
@@ -338,7 +338,7 @@ export async function POST(request: NextRequest) {
 
     // Handle AI provider unavailability specifically
     if (error instanceof AIProviderUnavailableError) {
-      console.error('❌ AI provider unavailable for chat:', error.message);
+      log.error('chat.provider_unavailable', { error: error.message });
 
       return NextResponse.json({
         success: false,
@@ -366,9 +366,9 @@ export async function POST(request: NextRequest) {
       }, { status: 503 }); // Service Unavailable
     }
 
-    console.error('Chat API error:', {
+    log.error('chat.api_error', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      processingTime: `${totalTime}ms`
+      processingTimeMs: totalTime
     });
 
     return NextResponse.json(
@@ -507,6 +507,7 @@ async function streamChatResponse(args: {
 }
 
 export async function GET(request?: NextRequest) {
+  const log = withRequest(request ?? ({} as NextRequest), { route: '/api/chat' });
   // For static export, provide client-side compatibility response
   const isStaticExport = process.env.BUILD_MODE === 'static';
   if (isStaticExport) {
@@ -520,7 +521,7 @@ export async function GET(request?: NextRequest) {
 
   // Enhanced server-side functionality with provider detection
   try {
-    console.log('🔍 Detecting AI providers for chat endpoint...');
+    log.info('chat.provider_detection_started');
 
     // Keep the status probe responsive and local-first. The chat POST path
     // already uses this mode; running the full cloud/agent probe here made
@@ -597,7 +598,7 @@ export async function GET(request?: NextRequest) {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('❌ Chat endpoint provider detection failed:', error);
+    log.error('chat.provider_detection_failed', { error: error instanceof Error ? error.message : String(error) });
 
     return NextResponse.json(
       {

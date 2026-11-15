@@ -18,12 +18,17 @@ jest.mock('@/lib/ai-provider-minimax', () => ({
   executeWithMiniMaxStream: jest.fn(),
 }));
 
+// Plain function (not jest.fn): jest.clearAllMocks() in beforeEach strips
+// jest.fn implementations in this setup, which would leave withRequest
+// returning undefined once the route logs on its happy paths. Same style
+// as tests/unit/analytics-records-route.test.ts.
 jest.mock('@/lib/logger', () => ({
-  withRequest: jest.fn(() => ({
+  withRequest: () => ({
+    debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-  })),
+  }),
 }));
 
 import { GET, POST } from '@/app/api/chat/route';
