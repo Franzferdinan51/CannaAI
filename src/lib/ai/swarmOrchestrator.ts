@@ -2,6 +2,9 @@ import { PlantHealthAnalysis, ModelConfig } from "../../types/plant-analysis";
 import { analyzePlantHealth } from "./geminiService";
 import { analyzeWithLMStudio } from "./lmstudioService";
 import { analyzeWithOpenRouter } from "./openrouterService";
+import { getLogger } from "../logger";
+
+const log = getLogger().child({ tag: '[SWARM]' });
 
 /**
  * AI Swarm Orchestrator for Plant Health Analysis
@@ -131,7 +134,7 @@ async function runProviderAnalysis(
       confidence: analysis.confidenceScore || 0
     };
   } catch (error) {
-    console.error(`Provider ${provider} failed:`, error);
+    log.error('swarm.provider_failed', { provider, error: error instanceof Error ? error.message : String(error) });
     // Failed providers are excluded from consensus. A synthetic empty
     // analysis would be indistinguishable from real model evidence.
     return null;
@@ -280,7 +283,7 @@ export async function runConsensusMode(
     throw new Error("No active providers configured");
   }
 
-  console.log(`[SWARM CONSENSUS] Running ${providers.length} providers in parallel...`);
+  log.info('swarm.consensus_started', { providerCount: providers.length });
 
   // Run all providers in parallel
   const providerResults = await Promise.all(
@@ -295,7 +298,7 @@ export async function runConsensusMode(
   const finalAnalysis = mergeAnalyses(results);
   const consensusLevel = calculateConsensusLevel(results);
 
-  console.log(`[SWARM CONSENSUS] Complete. Consensus: ${Math.round(consensusLevel * 100)}%`);
+  log.info('swarm.consensus_completed', { consensusPercent: Math.round(consensusLevel * 100) });
 
   return {
     finalAnalysis,
@@ -322,7 +325,7 @@ export async function runDistributedMode(
     throw new Error("No active providers configured");
   }
 
-  console.log(`[SWARM DISTRIBUTED] Distributing workload across ${providers.length} providers...`);
+  log.info('swarm.distributed_started', { providerCount: providers.length });
 
   // Strategy: Each provider gets all images but we process in a round-robin
   // In a real batch scenario, you'd split documents across providers
@@ -342,7 +345,7 @@ export async function runDistributedMode(
         break; // Use up to 3 providers for balance
       }
     } catch (error) {
-      console.error(`Provider ${provider} failed in distributed mode, trying next...`);
+      log.error('swarm.provider_failed_distributed', { provider });
       continue;
     }
   }
@@ -355,7 +358,7 @@ export async function runDistributedMode(
   const finalAnalysis = mergeAnalyses(results);
   const consensusLevel = calculateConsensusLevel(results);
 
-  console.log(`[SWARM DISTRIBUTED] Complete. Used ${results.length} providers.`);
+  log.info('swarm.distributed_completed', { providersUsed: results.length });
 
   return {
     finalAnalysis,

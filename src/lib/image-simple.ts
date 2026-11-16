@@ -5,6 +5,9 @@
  */
 
 import { ImageProcessingError } from './base64';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[IMAGE]' });
 
 export { ImageProcessingError };
 
@@ -85,7 +88,7 @@ export async function processImageForVisionModel(
     try {
       const sharp = resolveSharpFactory(sharpPackage);
       if (!sharp) throw new Error('sharp module did not expose a callable factory');
-      console.log('[image-simple] Using sharp. Input size:', originalSize);
+      log.debug('image_simple.sharp_processing_started', { inputSize: originalSize });
 
       // First produce the processed JPEG buffer
       const processed = await sharp(inputBuffer)
@@ -104,10 +107,10 @@ export async function processImageForVisionModel(
         processed[1] === 0xD8 &&
         processed[2] === 0xFF &&
         processed[3] === 0xE0;
-      console.log('[image-simple] JPEG check: size=' + processed.length + ' starts=' + processed.slice(0, 8).toString('hex') + ' hasJFIF=' + hasJFIF);
+      log.debug('image_simple.jpeg_check', { size: processed.length, headerHex: processed.slice(0, 8).toString('hex'), hasJFIF });
 
       if (!hasJFIF) {
-        console.warn('[image-simple] Non-JFIF JPEG detected. Converting to PNG then back to JPEG to ensure compatibility...');
+        log.warn('image_simple.non_jfif_jpeg_detected');
         // Convert to PNG then back to JPEG to get clean JFIF structure
         const pngBuf = await sharp(inputBuffer)
           .resize(width, height, { fit: 'inside', withoutEnlargement: true })
@@ -117,8 +120,8 @@ export async function processImageForVisionModel(
           .jpeg({ quality, mozjpeg: false })
           .toBuffer();
         const cleanMetadata = await sharp(cleanJpeg).metadata?.();
-        console.warn('[image-simple] PNG intermediate:', pngBuf.length, '-> clean JPEG:', cleanJpeg.length);
-        console.warn('[image-simple] Clean JPEG starts:', cleanJpeg.slice(0, 8).toString('hex'));
+        log.warn('image_simple.png_intermediate_created', { pngSize: pngBuf.length, jpegSize: cleanJpeg.length });
+        log.warn('image_simple.clean_jpeg_header', { headerHex: cleanJpeg.slice(0, 8).toString('hex') });
         const finalBuf = cleanJpeg;
         return {
           data: finalBuf,
@@ -151,7 +154,7 @@ export async function processImageForVisionModel(
         compressionRatio: ((originalSize - processed.length) / originalSize) * 100,
       };
     } catch (err) {
-      console.warn('[image-simple] Sharp processing failed, falling back:', err);
+      log.warn('image_simple.sharp_processing_failed_fallback', { error: err instanceof Error ? err.message : String(err) });
     }
   }
 

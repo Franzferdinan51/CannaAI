@@ -1,6 +1,9 @@
 import { PlantHealthAnalysis } from "../../types/plant-analysis";
 import { getLMStudioApiKey } from "../ai-provider-lmstudio";
 import { extractJSONFromResponse } from "../analysis-json";
+import { getLogger } from "../logger";
+
+const log = getLogger().child({ tag: '[LMSTUDIO-SERVICE]' });
 
 function normalizeImageUrl(image: unknown): string | undefined {
   if (typeof image !== 'string') return undefined;
@@ -119,7 +122,7 @@ export async function testLMStudioConnection(
         errorMsg = "Network Error: Ensure LM Studio is running, CORS is enabled, and endpoint is correct.";
       }
     }
-    console.error("Connection test failed:", e);
+    log.error('lmstudio_service.connection_test_failed', { error: e instanceof Error ? e.message : String(e) });
     return { success: false, error: errorMsg };
   }
 }
@@ -133,7 +136,7 @@ async function getAvailableModel(baseUrl: string): Promise<string | null> {
     const model = models.find((entry: any) => !isNonChatModel(entry));
     if (model) return model.id || model.key || null;
   } catch (e) {
-    console.error("Failed to get models:", e);
+    log.error('lmstudio_service.get_models_failed', { error: e instanceof Error ? e.message : String(e) });
   }
   return null;
 }
@@ -276,7 +279,7 @@ export async function analyzeWithLMStudio(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
-      console.error("LM Studio error response:", errorText);
+      log.error('lmstudio_service.error_response', { status: response.status, errorText: errorText.substring(0, 200) });
       throw new Error(`HTTP Error: ${response.status}`);
     }
 
@@ -291,7 +294,7 @@ export async function analyzeWithLMStudio(
     // so this compatibility adapter behaves like the primary analysis route.
     const extracted = extractJSONFromResponse(responseContent);
     if (!extracted.success || !extracted.data || Array.isArray(extracted.data)) {
-      console.error("Failed to parse LM Studio response:", responseContent);
+      log.error('lmstudio_service.response_parse_failed', { responseLength: responseContent.length });
       return null;
     }
     const parsed: any = extracted.data;
@@ -317,7 +320,7 @@ export async function analyzeWithLMStudio(
 
     return analysis;
   } catch (e: any) {
-    console.error("LM Studio analysis error:", e);
+    log.error('lmstudio_service.analysis_failed', { error: e instanceof Error ? e.message : String(e) });
     if (e.name === 'AbortError') {
       throw new Error("Analysis timeout: LM Studio took too long to respond");
     }
@@ -424,7 +427,7 @@ QUERY: ${query}`;
     throw new Error("LM Studio returned an empty chat response");
   } catch (e: any) {
     clearTimeout(timeoutId);
-    console.error("LM Studio RAG chat error:", e);
+    log.error('lmstudio_service.rag_chat_failed', { error: e instanceof Error ? e.message : String(e) });
     if (e.name === 'AbortError') {
       throw new Error("Chat timeout: LM Studio took too long to respond");
     }

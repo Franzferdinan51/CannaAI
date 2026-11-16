@@ -1,6 +1,9 @@
 import { prisma } from './prisma';
 import crypto from 'crypto';
 import { createTimeoutSignal } from './abort-signal';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[WEBHOOKS]' });
 
 // Webhook event types
 export type WebhookEventType =
@@ -84,7 +87,7 @@ export async function createWebhookSubscription(
   try {
     await sendWebhookTest(webhook.id);
   } catch (error) {
-    console.error(`[WEBHOOK] Failed to verify webhook ${webhook.id}:`, error);
+    log.error('webhooks.verification_failed', { webhookId: webhook.id, error: error instanceof Error ? error.message : String(error) });
   }
 
   return webhook;
@@ -481,12 +484,12 @@ let webhookWorkerLastErrorAt = 0;
 
 export function startWebhookWorker(): void {
   if (webhookWorkerRunning) {
-    console.log('[WEBHOOK-WORKER] Already running');
+    log.info('webhooks.worker_already_running');
     return;
   }
 
   webhookWorkerRunning = true;
-  console.log('[WEBHOOK-WORKER] Starting background worker');
+  log.info('webhooks.worker_started');
 
   // Process pending deliveries every 30 seconds, with a 5-minute cooldown
   // after a P1008 (SQLite socket timeout) so a slow database does not spam
@@ -506,9 +509,9 @@ export function startWebhookWorker(): void {
       }
       webhookWorkerLastErrorAt = now;
       if (isTimeout) {
-        console.warn('[WEBHOOK-WORKER] SQLite timeout, backing off for 5 minutes');
+        log.warn('webhooks.worker_sqlite_timeout_backoff', { cooldownMs: WEBHOOK_WORKER_COOLDOWN_MS });
       } else {
-        console.error('[WEBHOOK-WORKER] Error processing deliveries:', error);
+        log.error('webhooks.worker_delivery_processing_failed', { error: error instanceof Error ? error.message : String(error) });
       }
     }
   }, 30000);
@@ -522,5 +525,5 @@ export function stopWebhookWorker(): void {
   }
   webhookWorkerRunning = false;
   webhookWorkerLastErrorAt = 0;
-  console.log('[WEBHOOK-WORKER] Stopped');
+  log.info('webhooks.worker_stopped');
 }

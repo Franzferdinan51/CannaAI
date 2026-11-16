@@ -18,6 +18,9 @@ import { addHours, addDays, addWeeks, addMonths } from 'date-fns';
 import { analyzePlantHealth } from '@/lib/ai';
 import { sendNotification } from '@/lib/notifications';
 import { exportManager } from '@/lib/export-import-utils';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[AUTOMATION]' });
 
 export async function runAutomationEngine() {
   const results = {
@@ -49,7 +52,7 @@ export async function runAutomationEngine() {
 
   } catch (error) {
     results.errors.push(error instanceof Error ? error.message : 'Unknown error');
-    console.error('Automation engine error:', error);
+    log.error('automation_engine.run_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 
   return {
@@ -80,7 +83,7 @@ export async function checkSchedules() {
 
   for (const scheduler of dueSchedulers) {
     try {
-      console.log(`Executing scheduled analysis for plant ${scheduler.plantId}: ${scheduler.analysisType}`);
+      log.debug('automation_engine.scheduled_analysis_executing', { plantId: scheduler.plantId, analysisType: scheduler.analysisType });
 
       // Execute the analysis
       let analysisResult;
@@ -169,7 +172,7 @@ export async function checkSchedules() {
       }
 
     } catch (error) {
-      console.error(`Failed to execute scheduler ${scheduler.id}:`, error);
+      log.error('automation_engine.scheduler_execution_failed', { schedulerId: scheduler.id, error: error instanceof Error ? error.message : String(error) });
       results.push({
         schedulerId: scheduler.id,
         plantId: scheduler.plantId,
@@ -195,7 +198,7 @@ export async function checkSchedules() {
 
   for (const schedule of dueSchedules) {
     try {
-      console.log(`Executing schedule: ${schedule.name}`);
+      log.debug('automation_engine.schedule_executing', { scheduleId: schedule.id, scheduleName: schedule.name });
       let scheduleSucceeded = true;
 
       if (schedule.type === 'export') {
@@ -265,7 +268,7 @@ export async function checkSchedules() {
       if (scheduleSucceeded) executed++;
 
     } catch (error) {
-      console.error(`Failed to execute schedule ${schedule.id}:`, error);
+      log.error('automation_engine.schedule_execution_failed', { scheduleId: schedule.id, error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -300,7 +303,7 @@ export async function checkForAnomalies() {
       await analyzeAndDetectAnomalies(history.plantId, history.data);
       detected++;
     } catch (error) {
-      console.error(`Anomaly detection failed for plant ${history.plantId}:`, error);
+      log.error('automation_engine.anomaly_detection_failed', { plantId: history.plantId, error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -405,7 +408,7 @@ export async function generateMilestones() {
       }
 
     } catch (error) {
-      console.error(`Milestone generation failed for history ${history.id}:`, error);
+      log.error('automation_engine.milestone_generation_failed', { historyId: history.id, error: error instanceof Error ? error.message : String(error) });
     }
   }
 

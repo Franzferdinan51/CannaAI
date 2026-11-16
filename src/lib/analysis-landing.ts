@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[ANALYSIS-LANDING]' });
 
 /**
  * Analysis landing.
@@ -104,13 +107,13 @@ export async function landAnalysisOnPlant(input: AnalysisLandingInput): Promise<
       select: { id: true, health: true },
     });
   } catch (error) {
-    console.error(`Analysis landing: failed to load plant ${plantId}:`, error);
+    log.error('analysis_landing.plant_load_failed', { plantId, error: error instanceof Error ? error.message : String(error) });
     return;
   }
   if (!plant) {
     // The analysis stays archived on its PlantAnalysis row; there is no
     // real plant to land it on.
-    console.warn(`Analysis landing: plant ${plantId} not found; skipping plant-facing writes.`);
+    log.warn('analysis_landing.plant_not_found', { plantId });
     return;
   }
 
@@ -137,7 +140,7 @@ export async function landAnalysisOnPlant(input: AnalysisLandingInput): Promise<
         },
       });
     } catch (error) {
-      console.error(`Analysis landing: failed to record health analytics for plant ${plantId}:`, error);
+      log.error('analysis_landing.health_analytics_failed', { plantId, error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -157,7 +160,7 @@ export async function landAnalysisOnPlant(input: AnalysisLandingInput): Promise<
       },
     });
   } catch (error) {
-    console.error(`Analysis landing: failed to record analysis history for plant ${plantId}:`, error);
+    log.error('analysis_landing.analysis_history_failed', { plantId, error: error instanceof Error ? error.message : String(error) });
   }
 
   // 3. Plant.health — override only the fields the analysis owns and
@@ -184,7 +187,7 @@ export async function landAnalysisOnPlant(input: AnalysisLandingInput): Promise<
         },
       });
     } catch (error) {
-      console.error(`Analysis landing: failed to update health for plant ${plantId}:`, error);
+      log.error('analysis_landing.plant_health_update_failed', { plantId, error: error instanceof Error ? error.message : String(error) });
     }
   }
 }
