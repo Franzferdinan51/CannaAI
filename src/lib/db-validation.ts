@@ -1,4 +1,7 @@
 import { prisma } from './prisma';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[DB-VALIDATION]' });
 
 /**
  * Database Validation and Integrity Checker
@@ -477,7 +480,7 @@ class DatabaseValidator {
    * Runs all validation checks
    */
   async validateAll(): Promise<DatabaseIntegrityReport> {
-    console.log('Starting database validation...');
+    log.info('db_validation.started');
 
     const foreignKeyResults = await this.validateForeignKeys();
     const integrityResults = await this.validateDataIntegrity();
@@ -502,7 +505,7 @@ class DatabaseValidator {
       results: allResults,
     };
 
-    console.log(`Validation complete: ${passed}/${allResults.length} checks passed`);
+    log.info('db_validation.completed', { passed, total: allResults.length });
 
     return report;
   }
@@ -518,8 +521,8 @@ class DatabaseValidator {
       // Note: SQLite doesn't support ON DELETE CASCADE by default
       // In production, manual cleanup would be needed
 
-      console.log('Auto-fix not fully implemented for SQLite');
-      console.log('Manual review of orphaned records recommended');
+      log.info('db_validation.auto_fix_not_implemented');
+      log.info('db_validation.auto_fix_manual_review_recommended');
     } catch (error) {
       errors.push(error instanceof Error ? error.message : 'Unknown error during auto-fix');
     }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addDays, addHours, addMonths, addWeeks } from 'date-fns';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[CARE-SCHEDULES]' });
 
 // Care schedules (watering / feeding) are ordinary rows in the shared
 // Schedule table, distinguished by their `type`. The Schedule model
@@ -123,7 +126,7 @@ export async function listCareSchedules(type: CareScheduleType, request: NextReq
       count: schedules.length,
     });
   } catch (error) {
-    console.error(`List ${type} schedules error:`, error);
+    log.error('care_schedules.list_failed', { type, error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to fetch schedules');
   }
 }
@@ -172,7 +175,7 @@ export async function createCareSchedule(
       { status: 201 },
     );
   } catch (error) {
-    console.error(`Create ${type} schedule error:`, error);
+    log.error('care_schedules.create_failed', { type, error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to create schedule');
   }
 }
@@ -220,7 +223,7 @@ export async function updateCareSchedule(
       message: `${label} updated successfully`,
     });
   } catch (error) {
-    console.error(`Update ${type} schedule error:`, error);
+    log.error('care_schedules.update_failed', { type, error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to update schedule');
   }
 }
@@ -250,7 +253,7 @@ export async function deleteCareSchedule(type: CareScheduleType, request: NextRe
       message: 'Schedule deleted successfully',
     });
   } catch (error) {
-    console.error(`Delete ${type} schedule error:`, error);
+    log.error('care_schedules.delete_failed', { type, error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to delete schedule');
   }
 }

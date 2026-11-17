@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[BATCH]' });
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
       data: batches
     });
   } catch (error) {
-    console.error('Batch list error:', error);
+    log.error('batch.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'batch', id: batch.id })
-      }).catch(err => console.error('Failed to auto-start batch:', err));
+      }).catch(err => log.error('batch.auto_start_failed', { error: err instanceof Error ? err.message : String(err) }));
     }
 
     return NextResponse.json({
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
       data: batch
     });
   } catch (error) {
-    console.error('Batch creation error:', error);
+    log.error('batch.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -109,7 +112,7 @@ export async function PUT(request: NextRequest) {
       data: batch
     });
   } catch (error) {
-    console.error('Batch update error:', error);
+    log.error('batch.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -142,7 +145,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Batch deleted successfully'
     });
   } catch (error) {
-    console.error('Batch deletion error:', error);
+    log.error('batch.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,

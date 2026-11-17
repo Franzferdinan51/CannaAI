@@ -46,6 +46,9 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CannaAIAssistantSidebar } from '@/components/ai/cannai-assistant-sidebar';
+import { getLogger } from '@/lib/logger-browser';
+
+const log = getLogger().child({ tag: '[DASHBOARD]' });
 
 // Default strain database with purple strain indicators (Fallback)
 const defaultStrains = [
@@ -159,7 +162,7 @@ function DashboardContent() {
                     }
                 }
             } catch (error) {
-                console.error('Failed to fetch strains:', error);
+                log.error('dashboard.strains_fetch_failed', { error: error instanceof Error ? error.message : String(error) });
             }
         };
         fetchStrains();
@@ -214,7 +217,7 @@ function DashboardContent() {
                 ? window.location.origin
                 : `http://${window.location.hostname}:3000`;
 
-            console.log(`🔌 Connecting to Socket.IO server at: ${serverUrl}`);
+            log.debug('dashboard.socket_connecting', { serverUrl });
 
             socket = io(serverUrl, {
                 path: '/api/socketio',
@@ -226,28 +229,28 @@ function DashboardContent() {
             });
 
             socket.on('connect', () => {
-                console.log('✅ Connected to Socket.IO server:', socket.id);
+                log.debug('dashboard.socket_connected', { socketId: socket.id });
             });
 
             socket.on('connect_error', (error: any) => {
-                console.error('❌ Socket.IO connection error:', error);
-                console.log('⚠️ This is expected if the server is not running or if there are network issues');
+                log.error('dashboard.socket_connection_error', { error: error instanceof Error ? error.message : String(error) });
+                log.debug('dashboard.socket_connection_hint');
             });
 
             socket.on('disconnect', (reason: string) => {
-                console.log('❌ Socket.IO disconnected:', reason);
+                log.debug('dashboard.socket_disconnected', { reason });
             });
 
             socket.on('sensor-data', (data: any) => {
                 setSensorData(prev => ({ ...prev, ...data }));
             });
         } catch (e) {
-            console.warn('❌ WebSocket initialization failed:', e);
+            log.warn('dashboard.websocket_init_failed', { error: e instanceof Error ? e.message : String(e) });
         }
 
         return () => {
             if (socket) {
-                console.log('🔌 Disconnecting Socket.IO...');
+                log.debug('dashboard.socket_disconnecting');
                 socket.disconnect();
             }
         };
@@ -318,7 +321,7 @@ function DashboardContent() {
             }
 
         } catch (error: any) {
-            console.error('Analysis error:', error);
+            log.error('dashboard.analysis_failed', { error: error instanceof Error ? error.message : String(error) });
             setNotifications(prev => [{
                 id: Date.now(),
                 type: 'alert',

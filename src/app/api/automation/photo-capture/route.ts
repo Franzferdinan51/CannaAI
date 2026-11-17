@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { executeCapture, triggerAnalysisAfterCapture } from '@/lib/photo-capture-service';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[PHOTO-CAPTURE]' });
 
 function asJsonRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -34,7 +37,7 @@ export async function GET(request: NextRequest) {
       data: captures
     });
   } catch (error) {
-    console.error('Photo capture fetch error:', error);
+    log.error('photo_capture.fetch_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -98,7 +101,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Execute capture immediately
-      executeCapture(task.id).catch(err => console.error('Photo capture error:', err));
+      executeCapture(task.id).catch(err => log.error('photo_capture.execute_failed', { error: err instanceof Error ? err.message : String(err) }));
     }
 
     return NextResponse.json({
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
       data: task
     });
   } catch (error) {
-    console.error('Photo capture creation error:', error);
+    log.error('photo_capture.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -175,7 +178,7 @@ export async function PUT(request: NextRequest) {
         ...asJsonRecord(task.data),
         taskId: task.id
       }).catch(err =>
-        console.error('Post-capture analysis error:', err)
+        log.error('photo_capture.post_capture_analysis_failed', { error: err instanceof Error ? err.message : String(err) })
       );
     }
 
@@ -184,7 +187,7 @@ export async function PUT(request: NextRequest) {
       data: task
     });
   } catch (error) {
-    console.error('Photo capture update error:', error);
+    log.error('photo_capture.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,

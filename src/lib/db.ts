@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client'
+import { getLogger } from './logger'
+
+const log = getLogger().child({ tag: '[DB]' })
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -29,14 +32,12 @@ if (process.env.NODE_ENV !== 'production') {
   // Add connection event listeners for monitoring
   db.$on('query', (e) => {
     if (process.env.NODE_ENV === 'development' && process.env.LOG_QUERIES === 'true') {
-      console.log('Query: ' + e.query)
-      console.log('Duration: ' + e.duration + 'ms')
-      console.log('Params: ' + e.params)
+      log.debug('db.query', { query: e.query, durationMs: e.duration })
     }
   })
 
   db.$on('error', (e) => {
-    console.error('Database error:', e)
+    log.error('db.error', { error: (e as any)?.message ?? String(e) })
   })
 }
 

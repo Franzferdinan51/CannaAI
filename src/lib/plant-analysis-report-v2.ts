@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getLogger } from './logger';
 import type {
   DetectedIssue,
   EnvironmentRiskAssessment,
@@ -14,6 +15,8 @@ import type {
 } from '@/types/plant-analysis';
 
 type AnalysisRecord = Record<string, any>;
+
+const log = getLogger().child({ tag: '[PLANT-ANALYSIS-REPORT]' });
 
 const REPORT_SCHEMA_VERSION = '2.0.0';
 const ANALYSIS_VERSION = '4.1.0-Explainable-ReportV2';
@@ -698,7 +701,7 @@ function extractStructuredJson(rawText: string): AnalysisRecord | null {
       if (repaired) {
         const parsed = JSON.parse(repaired);
         if (isRecord(parsed) && hasRequiredKeys(parsed)) {
-          console.log('✅ JSON extracted with repair strategy');
+          log.debug('plant_analysis.json_extracted', { strategy: 'repair' });
           return parsed;
         }
       }
@@ -711,18 +714,18 @@ function extractStructuredJson(rawText: string): AnalysisRecord | null {
   // cut off mid-response; the diagnosis fields are emitted first)
   const salvaged = salvageTruncatedJson(rawText);
   if (salvaged) {
-    console.log('✅ JSON extracted with truncation-salvage strategy');
+    log.debug('plant_analysis.json_extracted', { strategy: 'truncation-salvage' });
     return salvaged;
   }
 
   // Strategy 4: Extract largest valid object (fallback)
   const largestValid = extractLargestValidObject(rawText);
   if (largestValid && hasRequiredKeys(largestValid)) {
-    console.log('✅ JSON extracted with largest-object strategy');
+    log.debug('plant_analysis.json_extracted', { strategy: 'largest-object' });
     return largestValid;
   }
 
-  console.log('❌ All JSON extraction strategies failed');
+  log.info('plant_analysis.json_extraction_failed');
   return null;
 }
 
