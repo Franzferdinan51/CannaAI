@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { addDays, addWeeks, addMonths } from 'date-fns';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[SCHEDULES]' });
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +30,7 @@ export async function GET(request: NextRequest) {
       data: schedules
     });
   } catch (error) {
-    console.error('Schedules fetch error:', error);
+    log.error('schedules.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
       data: schedule
     });
   } catch (error) {
-    console.error('Schedule creation error:', error);
+    log.error('schedules.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -163,7 +166,7 @@ export async function PUT(request: NextRequest) {
       data: schedule
     });
   } catch (error) {
-    console.error('Schedule update error:', error);
+    log.error('schedules.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -196,7 +199,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Schedule deleted successfully'
     });
   } catch (error) {
-    console.error('Schedule deletion error:', error);
+    log.error('schedules.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,

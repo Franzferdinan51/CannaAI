@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[INVENTORY]' });
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -96,7 +99,7 @@ export async function GET(request: NextRequest) {
       count: items.length,
     });
   } catch (error) {
-    console.error('Get inventory error:', error);
+    log.error('inventory.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to fetch inventory');
   }
 }
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Create inventory item error:', error);
+    log.error('inventory.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to create inventory item');
   }
 }
@@ -145,7 +148,7 @@ export async function PUT(request: NextRequest) {
       message: 'Inventory item updated successfully',
     });
   } catch (error) {
-    console.error('Update inventory item error:', error);
+    log.error('inventory.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to update inventory item');
   }
 }
@@ -175,7 +178,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Inventory item deleted successfully',
     });
   } catch (error) {
-    console.error('Delete inventory item error:', error);
+    log.error('inventory.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to delete inventory item');
   }
 }

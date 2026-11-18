@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[WORKFLOWS]' });
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
       data: workflows
     });
   } catch (error) {
-    console.error('Workflows fetch error:', error);
+    log.error('workflows.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
       data: workflow
     });
   } catch (error) {
-    console.error('Workflow creation error:', error);
+    log.error('workflows.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -96,7 +99,7 @@ export async function PUT(request: NextRequest) {
       data: workflow
     });
   } catch (error) {
-    console.error('Workflow update error:', error);
+    log.error('workflows.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -129,7 +132,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Workflow deleted successfully'
     });
   } catch (error) {
-    console.error('Workflow deletion error:', error);
+    log.error('workflows.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,

@@ -2,6 +2,9 @@ import { PlantHealthAnalysis, ModelConfig } from "../../types/plant-analysis";
 import { analyzePlantHealth } from "./geminiService";
 import { analyzeWithLMStudio } from "./lmstudioService";
 import { analyzeWithOpenRouter } from "./openrouterService";
+import { getLogger } from '../logger';
+
+const log = getLogger().child({ tag: '[VERIFICATION-PIPELINE]' });
 
 /**
  * Dual-Check Verification Pipeline
@@ -88,7 +91,7 @@ async function runVerification(
           const analysis = await analyzeWithLMStudio(text, images, endpoint, primaryAnalysis.flaggedIssues?.[0], model);
           if (analysis) return { analysis, provider };
         } catch (error) {
-          console.error(`[DUAL-CHECK] ${provider} verifier failed; trying the next local model`, error);
+          log.error('verification.provider_failed', { provider, error: error instanceof Error ? error.message : String(error) });
         }
       }
     }
@@ -156,7 +159,7 @@ async function runVerification(
         const analysis = await analyzeWithLMStudio(text, images, endpoint, primaryAnalysis.flaggedIssues?.[0], model);
         if (analysis) return { analysis, provider: `${provider} (fallback)` };
       } catch (error) {
-        console.error(`[DUAL-CHECK] ${provider} fallback verifier failed`, error);
+        log.error('verification.fallback_provider_failed', { provider, error: error instanceof Error ? error.message : String(error) });
       }
     }
   }
@@ -298,7 +301,7 @@ export async function runDualCheckPipeline(
   }
 
   // Step 3: Run background verification
-  console.log('[DUAL-CHECK] Critical findings detected, starting verification...');
+  log.info('verification.critical_findings_detected', { criticalFindingsCount: criticalFindings.length });
 
   try {
     const verification = await runVerification(primaryAnalysis, text, images, config);
@@ -324,7 +327,7 @@ export async function runDualCheckPipeline(
       criticalFindings
     };
   } catch (error) {
-    console.error('[DUAL-CHECK] Verification failed:', error);
+    log.error('verification.failed', { error: error instanceof Error ? error.message : String(error) });
     return {
       primaryAnalysis,
       verificationNeeded: true,

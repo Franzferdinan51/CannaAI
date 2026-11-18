@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[THRESHOLDS]' });
 
 export async function GET(request: Request) {
   try {
@@ -25,7 +28,7 @@ export async function GET(request: Request) {
       data: thresholds,
     });
   } catch (error) {
-    console.error('Error fetching alert thresholds:', error);
+    log.error('thresholds.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
       data: threshold,
     });
   } catch (error) {
-    console.error('Error creating alert threshold:', error);
+    log.error('thresholds.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -133,7 +136,7 @@ export async function PUT(request: Request) {
       data: threshold,
     });
   } catch (error) {
-    console.error('Error updating alert threshold:', error);
+    log.error('thresholds.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -169,7 +172,7 @@ export async function DELETE(request: Request) {
       message: 'Alert threshold deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting alert threshold:', error);
+    log.error('thresholds.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,

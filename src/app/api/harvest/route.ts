@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[HARVEST]' });
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -104,7 +107,7 @@ export async function GET(request: NextRequest) {
       count: harvests.length,
     });
   } catch (error) {
-    console.error('Get harvests error:', error);
+    log.error('harvest.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to fetch harvests');
   }
 }
@@ -136,7 +139,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Create harvest error:', error);
+    log.error('harvest.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to create harvest');
   }
 }
@@ -186,7 +189,7 @@ export async function PUT(request: NextRequest) {
       message: 'Harvest updated successfully',
     });
   } catch (error) {
-    console.error('Update harvest error:', error);
+    log.error('harvest.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to update harvest');
   }
 }
@@ -219,7 +222,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Harvest deleted successfully',
     });
   } catch (error) {
-    console.error('Delete harvest error:', error);
+    log.error('harvest.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to delete harvest');
   }
 }

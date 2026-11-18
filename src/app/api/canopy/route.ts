@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[CANOPY]' });
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -123,7 +126,7 @@ export async function GET(request: NextRequest) {
       count: measurements.length,
     });
   } catch (error) {
-    console.error('Get canopy measurements error:', error);
+    log.error('canopy.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to fetch canopy measurements');
   }
 }
@@ -151,7 +154,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Create canopy measurement error:', error);
+    log.error('canopy.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to create canopy measurement');
   }
 }
@@ -192,7 +195,7 @@ export async function PUT(request: NextRequest) {
       message: 'Canopy measurement updated successfully',
     });
   } catch (error) {
-    console.error('Update canopy measurement error:', error);
+    log.error('canopy.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to update canopy measurement');
   }
 }
@@ -222,7 +225,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Canopy measurement deleted successfully',
     });
   } catch (error) {
-    console.error('Delete canopy measurement error:', error);
+    log.error('canopy.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to delete canopy measurement');
   }
 }

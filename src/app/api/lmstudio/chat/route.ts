@@ -4,6 +4,9 @@ import {
   getLMStudioEndpointCandidates,
 } from '@/lib/ai-provider-lmstudio';
 import { ImageProcessingError, normalizeBase64ImageData } from '@/lib/base64';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[LMSTUDIO-CHAT]' });
 
 function lmStudioHeaders(includeJson = false, apiKeyOverride?: string): Record<string, string> {
   const apiKey = apiKeyOverride?.trim() || getLMStudioApiKey();
@@ -350,7 +353,7 @@ export async function POST(request: NextRequest) {
       presence_penalty: 0.0
     };
 
-    console.log('Sending request to LM Studio:', {
+    log.debug('lmstudio_chat.request_sending', {
       model: selectedModel,
       messagesCount: messages.length,
       hasImage: !!image,
@@ -371,10 +374,10 @@ export async function POST(request: NextRequest) {
 
     if (!lmStudioResponse.ok) {
       const errorText = await lmStudioResponse.text();
-      console.error('LM Studio API error:', {
+      log.error('lmstudio_chat.api_failed', {
         status: lmStudioResponse.status,
         statusText: lmStudioResponse.statusText,
-        errorText
+        errorTextLength: errorText.length
       });
 
       return NextResponse.json(
@@ -415,7 +418,7 @@ export async function POST(request: NextRequest) {
       finishReason: result.choices?.[0]?.finish_reason || 'stop'
     };
 
-    console.log('LM Studio response received:', {
+    log.debug('lmstudio_chat.response_received', {
       model: response.model,
       contentLength: response.content.length,
       usage: response.usage
@@ -424,7 +427,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('LM Studio chat API error:', error);
+    log.error('lmstudio_chat.request_failed', { error: error instanceof Error ? error.message : String(error) });
 
     if (error instanceof ImageProcessingError) {
       return NextResponse.json(

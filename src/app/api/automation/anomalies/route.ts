@@ -5,6 +5,9 @@ import {
   type DeliveryChannel,
   type SeverityLevel,
 } from '@/lib/notifications';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[ANOMALIES]' });
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,7 +51,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Anomalies fetch error:', error);
+    log.error('anomalies.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -88,7 +91,7 @@ export async function POST(request: NextRequest) {
       data: anomaly
     });
   } catch (error) {
-    console.error('Anomaly detection error:', error);
+    log.error('anomalies.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -121,7 +124,7 @@ export async function PUT(request: NextRequest) {
       data: anomaly
     });
   } catch (error) {
-    console.error('Anomaly update error:', error);
+    log.error('anomalies.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -170,7 +173,7 @@ async function checkAndTriggerNotifications(anomaly: any) {
       }
     }
   } catch (error) {
-    console.error('Notification check error:', error);
+    log.error('anomalies.notification_check_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 

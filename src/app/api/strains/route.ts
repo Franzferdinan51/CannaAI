@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[STRAINS]' });
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -117,7 +120,7 @@ export async function GET(request: NextRequest) {
       count: strains.length,
     });
   } catch (error) {
-    console.error('Get strains error:', error);
+    log.error('strains.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to fetch strains');
   }
 }
@@ -166,7 +169,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Create strain error:', error);
+    log.error('strains.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to create strain');
   }
 }
@@ -214,7 +217,7 @@ export async function PUT(request: NextRequest) {
       message: 'Strain updated successfully',
     });
   } catch (error) {
-    console.error('Update strain error:', error);
+    log.error('strains.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to update strain');
   }
 }
@@ -264,7 +267,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Strain deleted successfully',
     });
   } catch (error) {
-    console.error('Delete strain error:', error);
+    log.error('strains.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to delete strain');
   }
 }

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[COSTS]' });
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -138,7 +141,7 @@ export async function GET(request: NextRequest) {
       count: records.length,
     });
   } catch (error) {
-    console.error('Get cost records error:', error);
+    log.error('costs.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to fetch cost records');
   }
 }
@@ -160,7 +163,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Create cost record error:', error);
+    log.error('costs.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to create cost record');
   }
 }
@@ -201,7 +204,7 @@ export async function PUT(request: NextRequest) {
       message: 'Cost record updated successfully',
     });
   } catch (error) {
-    console.error('Update cost record error:', error);
+    log.error('costs.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to update cost record');
   }
 }
@@ -231,7 +234,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Cost record deleted successfully',
     });
   } catch (error) {
-    console.error('Delete cost record error:', error);
+    log.error('costs.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to delete cost record');
   }
 }

@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Nutrient, Strain, NutrientType, StrainType, UserSettings, NewsArticle, GeneticAnalysis, UsageLog, LineageNode, ProductAlternative, BreedingProject } from '../../types/canopy';
+import { getLogger } from '../logger';
+
+const log = getLogger().child({ tag: '[CANOPY-SERVICE]' });
 
 /**
  * Enhanced Gemini AI Service for Canopy Features
@@ -95,7 +98,7 @@ export const scanInventoryItem = async (
     }
     throw new Error("No data returned from AI");
   } catch (error) {
-    console.error("Gemini Scan Error:", error);
+    log.error('canopy.scan_failed', { mode, error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 };
@@ -165,13 +168,13 @@ JSON Output Schema:
           floweringTimeWeeks: typeof data.floweringTimeWeeks === 'number' ? data.floweringTimeWeeks : null
         };
       } catch (parseError) {
-        console.error("JSON Parse Error:", parseError, cleanedText);
+        log.error('canopy.strain_url_parse_failed', { error: parseError instanceof Error ? parseError.message : String(parseError), cleanedTextLength: cleanedText.length });
         throw new Error("AI returned invalid JSON format.");
       }
     }
     throw new Error("No data returned");
   } catch (error) {
-    console.error("Gemini URL Fetch Error:", error);
+    log.error('canopy.strain_url_fetch_failed', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 };
@@ -215,7 +218,7 @@ Return JSON Array:
     }
     return [];
   } catch (error) {
-    console.error("Alternatives Fetch Error", error);
+    log.error('canopy.alternatives_fetch_failed', { category, error: error instanceof Error ? error.message : String(error) });
     throw new Error("Could not find alternatives.");
   }
 };

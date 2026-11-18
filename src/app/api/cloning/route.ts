@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[CLONING]' });
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -110,7 +113,7 @@ export async function GET(request: NextRequest) {
       count: batches.length,
     });
   } catch (error) {
-    console.error('Get clone batches error:', error);
+    log.error('cloning.list_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to fetch clone batches');
   }
 }
@@ -142,7 +145,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Create clone batch error:', error);
+    log.error('cloning.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to create clone batch');
   }
 }
@@ -201,7 +204,7 @@ export async function PUT(request: NextRequest) {
       message: 'Clone batch updated successfully',
     });
   } catch (error) {
-    console.error('Update clone batch error:', error);
+    log.error('cloning.update_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to update clone batch');
   }
 }
@@ -234,7 +237,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Clone batch deleted successfully',
     });
   } catch (error) {
-    console.error('Delete clone batch error:', error);
+    log.error('cloning.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to delete clone batch');
   }
 }
