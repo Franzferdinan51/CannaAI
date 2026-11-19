@@ -15,6 +15,9 @@ import {
   CouncilConfig,
   ArgumentClaim
 } from '../../types/council';
+import { getLogger } from '../logger';
+
+const log = getLogger().child({ tag: '[COUNCIL]' });
 
 const DEFAULT_CONFIG: CouncilConfig = {
   maxParticipants: 8,
@@ -60,7 +63,7 @@ export async function generatePersonaResponse(
   try {
     return await generateCouncilText(prompt);
   } catch (error) {
-    console.error(`Error generating response for ${persona.name}:`, error);
+    log.error('council.response_failed', { persona: persona.name, error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -201,7 +204,7 @@ Provide their reasoning and confidence (0-1).`;
       votes
     };
   } catch (error) {
-    console.error("Error calculating votes:", error);
+    log.error('council.voting_failed', { error: error instanceof Error ? error.message : String(error) });
     return {
       agree: 0,
       disagree: 0,
@@ -240,7 +243,7 @@ Identify 3-5 key arguments with claims, supporting evidence, and conclusions.`;
       proposedBy: arg.proposedBy
     }));
   } catch (error) {
-    console.error("Error generating arguments:", error);
+    log.error('council.arguments_failed', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }

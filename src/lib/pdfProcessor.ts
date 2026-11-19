@@ -1,4 +1,7 @@
 import { recognizeText } from './ocrService';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[PDF]' });
 
 // pdfjs-dist is loaded lazily so the API route does not evaluate browser-only
 // PDF internals during the Next.js production build.
@@ -69,13 +72,13 @@ export async function processPdf(file: File | Blob): Promise<{ text: string; ima
         images.push(dataUrl.split(',')[1] || '');
 
         if (pageText.trim().length < 50) {
-          console.log(`[Page ${i}] No text layer found. Attempting OCR...`);
+          log.debug('pdf.page_no_text_layer', { page: i });
           pageText = await recognizeText(dataUrl);
         }
       }
     } else if (pageText.trim().length < 50) {
-      console.log(`[Page ${i}] No text layer found. Attempting OCR...`);
-      console.log(`[Page ${i}] Skipping OCR because the Node runtime has no canvas renderer configured.`);
+      log.debug('pdf.page_no_text_layer', { page: i });
+      log.debug('pdf.page_ocr_skipped_no_canvas', { page: i });
     }
 
     fullText += `[Page ${i}]\n${pageText}\n\n`;

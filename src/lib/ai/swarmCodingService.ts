@@ -10,6 +10,9 @@ import {
   CouncilPersona,
   CULTIVATION_PERSONAS
 } from '../../types/council';
+import { getLogger } from '../logger';
+
+const log = getLogger().child({ tag: '[SWARM-CODING]' });
 
 const getAiClient = (apiKey: string) => {
   return createLocalAIClient();
@@ -174,7 +177,7 @@ export async function executePhase(
 
     return { output, updatedPipeline };
   } catch (error) {
-    console.error(`Error executing phase ${phase.name}:`, error);
+    log.error('swarm_coding.phase_failed', { phase: phase.name, phaseIndex, pipelineId: pipeline.id, error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -289,7 +292,7 @@ export async function reviewPipelineResults(
     const response = await model.generateContent(prompt);
     return JSON.parse(response.response.text());
   } catch (error) {
-    console.error("Error reviewing pipeline:", error);
+    log.error('swarm_coding.review_failed', { pipelineId: pipeline.id, error: error instanceof Error ? error.message : String(error) });
     return {
       overallQuality: 0.5,
       strengths: [],
@@ -332,7 +335,7 @@ export async function suggestAutomationTasks(
     const result = JSON.parse(response.response.text());
     return result.tasks || [];
   } catch (error) {
-    console.error("Error suggesting automation tasks:", error);
+    log.error('swarm_coding.suggest_tasks_failed', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }

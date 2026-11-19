@@ -1,4 +1,7 @@
 import Tesseract from 'tesseract.js';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[OCR]' });
 
 /**
  * OCR Service for extracting text from plant photos
@@ -17,14 +20,14 @@ export async function recognizeText(imageSource: string | Blob): Promise<string>
             {
                 logger: m => {
                     if (m.status === 'recognizing text') {
-                        console.log(`[OCR] Progress: ${Math.round(m.progress * 100)}%`);
+                        log.debug('ocr.progress', { progress: Math.round(m.progress * 100) });
                     }
                 }
             }
         );
         return result.data.text;
     } catch (error) {
-        console.error("OCR Failed:", error);
+        log.error('ocr.failed', { error: error instanceof Error ? error.message : String(error) });
         return "";
     }
 }
@@ -41,7 +44,7 @@ export async function recognizeTextBatch(imageSources: (string | Blob)[]): Promi
         if (result.status === 'fulfilled') {
             return result.value;
         }
-        console.error("OCR batch item failed:", result.reason);
+        log.error('ocr.batch_item_failed', { error: result.reason instanceof Error ? result.reason.message : String(result.reason) });
         return "";
     });
 }

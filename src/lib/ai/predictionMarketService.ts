@@ -9,6 +9,9 @@ import {
   CouncilPersona,
   CULTIVATION_PERSONAS
 } from '../../types/council';
+import { getLogger } from '../logger';
+
+const log = getLogger().child({ tag: '[PREDICTION-MARKET]' });
 
 /**
  * Get AI client
@@ -48,7 +51,7 @@ export async function generatePredictions(
       );
       predictions.push(prediction);
     } catch (error) {
-      console.error(`Error generating prediction for ${persona.name}:`, error);
+      log.error('prediction_market.prediction_failed', { persona: persona.name, category, error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -102,7 +105,7 @@ async function generateSinglePrediction(
       timestamp: new Date().toISOString()
     };
   } catch (error) {
-    console.error(`Error in prediction for ${persona.name}:`, error);
+    log.error('prediction_market.single_prediction_failed', { persona: persona.name, category, error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -334,7 +337,7 @@ export async function suggestPredictionQuestions(
     const result = JSON.parse(response.response.text());
     return result.questions || [];
   } catch (error) {
-    console.error("Error generating prediction questions:", error);
+    log.error('prediction_market.questions_failed', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }

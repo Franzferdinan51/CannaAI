@@ -9,6 +9,9 @@ import {
   CouncilPersona,
   CULTIVATION_PERSONAS
 } from '../../types/council';
+import { getLogger } from '../logger';
+
+const log = getLogger().child({ tag: '[ARGUMENTATION]' });
 
 const getAiClient = (apiKey: string) => {
   return createLocalAIClient();
@@ -78,7 +81,7 @@ Focus on well-structured, complete arguments.`;
       proposedBy: arg.proposedBy
     }));
   } catch (error) {
-    console.error("Error extracting arguments:", error);
+    log.error('argumentation.extract_failed', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -189,7 +192,7 @@ Generate 2-3 strong counter-arguments that challenge this position. Each counter
       proposedBy: arg.proposedBy
     }));
   } catch (error) {
-    console.error("Error finding counter-arguments:", error);
+    log.error('argumentation.counter_arguments_failed', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -252,7 +255,7 @@ Synthesize these arguments into a coherent conclusion. Provide:
       recommendations: result.recommendations || []
     };
   } catch (error) {
-    console.error("Error synthesizing arguments:", error);
+    log.error('argumentation.synthesize_failed', { error: error instanceof Error ? error.message : String(error) });
     return {
       synthesis: "Failed to synthesize arguments",
       consensusLevel: 'none',

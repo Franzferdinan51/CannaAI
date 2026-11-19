@@ -2,6 +2,9 @@ import { ModelConfig } from "../../types/plant-analysis";
 import { cultivationRagChat } from "./geminiService";
 import { localRagChat } from "./lmstudioService";
 import { openrouterRagChat } from "./openrouterService";
+import { getLogger } from '../logger';
+
+const log = getLogger().child({ tag: '[RAG-CHAT]' });
 
 /**
  * RAG Chat System for Cultivation Assistance
@@ -144,7 +147,7 @@ export async function ragChat(
   // Step 1: Find relevant documents
   const relevantDocs = searchRelevantDocs(query, documents);
 
-  console.log(`[RAG CHAT] Found ${relevantDocs.length} relevant documents for query`);
+  log.debug('rag_chat.documents_found', { count: relevantDocs.length });
 
   // Step 2: Select provider
   const provider = preferredProvider || selectChatProvider(config);
@@ -220,7 +223,7 @@ export async function ragChat(
         throw new Error(`Unknown chat provider: ${provider}`);
     }
   } catch (error) {
-    console.error(`[RAG CHAT] Provider ${provider} failed:`, error);
+    log.error('rag_chat.provider_failed', { provider, error: error instanceof Error ? error.message : String(error) });
 
     // Keep fallback order local-first and report the provider that actually
     // answered. A failed provider must never be presented as a successful one.
@@ -254,7 +257,7 @@ export async function ragChat(
           contextDocs: relevantDocs.length
         };
       } catch (fallbackError) {
-        console.error(`[RAG CHAT] Fallback provider ${fallbackProvider} failed:`, fallbackError);
+        log.error('rag_chat.fallback_provider_failed', { provider: fallbackProvider, error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
       }
     }
 

@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { analyzePlantHealth } from '@/lib/ai';
+import { getLogger } from './logger';
+
+const log = getLogger().child({ tag: '[PHOTO-CAPTURE]' });
 
 function asJsonRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -30,7 +33,7 @@ export async function executeCapture(taskId: string) {
       await triggerAnalysisAfterCapture(task.plantId, taskData.imageData, taskData);
     }
   } catch (error) {
-    console.error('Capture execution error:', error);
+    log.error('photo_capture.execution_failed', { taskId, error: error instanceof Error ? error.message : String(error) });
     await prisma.task.update({
       where: { id: taskId },
       data: {
@@ -51,7 +54,7 @@ export async function triggerAnalysisAfterCapture(plantId: string, imageData: st
       source: 'agent_photo_capture'
     });
   } catch (error) {
-    console.error('Post-capture analysis error:', error);
+    log.error('photo_capture.post_capture_analysis_failed', { plantId, error: error instanceof Error ? error.message : String(error) });
     await prisma.analysisHistory.create({
       data: {
         plantId,
@@ -65,7 +68,7 @@ export async function triggerAnalysisAfterCapture(plantId: string, imageData: st
           capturedAt: captureData?.capturedAt || null
         }
       }
-    }).catch((historyError) => console.error('Failed to persist capture analysis error:', historyError));
+    }).catch((historyError) => log.error('photo_capture.persist_analysis_error_failed', { plantId, error: historyError instanceof Error ? historyError.message : String(historyError) }));
   }
 }
 
