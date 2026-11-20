@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[PDF]' });
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -24,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log('[PDF API] Processing PDF...');
+    log.debug('pdf.started');
 
     // Convert base64 to Blob
     const base64Payload = file.split(',')[1] || file;
@@ -49,12 +52,12 @@ export async function POST(req: NextRequest) {
       result.documentType = documentType;
     }
 
-    console.log('[PDF API] Processing complete');
+    log.debug('pdf.completed', { imageCount: images.length });
 
     return NextResponse.json(result);
 
   } catch (error: unknown) {
-    console.error('[PDF API] Error:', error);
+    log.error('pdf.failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,

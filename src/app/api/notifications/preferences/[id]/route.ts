@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[NOTIFICATIONS-PREFERENCES-ID]' });
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -25,7 +28,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       }
     });
   } catch (error) {
-    console.error('[API-NOTIFICATIONS-PREFERENCES-ID-GET] Error:', error);
+    log.error('notification-preferences.get_failed', { error: error instanceof Error ? error.message : String(error) });
 
     return NextResponse.json(
       {
@@ -86,7 +89,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       }
     });
   } catch (error) {
-    console.error('[API-NOTIFICATIONS-PREFERENCES-ID-PUT] Error:', error);
+    log.error('notification-preferences.update_failed', { error: error instanceof Error ? error.message : String(error) });
 
     return NextResponse.json(
       {
@@ -114,7 +117,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       }
     });
   } catch (error) {
-    console.error('[API-NOTIFICATIONS-PREFERENCES-ID-DELETE] Error:', error);
+    log.error('notification-preferences.delete_failed', { error: error instanceof Error ? error.message : String(error) });
 
     return NextResponse.json(
       {

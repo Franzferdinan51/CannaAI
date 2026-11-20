@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { analyzePlantHealth } from '@/lib/ai';
 import { sendNotification as deliverNotification, type NotificationData } from '@/lib/notifications';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[AUTOMATION-RUN]' });
 
 interface RunRequest {
   type: 'rule' | 'schedule' | 'workflow' | 'batch';
@@ -41,7 +44,7 @@ export async function POST(request: NextRequest) {
       data: result
     });
   } catch (error) {
-    console.error('Automation execution error:', error);
+    log.error('automation-run.execution_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -107,7 +110,7 @@ async function executeAutomationRule(ruleId: string, data?: any) {
         break;
 
       default:
-        console.warn(`Unknown action type: ${action.type}`);
+        log.warn('automation-run.unknown_action_type', { actionType: action.type });
     }
   }
 
@@ -298,7 +301,7 @@ async function executeBatch(batchId: string) {
             : { failedCount: { increment: 1 } }
         });
       } catch (error) {
-        console.error(`Batch analysis failed for plant ${plantId}:`, error);
+        log.error('automation-run.batch_plant_failed', { plantId, error: error instanceof Error ? error.message : String(error) });
         results.push({
           plantId,
           success: false,

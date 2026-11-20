@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { evaluateEnvironmentAlerts } from '@/lib/alert-evaluation';
 import { calculateVPD } from '@/lib/ac-infinity';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[SENSORS]' });
 
 type SensorConfigInput = {
   name?: unknown;
@@ -209,7 +212,7 @@ export async function POST(request: Request) {
       alerts = evaluation.bandAlerts;
       persistedAlerts = evaluation.bandAlertsCreated + evaluation.thresholdAlertsCreated;
     } catch (err) {
-      console.error('Generic sensor alert evaluation failed:', err);
+      log.error('sensors.alert_evaluation_failed', { error: err instanceof Error ? err.message : String(err) });
     }
 
     return NextResponse.json({
@@ -220,7 +223,7 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Sensor data error:', error);
+    log.error('sensors.ingest_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to process sensor data' },
       { status: 500 }
@@ -262,7 +265,7 @@ export async function GET(request: Request) {
       readings: readings.reverse(),
     });
   } catch (error) {
-    console.error('Sensor readings error:', error);
+    log.error('sensors.readings_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to retrieve sensor readings' },
       { status: 500 }

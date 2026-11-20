@@ -138,7 +138,7 @@ async function loadSettings(): Promise<void> {
     }
   } catch (error) {
     // Keep development/static installs usable before the Prisma schema exists.
-    console.warn('[SETTINGS] Durable settings unavailable; using process memory:', error);
+    getLogger().warn('settings_durable_unavailable', { error: error instanceof Error ? error.message : 'unknown' });
   } finally {
     settingsLoaded = true;
   }
@@ -155,7 +155,7 @@ async function persistSettings(): Promise<boolean> {
     );
     return true;
   } catch (error) {
-    console.warn('[SETTINGS] Could not persist settings; retaining process-local changes:', error);
+    getLogger().warn('settings_persist_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return false;
   }
 }
@@ -377,7 +377,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Settings error:', error);
+    getLogger().error('settings_post_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       { error: 'Failed to update settings' },
       { status: 500 }

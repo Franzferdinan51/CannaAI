@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runSwarmAnalysis } from '@/lib/ai/swarmOrchestrator';
 import { runDualCheckPipeline } from '@/lib/ai/verificationPipeline';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[SWARM-API]' });
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[SWARM API] Starting ${config.swarmMode} mode with ${images.length} images...`);
+    log.debug('swarm_analyze.started', { mode: config.swarmMode, imageCount: images.length });
 
     let result;
 
@@ -62,7 +65,7 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    console.log(`[SWARM API] Analysis complete`);
+    log.debug('swarm_analyze.completed', { mode: result.mode });
 
     return NextResponse.json({
       success: true,
@@ -70,7 +73,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('[SWARM API] Error:', error);
+    log.error('swarm_analyze.failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,

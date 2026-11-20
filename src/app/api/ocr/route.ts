@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recognizeText, recognizeTextBatch, parseNutrientLabel, parseMeterReading } from '@/lib/ocrService';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[OCR]' });
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -26,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     const imagesArray = Array.isArray(images) ? images : [images];
 
-    console.log(`[OCR API] Processing ${imagesArray.length} images in ${mode} mode...`);
+    log.debug('ocr.processing_started', { imageCount: imagesArray.length, mode });
 
     // Extract text from all images
     const textResults = await recognizeTextBatch(imagesArray);
@@ -46,12 +49,12 @@ export async function POST(req: NextRequest) {
       result.meters = meterData;
     }
 
-    console.log(`[OCR API] Processing complete`);
+    log.debug('ocr.processing_complete', { imageCount: imagesArray.length, mode });
 
     return NextResponse.json(result);
 
   } catch (error: unknown) {
-    console.error('[OCR API] Error:', error);
+    log.error('ocr.processing_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,

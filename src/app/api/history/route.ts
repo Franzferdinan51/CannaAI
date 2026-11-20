@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[HISTORY]' });
 
 export const dynamic = 'auto';
 export const revalidate = false;
@@ -52,7 +55,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, history, count: history.length });
   } catch (error) {
-    console.error('Get history error:', error);
+    log.error('history.get_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { success: false, error: 'Failed to fetch analysis history' },
       { status: 500 },
@@ -93,7 +96,7 @@ export async function POST(request: NextRequest) {
     const entry = toHistoryEntry(record);
     return NextResponse.json({ success: true, entry, message: 'Analysis saved to history successfully' });
   } catch (error) {
-    console.error('Save history error:', error);
+    log.error('history.save_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { success: false, error: 'Failed to save analysis to history' },
       { status: 500 },
@@ -120,7 +123,7 @@ export async function DELETE(request: NextRequest) {
     if (error?.code === 'P2025') {
       return NextResponse.json({ success: false, error: 'History entry not found' }, { status: 404 });
     }
-    console.error('Delete history error:', error);
+    log.error('history.delete_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { success: false, error: 'Failed to delete analysis history entry' },
       { status: 500 },

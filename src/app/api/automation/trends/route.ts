@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[AUTOMATION-TRENDS]' });
 
 export async function GET(request: NextRequest) {
   try {
@@ -57,7 +60,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Trends fetch error:', error);
+    log.error('automation-trends.fetch_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -180,7 +183,7 @@ export async function POST(request: NextRequest) {
       data: history
     });
   } catch (error) {
-    console.error('History creation error:', error);
+    log.error('automation-trends.create_failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       {
         success: false,
@@ -258,6 +261,6 @@ async function detectMilestones(history: any) {
       });
     }
   } catch (error) {
-    console.error('Milestone detection error:', error);
+    log.error('automation-trends.milestone_detection_failed', { error: error instanceof Error ? error.message : String(error) });
   }
 }

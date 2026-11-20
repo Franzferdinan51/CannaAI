@@ -6,6 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkLMStudio, detectAvailableProviders } from '@/lib/ai-provider-detection';
 import { looksLikeVisionModel } from '@/lib/ai-provider-lmstudio';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[PROVIDERS]' });
 
 /**
  * Static capability metadata per provider. Detection reports availability;
@@ -106,7 +109,7 @@ export async function GET(request: NextRequest) {
           models: Array.isArray(r.models) ? r.models : Array.isArray(r?.data?.models) ? r.data.models : [],
         }));
     } catch (detectionError) {
-      console.warn('[providers] live detection failed:', detectionError);
+      log.warn('providers.live_detection_failed', { error: detectionError instanceof Error ? detectionError.message : String(detectionError) });
     }
     const liveByName = new Map(liveProviders.map((p) => [p.provider, p]));
 
@@ -119,7 +122,7 @@ export async function GET(request: NextRequest) {
       const { getVisionModels } = await import('@/lib/ai-provider-lmstudio');
       lmStudioVisionModels = await getVisionModels(visionBaseUrl);
     } catch (visionError) {
-      console.warn('[providers] vision catalog check failed, using heuristic:', visionError);
+      log.warn('providers.vision_catalog_failed', { error: visionError instanceof Error ? visionError.message : String(visionError) });
     }
 
     // Build the provider list from detection results with static capability
@@ -243,7 +246,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Provider configuration error:', error);
+    log.error('providers.configuration_failed', { error: error instanceof Error ? error.message : String(error) });
 
     return NextResponse.json(
       {

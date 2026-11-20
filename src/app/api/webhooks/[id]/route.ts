@@ -5,6 +5,9 @@ import {
   deleteWebhookSubscription,
   sendWebhookTest
 } from '@/lib/webhooks';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[API-WEBHOOK-ID]' });
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -24,7 +27,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       }
     });
   } catch (error) {
-    console.error('[API-WEBHOOK-ID-GET] Error:', error);
+    log.error('webhooks.get_failed', { error: error instanceof Error ? error.message : String(error) });
 
     return NextResponse.json(
       {
@@ -97,7 +100,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       }
     });
   } catch (error) {
-    console.error('[API-WEBHOOK-ID-PUT] Error:', error);
+    log.error('webhooks.update_failed', { error: error instanceof Error ? error.message : String(error) });
 
     return NextResponse.json(
       {
@@ -123,7 +126,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       }
     });
   } catch (error) {
-    console.error('[API-WEBHOOK-ID-DELETE] Error:', error);
+    log.error('webhooks.delete_failed', { error: error instanceof Error ? error.message : String(error) });
 
     return NextResponse.json(
       {

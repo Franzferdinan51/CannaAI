@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[STORAGE]' });
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -57,7 +60,7 @@ export async function GET(request: NextRequest) {
       count: documents.length,
     });
   } catch (error) {
-    console.error('Get documents error:', error);
+    log.error('storage.get_documents_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to fetch documents');
   }
 }
@@ -105,7 +108,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Save document error:', error);
+    log.error('storage.save_document_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to save document');
   }
 }
@@ -136,7 +139,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Document deleted successfully',
     });
   } catch (error) {
-    console.error('Delete document error:', error);
+    log.error('storage.delete_document_failed', { error: error instanceof Error ? error.message : String(error) });
     return errorResponse(error, 'Failed to delete document');
   }
 }

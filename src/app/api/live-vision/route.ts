@@ -4,6 +4,9 @@ import { base64ToBuffer, normalizeBase64ImageData } from '@/lib/base64';
 import { processImageForVisionModel } from '@/lib/image-simple';
 import { analyzePlantHealth } from '@/lib/ai';
 import { getPersistedLMStudioSettings } from '@/lib/lmstudio-settings';
+import { getLogger } from '@/lib/logger';
+
+const log = getLogger().child({ tag: '[LIVE-VISION]' });
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -86,7 +89,7 @@ export async function POST(request: NextRequest) {
           withoutEnlargement: true
         });
       } catch (imageError) {
-        console.error('Image processing error:', imageError);
+        log.error('live-vision.image_processing_failed', { error: imageError instanceof Error ? imageError.message : String(imageError) });
         return createAPIError(`Image processing failed: ${imageError.message}`, 400);
       }
 
@@ -166,7 +169,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(liveVisionResponse);
 
     } catch (error: any) {
-      console.error('Live vision analysis error:', error);
+      log.error('live-vision.analysis_failed', { error: error instanceof Error ? error.message : String(error) });
 
       // Determine if it's a specific type of error
       let errorMessage = 'Live vision analysis failed';
@@ -297,7 +300,7 @@ export async function GET(request: NextRequest) {
       });
 
     } catch (error: any) {
-      console.error('Live vision status error:', error);
+      log.error('live-vision.status_failed', { error: error instanceof Error ? error.message : String(error) });
       return createAPIError('Failed to get live vision status', 500, error.message);
     }
   });
