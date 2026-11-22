@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, SchemaType, Schema } from "@google/generative-ai";
 import { PlantHealthAnalysis } from "../../types/plant-analysis";
+import { getLogger } from '../logger';
 
 const schema: Schema = {
   type: SchemaType.OBJECT,
@@ -189,7 +190,7 @@ export async function analyzePlantHealth(
         finalError = error;
         if (error.message?.includes("429") || error.message?.includes("503") || error.status === 429) {
           attempts++;
-          console.warn(`Gemini 429/503 hit. Retrying in ${20 * attempts}s... (Attempt ${attempts}/${maxAttempts})`);
+          getLogger().warn('gemini_rate_limited_retry', { attempt: attempts, maxAttempts, delaySeconds: 20 * attempts });
           await new Promise(resolve => setTimeout(resolve, 20000 * attempts));
           continue;
         }
@@ -198,7 +199,7 @@ export async function analyzePlantHealth(
     }
     throw finalError;
   } catch (error) {
-    console.error("Gemini Analysis Error:", error);
+    getLogger().error('gemini_analysis_failed', { error: error instanceof Error ? error.message : 'unknown' });
     // Provider failures must remain failures. Returning an empty analysis here
     // makes swarm consensus treat an error as real model evidence.
     throw error instanceof Error ? error : new Error('Gemini analysis failed');

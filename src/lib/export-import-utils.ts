@@ -4,6 +4,7 @@
  */
 
 import { prisma } from './prisma';
+import { getLogger } from './logger';
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -114,7 +115,7 @@ export class ExportManager {
 
     // Process asynchronously
     this.processExport(jobId, options).catch(error => {
-      console.error('Export job failed:', error);
+      getLogger().error('export_job_failed', { error: error instanceof Error ? error.message : 'unknown' });
       const job = this.exportJobs.get(jobId);
       if (job) {
         job.status = 'failed';
@@ -635,7 +636,7 @@ export class ImportManager {
           details: result.details
         }
       }).catch((historyError: unknown) => {
-        console.error('Failed to persist import history:', historyError);
+        getLogger().error('export_import_history_persist_failed', { error: historyError instanceof Error ? historyError.message : 'unknown' });
       });
     }
 

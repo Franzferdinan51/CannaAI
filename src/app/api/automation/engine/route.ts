@@ -6,6 +6,7 @@ import {
   checkForAnomalies,
   generateMilestones
 } from '@/lib/automation-engine';
+import { getLogger } from '@/lib/logger';
 
 // The engine implementation lives in @/lib/automation-engine so this
 // manual endpoint and the in-process scheduler (src/lib/scheduler.ts)
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
       data: engineStatus
     });
   } catch (error) {
-    console.error('Engine status error:', error);
+    getLogger().error('automation_engine_status_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       data: result
     });
   } catch (error) {
-    console.error('Engine execution error:', error);
+    getLogger().error('automation_engine_execute_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

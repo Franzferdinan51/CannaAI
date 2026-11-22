@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LiveCamera from '@/components/live-camera';
+import { getLogger } from '@/lib/logger-browser';
 import Link from 'next/link';
 import {
   Camera,
@@ -137,7 +138,7 @@ export default function LiveVisionDashboard() {
         throw new Error(result.error || 'Analysis failed');
       }
     } catch (error) {
-      console.error('Analysis error:', error);
+      getLogger().error('live_vision_analysis_failed', { error: error instanceof Error ? error.message : 'unknown' });
       setConnectionStatus('error');
     } finally {
       setIsAnalyzing(false);
@@ -187,7 +188,7 @@ export default function LiveVisionDashboard() {
         throw new Error(result.error?.message || 'Trichome analysis failed');
       }
     } catch (error) {
-      console.error('Trichome analysis error:', error);
+      getLogger().error('live_vision_trichome_analysis_failed', { error: error instanceof Error ? error.message : 'unknown' });
       setConnectionStatus('error');
     } finally {
       setIsAnalyzing(false);

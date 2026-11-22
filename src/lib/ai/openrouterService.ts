@@ -1,4 +1,5 @@
 import { PlantHealthAnalysis } from "../../types/plant-analysis";
+import { getLogger } from '../logger';
 
 const SYSTEM_PROMPT = `
 TASK: PERFORM FORENSIC CANNABIS PLANT HEALTH ANALYSIS.
@@ -155,7 +156,7 @@ export async function analyzeWithOpenRouter(
         try {
           parsed = JSON.parse(potentialJson);
         } catch (innerError) {
-          console.error("Failed to parse extracted JSON:", potentialJson);
+          getLogger().error('openrouter_json_parse_failed', { contentLength: potentialJson.length });
         }
       }
     }
@@ -188,7 +189,7 @@ export async function analyzeWithOpenRouter(
     };
   } catch (error: any) {
     clearTimeout(timeoutId);
-    console.error("OpenRouter Analysis Error:", error);
+    getLogger().error('openrouter_analysis_failed', { error: error instanceof Error ? error.message : 'unknown' });
     throw error;
   }
 }

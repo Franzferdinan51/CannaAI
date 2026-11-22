@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { startOfDay, subDays } from 'date-fns';
+import { getLogger } from '@/lib/logger';
 
 export async function GET(request: Request) {
   try {
@@ -174,7 +175,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error fetching plant health analytics:', error);
+    getLogger().error('analytics_plant_health_fetch_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,
@@ -237,7 +238,7 @@ export async function POST(request: Request) {
       data: analytics,
     });
   } catch (error) {
-    console.error('Error creating plant health analytics:', error);
+    getLogger().error('analytics_plant_health_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

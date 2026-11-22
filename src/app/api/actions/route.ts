@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
+import { getLogger } from '@/lib/logger';
 
 const ActionCreateSchema = z.object({
   plantId: z.string().trim().min(1).max(100).optional(),
@@ -17,7 +18,7 @@ export async function GET() {
     const data = await prisma.action.findMany();
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('Actions list error:', error);
+    getLogger().error('actions_list_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: 'Failed to list actions' }, { status: 500 });
   }
 }
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ success: true, data: action });
   } catch (error) {
-    console.error('Action create error:', error);
+    getLogger().error('actions_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: 'Failed to create action' }, { status: 500 });
   }
 }

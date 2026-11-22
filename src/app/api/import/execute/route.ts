@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { importManager, ImportOptions, resolveImportFilePath, MAX_IMPORT_FILE_SIZE } from '@/lib/export-import-utils';
 import { readFileSync, existsSync, unlinkSync, statSync } from 'fs';
+import { getLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
     try {
       unlinkSync(filepath);
     } catch (deleteError) {
-      console.warn('Failed to delete uploaded file:', deleteError);
+      getLogger().warn('import_execute_cleanup_failed', { error: deleteError instanceof Error ? deleteError.message : 'unknown' });
     }
 
     return NextResponse.json({
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
       }
     }, { status: result.errors > 0 && importOptions.skipErrors === false ? 422 : 200 });
   } catch (error) {
-    console.error('Import execution failed:', error);
+    getLogger().error('import_execute_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to execute import',

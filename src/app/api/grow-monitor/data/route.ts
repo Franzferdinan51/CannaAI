@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
 
 /**
  * Grow Monitor Data API
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-    console.error('Grow monitor data error:', error);
+    getLogger().error('grow_monitor_ingest_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       { error: 'Failed to process grow monitor data', details: error.message },
       { status: 500 }
@@ -118,7 +119,7 @@ export async function GET(request: Request) {
       readings: readings,
     });
   } catch (error: any) {
-    console.error('Grow monitor data retrieval error:', error);
+    getLogger().error('grow_monitor_fetch_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       { error: 'Failed to retrieve grow monitor data', details: error.message },
       { status: 500 }

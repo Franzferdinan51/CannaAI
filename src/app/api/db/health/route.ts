@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { dbMonitor, getHealthMetrics } from '@/lib/db-monitoring';
 import { cleanup } from '@/lib/db-optimization';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
 
 /** Prisma hands back BigInt for SQLite integer aggregates and counts,
  *  and JSON.stringify cannot serialize BigInt (it throws, turning the
@@ -139,7 +140,7 @@ export async function GET(request: Request) {
         );
     }
   } catch (error) {
-    console.error('Database health check error:', error);
+    getLogger().error('db_health_check_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,
@@ -206,7 +207,7 @@ export async function POST(request: Request) {
         );
     }
   } catch (error) {
-    console.error('Database maintenance error:', error);
+    getLogger().error('db_health_maintenance_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import LiveCamera from '@/components/live-camera';
+import { getLogger } from '@/lib/logger-browser';
 import USBDeviceConfig from '@/components/usb-device-config';
 import {
   Bug,
@@ -221,7 +222,7 @@ export default function AllToolsPage() {
 
   // Handle image capture from live camera
   const handleImageCapture = async (imageData: string, deviceInfo: any) => {
-    console.log('Image captured for analysis:', deviceInfo);
+    getLogger().debug('all_tools_image_captured');
     setAnalysisError(null);
     try {
       const response = await fetch('/api/live-vision', {
@@ -243,7 +244,7 @@ export default function AllToolsPage() {
 
   // Handle trichome analysis
   const handleTrichomeAnalysis = async (imageData: string, deviceInfo: any) => {
-    console.log('Trichome analysis requested:', deviceInfo);
+    getLogger().debug('all_tools_trichome_analysis_requested');
     setAnalysisError(null);
     try {
       const response = await fetch('/api/trichome-analysis', {

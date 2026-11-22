@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
+import { getLogger } from '@/lib/logger';
 
 const MAX_LIMIT = 100;
 
@@ -55,7 +56,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Tasks list error:', error);
+    getLogger().error('tasks_list_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: 'Failed to list tasks' }, { status: 500 });
   }
 }
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ success: true, data: task });
   } catch (error) {
-    console.error('Task create error:', error);
+    getLogger().error('tasks_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: 'Failed to create task' }, { status: 500 });
   }
 }

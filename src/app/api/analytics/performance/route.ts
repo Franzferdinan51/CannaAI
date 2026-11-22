@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { startOfDay, subDays } from 'date-fns';
+import { getLogger } from '@/lib/logger';
 
 export async function GET(request: Request) {
   try {
@@ -175,7 +176,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error fetching performance metrics:', error);
+    getLogger().error('analytics_performance_fetch_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,
@@ -234,7 +235,7 @@ export async function POST(request: Request) {
       data: metric,
     });
   } catch (error) {
-    console.error('Error creating performance metric:', error);
+    getLogger().error('analytics_performance_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

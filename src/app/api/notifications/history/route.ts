@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNotificationHistory, acknowledgeNotification } from '@/lib/notifications';
+import { getLogger } from '@/lib/logger';
 
 // Rate limiting map
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('[API-NOTIFICATIONS-HISTORY] Error:', error);
+    getLogger().error('notifications_history_failed', { error: error instanceof Error ? error.message : 'unknown' });
 
     return NextResponse.json(
       {
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('[API-NOTIFICATIONS-ACKNOWLEDGE] Error:', error);
+    getLogger().error('notifications_acknowledge_failed', { error: error instanceof Error ? error.message : 'unknown' });
 
     return NextResponse.json(
       {

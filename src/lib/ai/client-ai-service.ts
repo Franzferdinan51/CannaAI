@@ -1,6 +1,7 @@
 'use client'
 
 import { safeLocalStorage } from '@/lib/safe-local-storage';
+import { getLogger } from '../logger-browser';
 
 // Guard against SSR
 if (typeof window === 'undefined') {
@@ -94,7 +95,7 @@ export class ClientAIService {
         return { ...defaults, ...parsed } as AIConfig;
       }
     } catch (error) {
-      console.error('Failed to load AI config:', error);
+      getLogger().error('client_ai_config_load_failed', { error: error instanceof Error ? error.message : 'unknown' });
     }
 
     return defaults;
@@ -154,7 +155,7 @@ export class ClientAIService {
           return response;
         }
       } catch (error) {
-        console.warn(`Provider ${this.config.provider} failed:`, error);
+        getLogger().warn('client_ai_provider_failed', { provider: this.config.provider, error: error instanceof Error ? error.message : 'unknown' });
         if (!this.config.fallbackEnabled) {
           return {
             success: false,

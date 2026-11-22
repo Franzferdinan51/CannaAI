@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
+import { getLogger } from '@/lib/logger';
 
 const RoomCreateSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -17,7 +18,7 @@ export async function GET() {
     const data = await prisma.room.findMany();
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('Rooms list error:', error);
+    getLogger().error('rooms_list_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: 'Failed to list rooms' }, { status: 500 });
   }
 }
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ success: true, data: created });
   } catch (error) {
-    console.error('Room create error:', error);
+    getLogger().error('rooms_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: 'Failed to create room' }, { status: 500 });
   }
 }

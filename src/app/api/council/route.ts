@@ -55,6 +55,7 @@ import {
   generateOptimizationReport,
   getOptimizationSuggestions
 } from '@/lib/ai/adaptiveOrchestrationService';
+import { getLogger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -311,7 +312,7 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('[COUNCIL API] Error:', error);
+    getLogger().error('council_post_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: error.message || 'Internal server error'
@@ -350,7 +351,7 @@ export async function GET(req: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('[COUNCIL API] Error:', error);
+    getLogger().error('council_get_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: error.message || 'Internal server error'

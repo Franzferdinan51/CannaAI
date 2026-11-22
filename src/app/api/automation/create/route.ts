@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
       data: rule
     });
   } catch (error) {
-    console.error('Automation creation error:', error);
+    getLogger().error('automation_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,
@@ -207,7 +208,7 @@ export async function GET(request: NextRequest) {
       data: result
     });
   } catch (error) {
-    console.error('Automation list error:', error);
+    getLogger().error('automation_list_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { getLogger } from './logger';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
@@ -60,7 +61,7 @@ class DatabaseMonitor {
 
     // Log slow queries
     if (metrics.duration > this.slowQueryThreshold && !metrics.success) {
-      console.warn(`[SLOW QUERY] ${metrics.duration}ms - ${metrics.query.substring(0, 100)}...`);
+      getLogger().warn('db_monitoring_slow_query', { durationMs: metrics.duration, thresholdMs: this.slowQueryThreshold });
     }
   }
 
@@ -153,7 +154,7 @@ class DatabaseMonitor {
         lastAnalyzed: new Date(),
       };
     } catch (error) {
-      console.error('Error getting health metrics:', error);
+      getLogger().error('db_monitoring_health_failed', { error: error instanceof Error ? error.message : 'unknown' });
       throw error;
     }
   }
