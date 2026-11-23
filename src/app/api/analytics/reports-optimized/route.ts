@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { trackPrismaQuery } from '@/lib/db-monitoring';
 import { QueryBuilder } from '@/lib/db-optimization';
 import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { getLogger } from '@/lib/logger';
 
 export async function GET(request: Request) {
   try {
@@ -168,7 +169,7 @@ export async function GET(request: Request) {
       cached: false,
     });
   } catch (error) {
-    console.error('Error generating analytics report:', error);
+    getLogger().error('analytics_report_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

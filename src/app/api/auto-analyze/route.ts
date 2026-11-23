@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withSecurity, securityConfig, createAPIResponse, createAPIError } from '@/lib/security';
 import { autoAnalyzeRequestSchema, validateRequestBody, AutoAnalyzeRequest } from '@/lib/validation';
+import { getLogger } from '@/lib/logger';
 
 // Export configuration for dual-mode compatibility
 export const dynamic = 'auto';
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (error) {
-      console.error('Auto-analysis error:', error);
+      getLogger().error('auto_analyze_failed', { error: error instanceof Error ? error.message : 'unknown' });
 
       return createAPIError(
         'Failed to perform auto-analysis',

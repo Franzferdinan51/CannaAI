@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendNotification, broadcastNotification, NotificationData } from '@/lib/notifications';
+import { getLogger } from '@/lib/logger';
 
 // Rate limiting map (in production, use Redis)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
       }
     }, { status });
   } catch (error) {
-    console.error('[API-NOTIFICATIONS-SEND] Error:', error);
+    getLogger().error('notifications_send_failed', { error: error instanceof Error ? error.message : 'unknown' });
 
     return NextResponse.json(
       {

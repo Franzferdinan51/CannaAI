@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { importManager, ImportOptions } from '@/lib/export-import-utils';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { getLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       ]
     });
   } catch (error) {
-    console.error('Import validation failed:', error);
+    getLogger().error('import_validate_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to validate import data',

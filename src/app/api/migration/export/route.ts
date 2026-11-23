@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { migrationManager } from '@/lib/export-import-utils';
 import { z } from 'zod';
+import { getLogger } from '@/lib/logger';
 
 const MigrationSchema = z.object({
   sourceVersion: z.string(),
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       message: 'Migration export created successfully'
     });
   } catch (error) {
-    console.error('Migration export failed:', error);
+    getLogger().error('migration_export_failed', { error: error instanceof Error ? error.message : 'unknown' });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json({

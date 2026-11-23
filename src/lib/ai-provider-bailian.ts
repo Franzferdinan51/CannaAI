@@ -9,6 +9,7 @@
  */
 
 import { ProviderDetectionResult } from './ai-provider-detection';
+import { getLogger } from './logger';
 
 const BAILIAN_BASE_URL = process.env.QWEN_BASE_URL || 'https://coding-intl.dashscope.aliyuncs.com/v1';
 const BAILIAN_MODEL = process.env.QWEN_MODEL || 'qwen3.5-plus';
@@ -134,7 +135,7 @@ export async function executeWithBailian(params: {
           { type: 'text', text: prompt }
         ]
       }];
-      console.log(`👁️ Bailian: Using vision model "${selectedModel}" for plant image analysis`);
+      getLogger().debug('bailian_vision_model_selected', { model: selectedModel });
     } else {
       if (image && !selectedModelSupportsVision) {
         return {

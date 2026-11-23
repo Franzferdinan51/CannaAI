@@ -7,6 +7,7 @@ import {
   VectorDocument,
   SemanticSearchResult
 } from '../../types/council';
+import { getLogger } from '../logger';
 
 /**
  * In-memory vector storage
@@ -430,7 +431,7 @@ export async function importVectorStore(jsonData: string): Promise<number> {
 
     return docs.length;
   } catch (error) {
-    console.error("Error importing vector store:", error);
+    getLogger().error('vector_store_import_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return 0;
   }
 }

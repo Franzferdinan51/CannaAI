@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { existsSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { getLogger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
       total: backups.length
     });
   } catch (error) {
-    console.error('Backup list retrieval failed:', error);
+    getLogger().error('backup_list_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to retrieve backup list',

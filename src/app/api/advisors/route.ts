@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLocalMoaAdvisors } from '@/lib/ai/localMoaAdvisors';
 import { refreshProviderHealth } from '@/lib/ai-provider-detection';
+import { getLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     const result = await getLocalMoaAdvisors().run({ task, context, provider, model });
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
-    console.error('[Local MoA] Request failed:', error);
+    getLogger().error('advisors_request_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Advisor workflow failed.' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { startOfDay, subDays } from 'date-fns';
+import { getLogger } from '@/lib/logger';
 
 function convertToCSV(data: any[], headers: string[]): string {
   const csvHeaders = headers.join(',');
@@ -222,7 +223,7 @@ export async function GET(request: Request) {
       });
     }
   } catch (error) {
-    console.error('Error exporting analytics data:', error);
+    getLogger().error('analytics_export_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

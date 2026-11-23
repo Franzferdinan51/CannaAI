@@ -17,6 +17,7 @@
  */
 
 import { ProviderDetectionResult } from './ai-provider-detection';
+import { getLogger } from './logger';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
@@ -249,7 +250,7 @@ export async function executeWithOpenRouter(params: {
           { type: 'text', text: prompt }
         ]
       });
-      console.log(`👁️ OpenRouter: Using vision model "${selectedModel}" for plant image analysis`);
+      getLogger().debug('openrouter_vision_model_selected', { model: selectedModel });
     } else {
       // Text-only request
       messages.push({

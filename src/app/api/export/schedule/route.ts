@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backupManager } from '@/lib/export-import-utils';
 import { z } from 'zod';
+import { getLogger } from '@/lib/logger';
 
 const ScheduleSchema = z.object({
   frequency: z.enum(['daily', 'weekly', 'monthly']),
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Export scheduling failed:', error);
+    getLogger().error('export_schedule_failed', { error: error instanceof Error ? error.message : 'unknown' });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json({

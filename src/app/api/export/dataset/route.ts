@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { extractMetrics, metricStats } from '@/lib/reports-analytics';
+import { getLogger } from '@/lib/logger';
 
 // Dataset export for later training use: plants (with strain + room), their
 // analyses and health history, photo metadata, and the sensor window around
@@ -249,7 +250,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Dataset export failed:', error);
+    getLogger().error('dataset_export_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: 'Dataset export failed.' }, { status: 500 });
   }
 }

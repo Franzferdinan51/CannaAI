@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { migrationManager } from '@/lib/export-import-utils';
+import { getLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
       message: 'Migration data imported successfully'
     }, { status: result.errors === 0 ? 200 : 422 });
   } catch (error) {
-    console.error('Migration import failed:', error);
+    getLogger().error('migration_import_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to import migration data',

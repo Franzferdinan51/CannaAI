@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateDailyReport, aggregateData, cleanupOldData } from '@/lib/analytics-utils';
+import { getLogger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
         );
     }
   } catch (error) {
-    console.error('Error executing task:', error);
+    getLogger().error('scheduled_task_execute_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

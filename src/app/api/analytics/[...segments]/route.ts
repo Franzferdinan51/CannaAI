@@ -8,6 +8,7 @@ import {
   parseDateRange,
   parseIdList,
 } from '@/lib/reports-analytics';
+import { getLogger } from '@/lib/logger';
 
 // Real aggregates for the Reports analytics tabs, computed from stored
 // sensor readings, plant analyses and alerts (see lib/reports-analytics).
@@ -68,7 +69,7 @@ export async function GET(
         return NextResponse.json({ available: false, message: `Analytics resource '${resource}' is not configured.` });
     }
   } catch (error) {
-    console.error(`Analytics resource '${resource}' failed:`, error);
+    getLogger().error('analytics_resource_failed', { resource, error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       { success: false, error: `Analytics resource '${resource}' failed to load.` },
       { status: 500 },

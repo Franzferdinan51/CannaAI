@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { exportManager } from '@/lib/export-import-utils';
+import { getLogger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Export history retrieval failed:', error);
+    getLogger().error('export_history_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to retrieve export history',

@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import { safeLocalStorage } from '@/lib/safe-local-storage';
+import { getLogger } from '@/lib/logger-browser';
 
 interface NutrientRecipe {
   id: string;
@@ -195,7 +196,7 @@ export default function NutrientCalculatorPage() {
         const recipes = JSON.parse(stored);
         setSavedRecipes([...PRESET_RECIPES, ...recipes]);
       } catch (error) {
-        console.error('Error loading saved recipes:', error);
+        getLogger().error('nutrient_recipes_load_failed', { error: error instanceof Error ? error.message : 'unknown' });
       }
     }
   }, []);

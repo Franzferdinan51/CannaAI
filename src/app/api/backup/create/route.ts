@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { backupManager } from '@/lib/export-import-utils';
+import { getLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       message: 'Backup created successfully'
     });
   } catch (error) {
-    console.error('Backup creation failed:', error);
+    getLogger().error('backup_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to create backup',

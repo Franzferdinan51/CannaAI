@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureSeedData } from '@/lib/seed-data';
 import { subDays, startOfDay } from 'date-fns';
+import { getLogger } from '@/lib/logger';
 
 export async function GET(request: Request) {
   try {
@@ -158,7 +159,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error fetching analytics:', error);
+    getLogger().error('analytics_fetch_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json(
       {
         success: false,

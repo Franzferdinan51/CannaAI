@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLogger } from '@/lib/logger';
 
 // CRUD for sensor definitions. `/api/sensors` is intentionally kept as the
 // ingestion endpoint for backwards-compatible OpenClaw readings; the UI must
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, data: sensor }, { status: 201 });
   } catch (error) {
-    console.error('Failed to create sensor configuration:', error);
+    getLogger().error('sensor_config_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: 'Failed to create sensor configuration' }, { status: 500 });
   }
 }

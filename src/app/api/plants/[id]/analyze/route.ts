@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { analyzePlantHealth } from '@/lib/ai';
 import { landAnalysisOnPlant } from '@/lib/analysis-landing';
+import { getLogger } from '@/lib/logger';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ success: true, data: { result } });
   } catch (error) {
-    console.error('Plant analysis failed:', error);
+    getLogger().error('plant_analysis_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Plant analysis failed' }, { status: 500 });
   }
 }

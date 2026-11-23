@@ -8,6 +8,7 @@ import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { basename, join } from 'path';
 import { MAX_IMPORT_FILE_SIZE, resolveImportFilePath } from '@/lib/export-import-utils';
+import { getLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       message: 'File uploaded successfully'
     });
   } catch (error) {
-    console.error('Import upload failed:', error);
+    getLogger().error('import_upload_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to upload file',

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backupManager, isOpaqueId } from '@/lib/export-import-utils';
 import { z } from 'zod';
+import { getLogger } from '@/lib/logger';
 
 const RestoreSchema = z.object({
   backupId: z.string(),
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       message: 'Database restored successfully from backup'
     });
   } catch (error) {
-    console.error('Backup restore failed:', error);
+    getLogger().error('backup_restore_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to restore from backup',

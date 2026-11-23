@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exportManager } from '@/lib/export-import-utils';
 import { readFileSync, existsSync } from 'fs';
 import { basename } from 'path';
+import { getLogger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -66,7 +67,7 @@ export async function GET(
       }
     });
   } catch (error) {
-    console.error('Export download failed:', error);
+    getLogger().error('export_download_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return NextResponse.json({
       success: false,
       error: 'Failed to download export file',

@@ -9,6 +9,7 @@ import {
   CouncilSession,
   CouncilPersona
 } from '../../types/council';
+import { getLogger } from '../logger';
 
 /**
  * In-memory storage (production should use persistent storage)
@@ -360,7 +361,7 @@ export async function importMemories(jsonData: string): Promise<number> {
 
     return memories.length;
   } catch (error) {
-    console.error("Error importing memories:", error);
+    getLogger().error('council_memory_import_failed', { error: error instanceof Error ? error.message : 'unknown' });
     return 0;
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiRateLimiter, analysisRateLimiter, ValidationError } from './validation';
 import { headers } from 'next/headers';
+import { getLogger } from './logger';
 
 export interface SecurityOptions {
   rateLimitPerMinute?: number;
@@ -218,7 +219,7 @@ export async function withSecurity(
     return response;
 
   } catch (error) {
-    console.error('Security middleware error:', error);
+    getLogger().error('security_middleware_error', { error: error instanceof Error ? error.message : 'unknown' });
 
     // Handle validation errors
     if (error instanceof ValidationError) {

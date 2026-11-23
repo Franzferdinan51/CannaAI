@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exportManager, ExportOptions } from '@/lib/export-import-utils';
 import { z } from 'zod';
+import { getLogger } from '@/lib/logger';
 
 const ExportRequestSchema = z.object({
   format: z.enum(['json', 'csv', 'pdf', 'zip', 'xml', 'xlsx']),
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       status: 'pending'
     });
   } catch (error) {
-    console.error('Export creation failed:', error);
+    getLogger().error('export_create_failed', { error: error instanceof Error ? error.message : 'unknown' });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createWebhookSubscription } from '@/lib/webhooks';
+import { getLogger } from '@/lib/logger';
 
 // Rate limiting map
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('[API-WEBHOOKS-REGISTER] Error:', error);
+    getLogger().error('webhooks_register_failed', { error: error instanceof Error ? error.message : 'unknown' });
 
     return NextResponse.json(
       {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { getLogger } from '@/lib/logger-browser';
 
 export default function Error({
   error,
@@ -10,7 +11,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    getLogger().error('app_error_boundary', { error: error.message, digest: error.digest });
   }, [error]);
 
   return (
