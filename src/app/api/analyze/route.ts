@@ -683,9 +683,13 @@ export async function POST(request: NextRequest) {
               ...(effectiveApiKey ? { apiKey: effectiveApiKey } : {}),
               temperature: 0.15,
               useVision: !!imageBase64ForAI,
-              // Match the route and browser deadlines for slow local vision
-              // models instead of letting the adapter's shorter default abort.
-              timeout: imageBase64ForAI ? 600000 : 120000,
+              // Bound vision inference well inside the client deadlines:
+              // a stuck LM Studio JIT-load/queue must surface this route's
+              // clean timeout error instead of hanging past every client
+              // timeout (wave-15 smoke hung >180s at the old 600s cap).
+              // 150s still leaves ample room for a JIT load plus inference
+              // on the pinned 9B vision model once loaded.
+              timeout: imageBase64ForAI ? 150000 : 120000,
             }
           );
         } catch (lmError) {

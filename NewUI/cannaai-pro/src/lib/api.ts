@@ -137,11 +137,6 @@ export const api = {
     status: () => apiClient.get('/advisors'),
     run: (data: { task: string; context?: string; provider?: string }) => apiClient.post('/advisors', data),
   },
-  lmstudio: {
-    chat: (message: string) => apiClient.post('/lmstudio/chat', { message }),
-    models: () => apiClient.get('/lmstudio/models'),
-  },
-
   // Data Management
   strains: {
     list: () => apiClient.get<StrainsApiResponse>('/strains'),
