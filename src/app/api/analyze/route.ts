@@ -683,13 +683,15 @@ export async function POST(request: NextRequest) {
               ...(effectiveApiKey ? { apiKey: effectiveApiKey } : {}),
               temperature: 0.15,
               useVision: !!imageBase64ForAI,
-              // Bound vision inference well inside the client deadlines:
-              // a stuck LM Studio JIT-load/queue must surface this route's
-              // clean timeout error instead of hanging past every client
-              // timeout (wave-15 smoke hung >180s at the old 600s cap).
-              // 150s still leaves ample room for a JIT load plus inference
-              // on the pinned 9B vision model once loaded.
-              timeout: imageBase64ForAI ? 150000 : 120000,
+              // Bound vision inference so a stuck LM Studio JIT-load/queue
+              // surfaces this route's clean timeout error instead of hanging
+              // forever — but the cap must clear a real slow run: the pinned
+              // vision model is now duckets/inkling-2-mini-mlx (17 GB) and a
+              // verified healthy end-to-end analyze took ~179s on
+              // 2026-11-23, so the wave-15 150s cap converted working slow
+              // runs into ai_provider_unavailable failures (Day 18 AM,
+              // 2026-11-24). 420s is the bound as of 2026-11-24.
+              timeout: imageBase64ForAI ? 420000 : 120000,
             }
           );
         } catch (lmError) {
