@@ -8,7 +8,7 @@ import { getLogger } from './logger';
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import sharp from 'sharp';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
 import { createHash } from 'node:crypto';
@@ -451,7 +451,7 @@ export class ExportManager {
   private async formatAsZip(data: any, options: ExportOptions): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      const archive = new ZipArchive({ zlib: { level: 9 } });
 
       archive.on('data', (chunk) => chunks.push(chunk));
       archive.on('end', () => resolve(Buffer.concat(chunks)));

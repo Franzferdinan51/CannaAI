@@ -349,4 +349,59 @@ describe('CORS hardening — src/proxy.ts', () => {
       expect(headersMap.get('Vary')).toBeUndefined();
     });
   });
+
+  // -------------------------------------------------------------------------
+  // P2-6: auth-gate coverage — hard-tier paths are always gated; every
+  // other mutation joins the gate once a token is configured; with no
+  // token configured, non-hard-tier mutations keep dev pass-through.
+  // The next/server mock returns status 200 for next() and 403 for
+  // json(), so gating shows up as the returned response status.
+  // -------------------------------------------------------------------------
+  describe('P2-6: auth gate coverage', () => {
+    const makeReq = (method: string, pathname: string, token?: string) => ({
+      method,
+      nextUrl: { pathname },
+      headers: {
+        get(name: string) {
+          if (name === 'x-cannaai-api-token') return token ?? null;
+          return null;
+        },
+      },
+    });
+
+    test('token configured: an ordinary mutation without credentials is gated', async () => {
+      process.env.CANNAAI_API_TOKEN = 'test-token';
+      const { proxy: middleware } = await import('@/proxy');
+      const res = middleware(makeReq('POST', '/api/settings') as never) as unknown as { status: number };
+      expect(res.status).toBe(403);
+    });
+
+    test('token configured: an ordinary mutation with the token passes', async () => {
+      process.env.CANNAAI_API_TOKEN = 'test-token';
+      const { proxy: middleware } = await import('@/proxy');
+      const res = middleware(makeReq('POST', '/api/settings', 'test-token') as never) as unknown as { status: number };
+      expect(res.status).toBe(200);
+    });
+
+    test('token configured: reads are never gated by the coverage tier', async () => {
+      process.env.CANNAAI_API_TOKEN = 'test-token';
+      const { proxy: middleware } = await import('@/proxy');
+      const res = middleware(makeReq('GET', '/api/settings') as never) as unknown as { status: number };
+      expect(res.status).toBe(200);
+    });
+
+    test('no token configured: an ordinary mutation keeps dev pass-through', async () => {
+      delete process.env.CANNAAI_API_TOKEN;
+      const { proxy: middleware } = await import('@/proxy');
+      const res = middleware(makeReq('POST', '/api/settings') as never) as unknown as { status: number };
+      expect(res.status).toBe(200);
+    });
+
+    test('no token configured: a hard-tier mutation still fails closed', async () => {
+      delete process.env.CANNAAI_API_TOKEN;
+      const { proxy: middleware } = await import('@/proxy');
+      const res = middleware(makeReq('POST', '/api/backup/create') as never) as unknown as { status: number };
+      expect(res.status).toBe(403);
+    });
+  });
 });

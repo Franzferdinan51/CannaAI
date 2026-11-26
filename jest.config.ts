@@ -70,10 +70,16 @@ const config: Config = {
   },
   moduleDirectories: ['node_modules', '<rootDir>'],
   transform: {
-    '^.+\\.(ts|tsx)$': '<rootDir>/tests/jest-typescript-transformer.cjs'
+    '^.+\\.(ts|tsx)$': '<rootDir>/tests/jest-typescript-transformer.cjs',
+    // archiver 8's subtree (archiver / zip-stream / compress-commons /
+    // crc32-stream, plus is-stream 4 where nested) is ESM-only
+    // ("type": "module"); route its .js through the same transpile-to-CJS
+    // transformer so suites that import the real archiver (export/backup
+    // paths) can load it.
+    '^.+node_modules/(archiver|zip-stream|compress-commons|crc32-stream|is-stream)/.+\\.js$': '<rootDir>/tests/jest-typescript-transformer.cjs'
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(sharp|heic-convert|libheif-js)/)'
+    'node_modules/(?!(sharp|heic-convert|libheif-js|archiver|zip-stream|compress-commons|crc32-stream|is-stream)/)'
   ],
   verbose: true,
   // Tests share a mocked provider registry and a SQLite integration fixture.

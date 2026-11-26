@@ -38,14 +38,23 @@ export function proxy(request: NextRequest) {
   if (isApi) {
     const publicApiPaths = new Set(['/api/health', '/api/health-check', '/api/version']);
     const sensitiveMutation = isSensitiveMutation(request.nextUrl.pathname, request.method);
+    const configuredToken = process.env.CANNAAI_API_TOKEN;
+    const anyMutation = request.method !== 'GET' && request.method !== 'OPTIONS';
     const requireApiToken = process.env.CANNAAI_REQUIRE_AUTH === 'true'
       || process.env.NODE_ENV === 'production'
-      || sensitiveMutation;
+      || sensitiveMutation
+      // Auth-gate coverage (P2-6): the hard-tier paths in isSensitiveMutation
+      // are gated unconditionally — with no token configured they fail closed
+      // (503 below). Every OTHER mutation joins the gate as soon as a token
+      // IS configured, so setting CANNAAI_API_TOKEN alone locks down the
+      // whole API instead of only the six hard-tier paths. Until a token is
+      // configured, non-hard-tier mutations keep the current dev behavior
+      // (the live UI is unaffected); reads are never gated by this tier.
+      || (anyMutation && Boolean(configuredToken));
 
     // Browser CORS preflights do not carry the eventual Authorization header.
     // They may validate the allowlist here; the actual request remains gated.
     if (requireApiToken && request.method !== 'OPTIONS' && !publicApiPaths.has(request.nextUrl.pathname)) {
-      const configuredToken = process.env.CANNAAI_API_TOKEN;
       const authorization = request.headers.get('authorization') ?? '';
       const bearerToken = authorization.startsWith('Bearer ')
         ? authorization.slice('Bearer '.length)
