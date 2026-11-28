@@ -205,12 +205,21 @@ export interface SensorAnalytics {
   };
   alerts: number;
   dataQuality: number; // Percentage
+  // Server-side aggregation disclosure: long timeframes return bucket
+  // averages instead of raw readings; bucketSeconds 0 means raw points.
+  aggregation?: {
+    bucketSeconds: number;
+    readingsConsidered: number;
+    readingsWithValue: number;
+  };
 }
 
 export interface AnalyticsDataPoint {
   timestamp: string;
   value: number;
-  quality: 'good' | 'fair' | 'poor';
+  // 'unknown' when the reading recorded no quality metadata — the API
+  // never assumes 'good'.
+  quality: 'good' | 'fair' | 'poor' | 'unknown';
 }
 
 export interface SystemHealth {

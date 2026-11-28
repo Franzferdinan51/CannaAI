@@ -311,7 +311,7 @@ const GrowCommandDashboard: React.FC = () => {
             </h1>
             <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-white/50">
               {primary
-                ? `${data.plants.length} ${strain?.name || 'plants'} in the ${roomName}, ${primary.stage || 'growing'} stage${dayCount(primary.plantedDate) !== null ? `, day ${dayCount(primary.plantedDate)}` : ''}. Everything on this page is live data from the tent and the grow log — nothing is demo data.`
+                ? `${data.plants.length} ${strain?.name || 'plants'} in the ${roomName}, ${primary.stage || 'growing'} stage${dayCount(primary.plantedDate) !== null ? `, day ${dayCount(primary.plantedDate)}` : ''}. Everything on this page is live data from the ${roomName} and the grow log — nothing is demo data.`
                 : 'No active plants yet. Add the first plant and this page becomes its command center.'}
             </p>
             {strain?.lineage && <p className="mt-1.5 text-sm text-white/35">Lineage: {strain.lineage}</p>}
@@ -369,7 +369,7 @@ const GrowCommandDashboard: React.FC = () => {
           <Card className="min-w-0">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-[17px]">
-                <Activity className="h-5 w-5 text-blue-300" /> Last 24 hours in the tent
+                <Activity className="h-5 w-5 text-blue-300" /> Last 24 hours in the {roomName}
               </CardTitle>
               <CardDescription>Real AC Infinity readings, collected every five minutes</CardDescription>
             </CardHeader>
@@ -411,7 +411,7 @@ const GrowCommandDashboard: React.FC = () => {
                       Port {port.port}: level {port.speed}
                     </span>
                   ))}
-                  <span className="rounded-full bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/35">Levels are controller settings; the AI program runs the tent.</span>
+                  <span className="rounded-full bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/35">Levels are controller settings; the AI program runs the {roomName}.</span>
                 </div>
               )}
             </CardContent>
@@ -420,7 +420,7 @@ const GrowCommandDashboard: React.FC = () => {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-[17px]">
-                <Camera className="h-5 w-5 text-emerald-300" /> Latest tent photo
+                <Camera className="h-5 w-5 text-emerald-300" /> Latest {roomName} photo
               </CardTitle>
               <CardDescription>{data.latestPhoto ? `${data.latestPhoto.plantName} · ${formatDateTime(data.latestPhoto.image.capturedAt)}` : 'Photos you attach to a plant show up here'}</CardDescription>
             </CardHeader>
@@ -527,7 +527,7 @@ const GrowCommandDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               {data.alerts.length === 0 ? (
-                <p className="py-2 text-sm text-white/35">All quiet in the tent.</p>
+                <p className="py-2 text-sm text-white/35">All quiet in the {roomName}.</p>
               ) : (
                 <div className="space-y-2">
                   {data.alerts.slice(0, 6).map((alert) => (
@@ -625,7 +625,7 @@ const GrowCommandDashboard: React.FC = () => {
               <textarea
                 value={journalText}
                 onChange={(event) => setJournalText(event.target.value)}
-                placeholder="What happened in the tent?"
+                placeholder={`What happened in the ${roomName}?`}
                 className="min-h-[72px] w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/25"
               />
               <div className="flex items-center justify-between">
